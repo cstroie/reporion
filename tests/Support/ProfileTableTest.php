@@ -50,6 +50,16 @@ final class ProfileTableTest extends TestCase
         self::assertSame(['create', 'summarize'], $ids);
     }
 
+    public function testABreakRowKeepsItsLabelAndIcon(): void
+    {
+        $body = "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n"
+            . "| --- | Write | | pencil | |\n| create | Create | | | insert |\n| --- |\n";
+
+        $rows = ProfileTable::parse($body);
+        self::assertSame(['---', 'Write', 'pencil'], [$rows[0]['id'], $rows[0]['label'], $rows[0]['icon']]);
+        self::assertSame(['---', '', ''], [$rows[2]['id'], $rows[2]['label'], $rows[2]['icon']], 'a bare --- row stays a plain line');
+    }
+
     public function testIdsAreLowercased(): void
     {
         $body = "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n"

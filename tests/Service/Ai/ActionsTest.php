@@ -212,6 +212,28 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['create' => false, 'conclusion' => false, 'quality' => true, 'linter' => false], $sections);
     }
 
+    public function testABreakRowWithALabelNamesItsSectionAtTheTopToo(): void
+    {
+        foreach (['create', 'quality', 'linter'] as $id) {
+            $this->storage->create('ai:profiles:reports:' . $id, ['visibility' => 'private'], "Do it.\n", 'owner');
+        }
+        $this->storage->create(
+            'ai:profiles:reports',
+            ['visibility' => 'private'],
+            "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n"
+            . "| --- | Write | | pencil | |\n| create | Create | | | insert |\n"
+            . "| --- | | | | |\n| --- | Check | | seal-check | |\n| quality | Quality | | | show |\n| linter | Linter | | | show |\n",
+            'owner'
+        );
+
+        $editor = [];
+        foreach ((new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH) as $action) {
+            $editor[$action->id] = [$action->forEditor()['sectionLabel'], $action->forEditor()['sectionIcon']];
+        }
+
+        self::assertSame(['create' => ['Write', 'pencil'], 'quality' => ['Check', 'seal-check'], 'linter' => ['', '']], $editor, 'the last label wins; a plain line stays a line');
+    }
+
     public function testEachPromptPageIsReadOncePerObjectAcrossRepeatedLookups(): void
     {
         $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');

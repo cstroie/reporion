@@ -377,7 +377,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
 <?php foreach ($ai['actions'] as $action): ?>
-<?php if ($action['section']): ?><hr class="wk-ai-sep"><?php endif; ?>
+<?php if ($action['section']): ?><?php if ($action['sectionLabel'] !== ''): ?><h4 class="wk-ai-sec"><?= $action['sectionIcon'] !== '' ? $aiIcon($action['sectionIcon']) : '' ?><?= htmlspecialchars($action['sectionLabel'], ENT_QUOTES) ?></h4><?php else: ?><hr class="wk-ai-sep"><?php endif; ?><?php endif; ?>
 <?php if ($action['custom']): ?>
 <div class="group wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
 <?php else: ?>

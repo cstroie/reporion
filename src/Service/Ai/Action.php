@@ -36,12 +36,16 @@ final class Action
         public readonly bool $sectionStart = false,
         /** Seconds this action waits for the server at most; 0: the server's own timeout */
         public readonly int $timeout = 0,
+        /** The name of the section it starts (the `---` row's Label), empty for a plain line */
+        public readonly string $sectionLabel = '',
+        /** …and its icon (the row's Icon cell, same forms as an action's) */
+        public readonly string $sectionIcon = '',
     ) {
     }
 
-    /** @return array{id: string, label: string, tooltip: string, icon: string, result: string, section: bool} what the editor needs */
+    /** @return array{id: string, label: string, tooltip: string, icon: string, result: string, section: bool, sectionLabel: string, sectionIcon: string} what the editor needs */
     public function forEditor(): array
     {
-        return ['id' => $this->id, 'label' => $this->label, 'tooltip' => $this->tooltip, 'icon' => $this->icon, 'result' => $this->result, 'section' => $this->sectionStart];
+        return ['id' => $this->id, 'label' => $this->label, 'tooltip' => $this->tooltip, 'icon' => $this->icon, 'result' => $this->result, 'section' => $this->sectionStart, 'sectionLabel' => $this->sectionLabel, 'sectionIcon' => $this->sectionIcon];
     }
 }

@@ -119,12 +119,17 @@ final class Actions
         $system = $this->system($ns);
         $actions = [];
         // A `---` row: a line before the next action there is: none at the
-        // top, none twice, none at the end
-        $break = false;
+        // top, none twice, none at the end. One with a Label names the section
+        // instead (a heading, also at the top); the last label before an action wins
+        $break = null;
         foreach (ProfileTable::parse($index) as $row) {
             $id = $row['id'];
             if ($id === ProfileTable::BREAK) {
-                $break = $actions !== [];
+                if ($row['label'] !== '') {
+                    $break = [$row['label'], $row['icon']];
+                } elseif ($actions !== [] && $break === null) {
+                    $break = ['', ''];
+                }
                 continue;
             }
             if ($id === self::SYSTEM || $id === self::SPECIAL_NS || \in_array($id, self::SPECIAL, true)) {
@@ -149,10 +154,12 @@ final class Actions
                 $model['tier'],
                 $model['server'],
                 $own['max_tokens'],
-                $break,
+                $break !== null,
                 $own['timeout'],
+                $break[0] ?? '',
+                $break[1] ?? '',
             );
-            $break = false;
+            $break = null;
         }
 
         return $actions;
@@ -218,7 +225,7 @@ final class Actions
         $named = [self::SYSTEM => true];
         foreach ($index !== null ? ProfileTable::parse($index) : [] as $row) {
             if ($row['id'] === ProfileTable::BREAK) {
-                $rail[] = ['break' => true];
+                $rail[] = ['break' => true, 'label' => $row['label'], 'icon' => $row['icon']];
                 continue;
             }
             $named[$row['id']] = true;

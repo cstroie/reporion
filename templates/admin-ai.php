@@ -240,7 +240,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php elseif ($o['rail'] === []): ?><p class="wk-dim wk-text-sm"><?= $e(t('admin.ai.rail_empty')) ?></p>
 <?php else: ?><ul class="wk-ai-rail">
 <?php foreach ($o['rail'] as $row): ?>
-<?php if ($row['break']): ?><li class="wk-ai-rail-break" aria-hidden="true"></li><?php continue; endif; ?>
+<?php if ($row['break']): ?><li class="wk-ai-rail-break"<?= $row['label'] === '' ? ' aria-hidden="true"' : '' ?>><?= $e($row['label']) ?></li><?php continue; endif; ?>
 <?php $tip = $row['id'] . ' · ' . $row['result'] . ($row['model'] !== '' ? ' · ' . $row['model'] : '') . ($row['ownSystem'] ? ' · +system' : '') . ($row['present'] ? '' : ' · ' . t('admin.ai.no_prompt_page')); ?>
 <li><a class="wk-ai-act"<?= $row['present'] ? '' : ' data-missing="1"' ?> href="<?= $b ?>/<?= $e($row['path']) ?><?= $row['present'] ? '' : '/edit' ?>" title="<?= $e($tip) ?>"><?= $row['present'] ? '' : '<i class="ph ph-warning" aria-hidden="true"></i>' ?><?= $e($row['label']) ?><small><?= $e($row['result']) ?></small></a></li>
 <?php endforeach; ?>

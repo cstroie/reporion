@@ -932,7 +932,10 @@ has none).
   `lite`), and with **no system prompt**, whatever the profile has.
 - **Sections** (2026-10-08): a row whose ID is `---` (the other cells blank) draws a thin line in
   the rail before the next action: `create`, `conclusion`, `diagnostic`, then `---`, then `quality`,
-  `linter`. One at the top, two in a row or one at the end draws nothing extra.
+  `linter`. One at the top, two in a row or one at the end draws nothing extra. **Named sections** (2026-10-20): a
+  `---` row with a Label (and an Icon, same forms as an action's) draws that name as a heading
+  instead of the line, at the top too: `| --- | Write | | pencil | |`. Two `---` rows in a row: the
+  last label wins. A section with no action after it draws nothing.
 - **A prompt page's `model:`** (frontmatter, 2026-10-08): the same alias syntax as the Model
   column; the table's cell wins when it is filled. The only way to put a reserved prompt on another model.
 - **A prompt page's `max_tokens:`** (frontmatter, 2026-10-08), that action's answer cap; with the

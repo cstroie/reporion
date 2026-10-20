@@ -18,10 +18,11 @@ namespace Reporion\Support;
  * (validating `result`, reading the id's own prompt page) is `Actions`' job;
  * this class only reads the syntax.
  *
- * A row whose ID cell is `---` (three dashes or more, the other cells
- * blank or not there) starts a new section of the rail (2026-10-08): it
- * comes back as a row with `id` '---', which Actions turns into a line
- * before the next action.
+ * A row whose ID cell is `---` (three dashes or more) starts a new section
+ * of the rail (2026-10-08): it comes back as a row with `id` '---', which
+ * Actions turns into a line before the next action. Its Label and Icon
+ * cells, when filled (2026-10-20), name the section: the rail draws them as
+ * a heading instead of the line. The other cells are ignored.
  */
 final class ProfileTable
 {
@@ -52,7 +53,7 @@ final class ProfileTable
         for ($n = $start; isset($lines[$n]) && self::isRow($lines[$n]); ++$n) {
             $cells = array_map('trim', explode('|', trim(trim($lines[$n]), '|')));
             if (preg_match('/^-{3,}$/', $cells[0]) === 1) {
-                $rows[] = ['id' => self::BREAK, 'label' => '', 'tooltip' => '', 'icon' => '', 'result' => '', 'model' => ''];
+                $rows[] = ['id' => self::BREAK, 'label' => $cells[1] ?? '', 'tooltip' => '', 'icon' => $cells[3] ?? '', 'result' => '', 'model' => ''];
                 continue;
             }
             if (\count($cells) < 5) {
