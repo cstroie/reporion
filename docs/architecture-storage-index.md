@@ -265,15 +265,18 @@ CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT N
 
 > **D4: typed columns for the facet set, JSON for the tail**. Fields you filter or sort on get real columns; everything else lives in `meta_json` and is reachable with SQLite's JSON functions when needed. Promoting a field from the tail to a column is a migration plus a reindex: cheap, and the schema file in §7 declares which fields are promoted, so the migration is generated rather than hand-written. The alternative, a generic key/value table, makes every faceted query a pile of self-joins; at 10k reports you would feel it.
 
-#### Tags, links, revisions
+#### Tags, links
 
 ```
 CREATE TABLE page_tags (pid TEXT, tag TEXT, PRIMARY KEY (pid, tag));
 CREATE TABLE links     (src TEXT, dst_path TEXT, dst_pid TEXT,
                         kind TEXT);            -- link|prior|template|protocol
-CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
-                        bytes INTEGER, kind TEXT, PRIMARY KEY (pid, n));
 ```
+
+The `revisions` table the index used to keep (written on every index(), read by nothing, only
+ever each page's newest revision) is dropped (`migrations/index/007_revisions_dropped.sql`,
+D54 step 5): every revision of every page is in `data/reporion.sqlite`'s `revision` table, a
+mirror of the page's attic zip (docs/architecture-v2.md §6).
 
 There is no `tags` table. The tag dictionary (group, ICD-10, synonyms) is admin-typed data with no
 other copy, so it lives on disk in `data/tags.yaml` (docs/FORMATS.md §3g, phase 20: invariant 1),

@@ -357,8 +357,10 @@ signing are all touched).
    name are a file and a directory, so the "has pages under it" refusals are gone. Rejoin
    (`reconcilePath()`, `PATH_COPY` for a copy) and adoption of a hand-made page file;
    accession counters (`nextAccession()`). *Done 2026-10-20.*
-5. The index's `revisions` table dropped: written only, never read, and the state DB mirrors
-   every revision now.
+5. The index's `revisions` table dropped (`migrations/index/007_revisions_dropped.sql`):
+   written only, never read, and the state DB mirrors every revision now. `index:rebuild`
+   already starts from `Storage::allPaths()`, a query of the `page` table under `FileTree`.
+   *Done 2026-10-20.*
 6. The switch: the Kernel, the CLI and the installer build `FileTree`; every service that read
    the 1.x layout (integrity, doctor, path repair, accessions, index maintenance) goes through
    it (invariant 5); the tests move to `FileTree`.

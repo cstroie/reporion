@@ -1242,7 +1242,6 @@ final class Sqlite implements IndexInterface
         // Links written before this page existed (or before it moved here) now resolve
         $this->pdo->prepare('UPDATE links SET dst_pid = ? WHERE dst_path = ? AND dst_pid IS NULL')
             ->execute([$snapshot->pid, $snapshot->path]);
-        $this->upsertRevision($snapshot);
 
         $this->pdo->prepare('DELETE FROM fts WHERE rowid = ?')->execute([$rowid]);
         $this->pdo->prepare('INSERT INTO fts (rowid, title, summary, body, tags, pid) VALUES (?, ?, ?, ?, ?, ?)')
@@ -1482,26 +1481,6 @@ final class Sqlite implements IndexInterface
         }
 
         return $out;
-    }
-
-    private function upsertRevision(PageSnapshot $snapshot): void
-    {
-        $this->pdo->prepare(
-            'INSERT INTO revisions (pid, n, ts, by, note, bytes, kind, sha256, signed)
-             VALUES (:pid, :n, :ts, :by, :note, :bytes, :kind, :sha256, 0)
-             ON CONFLICT(pid, n) DO UPDATE SET
-                ts = excluded.ts, by = excluded.by, note = excluded.note,
-                bytes = excluded.bytes, kind = excluded.kind, sha256 = excluded.sha256'
-        )->execute([
-            'pid' => $snapshot->pid,
-            'n' => $snapshot->rev,
-            'ts' => $snapshot->updated,
-            'by' => $snapshot->updatedBy,
-            'note' => $snapshot->note,
-            'bytes' => $snapshot->bytes,
-            'kind' => $snapshot->kind,
-            'sha256' => $snapshot->bodySha,
-        ]);
     }
 
     private function rowidFor(string $pid): ?int
