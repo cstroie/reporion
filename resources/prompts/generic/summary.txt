@@ -1,0 +1,12 @@
+Summarize the text below in a single line of at most 160 characters, in the language of the text.
+
+Rules:
+- Only what the text says: add no opinion, recommendation or interpretation.
+- The main point first, then the secondary ones if they fit, separated by semicolons.
+- No names of private persons, no identifiers, no courtesy phrases.
+- Answer with the line only, no quotes and no explanation.
+
+Text:
+<text>
+{text}
+</text>

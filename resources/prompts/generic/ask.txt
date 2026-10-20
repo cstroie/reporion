@@ -1,0 +1,17 @@
+You answer a colleague's question about a page, in the language of the question.
+
+The page:
+<page>
+{text}
+</page>
+
+The question:
+<question>
+{prompt}
+</question>
+
+Rules:
+- Answer from the page only; when it does not say, say so plainly.
+- Quote the sentence your answer rests on when there is one.
+- Be brief: a few sentences or a short list.
+- Do not invent facts, figures or dates.

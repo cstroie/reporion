@@ -350,4 +350,23 @@ final class AdminAiTest extends HttpTestCase
             body: $body,
         ));
     }
+
+    public function testShippedPromptsCanBeInstalledIntoAnyProfileByAnOwnerOnly(): void
+    {
+        foreach ([null, 'editor'] as $user) {
+            self::assertSame(404, $this->request('POST', '/admin/ai/prompts', $user, 'profile=reports')->status);
+        }
+        self::assertSame(422, $this->request('POST', '/admin/ai/prompts', 'owner', 'profile=Bad%20Name')->status);
+
+        $made = $this->request('POST', '/admin/ai/prompts', 'owner', 'profile=reports-short&target=radiology');
+        self::assertSame(302, $made->status);
+        $storage = new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        self::assertNotSame('', $storage->read('ai:profiles:reports-short:special:presign')->body);
+
+        // One id only, and asking again is harmless
+        self::assertSame(302, $this->request('POST', '/admin/ai/prompts', 'owner', 'profile=other&only%5B%5D=summary')->status);
+        self::assertNotSame('', $storage->read('ai:profiles:other:special:summary')->body);
+        $this->expectException(\Reporion\Exception\PageNotFoundException::class);
+        $storage->read('ai:profiles:other:special:tags');
+    }
 }

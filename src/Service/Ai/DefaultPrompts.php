@@ -6,12 +6,17 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Ai;
 
+use InvalidArgumentException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Storage\StorageInterface;
 
 /**
  * The prompts the app ships (resources/prompts, moved from docs/prompts
- * 2026-10-19) made into prompt pages of an AI profile: the reserved prompts
+ * 2026-10-19) made into prompt pages of an AI profile. They come in two
+ * targets (2026-10-20): `radiology` (reports; written in Romanian; every
+ * prompt) and `generic` (ordinary pages; in English; the ones that make
+ * sense for any page: summary, tags, tags-review, commit, ask). A profile is
+ * made from one of them. the reserved prompts
  * as `ai:profiles:{profile}:special:{id}`, the rail actions as
  * `ai:profiles:{profile}:{id}` (among them *Ask*, whose `{prompt}` gives the
  * rail its question box) and, when the profile has none, its own page with
@@ -31,38 +36,50 @@ final class DefaultPrompts
     public const ACTION = 'action';
     public const TABLE = 'table';
 
+    /** Prompts for reports of a radiology department, written in Romanian */
+    public const RADIOLOGY = 'radiology';
+    /** Prompts for ordinary pages, written in English */
+    public const GENERIC = 'generic';
+    public const TARGETS = [self::RADIOLOGY, self::GENERIC];
+
+    private const BOTH = [self::RADIOLOGY, self::GENERIC];
+    private const RADIOLOGY_ONLY = [self::RADIOLOGY];
+    private const GENERIC_ONLY = [self::GENERIC];
+
+    /** The target used when none is named */
+    public const DEFAULT_TARGET = self::GENERIC;
+
     /**
-     * Every shipped page: id => [kind, title, file under resources/prompts]
+     * Every shipped page: id => [kind, title, file, targets]. The file is
+     * under resources/prompts/{target}/ (one per target the id is shipped
+     * for: the radiology ones in Romanian, the generic ones in English).
      *
-     * @var array<string, array{kind: string, title: string, file: string}>
+     * @var array<string, array{kind: string, title: string, file: string, targets: list<string>}>
      */
     public const CATALOGUE = [
-        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt'],
-        'tags' => ['kind' => self::SPECIAL, 'title' => 'Tags', 'file' => 'tags.txt'],
-        'tags-review' => ['kind' => self::SPECIAL, 'title' => 'Tags review', 'file' => 'tags-review.txt'],
-        'evolution' => ['kind' => self::SPECIAL, 'title' => 'Evolution', 'file' => 'evolution.txt'],
-        'presign' => ['kind' => self::SPECIAL, 'title' => 'Check before signing', 'file' => 'presign.txt'],
-        'commit' => ['kind' => self::SPECIAL, 'title' => 'Revision note', 'file' => 'commit.txt'],
-        'recall-expand' => ['kind' => self::SPECIAL, 'title' => 'Recall: expand', 'file' => 'recall-expand.txt'],
-        'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt'],
-        'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt'],
-        'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt'],
-        'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this report', 'file' => 'actions/ask.txt'],
-        'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'actions/grammar.txt'],
-        'shorten' => ['kind' => self::ACTION, 'title' => 'Shorten', 'file' => 'actions/shorten.txt'],
-        'patient' => ['kind' => self::ACTION, 'title' => 'For the patient', 'file' => 'actions/patient.txt'],
-        'english' => ['kind' => self::ACTION, 'title' => 'English', 'file' => 'actions/english.txt'],
-        'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'actions/table.md'],
+        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt', 'targets' => self::BOTH],
+        'tags' => ['kind' => self::SPECIAL, 'title' => 'Tags', 'file' => 'tags.txt', 'targets' => self::BOTH],
+        'tags-review' => ['kind' => self::SPECIAL, 'title' => 'Tags review', 'file' => 'tags-review.txt', 'targets' => self::BOTH],
+        'commit' => ['kind' => self::SPECIAL, 'title' => 'Revision note', 'file' => 'commit.txt', 'targets' => self::BOTH],
+        'evolution' => ['kind' => self::SPECIAL, 'title' => 'Evolution', 'file' => 'evolution.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'presign' => ['kind' => self::SPECIAL, 'title' => 'Check before signing', 'file' => 'presign.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'recall-expand' => ['kind' => self::SPECIAL, 'title' => 'Recall: expand', 'file' => 'recall-expand.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
+        'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'targets' => self::GENERIC_ONLY],
+        'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::BOTH],
     ];
 
     /**
      * The baseline (what the installer's first tick makes): the rail with
-     * its actions, and the summary and tags that Summarize, Suggest tags
+     * its Ask action, and the summary and tags that Summarize, Suggest tags
      * and their tasks need. Every other prompt switches on one feature
      * outside the rail and is the owner's to add (the installer's second
      * tick, Admin → AI, `ai:prompts-install`).
      */
-    public const CORE = ['table', 'ask', 'grammar', 'shorten', 'patient', 'english', 'summary', 'tags'];
+    public const CORE = ['table', 'ask', 'grammar', 'summary', 'tags'];
 
     public function __construct(
         private readonly StorageInterface $storage,
@@ -83,16 +100,19 @@ final class DefaultPrompts
     }
 
     /**
-     * What each shipped page is in a profile: `present` (a page with text),
-     * `empty` (a page without text: left alone, an empty prompt is as absent
-     * as none) or `missing`
+     * What each shipped page of a target is in a profile: `present` (a page
+     * with text), `empty` (a page without text: left alone, an empty prompt
+     * is as absent as none) or `missing`
      *
      * @return array<string, string> id => state, in catalogue order
      */
-    public function status(string $profile): array
+    public function status(string $profile, string $target = self::DEFAULT_TARGET): array
     {
         $states = [];
-        foreach (array_keys(self::CATALOGUE) as $id) {
+        foreach (self::CATALOGUE as $id => $entry) {
+            if (!\in_array($target, $entry['targets'], true)) {
+                continue;
+            }
             $path = self::pathOf($profile, $id);
             $states[$id] = !$this->exists($path) ? 'missing' : ($this->hasText($path) ? 'present' : 'empty');
         }
@@ -104,20 +124,26 @@ final class DefaultPrompts
      * Make the shipped pages a profile lacks. Nothing is overwritten: a page
      * that exists, empty or not, is skipped.
      *
-     * @param list<string>|null $only ids to make (null: all)
+     * @param list<string>|null $only ids to make (null: all the target has)
+     * @param string $target self::RADIOLOGY (Romanian) or self::GENERIC (English)
+     *
+     * @throws InvalidArgumentException an unknown target
      *
      * @return array{created: list<string>, skipped: list<string>} ids, in catalogue order
      */
-    public function install(string $profile, string $actor, ?array $only = null, bool $dryRun = false): array
+    public function install(string $profile, string $actor, ?array $only = null, bool $dryRun = false, string $target = self::DEFAULT_TARGET): array
     {
+        if (!\in_array($target, self::TARGETS, true)) {
+            throw new InvalidArgumentException('Unknown target "' . $target . '". Known: ' . implode(', ', self::TARGETS));
+        }
         $created = [];
         $skipped = [];
         foreach (self::CATALOGUE as $id => $entry) {
-            if ($only !== null && !\in_array($id, $only, true)) {
+            if (($only !== null && !\in_array($id, $only, true)) || !\in_array($target, $entry['targets'], true)) {
                 continue;
             }
             $path = self::pathOf($profile, $id);
-            $file = $this->dir . '/' . $entry['file'];
+            $file = $this->dir . '/' . $target . '/' . $entry['file'];
             $body = is_file($file) ? trim((string) file_get_contents($file)) : '';
             if ($body === '' || $this->exists($path)) {
                 $skipped[] = $id;

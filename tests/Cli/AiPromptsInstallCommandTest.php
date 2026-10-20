@@ -45,7 +45,7 @@ final class AiPromptsInstallCommandTest extends StorageTestCase
         [$code, $out] = $this->exec(['--profile=reports', '--only=tags,commit']);
 
         self::assertSame(0, $code);
-        self::assertStringStartsWith('ai:prompts-install reports (writes)', $out);
+        self::assertStringStartsWith('ai:prompts-install reports generic (writes)', $out);
         self::assertStringContainsString('2 made, 0 already there', $out);
         self::assertNotSame('', $this->storage->read('ai:profiles:reports:special:commit')->body);
         self::assertSame('missing', (new DefaultPrompts($this->storage, '/nonexistent'))->status('reports')['summary']);
@@ -70,12 +70,15 @@ final class AiPromptsInstallCommandTest extends StorageTestCase
         self::assertSame(0, $code);
         $doc = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
         self::assertSame([], $doc['created']);
-        self::assertCount(\count(DefaultPrompts::CATALOGUE), $doc['skipped']);
+        self::assertCount(\count(array_filter(DefaultPrompts::CATALOGUE, static fn (array $e): bool => \in_array('generic', $e['targets'], true))), $doc['skipped']);
     }
 
     public function testABadProfileOrUnknownIdIsRefused(): void
     {
         self::assertSame(1, $this->exec(['--profile=Bad Name'])[0]);
+        [$bad, , $badErr] = $this->exec(['--profile=reports', '--target=nope']);
+        self::assertSame(1, $bad);
+        self::assertStringContainsString('Unknown target', $badErr);
         [$code, , $err] = $this->exec(['--profile=reports', '--only=nope']);
         self::assertSame(1, $code);
         self::assertStringContainsString('Unknown id(s): nope', $err);

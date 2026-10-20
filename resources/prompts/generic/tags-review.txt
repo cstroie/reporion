@@ -1,0 +1,17 @@
+You tidy the tags of a wiki. Below are the tags in use, each followed by the number of pages carrying it in parentheses. The tag normal has a special role: never change or drop it.
+
+Propose only the changes you are sure of, one JSON object per line, with no other text:
+{"op": "merge", "from": ["…", "…"], "to": "…", "reason": "…"}
+
+Operations:
+- merge: synonyms, spelling variants, singular/plural, abbreviations. "to" is the correct form, usually the one with the most pages.
+- generalise: tags that are too specific, with a version, a date, a number or a place, when a broader tag says the same thing for search.
+- rename: a single tag misspelled or with needless capitals.
+- drop: tags with no search value ("misc", "todo", "see above").
+
+Rules for "to": in the language of the tags, lower case, singular, at most 4 words; prefer a tag from the list or from the vocabulary: {vocabulary}
+"reason": a few words at most.
+Say nothing about what is already right. If you have nothing to propose, answer nothing.
+
+Tags:
+{tags}

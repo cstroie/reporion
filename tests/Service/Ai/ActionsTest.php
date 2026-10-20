@@ -240,13 +240,11 @@ final class ActionsTest extends StorageTestCase
 
     public function testTheProposedPromptsMakeARailWithAQuestionBoxForAsk(): void
     {
-        (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts'))->install('reports', 'owner');
+        (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts'))->install('reports', 'owner', target: DefaultPrompts::RADIOLOGY);
         $list = (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH);
 
-        self::assertSame(['ask', 'grammar', 'shorten', 'patient', 'english'], array_map(static fn (Action $a): string => $a->id, $list));
-        self::assertSame(['show', 'replace', 'replace', 'show', 'show'], array_map(static fn (Action $a): string => $a->result, $list));
+        self::assertSame(['ask'], array_map(static fn (Action $a): string => $a->id, $list));
+        self::assertSame(['show'], array_map(static fn (Action $a): string => $a->result, $list));
         self::assertStringContainsString('{prompt}', $list[0]->prompt, 'Ask: the rail gives it a question box');
-        self::assertTrue($list[1]->sectionStart);
-        self::assertSame('lite', $list[1]->model);
     }
 }

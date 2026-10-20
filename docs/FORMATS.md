@@ -901,9 +901,8 @@ visibility: private
 A row with no matching page (or an empty one) contributes nothing: same as it not being in the
 table at all.
 
-`resources/prompts/` holds the shipped texts (moved from `docs/prompts/` 2026-10-19; installable into any profile: Admin → AI, `ai:prompts-install`): one per reserved prompt, and `resources/prompts/actions/` the rail's
-(2026-10-19: `ask`, `grammar`, `shorten`, `patient`, `english`, plus `table.md`, the rows for a
-profile's own page). `ask` uses the placeholder `{prompt}` (the doctor's question, the rail shows a
+`resources/prompts/` holds the shipped texts (moved from `docs/prompts/` 2026-10-19; installable into any profile: Admin → AI, `ai:prompts-install`): in two targets (2026-10-20): `radiology/` (reports, written in Romanian: every reserved prompt) and `generic/` (ordinary pages, in English: `summary`, `tags`, `tags-review`, `commit`), each with the rail's `ask` (the only shipped rail action: `grammar`, `shorten`, `patient` and `english` were dropped) and `table.md`, the rows for a
+profile's own page. `ask` uses the placeholder `{prompt}` (the doctor's question, the rail shows a
 question box) and answers from `{text}` and `{history}`; shown only. The installer's *Create the
 proposed prompts* makes them all, never over an existing page (the table page only if the profile
 has none).
@@ -993,7 +992,7 @@ has none).
     `{"op": "merge|generalise|rename|drop", "from": ["tag", …], "to": "tag", "reason": "…"}`,
     each checked (`Support\TagProposals`): every `from` in use, `to` lowercase and at most 4 words,
     a dictionary tag never dropped. Proposals only: the owner ticks them in Admin → Tags. A
-    starting prompt is `resources/prompts/tags-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
+    starting prompt is `resources/prompts/{radiology,generic}/tags-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
   - `evolution`: the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
@@ -1007,7 +1006,7 @@ has none).
     not `expand` so that no rail action called `expand` is taken. `recall-expand` (*Expand*): the
     answer is shown first, *Replace line* puts it in the textarea (list marker kept; recorded
     `assisted: recall-expand`). `recall-missing` (*What is missing?*): shown only; model `lite`
-    unless its page sets `model:`. Starting prompts: `resources/prompts/recall-expand.txt` and
+    unless its page sets `model:`. Starting prompts: `resources/prompts/radiology/recall-expand.txt` and
     `recall-missing.txt` (the installer's *Create the proposed prompts* makes them pages too).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.

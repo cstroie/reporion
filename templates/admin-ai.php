@@ -232,6 +232,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($o['path']) ?>/edit"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.ai.edit_table')) ?></a></header>
 <?php if ($o['shippedMissing'] > 0): ?>
 <form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>">
+<select class="input" name="target" aria-label="<?= $e(t('admin.ai.prompts_target')) ?>"><?php foreach (\Reporion\Service\Ai\DefaultPrompts::TARGETS as $tg): ?><option value="<?= $e($tg) ?>"<?= $tg === $o['target'] ? ' selected' : '' ?>><?= $e(t('admin.ai.prompts_target.' . $tg)) ?></option><?php endforeach; ?></select>
 <button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('admin.ai.prompts_install', [$o['shippedMissing']])) ?></button>
 <small class="wk-dim"><?= $e(t('admin.ai.prompts_install_help')) ?></small></form>
 <?php else: ?><p class="wk-dim wk-text-sm"><i class="ph ph-check-circle" aria-hidden="true"></i> <?= $e(t('admin.ai.prompts_complete')) ?></p><?php endif; ?>
@@ -251,7 +252,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php foreach ($o['reserved'] as $r): ?>
 <li<?= $r['present'] ? ' data-on="1"' : '' ?>><i class="ph <?= $r['present'] ? 'ph-check-circle' : 'ph-circle-dashed' ?>" aria-hidden="true"></i><a class="wk-mono" href="<?= $b ?>/<?= $e($r['path']) ?><?= $r['present'] ? '' : '/edit' ?>"><?= $e($r['id']) ?></a>
 <span class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= $r['present'] ? '' : ': ' . $e(t('admin.ai.reserved_create')) ?></span>
-<?php if (!$r['present'] && ($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?></li>
+<?php if (!$r['present'] && ($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="target" value="<?= $e($o['target']) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?></li>
 <?php endforeach; ?>
 </ul>
 <h3 class="wk-eyebrow"><?= $e(t('admin.ai.system')) ?></h3>
@@ -268,6 +269,9 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <label><?= $e(t('admin.ai.prompts_new')) ?>
 <input type="text" name="profile" required pattern="[a-z0-9][a-z0-9_\-]{0,31}" maxlength="32" placeholder="<?= $e(t('admin.ai.prompts_new_hint')) ?>">
 <small><?= $e(t('admin.ai.prompts_new_help')) ?></small></label>
+<label><?= $e(t('admin.ai.prompts_target')) ?>
+<select class="input" name="target"><?php foreach (\Reporion\Service\Ai\DefaultPrompts::TARGETS as $tg): ?><option value="<?= $e($tg) ?>"><?= $e(t('admin.ai.prompts_target.' . $tg)) ?></option><?php endforeach; ?></select>
+<small><?= $e(t('admin.ai.prompts_target_help')) ?></small></label>
 <button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_new_button')) ?></button></form>
 </div>
 

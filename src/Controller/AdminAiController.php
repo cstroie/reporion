@@ -84,9 +84,12 @@ final class AdminAiController
         foreach ($names as $profile) {
             $profiles[$profile] = true;
             // Phase 33e: what the profile holds, and where it serves
-            $shipped = $this->defaults?->status($profile) ?? [];
+            // The target a profile is offered by default: radiology for the one serving reports, else generic
+            $target = $ai->profileFor('reports') === $profile ? DefaultPrompts::RADIOLOGY : DefaultPrompts::GENERIC;
+            $shipped = $this->defaults?->status($profile, $target) ?? [];
             $overview[$profile] = $this->actions->overview($profile) + [
                 'shipped' => $shipped,
+                'target' => $target,
                 'shippedMissing' => \count(array_filter($shipped, static fn (string $state): bool => $state === 'missing')),
                 'serves' => $profile === $ai->promptProfile ? 'main' : ($profile === $ai->fallbackProfile ? 'fallback' : (\in_array($profile, $ai->profileMap, true) ? 'mapped' : '')),
                 'fallbackToo' => $profile === $ai->promptProfile && $profile === $ai->fallbackProfile,
@@ -187,10 +190,12 @@ final class AdminAiController
         if (\is_array($fields['only'] ?? null)) {
             $only = array_values(array_filter($fields['only'], static fn (mixed $id): bool => \is_string($id) && isset(DefaultPrompts::CATALOGUE[$id])));
         }
-        $result = $this->defaults->install($profile, $principal->username, $only);
+        $target = \is_string($fields['target'] ?? null) && \in_array($fields['target'], DefaultPrompts::TARGETS, true) ? $fields['target'] : DefaultPrompts::DEFAULT_TARGET;
+        $result = $this->defaults->install($profile, $principal->username, $only, target: $target);
         $this->audit->record('settings.change', $principal->username, $request, extra: [
             'section' => 'ai.prompts',
             'profile' => $profile,
+            'target' => $target,
             'created' => implode(',', $result['created']),
         ]);
 

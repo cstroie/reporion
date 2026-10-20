@@ -31,10 +31,11 @@ final class AiPromptsInstallCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Makes the shipped example prompts pages of an AI profile (ai:profiles:<name>), skipping any page that is there already. Sends nothing to a model.',
-            usage: '--profile=<name> [--only=<id,id>] [--actor=<username>] [--list] [--dry-run] [--json]',
+            usage: '--profile=<name> [--target=radiology|generic] [--only=<id,id>] [--actor=<username>] [--list] [--dry-run] [--json]',
             options: [
                 '--profile=<name>' => 'the profile to complete (a new name makes it); default: reports',
-                '--only=<id,id>' => 'only these ids (summary, tags, ask-archive, grammar, table, …)',
+                '--target=<t>' => 'generic (default: summary, tags, tags-review, commit, ask, grammar, in English, for ordinary pages) or radiology (every prompt but grammar, in Romanian, for reports)',
+                '--only=<id,id>' => 'only these ids (summary, tags, ask-archive, table, …)',
                 '--actor=<username>' => 'author of the pages and of the audit line (default: cli)',
                 '--list' => 'show which shipped prompts the profile has and which it lacks; write nothing',
                 '--dry-run' => 'say which pages would be made; write nothing',
@@ -48,11 +49,14 @@ final class AiPromptsInstallCommand implements CommandInterface
         $profile = 'reports';
         $actor = 'cli';
         $only = null;
+        $target = DefaultPrompts::DEFAULT_TARGET;
         foreach ($args as $arg) {
             if (str_starts_with($arg, '--profile=')) {
                 $profile = substr($arg, 10);
             } elseif (str_starts_with($arg, '--actor=') && \strlen($arg) > 8) {
                 $actor = substr($arg, 8);
+            } elseif (str_starts_with($arg, '--target=')) {
+                $target = substr($arg, 9);
             } elseif (str_starts_with($arg, '--only=')) {
                 $only = array_values(array_filter(explode(',', substr($arg, 7)), static fn (string $id): bool => $id !== ''));
             }
@@ -61,10 +65,15 @@ final class AiPromptsInstallCommand implements CommandInterface
         $list = \in_array('--list', $args, true);
         $dryRun = \in_array('--dry-run', $args, true);
         if (!$json) {
-            $output->line(\sprintf('ai:prompts-install %s (%s)', $profile, $list ? 'list' : ($dryRun ? 'dry run' : 'writes')));
+            $output->line(\sprintf('ai:prompts-install %s %s (%s)', $profile, $target, $list ? 'list' : ($dryRun ? 'dry run' : 'writes')));
         }
         if (preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) !== 1) {
             $output->error('A profile name is lowercase letters, digits, - and _, up to 32 characters.');
+
+            return 1;
+        }
+        if (!\in_array($target, DefaultPrompts::TARGETS, true)) {
+            $output->error('Unknown target. Known: ' . implode(', ', DefaultPrompts::TARGETS));
 
             return 1;
         }
@@ -77,7 +86,7 @@ final class AiPromptsInstallCommand implements CommandInterface
 
         try {
             if ($list) {
-                $status = $this->prompts->status($profile);
+                $status = $this->prompts->status($profile, $target);
                 if ($json) {
                     $output->line((string) json_encode(['profile' => $profile, 'status' => $status], JSON_UNESCAPED_SLASHES));
                 } else {
@@ -88,17 +97,17 @@ final class AiPromptsInstallCommand implements CommandInterface
 
                 return 0;
             }
-            $result = $this->prompts->install($profile, $actor, $only, $dryRun);
+            $result = $this->prompts->install($profile, $actor, $only, $dryRun, $target);
         } catch (InvalidArgumentException $e) {
             $output->error($e->getMessage());
 
             return 1;
         }
         if (!$dryRun && $result['created'] !== []) {
-            $this->audit->record('settings.change', $actor, null, extra: ['section' => 'ai.prompts', 'profile' => $profile, 'created' => implode(',', $result['created'])]);
+            $this->audit->record('settings.change', $actor, null, extra: ['section' => 'ai.prompts', 'profile' => $profile, 'target' => $target, 'created' => implode(',', $result['created'])]);
         }
         if ($json) {
-            $output->line((string) json_encode(['profile' => $profile, 'dry_run' => $dryRun] + $result, JSON_UNESCAPED_SLASHES));
+            $output->line((string) json_encode(['profile' => $profile, 'target' => $target, 'dry_run' => $dryRun] + $result, JSON_UNESCAPED_SLASHES));
 
             return 0;
         }

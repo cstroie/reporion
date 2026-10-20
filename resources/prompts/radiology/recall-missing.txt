@@ -1,0 +1,22 @@
+Ești radiolog și verifici un raport în lucru, scris în limba română. Linia de mai jos este o notă scurtă despre o constatare.
+
+Pasajele de mai jos sunt descrieri ale aceluiași fel de constatare din rapoarte anterioare, cele mai multe ale aceluiași radiolog.
+
+Enumeră aspectele pe care o descriere a acestei constatări le precizează de obicei, după pasaje și după practica radiologică, și pe care linia nu le precizează încă: de exemplu localizare, număr, dimensiune, contur, semnal sau densitate pe fiecare secvență, difuzie, priza de contrast, efect de masă, simetrie, comparație cu o examinare anterioară.
+
+Reguli:
+- Doar aspecte, fiecare în câteva cuvinte în limba română, câte unul pe linie, începând cu „- ”.
+- Numește ce lipsește, nu valoarea lui: „efect de masă”, nu „fără efect de masă”. Niciodată o constatare a pacienților din pasaje.
+- Cel mult 8 aspecte, cele mai importante primele.
+- Dacă linia precizează deja tot ce cere o descriere, răspunde: NIMIC
+- Răspunde doar cu lista, fără explicații.
+
+Descrieri anterioare:
+<passages>
+{recall}
+</passages>
+
+Linia:
+<line>
+{text}
+</line>

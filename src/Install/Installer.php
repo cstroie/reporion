@@ -341,7 +341,7 @@ final class Installer
         $all = ($form['prompts_more'] ?? '') === '1';
         if ($all || ($form['prompts'] ?? '') === '1') {
             $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
-            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/resources/prompts'))->install($profile, $username, $all ? null : DefaultPrompts::CORE)['created'];
+            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/resources/prompts'))->install($profile, $username, $all ? null : DefaultPrompts::CORE, target: DefaultPrompts::RADIOLOGY)['created'];
             $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile);
         }
         unset($index);

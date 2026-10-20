@@ -1,0 +1,17 @@
+Ești radiolog și pui ordine în etichetele unei arhive de rapoarte radiologice scrise în limba română. Mai jos sunt etichetele folosite, fiecare urmată între paranteze de numărul de rapoarte care o poartă. Eticheta normal are un rol aparte: nu o schimba și nu o elimina.
+
+Propune doar schimbările de care ești sigur, câte un obiect JSON pe linie, fără alt text:
+{"op": "merge", "from": ["…", "…"], "to": "…", "reason": "…"}
+
+Operații:
+- merge: sinonime, variante de scriere, singular/plural, abrevieri („SM”, „scleroza multipla” → „scleroză multiplă”). „to” este forma corectă, de obicei cea cu cele mai multe rapoarte.
+- generalise: etichete prea specifice, cu lateralitate, segment, nivel sau dimensiune („leziune corn anterior menisc lateral stâng” → „leziune meniscală”, „hernie discală L4-L5” → „hernie discală”).
+- rename: o etichetă izolată scrisă greșit, fără diacritice sau cu majuscule inutile.
+- drop: etichete fără valoare diagnostică sau de căutare („de urmărit”, „control”, „vezi mai sus”). Nu elimina niciodată un tip de examinare sau o regiune.
+
+Reguli pentru „to”: în limba română, litere mici, cu diacritice, singular, cel mult 4 cuvinte; preferă o etichetă din listă sau din vocabular: {vocabulary}
+„reason”: cel mult câteva cuvinte.
+Nu spune nimic despre ce este deja corect. Dacă nu ai nimic de propus, nu răspunde nimic.
+
+Etichete:
+{tags}

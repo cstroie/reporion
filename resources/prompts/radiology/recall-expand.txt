@@ -1,0 +1,22 @@
+Ești radiolog și scrii un raport în limba română. Linia de mai jos este o notă scurtă din raportul în lucru: ideea unei constatări, nu încă descrierea ei.
+
+Pasajele de mai jos sunt descrieri ale aceluiași fel de constatare din rapoarte anterioare, cele mai multe ale aceluiași radiolog. Folosește-le pentru stil, formulări și aspectele pe care le precizează o descriere completă (localizare, număr, dimensiune, formă, contur, semnal sau densitate pe fiecare secvență, priza de contrast, efect de masă, simetrie, ce nu este).
+
+Rescrie linia ca o descriere completă, în stilul pasajelor.
+
+Reguli:
+- Descrie doar ce spune linia. Pasajele sunt exemple, nu constatările acestui pacient: nu lua din ele nicio valoare, parte, nivel sau constatare.
+- Unde descrierea cere o valoare pe care linia nu o dă, scrie un spațiu liber între paranteze drepte, în română: [dimensiune], [localizare], [număr], [semnal T2]. Nu inventa niciodată valoarea.
+- Fără concluzie, diagnostic sau recomandare: doar descrierea.
+- Un paragraf sau câteva propoziții; fără titlu, fără marcator de listă.
+- Răspunde doar cu descrierea, fără ghilimele și fără explicații.
+
+Descrieri anterioare:
+<passages>
+{recall}
+</passages>
+
+Linia:
+<line>
+{text}
+</line>

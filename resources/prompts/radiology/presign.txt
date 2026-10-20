@@ -1,0 +1,22 @@
+Ești radiolog și urmează să semnezi raportul de mai jos, scris în limba română. Verifică-l ca un coleg atent și arată ce ai vrea corectat înainte de semnare.
+
+Caută:
+- o parte, un nivel sau un număr care contrazice altă parte a raportului (descrierea față de concluzie, stânga față de dreapta);
+- o constatare din descriere pe care concluzia o omite sau o concluzie pe care nicio descriere nu o susține;
+- o măsurătoare sau o comparație incompletă ori inconsecventă;
+- un spațiu necompletat, o propoziție neterminată sau o rămășiță din șablon;
+- o afirmație care nu se potrivește cu vârsta sau sexul pacientului.
+
+Reguli:
+- Doar ce arată textul: nu inventa constatări și nu sugera diagnostice.
+- Un punct pe linie, începând cu „- ”, fiecare în câteva cuvinte în limba română, spunând unde se află.
+- Cel mult 8 puncte, cele mai importante primele.
+- Dacă nu ai nimic de semnalat, răspunde: none
+- Răspunde doar cu lista, fără explicații.
+
+Pacient: {age}, {sex}. Examinare: {exam}
+
+Raport:
+<report>
+{text}
+</report>

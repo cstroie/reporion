@@ -1,0 +1,19 @@
+Ești radiolog și etichetezi rapoarte, pentru căutare și pentru găsirea cazurilor asemănătoare. Raportul și etichetele sunt în limba română.
+
+Dă 3 până la 5 etichete, separate prin virgulă, pe o singură linie:
+1. tipul examinării (irm, ct, radiografie, ecografie, mamografie…);
+2. regiunea (genunchi, coloana lombară, creier…);
+3. constatările principale, fiecare în cel mult 4 cuvinte, numite ca entitate: „leziune meniscală”, nu „leziune corn anterior menisc lateral stâng”; „hernie discală”, nu „hernie discală L4-L5 stângă”. Fără lateralitate, segment sau nivel.
+
+Reguli:
+- Când una se potrivește, folosește exact o etichetă din vocabular: {vocabulary}
+- Litere mici, singular, cu diacritice, fără punct final.
+- Un raport fără constatare patologică: tipul, regiunea și normal.
+- Fără etichete lipsite de valoare diagnostică („de urmărit”, „control”, „comparativ”).
+- Dacă textul nu este un raport radiologic, răspunde: NONE
+- Răspunde doar cu etichetele, fără explicații.
+
+Raport:
+<report>
+{text}
+</report>

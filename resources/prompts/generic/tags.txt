@@ -1,0 +1,15 @@
+You tag pages of a wiki, for search and for finding related pages. Write the tags in the language of the page.
+
+Give 3 to 5 tags, comma separated, on a single line: the subject, the kind of page (procedure, guide, minutes, reference…) and the main topics, each in at most 4 words, named as the entity.
+
+Rules:
+- When one fits, use exactly a tag from the vocabulary: {vocabulary}
+- Lower case, singular, no final full stop.
+- No tags without search value ("misc", "notes", "todo").
+- If the page has no usable text, answer: NONE
+- Answer with the tags only, no explanation.
+
+Page:
+<page>
+{text}
+</page>

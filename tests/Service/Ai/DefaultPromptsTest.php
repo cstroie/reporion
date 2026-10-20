@@ -34,35 +34,67 @@ final class DefaultPromptsTest extends StorageTestCase
         self::assertEqualsCanonicalizing(Actions::SPECIAL, $special, 'a feature without a shipped prompt stays off for ever');
 
         $dir = \dirname(__DIR__, 3) . '/resources/prompts';
-        $listed = array_column(DefaultPrompts::CATALOGUE, 'file');
-        foreach ($listed as $file) {
-            self::assertNotSame('', trim((string) @file_get_contents($dir . '/' . $file)), $file . ' is shipped and not empty');
+        foreach (DefaultPrompts::TARGETS as $target) {
+            $listed = [];
+            foreach (DefaultPrompts::CATALOGUE as $entry) {
+                if (\in_array($target, $entry['targets'], true)) {
+                    $listed[] = $entry['file'];
+                    self::assertNotSame('', trim((string) @file_get_contents($dir . '/' . $target . '/' . $entry['file'])), $target . '/' . $entry['file'] . ' is shipped and not empty');
+                }
+            }
+            $onDisk = array_map('basename', glob($dir . '/' . $target . '/*') ?: []);
+            self::assertEqualsCanonicalizing($listed, $onDisk, 'no ' . $target . ' file shipped but not offered');
         }
-        $onDisk = array_map(static fn (string $f): string => substr($f, \strlen($dir) + 1), array_merge(glob($dir . '/*.txt') ?: [], glob($dir . '/actions/*') ?: []));
-        self::assertEqualsCanonicalizing($listed, $onDisk, 'no file shipped but not offered');
     }
 
-    public function testTheCoreGroupIsTheRailTheSummaryAndTheTags(): void
+    public function testTheRadiologyPromptsAreEveryReservedOneAndTheGenericOnesTheFewThatFitAnyPage(): void
+    {
+        $of = static fn (string $target): array => array_keys(array_filter(DefaultPrompts::CATALOGUE, static fn (array $e): bool => \in_array($target, $e['targets'], true)));
+
+        self::assertEqualsCanonicalizing(array_diff(array_keys(DefaultPrompts::CATALOGUE), ['grammar']), $of('radiology'));
+        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $of('generic'));
+        self::assertNotContains('grammar', $of('radiology'), 'grammar is for ordinary pages');
+        foreach (['shorten', 'patient', 'english'] as $gone) {
+            self::assertArrayNotHasKey($gone, DefaultPrompts::CATALOGUE);
+        }
+    }
+
+    public function testEachTargetMakesItsOwnTextAndRefusesAnUnknownOne(): void
+    {
+        $made = $this->prompts->install('wiki', 'owner');
+        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $made['created']);
+        self::assertStringContainsString('Summarize the text', $this->storage->read('ai:profiles:wiki:special:summary')->body);
+        self::assertSame('missing', $this->prompts->status('wiki', DefaultPrompts::RADIOLOGY)['presign']);
+        self::assertArrayNotHasKey('presign', $this->prompts->status('wiki', DefaultPrompts::GENERIC));
+
+        $this->prompts->install('reports', 'owner', target: DefaultPrompts::RADIOLOGY);
+        self::assertStringContainsString('Ești radiolog', $this->storage->read('ai:profiles:reports:special:summary')->body);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->prompts->install('x', 'owner', target: 'nope');
+    }
+
+    public function testTheCoreGroupIsTheAskActionTheSummaryAndTheTags(): void
     {
         self::assertSame([], array_diff(DefaultPrompts::CORE, array_keys(DefaultPrompts::CATALOGUE)));
-        $result = $this->prompts->install('reports', 'owner', DefaultPrompts::CORE);
+        $result = $this->prompts->install('reports', 'owner', DefaultPrompts::CORE, target: DefaultPrompts::RADIOLOGY);
 
-        self::assertEqualsCanonicalizing(DefaultPrompts::CORE, $result['created']);
-        self::assertSame('missing', $this->prompts->status('reports')['ask-archive']);
+        self::assertEqualsCanonicalizing(array_diff(DefaultPrompts::CORE, ['grammar']), $result['created'], 'grammar is generic only');
+        self::assertSame('missing', $this->prompts->status('reports', DefaultPrompts::RADIOLOGY)['ask-archive']);
     }
 
     public function testInstallMakesEveryPageOfAProfileAndAskingTwiceMakesNone(): void
     {
-        $first = $this->prompts->install('reports-short', 'owner');
-        self::assertCount(\count(DefaultPrompts::CATALOGUE), $first['created']);
+        $first = $this->prompts->install('reports-short', 'owner', target: DefaultPrompts::RADIOLOGY);
+        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 1, $first['created']);
         self::assertSame([], $first['skipped']);
         self::assertSame('Summary', $this->storage->read('ai:profiles:reports-short:special:summary')->frontmatter['title']);
-        self::assertSame('private', $this->storage->read('ai:profiles:reports-short:grammar')->frontmatter['visibility']);
-        self::assertSame(['present'], array_values(array_unique($this->prompts->status('reports-short'))));
+        self::assertSame('private', $this->storage->read('ai:profiles:reports-short:ask')->frontmatter['visibility']);
+        self::assertSame(['present'], array_values(array_unique($this->prompts->status('reports-short', DefaultPrompts::RADIOLOGY))));
 
-        $again = $this->prompts->install('reports-short', 'owner');
+        $again = $this->prompts->install('reports-short', 'owner', target: DefaultPrompts::RADIOLOGY);
         self::assertSame([], $again['created']);
-        self::assertCount(\count(DefaultPrompts::CATALOGUE), $again['skipped']);
+        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 1, $again['skipped']);
     }
 
     public function testAnEditedPageAndAnExistingTableAreNeverTouched(): void

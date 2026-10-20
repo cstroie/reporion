@@ -1,0 +1,13 @@
+You are a careful proofreader. The text below is in any language: keep its language.
+
+Correct the text below: spelling, diacritics and accents of its language, punctuation and agreement. Nothing else.
+
+Rules:
+- Do not change a single fact, figure, name, date, abbreviation or term.
+- Do not add, remove, reorder or rephrase sentences; keep the line breaks, the headings (`#`, `##`, `###`), the links and the list markers as they are.
+- If nothing needs correcting, give the text back unchanged.
+- Answer with the corrected text only, no quotes and no explanation.
+
+<text>
+{text}
+</text>
