@@ -10,7 +10,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\Signing;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -21,13 +21,13 @@ use Reporion\Tests\Storage\StorageTestCase;
  */
 final class SigningMissingTest extends StorageTestCase
 {
-    private FlatFile $storage;
+    private FileTree $storage;
     private Signing $signing;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->storage = new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        $this->storage = new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
         $this->signing = new Signing($this->storage, new Loader(\dirname(__DIR__, 2) . '/resources/schema'), new AuditLog($this->dataRoot . '/audit'));
     }
 

@@ -12,7 +12,7 @@ use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Kernel;
 
 /**
@@ -29,13 +29,13 @@ final class TimelineControllerTest extends HttpTestCase
     public function testTimelineShowsAllPagesForSamePatient(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',
             'owner'
         );
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:ct:mioveni:260102-test-b',
             ['title' => 'CT b', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body b',
@@ -61,8 +61,8 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $patient = ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'];
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'RM a', 'visibility' => 'private', 'patient' => $patient], 'body a', 'owner');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'RM b', 'visibility' => 'private', 'patient' => $patient], 'body b', 'owner');
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'RM a', 'visibility' => 'private', 'patient' => $patient], 'body a', 'owner');
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'RM b', 'visibility' => 'private', 'patient' => $patient], 'body b', 'owner');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
         $this->makeRadiologist('viewer');
         $timeline = fn (string $user, array $query = []): string => Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/timeline', query: $query, cookies: ['reporion' => $this->issueCookie($user)]))->body;
@@ -89,7 +89,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testTimelineShowsTheCurrentStudyWhenThereIsNoCnp(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'modality' => ['MR'], 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F']],
             'body a',
@@ -112,7 +112,7 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $patient = ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'];
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', [
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', [
             'title' => 'Ionescu Maria', 'exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'visibility' => 'private', 'patient' => $patient,
             'exams' => [['title' => 'IRM genunchi drept', 'accession' => 'MV-MR-26-0031'], ['title' => 'IRM genunchi stâng', 'accession' => 'MV-MR-26-0032']],
         ], 'body a', 'owner');
@@ -126,7 +126,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testAnOrdinaryPageHasNoPatientHistoryAndNoPatientTab(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('docs:notes', ['title' => 'Notes', 'visibility' => 'private'], 'body', 'owner');
+        (new FileTree($this->dataRoot, $index))->create('docs:notes', ['title' => 'Notes', 'visibility' => 'private'], 'body', 'owner');
         $cookies = ['reporion' => $this->issueCookie('owner')];
 
         self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/docs:notes/timeline', cookies: $cookies))->status);
@@ -141,7 +141,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testAReportKeepsItsReportAndPatientTabs(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'Test A', 'visibility' => 'private'], 'body', 'owner');
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'Test A', 'visibility' => 'private'], 'body', 'owner');
 
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a', cookies: ['reporion' => $this->issueCookie('owner')]))->body;
 
@@ -164,7 +164,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testNoPatientKeyShowsUnavailableMessage(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private'],
             'body a',
@@ -184,7 +184,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testAnonymousCanSeeTimelineOfPublicPage(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'public', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',
@@ -202,7 +202,7 @@ final class TimelineControllerTest extends HttpTestCase
     public function testAnonymousCannotSeeTimelineOfPrivatePage(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create(
+        (new FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',

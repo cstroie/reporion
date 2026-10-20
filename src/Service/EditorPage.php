@@ -9,7 +9,7 @@ namespace Reporion\Service;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Index\IndexInterface;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
@@ -51,7 +51,7 @@ final class EditorPage
                 return null;
             }
         }
-        if (!FlatFile::isValidPath($path) || !$principal->canWrite($path)) {
+        if (!FileTree::isValidPath($path) || !$principal->canWrite($path)) {
             return null;
         }
         try {

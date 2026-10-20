@@ -10,7 +10,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * GET /feed.atom and /feed/{ns}.atom: allowed namespaces only, never
@@ -21,7 +21,7 @@ final class FeedTest extends HttpTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $s = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $s = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $s->create('docs:public-guide', ['title' => 'Public guide', 'visibility' => 'public', 'summary' => 'How to report'], 'g', 'owner');
         $s->create('docs:sub:deeper', ['title' => 'Deeper public', 'visibility' => 'public'], 'd', 'owner');
         $s->create('docs:private-note', ['title' => 'Private note', 'visibility' => 'private'], 'p', 'owner');

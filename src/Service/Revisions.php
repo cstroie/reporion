@@ -51,6 +51,8 @@ final class Revisions
         } catch (RuntimeException | ParseException) {
             throw new PageNotFoundException();
         }
+        // Storage's own key in the stored bytes (D54 §5), as the current revision's record leaves it out
+        unset($frontmatter[\Reporion\Storage\FileTree::PID_KEY]);
 
         $revlog = array_values(array_filter(
             $current->revlog,
@@ -78,7 +80,7 @@ final class Revisions
     /**
      * The signature record for $rev, if that revision was signed, with
      * `matches`: whether the digest recomputed from the stored revision
-     * bytes equals the recorded one: computed the way Storage\FlatFile::sign()
+     * bytes equals the recorded one: computed the way Storage\FileTree::sign()
      * computed it, reordered by the schema field order stored on the
      * signature itself (falling back to today's schema for a signature
      * from before that was recorded).

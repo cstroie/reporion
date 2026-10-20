@@ -54,7 +54,7 @@ interface StorageInterface
      *
      * @throws \Reporion\Exception\PageNotFoundException    when the page does not exist
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev (nothing written)
-     * @throws \InvalidArgumentException                      when the form is larger than FlatFile::DRAFT_MAX_BYTES
+     * @throws \InvalidArgumentException                      when the form is larger than FileTree::DRAFT_MAX_BYTES
      */
     public function saveDraft(string $path, string $username, int $baseRev, bool $raw, string $form): void;
 

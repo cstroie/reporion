@@ -362,8 +362,14 @@ signing are all touched).
    already starts from `Storage::allPaths()`, a query of the `page` table under `FileTree`.
    *Done 2026-10-20.*
 6. The switch: the Kernel, the CLI and the installer build `FileTree`; every service that read
-   the 1.x layout (integrity, doctor, path repair, accessions, index maintenance) goes through
-   it (invariant 5); the tests move to `FileTree`.
+   the 1.x layout goes through it (invariant 5): `Accessions` allocates from the `counter`
+   table (`counters.json` is gone), `integrity:verify` checks the attic zips
+   (`FileTree::historyProblems()`, plus `mirror_drift`, `state_corrupt`, `page_file_missing`,
+   `attic_orphan`, and stray page files as `path_drift` / `duplicate_pid` / `stray_files`),
+   `pages:repair-paths` rejoins or adopts stray page files, doctor walks `*.md` with the
+   status from the state DB, and the trash count is a query. A page with pages under it is
+   deleted alone (the 409 `has_children` is gone). The tests move to `FileTree`.
+   *Done 2026-10-20.*
 7. Backup and rsync with the `VACUUM INTO` snapshot, restore, doctor, `db:recover`.
 8. `tools/migrate-v2.php`, tested on synthetic 1.x trees; then on a copy of the live archive
    (5,340 pages): counts, `integrity:verify` clean, `index:rebuild` under 60 s.

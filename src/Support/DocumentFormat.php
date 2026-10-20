@@ -11,13 +11,13 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * The "---\nfrontmatter\n---\n\nbody" shape a page's content editors work
- * with as one raw document: mirrors `Storage\FlatFile`'s own private
+ * with as one raw document: mirrors `Storage\FileTree`'s own private
  * `encodeDocument()`/`parseDocument()` exactly, so what an editor shows is
  * byte-for-byte what ends up on disk. Extracted here once `Controller\EditorController`
  * and `Controller\NewPageController` both needed the identical ~10 lines;
- * `FlatFile` itself is left untouched (its private methods are stable and
+ * `FileTree` itself is left untouched (its private methods are stable and
  * tested, and this class exists for editors, not for storage's own write
- * path: Storage\FlatFile still owns every actual disk write, invariant 5).
+ * path: Storage\FileTree still owns every actual disk write, invariant 5).
  */
 final class DocumentFormat
 {
@@ -58,7 +58,7 @@ final class DocumentFormat
         // regardless of what the user typed or the OS: this is normal
         // HTML form behavior, not malformed input, so it must be normalized
         // before the "---\n"-anchored regex below, which only matches a
-        // bare LF. Mirrors Storage\FlatFile::normalizeText()'s approach.
+        // bare LF. Mirrors Storage\FileTree::normalizeText()'s approach.
         $raw = str_replace(["\r\n", "\r"], "\n", $raw);
 
         if (preg_match('/^---\n(.*?\n)---\n\n?(.*)$/s', $raw, $m) !== 1) {

@@ -16,7 +16,7 @@ use Reporion\Service\FrontmatterFields;
 use Reporion\Service\PageMoves;
 use Reporion\Service\References;
 use Reporion\Service\Render;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -27,13 +27,13 @@ use Reporion\Tests\Storage\StorageTestCase;
 final class ReferencesTest extends StorageTestCase
 {
     private Sqlite $index;
-    private FlatFile $storage;
+    private FileTree $storage;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $this->storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private'], "## Grade\n\nThoracolumbar injury score.\n", 'owner');
         $this->storage->create('radiology:spine:ao', ['title' => 'AO Spine', 'visibility' => 'private'], "x\n", 'owner');
         $this->storage->create('teaching:secret', ['title' => 'Secret', 'visibility' => 'private'], "x\n", 'owner');

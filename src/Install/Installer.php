@@ -16,7 +16,7 @@ use Reporion\Kernel;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\InstanceSettings;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Fsync;
 use RuntimeException;
 use Throwable;
@@ -339,7 +339,7 @@ final class Installer
         // The proposed prompts (docs/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
         if (($form['prompts'] ?? '') === '1') {
             $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
-            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/docs/prompts'))->install($profile, $username);
+            $created = (new DefaultPrompts(new FileTree($dataDir, $index, (string) $config['paths']['state']), $this->root . '/docs/prompts'))->install($profile, $username);
             $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile);
         }
         unset($index);

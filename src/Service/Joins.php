@@ -13,7 +13,7 @@ use Reporion\Http\Request;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Exams;
 use Reporion\Support\HeadingNormalizer;
 use Reporion\Support\MetaText;
@@ -214,7 +214,7 @@ final class Joins
         $parentPaths = array_map(static fn (PageRecord $p): string => $p->path, $parents);
         if ($path === null) {
             $problems[] = t('join.err_path');
-        } elseif (!str_starts_with($leaf, $day . '-') || !ReportPath::isReport($path) || !FlatFile::isValidPath($path)) {
+        } elseif (!str_starts_with($leaf, $day . '-') || !ReportPath::isReport($path) || !FileTree::isValidPath($path)) {
             $problems[] = t('join.err_leaf', [$day]);
         } elseif (!$principal->canWrite($path)) {
             $problems[] = t('join.err_access');

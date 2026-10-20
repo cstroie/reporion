@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Reports versus every other page (Support\ReportPath, decided
@@ -57,7 +57,7 @@ final class PlainPagesTest extends HttpTestCase
     /** @param array<string, mixed> $extra */
     private function page(string $path, array $extra): void
     {
-        (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
+        (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
             ->create($path, ['title' => 'Titlu', 'visibility' => 'private'] + $extra, "## Secțiune\n\nText.\n", 'owner');
     }
 

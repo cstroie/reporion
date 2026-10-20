@@ -17,7 +17,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\TrashPurgeTask;
 
@@ -105,10 +105,10 @@ final class TrashTest extends HttpTestCase
         $oldSigned = $storage->create('docs:old-signed', ['title' => 'Old signed', 'visibility' => 'private'], 'body', 'owner');
         $storage->sign('docs:old-signed', 'owner', []);
         $recent = $storage->create('docs:recent', ['title' => 'Recent', 'visibility' => 'private'], 'body', 'owner');
-        // Deleted 40 days ago, as the journal records it
+        // Deleted 40 days ago, as the state database records it (D54)
         $storage->delete('docs:old', 'owner');
         $storage->delete('docs:old-signed', 'owner');
-        $this->backdateJournal(40);
+        $this->backdateDeletions(40);
         $storage->delete('docs:recent', 'owner');
 
         $command = new TrashPurgeCommand(new MaintenanceRunner([new TrashPurgeTask($storage, new AuditLog($this->dataRoot . '/audit'), 30)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));
@@ -120,20 +120,10 @@ final class TrashTest extends HttpTestCase
         self::assertSame([$recent->pid], $this->pidsInTrash());
     }
 
-    private function backdateJournal(int $days): void
+    private function backdateDeletions(int $days): void
     {
         $then = (new \DateTimeImmutable('-' . $days . ' days'))->format('Y-m-d\TH:i:sP');
-        foreach (glob($this->dataRoot . '/journal/*.ndjson') ?: [] as $file) {
-            $lines = array_map(static function (string $line) use ($then): string {
-                $data = json_decode($line, true);
-                if (($data['op'] ?? null) === 'delete') {
-                    $data['ts'] = $then;
-                }
-
-                return (string) json_encode($data);
-            }, array_filter(explode("\n", (string) file_get_contents($file))));
-            file_put_contents($file, implode("\n", $lines) . "\n");
-        }
+        (new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->prepare('UPDATE page SET trashed_at = ? WHERE trashed_at IS NOT NULL')->execute([$then]);
     }
 
     /** @return list<string> */
@@ -155,9 +145,9 @@ final class TrashTest extends HttpTestCase
         return (string) @file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     /** @param array<string, string> $query */

@@ -224,7 +224,7 @@ final class Sqlite implements IndexInterface
     /**
      * What findByPath() does for a signed-in caller when the path is not in
      * the index: `fn (string $path): bool`, true when it indexed a page there
-     * (Storage\FlatFile::adopt()). Anonymous lookups never trigger it.
+     * (Storage\FileTree::adopt()). Anonymous lookups never trigger it.
      */
     public function onMiss(Closure $handler): void
     {

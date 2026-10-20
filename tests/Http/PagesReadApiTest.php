@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * GET /api/v1/pages and GET /api/v1/pages/{path}.
@@ -23,7 +23,7 @@ final class PagesReadApiTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
-        $s = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $s = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $s->create('reports:mri:mioveni:a', ['title' => 'MR private', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT']], 'a', 'owner');
         $s->create('reports:ct:mioveni:b', ['title' => 'CT public', 'visibility' => 'public', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'OTHER PATIENT']], 'b', 'owner');
         $s->create('reports:mrix:c', ['title' => 'Lookalike ns', 'visibility' => 'private'], 'c', 'owner');

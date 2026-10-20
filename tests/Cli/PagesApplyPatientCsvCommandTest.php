@@ -11,7 +11,7 @@ use Reporion\Cli\Output;
 use Reporion\Cli\PagesApplyPatientCsvCommand;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\PatientCsvTask;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Cnp;
 use Reporion\Tests\Storage\RecordingIndex;
 use Reporion\Tests\Storage\StorageTestCase;
@@ -36,9 +36,9 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
             . '"15.12.2022","PACIENT","TEST UNU","' . $first12 . Cnp::checksum($first12) . "\",\"IRM CEREBRAL NATIV\",\"CEFALEE;\"\n");
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create(self::PATH, [
             'title' => 'Test', 'visibility' => 'private', 'status' => 'archived', 'modality' => ['MR'], 'region' => ['neuro'],
             'site' => 'polimed', 'study_date' => '2022-12-15', 'patient' => ['name' => 'TEST', 'born' => null, 'sex' => null, 'cnp' => null],
@@ -47,7 +47,7 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
         return $storage;
     }
 
-    private function command(FlatFile $storage): PagesApplyPatientCsvCommand
+    private function command(FileTree $storage): PagesApplyPatientCsvCommand
     {
         $audit = new AuditLog($this->dataRoot . '/audit');
 
@@ -101,7 +101,7 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
 
     public function testLooseNamesReachesTheTask(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('reports:mr:polimed:221215-pacient-test-unu-doi', [
             'title' => 'Test', 'visibility' => 'private', 'status' => 'archived', 'modality' => ['MR'], 'region' => ['neuro'],
             'site' => 'polimed', 'study_date' => '2022-12-15', 'patient' => ['name' => 'TEST'],

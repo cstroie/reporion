@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * A page named like its namespace (decided 2026-09-26): a site's
@@ -69,25 +69,20 @@ final class NamespacePageTest extends HttpTestCase
         self::assertStringNotContainsString('<li><a href="/:">Spaces</a></li>', $parent->body, 'the root is not a crumb');
     }
 
-    public function testDeletingItLeavesTheReportsAndSaysWhy(): void
+    /** D54: the description page and its namespace are a file and a directory: deleting one leaves the other */
+    public function testDeletingItLeavesTheReports(): void
     {
         $this->storage()->create(self::SITE, ['title' => 'Mioveni', 'visibility' => 'private'], 'Site.', 'owner');
 
         $form = $this->as('POST', '/' . self::SITE . '/delete');
-        self::assertSame(409, $form->status);
-        self::assertStringContainsString(htmlspecialchars(t('page.delete_has_children'), ENT_QUOTES), $form->body);
-
-        $api = $this->as('DELETE', '/api/v1/pages/' . self::SITE);
-        self::assertSame(409, $api->status);
-        self::assertSame('has_children', json_decode($api->body, true)['error']['code']);
-
-        self::assertSame(200, $this->as('GET', '/' . self::SITE)->status);
-        self::assertSame(200, $this->as('GET', '/' . self::REPORT)->status);
+        self::assertSame(302, $form->status);
+        self::assertSame(200, $this->as('GET', '/' . self::REPORT)->status, 'the reports under it stay');
+        self::assertCount(1, $this->storage()->trash());
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function as(string $method, string $path, string $body = ''): Response

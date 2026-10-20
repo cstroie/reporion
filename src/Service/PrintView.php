@@ -11,7 +11,7 @@ use DateTimeImmutable;
 use Exception;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\PageNotFoundException;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
@@ -36,7 +36,7 @@ final class PrintView
      */
     public function __construct(
         private readonly Render $render,
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly UserStoreInterface $users,
         private readonly array $sites,
         private readonly string $baseUrl,

@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Plugin\Loader;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
@@ -187,7 +187,7 @@ final class DicomFileTest extends HttpTestCase
             'study_uid' => self::UID, 'pacs_accession' => 'MV26777', 'pacs_device' => "SIEMENS Aera / NEWSCAN1\x07",
         ]));
         self::assertSame(302, $created->status);
-        $page = (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
+        $page = (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
         self::assertSame('SIEMENS Aera / NEWSCAN1', $page->frontmatter['pacs_device'], 'bounded text, no control characters');
 
         $tab = $this->send('owner', 'GET', '/x/dicom/study/' . $page->pid);
@@ -222,7 +222,7 @@ final class DicomFileTest extends HttpTestCase
             'study_uid' => self::UID, 'pacs_accession' => 'MV26777', 'pacs_device' => 'SIEMENS Aera / NEWSCAN1 · SN 181840', 'pacs_institution' => "Medima Health Calarasi\x07",
         ]));
         self::assertSame(302, $created->status);
-        $page = (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
+        $page = (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
         self::assertSame('SIEMENS Aera / NEWSCAN1 · SN 181840', $page->frontmatter['pacs_device']);
         self::assertSame('Medima Health Calarasi', $page->frontmatter['pacs_institution'], 'kept, bounded text');
         self::assertSame(self::UID, $page->frontmatter['exams'][0]['study_uid'], 'the report is linked to its study from the start');

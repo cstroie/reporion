@@ -6,10 +6,6 @@ declare(strict_types=1);
 
 namespace Reporion\Support;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-
 /**
  * D20 accession numbers, `{SITE}-{MOD}-{yy}-{seq}` by default (conf
  * `accession.pattern` / `seq_pad`), with one sequence per site + modality
@@ -48,24 +44,19 @@ final class AccessionFormat
     }
 
     /**
-     * Highest seq per key among every page's `accession:` frontmatter line
-     * on disk (invariant 1, not the index).
+     * Highest seq per key among the `accession:` frontmatter lines of these
+     * page files (invariant 1: disk, not the index)
+     *
+     * @param iterable<string> $files page files (Storage\FileTree::pageFiles())
      *
      * @return array<string, int>
      */
-    public static function issuedOnDisk(string $pagesRoot, string $pattern): array
+    public static function issuedIn(iterable $files, string $pattern): array
     {
-        if (!is_dir($pagesRoot)) {
-            return [];
-        }
         $regex = self::regex($pattern);
         $issued = [];
-        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pagesRoot, FilesystemIterator::SKIP_DOTS));
         foreach ($files as $file) {
-            if ($file->getFilename() !== 'current.md') {
-                continue;
-            }
-            $head = (string) file_get_contents($file->getPathname(), false, null, 0, 8192);
+            $head = (string) @file_get_contents($file, false, null, 0, 8192);
             // Frontmatter only: never a line in the report body. Every
             // `accession:` in it: a multi-exam report has one per exam (phase 12)
             if (preg_match('/\A---\n(.*?\n)---\n/s', $head, $frontmatter) !== 1

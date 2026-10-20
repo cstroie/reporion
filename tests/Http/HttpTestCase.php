@@ -18,7 +18,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Shared Kernel::boot() config fixture. Kernel reads new config keys
@@ -69,7 +69,7 @@ abstract class HttpTestCase extends TestCase
     protected function createPage(string $path, string $visibility, string $title, string $body): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create($path, ['title' => $title, 'visibility' => $visibility], $body, 'owner');
+        (new FileTree($this->dataRoot, $index))->create($path, ['title' => $title, 'visibility' => $visibility], $body, 'owner');
     }
 
     /**

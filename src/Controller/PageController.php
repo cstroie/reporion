@@ -23,7 +23,7 @@ use Reporion\Support\MetaText;
 
 /**
  * Thin (CLAUDE.md "Controller/"): parse, call services, render. Never
- * touches Storage\FlatFile's disk paths or Index\Sqlite's SQL directly
+ * touches Storage\FileTree's disk paths or Index\Sqlite's SQL directly
  * beyond calling the interfaces.
  */
 final class PageController
@@ -234,7 +234,7 @@ final class PageController
     }
 
     /**
-     * POST /{path}/delete: soft delete (Storage\FlatFile::delete() moves
+     * POST /{path}/delete: soft delete (Storage\FileTree::delete() moves
      * the page directory to data/trash/, invariant 1: never a hard delete
      * from a controller). Gated on canWrite() alone, like
      * EditorController::save() and NewPageController::create(): a write
@@ -249,12 +249,8 @@ final class PageController
         }
 
         $deleted = $this->storage->read($path);
-        try {
-            $this->storage->delete($path, $principal->username);
-        } catch (InvalidArgumentException) {
-            // A page and a namespace share this name: the pages under it stay
-            return $this->renderDeleteConfirm($request, $path, $principal, t('page.delete_has_children'), 409);
-        }
+        // A page and a namespace of the same name are a file and a directory (D54): the pages under it stay
+        $this->storage->delete($path, $principal->username);
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
         // Land on the parent namespace index: the page just vanished from

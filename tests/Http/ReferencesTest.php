@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Roadmap phase 25 end to end: the report view and the editor open the
@@ -27,7 +27,7 @@ final class ReferencesTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
-        $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private'], "## Score\n\nThoracolumbar injury score.\n", 'owner');
         $storage->create('teaching:spine:ao', ['title' => 'AO in teaching', 'visibility' => 'private'], "x\n", 'owner');
         $storage->create('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'reference' => 'radiology:spine:tlics'], "x\n", 'owner');
@@ -72,7 +72,7 @@ final class ReferencesTest extends HttpTestCase
     public function testATemplatesChecklistIsAFormAndSavesAsLines(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $storage->save('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'checklist' => ['# Corpuri', 'Fractură | fractur', ['x' => 1, 'y' => 2]]], "Fără fracturi.\n", 1, 'owner');
 
         $body = $this->get('/templates:ct:coloana/edit')->body;

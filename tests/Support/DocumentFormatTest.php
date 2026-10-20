@@ -55,9 +55,9 @@ final class DocumentFormatTest extends TestCase
 
     /**
      * The regex requires at least one line inside the frontmatter block
-     * (matching Storage\FlatFile's own identical parseDocument() regex,
+     * (matching Storage\FileTree's own identical parseDocument() regex,
      * which this mirrors exactly):"---\n---\n\n" with nothing between
-     * the fences doesn't match at all, same as it never has in FlatFile.
+     * the fences doesn't match at all, same as it never has in FileTree.
      * Not a new limitation this class introduces.
      */
     public function testParseRejectsTrulyEmptyFrontmatterBlock(): void

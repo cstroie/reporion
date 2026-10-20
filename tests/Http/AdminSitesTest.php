@@ -15,7 +15,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\InstanceSettings;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Admin → Sites: a card per site, each saved on its own (owner-only), the
@@ -89,7 +89,7 @@ final class AdminSitesTest extends HttpTestCase
         self::assertSame(['MV-MR-01' => 'Aparat RM'], $sites['mioveni']['devices'], 'a device with nothing linked stays a plain name; the blank row is skipped');
         self::assertSame('Alt Spital', $sites['scuc']['name'], 'the other site is untouched');
 
-        (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
+        (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
             ->create('reports:mri:mioveni:260101-test-subject', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni', 'device' => 'MV-MR-01'], "text\n", 'owner');
         $print = $this->request('GET', '/export/reports:mri:mioveni:260101-test-subject.html', 'owner')->body;
         self::assertStringContainsString('class="lh"', $print);
@@ -186,7 +186,7 @@ final class AdminSitesTest extends HttpTestCase
     {
         $this->add('mioveni', 'Spital');
         $this->add('scuc', 'Alt');
-        (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
+        (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
             ->create('reports:mri:mioveni:260101-test-subject', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni'], "text\n", 'owner');
 
         self::assertStringContainsString('1 report ·', $this->request('GET', '/admin/sites', 'owner')->body, 'counted');

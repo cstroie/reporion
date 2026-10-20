@@ -299,7 +299,7 @@ final class NewPageTest extends HttpTestCase
         ]);
 
         self::assertSame(302, $saved->status);
-        $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:curated');
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:curated');
         self::assertSame(1, $page->rev);
         self::assertSame("# Curated\n\nFirst text.\n", $page->body);
         self::assertSame('Curated page', $page->frontmatter['title']);
@@ -321,7 +321,7 @@ final class NewPageTest extends HttpTestCase
 
         $saved = $this->ownerSubmitTo('/docs:it:medima/edit', ['document' => "# Medima\n\nFirst text.\n", 'base_rev' => '0'], ['raw' => '1']);
         self::assertSame(302, $saved->status);
-        $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:medima');
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:medima');
         self::assertSame(1, $page->rev);
         self::assertSame("# Medima\n\nFirst text.\n", $page->body);
         self::assertSame(['visibility' => 'private'], $page->frontmatter, 'no title key: the first heading is the title');

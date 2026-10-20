@@ -13,7 +13,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\RecordingIndex;
 
 /**
@@ -41,7 +41,7 @@ final class AdminIndexTest extends HttpTestCase
         $this->createPage('reports:mri:mioveni:indexed', 'private', 'Indexed', 'body');
         // Written to disk without reaching the index: what a failed index
         // update after a successful write leaves behind
-        (new FlatFile($this->dataRoot, new RecordingIndex()))->create('reports:mri:mioveni:260101-not-indexed', ['title' => 'Unindexed', 'visibility' => 'private'], 'body', 'owner');
+        (new FileTree($this->dataRoot, new RecordingIndex()))->create('reports:mri:mioveni:260101-not-indexed', ['title' => 'Unindexed', 'visibility' => 'private'], 'body', 'owner');
 
         $before = $this->as('owner', 'GET', '/admin/index');
         self::assertStringContainsString(t('admin.index.drift_counts', [1, 0, 0]), $before->body);

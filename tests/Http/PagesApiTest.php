@@ -55,7 +55,7 @@ final class PagesApiTest extends HttpTestCase
         ]);
 
         self::assertSame(201, $response->status);
-        $meta = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-unu')->frontmatter;
+        $meta = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-unu')->frontmatter;
         self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($meta['exams'], 'accession'), 'numbered at create, as on the new-report form');
     }
 
@@ -106,7 +106,7 @@ final class PagesApiTest extends HttpTestCase
         ]);
         self::assertSame(200, $put->status);
 
-        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-doi')->frontmatter;
+        $fm = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-doi')->frontmatter;
         self::assertSame(['msk', 'vascular'], $fm['exams'][0]['region']);
         self::assertSame('templates:mri:genunchi', $fm['exams'][0]['template'], 'the exam keeps its template');
         self::assertArrayNotHasKey('region', $fm);
@@ -140,11 +140,8 @@ final class PagesApiTest extends HttpTestCase
             'body' => 'x',
         ]);
 
-        $meta = json_decode(
-            (string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/a/meta.json'),
-            true
-        );
-        self::assertSame('mihai', $meta['revlog'][0]['by']);
+        $history = (new \Reporion\Storage\Attic())->history($this->dataRoot . '/attic/reports/mri/mioveni/a.zip');
+        self::assertSame('mihai', $history['revlog'][0]['by']);
     }
 
     public function testEditorWithoutGrantOnThisNamespaceCannotCreateAPageThere(): void

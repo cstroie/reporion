@@ -23,7 +23,7 @@ use Reporion\Service\Accessions;
 use Reporion\Support\AccessionFormat;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Render;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * bin/reporion's existing contract: Application::boot($config)->run($argv).
@@ -70,14 +70,14 @@ final class Application
         $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $indexAndStorage = static function () use ($config, $rootDir): array {
             $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
-            $storage = new FlatFile((string) $config['paths']['data'], $index);
-            // A page on disk the index lacks is put right when a signed-in lookup misses it (FlatFile::adopt())
+            $storage = new FileTree((string) $config['paths']['data'], $index, (string) $config['paths']['state']);
+            // A page on disk the index lacks is put right when a signed-in lookup misses it (FileTree::adopt())
             $index->onMiss($storage->adopt(...));
 
             return [$storage, $index];
         };
         // The same maintenance tasks Admin → Maintenance runs (Service\Maintenance)
-        $maintenance = static fn (FlatFile $storage, Sqlite $index): MaintenanceRunner => MaintenanceRunner::standard(
+        $maintenance = static fn (FileTree $storage, Sqlite $index): MaintenanceRunner => MaintenanceRunner::standard(
             $storage,
             $index,
             $audit(),
@@ -127,7 +127,7 @@ final class Application
         $app->register('pacs:link', PacsLinkCommand::class, static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
             [$storage, $index] = $indexAndStorage();
             $accessions = new Accessions(
-                (string) $config['paths']['data'],
+                $storage,
                 $index,
                 (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
                 (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),

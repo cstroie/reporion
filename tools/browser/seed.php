@@ -11,7 +11,7 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 $dir = $argv[1] ?? '';
 $live = realpath(dirname(__DIR__, 2) . '/data');
@@ -20,7 +20,7 @@ if ($dir === '' || ($live !== false && str_starts_with((string) realpath(dirname
     exit(1);
 }
 $index = new Sqlite($dir . '/index.sqlite', dirname(__DIR__, 2) . '/migrations');
-$storage = new FlatFile($dir, $index);
+$storage = new FileTree($dir, $index);
 $users = new FlatFileUserStore($dir);
 // A radiologist owner: only a radiologist reads and writes reports (D47)
 $users->save($users->create('owner', password_hash('owner-password', PASSWORD_ARGON2ID), true, [], 'Dr. Test Owner', 'Medic primar')->with(radiologist: true));

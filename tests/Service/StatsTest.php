@@ -12,7 +12,7 @@ use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Stats;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -22,7 +22,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 final class StatsTest extends StorageTestCase
 {
     private Sqlite $index;
-    private FlatFile $storage;
+    private FileTree $storage;
     private DateTimeImmutable $now;
 
     private string $timezone = 'UTC';
@@ -34,7 +34,7 @@ final class StatsTest extends StorageTestCase
         $this->timezone = date_default_timezone_get();
         date_default_timezone_set('UTC');
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $this->now = new DateTimeImmutable();
     }
 

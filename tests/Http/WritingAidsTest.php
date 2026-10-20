@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * The editor's writing aids (D51): POST /api/v1/checks and
@@ -128,8 +128,8 @@ final class WritingAidsTest extends HttpTestCase
         return Kernel::boot($this->config)->handle(new Request($method, $path, query: $q, cookies: $cookies, body: $body !== [] ? (string) json_encode($body) : ''));
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 }

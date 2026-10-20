@@ -12,7 +12,7 @@ use Reporion\Kernel;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\TagReviewTask;
 use Reporion\Service\TagDictionary;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Ai\FakeServer;
 use Reporion\Tests\Storage\StorageTestCase;
 
@@ -25,7 +25,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 final class TagReviewTaskTest extends StorageTestCase
 {
     private FakeServer $server;
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
@@ -33,7 +33,7 @@ final class TagReviewTaskTest extends StorageTestCase
         parent::setUp();
         $this->server = new FakeServer();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         file_put_contents($this->dataRoot . '/tags.yaml', "leziune meniscală:\n  group: diagnosis\n");
         $fm = ['visibility' => 'private', 'study_date' => '2026-09-27', 'patient' => ['name' => 'TEST Popescul']];
         $this->storage->create('reports:mri:mioveni:260927-test-popescul', ['tags' => ['leziune meniscală', 'leziune corn anterior menisc', 'de urmărit', 'chist popescul', 'rads:birads-2']] + $fm, "# TEST Popescul\n\n## IRM genunchi\n\nSecret body words.\n", 'owner');

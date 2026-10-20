@@ -14,7 +14,7 @@ use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\TagDictionary;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
 use Reporion\Support\TagList;
@@ -57,7 +57,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
     private $progress = null;
 
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
         private readonly Actions $actions,
         private readonly Assistant $assistant,

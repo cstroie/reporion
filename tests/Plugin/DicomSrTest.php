@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Plugin\Dicom\Sr\Uid;
 use Reporion\Plugin\Dicom\Sr\Writer;
 use Reporion\Plugin\Loader;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
 
@@ -308,9 +308,9 @@ final class DicomSrTest extends HttpTestCase
         return $this->storage()->read(self::REPORT)->pid;
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function get(string $user, string $path): Response

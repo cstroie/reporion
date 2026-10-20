@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Text pages (D40, docs/FORMATS.md §3j): `format: text` is shown exactly
@@ -116,9 +116,9 @@ final class TextPagesTest extends HttpTestCase
         self::assertSame([], \Reporion\Support\Exams::problems($this->storage()->read($path)->frontmatter, $this->storage()->read($path)->body));
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function owner(): \Reporion\Auth\User

@@ -10,7 +10,7 @@ use Reporion\Exception\AiException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\Embedder;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\ReportPath;
 use RuntimeException;
 
@@ -40,7 +40,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
     private $progress = null;
 
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly Sqlite $index,
         private readonly ?Embedder $embedder,
         private readonly int $timeout = 120,

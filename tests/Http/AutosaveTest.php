@@ -51,9 +51,15 @@ final class AutosaveTest extends HttpTestCase
         return Kernel::boot($this->config)->handle(new Request($method, (string) parse_url($path, PHP_URL_PATH), query: $query, cookies: $cookies, body: $json !== null ? (string) json_encode($json) : $body));
     }
 
-    private function file(string $user): string
+    /** Whether $user has a draft of docs:note, as the state database holds it (D54) */
+    private function hasDraft(string $user): bool
     {
-        return $this->dataRoot . '/pages/docs/note/autosave.' . $user . '.json';
+        $stmt = (new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->prepare(
+            "SELECT COUNT(*) FROM draft d JOIN page p ON p.pid = d.pid WHERE p.path = 'docs:note' AND d.username = ?"
+        );
+        $stmt->execute([$user]);
+
+        return (int) $stmt->fetchColumn() === 1;
     }
 
     /** @return array<string, mixed> */
@@ -67,7 +73,7 @@ final class AutosaveTest extends HttpTestCase
         $url = '/api/v1/pages/' . self::PATH . '/autosave';
         foreach (['owner', 'editor'] as $user) {
             self::assertSame(204, $this->call($user, 'PUT', $url, $this->draftBody())->status, $user);
-            self::assertFileExists($this->file($user));
+            self::assertTrue($this->hasDraft($user));
         }
         foreach ([null, 'viewer'] as $user) {
             self::assertSame(404, $this->call($user, 'PUT', $url, $this->draftBody())->status);
@@ -81,9 +87,9 @@ final class AutosaveTest extends HttpTestCase
         self::assertStringNotContainsString('Typed', $this->call('editor', 'GET', $url)->body, 'metadata only: the text comes back through the editor');
 
         self::assertSame(204, $this->call('editor', 'DELETE', $url)->status);
-        self::assertFileDoesNotExist($this->file('editor'));
-        self::assertFileExists($this->file('owner'), "not the owner's");
-        self::assertSame(1, (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read(self::PATH)->rev, 'never a revision');
+        self::assertFalse($this->hasDraft('editor'));
+        self::assertTrue($this->hasDraft('owner'), "not the owner's");
+        self::assertSame(1, (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read(self::PATH)->rev, 'never a revision');
     }
 
     public function testBadRequests(): void
@@ -95,7 +101,7 @@ final class AutosaveTest extends HttpTestCase
         $late = $this->call('owner', 'PUT', $url, $this->draftBody(0));
         self::assertSame(409, $late->status, 'the editor is behind');
         self::assertSame('conflict', json_decode($late->body, true)['error']['code']);
-        self::assertFileDoesNotExist($this->file('owner'), 'nothing stored');
+        self::assertFalse($this->hasDraft('owner'), 'nothing stored');
 
         self::assertSame(422, $this->call('owner', 'PUT', $url, $this->draftBody(1, false, str_repeat('x', 2 * 1024 * 1024 + 1)))->status);
     }
@@ -137,7 +143,7 @@ final class AutosaveTest extends HttpTestCase
         self::assertStringContainsString('"unsaved":true', $restored->body, 'nothing is stored until Save');
         self::assertStringNotContainsString('id="editor-autosave-banner"', $restored->body);
         self::assertStringContainsString('name="base_rev" value="1"', $restored->body);
-        self::assertFileExists($this->file('editor'), 'restoring does not remove the draft; the Save does');
+        self::assertTrue($this->hasDraft('editor'), 'restoring does not remove the draft; the Save does');
 
         // A draft made in the other mode sends the editor to that mode first
         $this->call('editor', 'PUT', '/api/v1/pages/' . self::PATH . '/autosave', $this->draftBody(1, true, 'document=' . rawurlencode("---\ntitle: Raw\n---\n\nRaw typed.\n")));
@@ -156,8 +162,8 @@ final class AutosaveTest extends HttpTestCase
 
         $saved = $this->call('editor', 'POST', '/' . self::PATH . '/edit', null, 'base_rev=1&body=' . rawurlencode("Saved by editor.\n"));
         self::assertSame(302, $saved->status);
-        self::assertFileDoesNotExist($this->file('editor'), 'the Save removed its author\'s draft');
-        self::assertFileExists($this->file('owner'));
+        self::assertFalse($this->hasDraft('editor'), 'the Save removed its author\'s draft');
+        self::assertTrue($this->hasDraft('owner'));
 
         // The owner's draft is now of an older revision: still offered, with the warning, and Save meets the conflict
         $offered = $this->call('owner', 'GET', '/' . self::PATH . '/edit');

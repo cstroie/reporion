@@ -15,7 +15,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Plugin\Loader;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Http\HttpTestCase;
 use RuntimeException;
 
@@ -196,9 +196,9 @@ final class DokuwikiToolsTest extends HttpTestCase
         self::assertStringContainsString('data-edit-tool="unitsDegrees"', $off);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function get(string $user, string $path): Response

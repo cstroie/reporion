@@ -158,6 +158,37 @@ final class StateDb
         $this->updatePage($pid, ['rev' => \count($history['revlog']), 'status' => (string) $history['status']]);
     }
 
+    /** @return array<int, string> the mirrored revisions' sha256, by n */
+    public function revisionShas(string $pid): array
+    {
+        $out = [];
+        foreach ($this->all('SELECT n, sha256 FROM revision WHERE pid = ? ORDER BY n', [$pid]) as $r) {
+            $out[(int) $r['n']] = (string) $r['sha256'];
+        }
+
+        return $out;
+    }
+
+    /** @return list<int> the mirrored signatures' revisions, in order */
+    public function signatureRevs(string $pid): array
+    {
+        return array_map(static fn (array $r): int => (int) $r['rev'], $this->all('SELECT rev FROM signature WHERE pid = ? ORDER BY rev, ts', [$pid]));
+    }
+
+    /** @return list<string> what SQLite's integrity and foreign-key checks find; none when sound */
+    public function check(): array
+    {
+        $found = array_values(array_filter(
+            array_map('strval', $this->pdo->query('PRAGMA integrity_check')?->fetchAll(PDO::FETCH_COLUMN) ?: []),
+            static fn (string $line): bool => $line !== 'ok'
+        ));
+        foreach ($this->pdo->query('PRAGMA foreign_key_check')?->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $found[] = 'foreign key: ' . (string) ($row['table'] ?? '');
+        }
+
+        return $found;
+    }
+
     public function hasSignature(string $pid): bool
     {
         return $this->one('SELECT 1 AS x FROM signature WHERE pid = ? LIMIT 1', [$pid]) !== null;

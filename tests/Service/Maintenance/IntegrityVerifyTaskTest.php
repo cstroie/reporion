@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Service\Maintenance;
 
+use DateTimeImmutable;
+use PDO;
 use Reporion\Audit\AuditLog;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
@@ -15,14 +17,17 @@ use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Revisions;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
+use Reporion\Support\Zip;
+use Reporion\Support\ZipEntry;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
- * integrity:verify (roadmap phase 23): an intact archive reads clean; each
- * kind of damage done to the files behind Reporion's back is found and
- * named by pid, never by path; nothing is ever repaired. Fixture data is
- * fictitious (invariant 10).
+ * integrity:verify (roadmap phase 23, the 2.0 layout of D54): an intact
+ * archive reads clean; each kind of damage done behind Reporion's back, to
+ * an attic zip, a page file or the state database, is found and named by
+ * pid, never by path; nothing is ever repaired. Fixture data is fictitious
+ * (invariant 10).
  */
 final class IntegrityVerifyTaskTest extends StorageTestCase
 {
@@ -33,13 +38,13 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
     private const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
     private Sqlite $index;
-    private FlatFile $storage;
+    private FileTree $storage;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
 
         $this->storage->create(self::SIGNED, ['title' => 'TEST Unu', 'visibility' => 'private'], "# TEST Unu\n\nPrima.\n", 'owner');
         $page = $this->storage->read(self::SIGNED);
@@ -64,7 +69,7 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
 
     public function testAChangedSignedRevisionBreaksBothItsHashAndItsSignature(): void
     {
-        $this->rewriteRevision(self::SIGNED, 2, "---\ntitle: TEST Unu\nvisibility: private\n---\n\n# TEST Unu\n\nAltceva.\n");
+        $this->setEntry(self::SIGNED, '0002.md', "---\ntitle: TEST Unu\nvisibility: private\n---\n\n# TEST Unu\n\nAltceva.\n");
 
         $report = $this->verify();
 
@@ -80,15 +85,18 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
             }
         }
         self::assertStringNotContainsString('test-unu', $report->toJson(), 'no path in the report (invariant 8)');
-        self::assertStringContainsString('Altceva', (string) gzdecode((string) file_get_contents($this->revFile(self::SIGNED, 2))), 'nothing repaired');
+        self::assertStringContainsString('Altceva', $this->entries(self::SIGNED)['0002.md']->bytes(), 'nothing repaired');
     }
 
-    public function testAMissingACorruptAndAnExtraRevisionAndAStaleCurrent(): void
+    public function testAMissingACorruptAndAnExtraRevisionAndAStalePageFile(): void
     {
-        unlink($this->revFile(self::SIGNED, 1));
-        file_put_contents($this->revFile(self::DRAFT, 1), 'not gzip');
-        file_put_contents($this->revFile(self::DRAFT, 7), (string) gzencode("stray\n"));
-        file_put_contents($this->pageDir(self::SIGNED) . '/current.md', "---\ntitle: X\n---\n\nedited by hand\n");
+        $this->setEntry(self::SIGNED, '0001.md', null);
+        $entries = $this->entries(self::DRAFT);
+        $broken = $entries['0001.md'];
+        $entries['0001.md'] = new ZipEntry('0001.md', ZipEntry::DEFLATED, $broken->crc, $broken->size, 'not deflate', $broken->dosTime, $broken->dosDate);
+        $entries['0007.md'] = ZipEntry::deflated('0007.md', "stray\n", new DateTimeImmutable());
+        $this->writeEntries(self::DRAFT, $entries);
+        file_put_contents($this->pageFile(self::SIGNED), "---\ntitle: X\n---\n\nedited by hand\n");
 
         $outcomes = $this->outcomes($this->verify());
 
@@ -100,16 +108,19 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
 
     public function testARevisionRemovedFromTheMiddleOfTheChainIsFound(): void
     {
-        // Three revisions; drop the middle revlog entry the way a hand edit of meta.json would
+        // Three revisions; drop the middle revlog entry the way a hand edit of revlog.json would
         $page = $this->storage->read(self::SIGNED);
         $this->storage->save(self::SIGNED, $page->frontmatter, "# TEST Unu\n\nA treia.\n", $page->rev, 'owner');
         self::assertSame([], $this->outcomes($this->verify()));
 
-        $this->editMeta(self::SIGNED, static function (array $meta): array {
-            unset($meta['revlog'][1]);
-            $meta['revlog'] = array_values($meta['revlog']);
+        $this->editHistory(self::SIGNED, static function (array $history): array {
+            unset($history['revlog'][1]);
+            $history['revlog'] = array_values($history['revlog']);
+            foreach ($history['revlog'] as $i => $entry) {
+                $history['revlog'][$i]['n'] = $i + 1;
+            }
 
-            return $meta;
+            return $history;
         });
 
         self::assertContains('chain_broken', $this->outcomes($this->verify()));
@@ -117,17 +128,17 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
 
     public function testAChangedEntryAndAStrippedLinkAreFound(): void
     {
-        $this->editMeta(self::SIGNED, static function (array $meta): array {
-            $meta['revlog'][0]['by'] = 'someone-else';
+        $this->editHistory(self::SIGNED, static function (array $history): array {
+            $history['revlog'][0]['by'] = 'someone-else';
 
-            return $meta;
+            return $history;
         });
         self::assertContains('chain_broken', $this->outcomes($this->verify()));
 
-        $this->editMeta(self::SIGNED, static function (array $meta): array {
-            unset($meta['revlog'][1]['chain']);
+        $this->editHistory(self::SIGNED, static function (array $history): array {
+            unset($history['revlog'][1]['chain']);
 
-            return $meta;
+            return $history;
         });
         self::assertContains('chain_missing', $this->outcomes($this->verify()));
     }
@@ -135,10 +146,10 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
     public function testHistoryWrittenBeforeTheChainIsAnchoredNotFlagged(): void
     {
         // A page as it was before 2026-10-17: no `chain` anywhere, then one new revision
-        $this->editMeta(self::DRAFT, static function (array $meta): array {
-            unset($meta['revlog'][0]['chain']);
+        $this->editHistory(self::DRAFT, static function (array $history): array {
+            unset($history['revlog'][0]['chain']);
 
-            return $meta;
+            return $history;
         });
         self::assertSame([], $this->outcomes($this->verify()));
 
@@ -156,7 +167,10 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
 
     public function testACorruptSignedRevisionFailsItsSignatureQuietly(): void
     {
-        file_put_contents($this->revFile(self::SIGNED, 2), 'not gzip');
+        $entries = $this->entries(self::SIGNED);
+        $signed = $entries['0002.md'];
+        $entries['0002.md'] = new ZipEntry('0002.md', ZipEntry::DEFLATED, $signed->crc, $signed->size, 'not deflate', $signed->dosTime, $signed->dosDate);
+        $this->writeEntries(self::SIGNED, $entries);
 
         $outcomes = $this->outcomes($this->verify());
 
@@ -174,30 +188,29 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
         $this->assertContainsOutcome('media_missing', $this->verify());
     }
 
-    public function testACorruptMediaManifestIsReportedAndNeverRewrittenByAnAttach(): void
+    public function testAStateMirrorThatDisagreesWithTheAtticIsReported(): void
     {
-        $manifest = $this->pageDir(self::DRAFT) . '/media.json';
-        file_put_contents($manifest, '[{broken');
+        (new PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->exec('DELETE FROM signature');
 
-        $this->assertContainsOutcome('media_manifest_corrupt', $this->verify());
-
-        try {
-            $this->storage->attachMedia(self::DRAFT, (string) base64_decode(self::PNG, true), 'other.png', 'owner');
-            self::fail('an attach must not write over a manifest it cannot read');
-        } catch (\RuntimeException) {
-        }
-        self::assertSame('[{broken', file_get_contents($manifest));
+        $this->assertContainsOutcome('mirror_drift', $this->verify());
     }
 
     public function testAnUnreadablePageIsNamedByItsPathHash(): void
     {
-        file_put_contents($this->pageDir(self::DRAFT) . '/meta.json', '{broken');
+        file_put_contents($this->pageFile(self::DRAFT), '{broken');
 
         $report = $this->verify();
 
         $item = array_values(array_filter($report->items(), static fn (array $i): bool => $i['outcome'] === 'page_unreadable'))[0];
         self::assertNull($item['pid']);
         self::assertSame(AuditLog::pathHash(self::DRAFT), $item['data']['path_hash']);
+    }
+
+    public function testAnAtticZipWithNoPageIsReported(): void
+    {
+        copy($this->zipFile(self::DRAFT), $this->dataRoot . '/attic/reports/ct/mioveni/260921-orphan.zip');
+
+        $this->assertContainsOutcome('attic_orphan', $this->verify());
     }
 
     public function testIndexDriftIsReported(): void
@@ -216,15 +229,23 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
             self::assertSame(0, $clean->exit());
             self::assertSame(1, $clean->summary()['backup_checked']);
 
-            unlink($backup . '/pages/' . str_replace(':', '/', self::SIGNED) . '/rev/0002.md.gz');
+            $this->setEntry(self::SIGNED, '0002.md', null, $backup);
             $this->assertContainsOutcome('backup_missing', $this->verify(['backup' => $backup]));
 
-            file_put_contents($backup . '/pages/' . str_replace(':', '/', self::SIGNED) . '/rev/0002.md.gz', (string) gzencode("other\n"));
-            $this->assertContainsOutcome('backup_differs', $this->verify(['backup' => $backup]));
+            // Other bytes the backup's own record agrees with: a different revision, not a damaged zip
+            $this->copyTree($this->dataRoot, $backup . '-2');
+            $this->setEntry(self::SIGNED, '0002.md', "other\n", $backup . '-2');
+            $this->editHistory(self::SIGNED, static function (array $history): array {
+                $history['revlog'][1]['sha256'] = hash('sha256', "other\n");
+                $history['revlog'][1]['bytes'] = 6;
+
+                return $history;
+            }, $backup . '-2');
+            $this->assertContainsOutcome('backup_differs', $this->verify(['backup' => $backup . '-2']));
 
             $this->assertContainsOutcome('backup_unreadable', $this->verify(['backup' => '/nonexistent/backup']));
         } finally {
-            exec('rm -rf ' . escapeshellarg($backup));
+            exec('rm -rf ' . escapeshellarg($backup) . ' ' . escapeshellarg($backup . '-2'));
         }
     }
 
@@ -263,27 +284,45 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
         self::assertSame(1, $report->exit());
     }
 
-    private function pageDir(string $path): string
+    private function pageFile(string $path): string
     {
-        return $this->dataRoot . '/pages/' . str_replace(':', '/', $path);
+        return $this->dataRoot . '/pages/' . str_replace(':', '/', $path) . '.md';
     }
 
-    private function revFile(string $path, int $rev): string
+    private function zipFile(string $path, ?string $root = null): string
     {
-        return \sprintf('%s/rev/%04d.md.gz', $this->pageDir($path), $rev);
+        return ($root ?? $this->dataRoot) . '/attic/' . str_replace(':', '/', $path) . '.zip';
+    }
+
+    /** @return array<string, ZipEntry> */
+    private function entries(string $path, ?string $root = null): array
+    {
+        return Zip::read((string) file_get_contents($this->zipFile($path, $root)));
+    }
+
+    /** @param array<string, ZipEntry> $entries */
+    private function writeEntries(string $path, array $entries, ?string $root = null): void
+    {
+        file_put_contents($this->zipFile($path, $root), Zip::assemble(array_values($entries)));
+    }
+
+    /** An entry replaced by other bytes, or removed (null), behind Storage's back */
+    private function setEntry(string $path, string $name, ?string $bytes, ?string $root = null): void
+    {
+        $entries = $this->entries($path, $root);
+        if ($bytes === null) {
+            unset($entries[$name]);
+        } else {
+            $entries[$name] = ZipEntry::deflated($name, $bytes, new DateTimeImmutable());
+        }
+        $this->writeEntries($path, $entries, $root);
     }
 
     /** @param callable(array<string, mixed>): array<string, mixed> $change */
-    private function editMeta(string $path, callable $change): void
+    private function editHistory(string $path, callable $change, ?string $root = null): void
     {
-        $file = $this->pageDir($path) . '/meta.json';
-        file_put_contents($file, json_encode($change(json_decode((string) file_get_contents($file), true)), JSON_UNESCAPED_UNICODE));
-    }
-
-    private function rewriteRevision(string $path, int $rev, string $document): void
-    {
-        file_put_contents($this->revFile($path, $rev), (string) gzencode($document));
-        file_put_contents($this->pageDir($path) . '/current.md', $document);
+        $history = json_decode($this->entries($path, $root)['revlog.json']->bytes(), true);
+        $this->setEntry($path, 'revlog.json', (string) json_encode($change($history), JSON_UNESCAPED_UNICODE), $root);
     }
 
     private function copyTree(string $from, string $to): void

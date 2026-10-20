@@ -15,7 +15,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * GET /stats, GET /stats.csv and the start page's "This month" card
@@ -28,7 +28,7 @@ final class StatsTest extends HttpTestCase
         parent::setUp();
         $this->createOwner();
         $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test'], 'pitesti' => ['name' => 'Alt Spital']];
-        $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $date = (new DateTimeImmutable('-2 days'))->format('Y-m-d');
         foreach (['mri:mioveni' => ['MR', 'mioveni'], 'ct:pitesti' => ['CT', 'pitesti']] as $ns => [$modality, $site]) {
             $path = 'reports:' . $ns . ':' . (new DateTimeImmutable())->format('ymd') . '-test-unu';

@@ -14,7 +14,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\Action;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\Redactor;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -28,14 +28,14 @@ final class ContextTest extends StorageTestCase
     private const PRIOR = 'reports:mri:mioveni:250310-popescu-ana-maria';
     private const OTHER = 'reports:mri:mioveni:250101-ionescu-vasile';
 
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $this->storage->create('templates:mri:genunchi', ['title' => 'IRM Genunchi', 'visibility' => 'private'], "Genunchi: meniscuri normale.\n", 'owner');
         $this->storage->create(self::PRIOR, [
             'title' => 'POPESCU Ana Maria', 'visibility' => 'private', 'study_date' => '2025-03-10', 'accession' => 'MV-MR-25-0100',

@@ -15,7 +15,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\InstanceSettings;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Ai\FakeServer;
 
 /**
@@ -125,7 +125,7 @@ final class AdminAiTest extends HttpTestCase
             $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => $server->url, 'model' => 'test-model'] + self::SERVER]));
             $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');
             $this->request('POST', '/admin/ai/enabled', 'owner', 'ai_enabled=1');
-            $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+            $storage = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
             $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Concluzie', 'order' => 20, 'visibility' => 'private'], "{text}\n", 'owner');
             $storage->create('ai:profiles:reports:custom', ['title' => 'Custom', 'enabled' => false, 'visibility' => 'private'], "{prompt}\n", 'owner');
             $storage->create('ai:profiles:short:conclusion', ['title' => 'Conclusion', 'visibility' => 'private'], "{text}\n", 'owner');

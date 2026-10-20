@@ -10,7 +10,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Service\Duplicates;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * bin/reporion page:new <path> [--template=<path>] [--actor=<username>]
@@ -24,7 +24,7 @@ use Reporion\Storage\FlatFile;
 final class PageNewCommand implements CommandInterface
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
     ) {
     }

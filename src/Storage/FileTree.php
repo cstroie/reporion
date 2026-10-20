@@ -321,7 +321,7 @@ final class FileTree implements StorageInterface
         if (!is_file($file)) {
             throw new PageNotFoundException();
         }
-        $history = $this->historyOf($path);
+        $history = self::committed($row, $this->historyOf($path));
         [$frontmatter, $body] = $this->parseDocument((string) file_get_contents($file));
 
         return new PageRecord(
@@ -378,7 +378,7 @@ final class FileTree implements StorageInterface
         if (!is_file($file)) {
             throw new PageNotFoundException();
         }
-        $history = $this->historyOf($path);
+        $history = self::committed($row, $this->historyOf($path));
         $document = (string) file_get_contents($file);
         [$frontmatter, $body] = $this->parseDocument($document);
         $frontmatter = self::withoutPid($frontmatter);
@@ -760,6 +760,132 @@ final class FileTree implements StorageInterface
     public function accessionCounters(): array
     {
         return $this->state->counters();
+    }
+
+    /**
+     * integrity:verify's per-page check, reading only: the attic zip's
+     * problems (Attic::problems(): an entry missing, corrupt or changed,
+     * the chain), `current_stale` when the page file is not the newest
+     * revision (D2), `mirror_drift` when the state DB's revision or
+     * signature rows disagree with the zip.
+     *
+     * @return list<array{rev: ?int, problem: string}>
+     *
+     * @throws PageNotFoundException
+     */
+    public function historyProblems(string $path): array
+    {
+        $row = $this->liveRow($path);
+        $zip = $this->atticFile($path);
+        $problems = $this->attic->problems($zip);
+        if ($problems !== [] && $problems[0]['rev'] === null && \in_array($problems[0]['problem'], ['missing', 'unreadable', 'history_missing', 'history_unreadable', 'history_invalid'], true)) {
+            return $problems;
+        }
+        $history = $this->attic->history($zip);
+        $n = \count($history['revlog']);
+        $file = $this->pageFile($path);
+        if ($n > 0 && is_file($file) && !hash_equals((string) $history['revlog'][$n - 1]['sha256'], hash('sha256', (string) file_get_contents($file)))) {
+            $problems[] = ['rev' => $n, 'problem' => 'current_stale'];
+        }
+        $pid = (string) $row['pid'];
+        $logged = [];
+        foreach ($history['revlog'] as $entry) {
+            $logged[(int) $entry['n']] = (string) $entry['sha256'];
+        }
+        $signed = array_map(static fn (array $s): int => (int) $s['rev'], $history['signatures']);
+        sort($signed);
+        if ($logged !== $this->state->revisionShas($pid) || $signed !== $this->state->signatureRevs($pid)
+            || (int) $row['rev'] !== $n || (string) $row['status'] !== (string) $history['status']) {
+            $problems[] = ['rev' => null, 'problem' => 'mirror_drift'];
+        }
+
+        return $problems;
+    }
+
+    /** @return list<string> live pages whose page file is not where the row says (moved or removed by hand) */
+    public function missingPageFiles(): array
+    {
+        return array_values(array_filter($this->state->livePaths(), fn (string $path): bool => !is_file($this->pageFile($path))));
+    }
+
+    /** @return list<string> attic zips under attic/ that no page row has at their path, as colon paths */
+    public function orphanAttics(): array
+    {
+        $root = $this->dataRoot . '/attic';
+        if (!is_dir($root)) {
+            return [];
+        }
+        $orphans = [];
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $item) {
+            if (!$item->isFile() || !str_ends_with($item->getFilename(), self::ATTIC_EXT)) {
+                continue;
+            }
+            $path = str_replace('/', ':', substr($item->getPathname(), \strlen($root) + 1, -\strlen(self::ATTIC_EXT)));
+            if ($this->state->pageAt($path) === null) {
+                $orphans[] = $path;
+            }
+        }
+        sort($orphans);
+
+        return $orphans;
+    }
+
+    /**
+     * What a stray page file (strayPaths()) is, without changing anything:
+     * `moved` (its page's row is elsewhere, that file gone: rejoined by
+     * pages:repair-paths), `copy` (its pid is a live page's that still has
+     * its file) or `new` (no page is known for it: adopted as one).
+     */
+    public function strayKind(string $path): string
+    {
+        try {
+            if ($this->owner($path) !== null) {
+                return 'moved';
+            }
+            [$frontmatter] = $this->parseDocument((string) file_get_contents($this->pageFile($path)));
+        } catch (RuntimeException) {
+            return 'new';
+        }
+        $claimed = \is_string($frontmatter[self::PID_KEY] ?? null) ? $this->state->pageByPid($frontmatter[self::PID_KEY]) : null;
+
+        return $claimed !== null && $claimed['trashed_at'] === null ? 'copy' : 'new';
+    }
+
+    /** @return list<string> what SQLite finds wrong with reporion.sqlite; none when sound */
+    public function stateProblems(): array
+    {
+        return $this->state->check();
+    }
+
+    /**
+     * Revision $rev of the page at $path as a copy of data/ holds it (a
+     * mounted backup snapshot): null when that copy has no such revision.
+     * Reads only.
+     */
+    public function revisionInCopy(string $copyRoot, string $path, int $rev): ?string
+    {
+        if (!self::safePath($path)) {
+            return null;
+        }
+        $zip = rtrim($copyRoot, '/') . '/attic/' . str_replace(':', '/', $path) . self::ATTIC_EXT;
+        try {
+            return is_file($zip) ? $this->attic->revision($zip, $rev) : null;
+        } catch (AtticException) {
+            return null;
+        }
+    }
+
+    /**
+     * Every page file under pages/, live or not (a tree walk: for seeding
+     * from what is on disk, never for listing pages)
+     *
+     * @return iterable<string> absolute file names
+     */
+    public function pageFiles(): iterable
+    {
+        foreach ($this->pageFilesOnDisk() as $path) {
+            yield $this->pageFile($path);
+        }
     }
 
     /** Whether $path is a well-formed page path (what create() would accept) */
@@ -1197,8 +1323,7 @@ final class FileTree implements StorageInterface
     private function meta(array $row, array $history): array
     {
         $pid = (string) $row['pid'];
-
-        return [
+        $meta = [
             'pid' => $pid,
             'created' => (string) $row['created'],
             'created_by' => (string) $row['created_by'],
@@ -1208,10 +1333,41 @@ final class FileTree implements StorageInterface
             'signatures' => $history['signatures'],
             'status' => (string) $history['status'],
             'visibility' => (string) $row['visibility'],
-            'moves' => $this->state->moves($pid),
-            'deliveries' => $this->state->deliveries($pid),
             'share_token' => null,
         ];
+        // As meta.json had them: only once there is one
+        foreach (['moves' => $this->state->moves($pid), 'deliveries' => $this->state->deliveries($pid)] as $key => $rows) {
+            if ($rows !== []) {
+                $meta[$key] = $rows;
+            }
+        }
+
+        return $meta;
+    }
+
+    /**
+     * What readers see while a write is in flight, or after one a crash
+     * stopped before its state transaction: the attic zip may already hold
+     * a revision the row (and the page file) do not. Until the write commits
+     * or replay finishes it, the page is what the row says: the record cut
+     * at the row's rev, its status the row's.
+     *
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $history
+     *
+     * @return array<string, mixed>
+     */
+    private static function committed(array $row, array $history): array
+    {
+        $rev = (int) $row['rev'];
+        if ($rev < 1 || \count($history['revlog']) <= $rev) {
+            return $history;
+        }
+        $history['revlog'] = \array_slice($history['revlog'], 0, $rev);
+        $history['signatures'] = array_values(array_filter($history['signatures'], static fn (array $s): bool => (int) ($s['rev'] ?? 0) <= $rev));
+        $history['status'] = (string) $row['status'];
+
+        return $history;
     }
 
     /**

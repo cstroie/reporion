@@ -12,12 +12,12 @@ use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\ProgressAware;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * bin/reporion index:rebuild: full rebuild from disk (CLAUDE.md Commands
- * table). Walks data/pages/ (FlatFile::allPaths()), reconstructs each
- * page's PageSnapshot straight from disk (FlatFile::snapshotOf()), and
+ * table). Walks data/pages/ (FileTree::allPaths()), reconstructs each
+ * page's PageSnapshot straight from disk (FileTree::snapshotOf()), and
  * replaces the whole index in one transaction (Index\Sqlite::rebuild()).
  * This is the safety net the cache-is-disposable claim (invariant 1)
  * depends on: data/index.sqlite can always be deleted and regenerated.
@@ -30,7 +30,7 @@ use Reporion\Storage\FlatFile;
 final class IndexRebuildCommand implements CommandInterface
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly Sqlite $index,
         // Takes the maintenance lock when given (bin/reporion always does)
         private readonly string $dataRoot = '',

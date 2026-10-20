@@ -51,8 +51,8 @@ final class DoctorCommandTest extends TestCase
     {
         $this->createOwnerAccount();
         foreach (['ct/a' => "---\ntitle: Old\n---\n\nText.\n", 'ct/b' => "---\nvisibility: private\n---\n\n# Name\n\n## Exam\n", 'snippets/s' => "---\n---\n\nx\n"] as $page => $document) {
-            mkdir($this->dataDir . '/pages/templates/' . $page, 0775, true);
-            file_put_contents($this->dataDir . '/pages/templates/' . $page . '/current.md', $document);
+            @mkdir(\dirname($this->dataDir . '/pages/templates/' . $page), 0775, true);
+            file_put_contents($this->dataDir . '/pages/templates/' . $page . '.md', $document);
         }
 
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
@@ -71,10 +71,14 @@ final class DoctorCommandTest extends TestCase
             'mri/mioveni/d' => ['exams' => [['title' => 'Signed']]],
         ];
         foreach ($reports as $page => $frontmatter) {
-            mkdir($this->dataDir . '/pages/reports/' . $page, 0775, true);
-            file_put_contents($this->dataDir . '/pages/reports/' . $page . '/current.md', \Reporion\Support\DocumentFormat::encode($frontmatter, "x\n"));
+            @mkdir(\dirname($this->dataDir . '/pages/reports/' . $page), 0775, true);
+            file_put_contents($this->dataDir . '/pages/reports/' . $page . '.md', \Reporion\Support\DocumentFormat::encode($frontmatter, "x\n"));
         }
-        file_put_contents($this->dataDir . '/pages/reports/mri/mioveni/d/meta.json', json_encode(['status' => 'signed']));
+        // The signed one, as the state database says (D54)
+        \Reporion\Storage\Databases::openState($this->dataDir . '/reporion.sqlite')->exec(
+            "INSERT INTO page (pid, path, rev, status, created, created_by, file_sha, file_mtime, file_bytes)
+             VALUES ('01JB8X4MT7QK2V9Z0C3R5H6ND0', 'reports:mri:mioveni:d', 1, 'signed', 't', 'u', 's', 0, 0)"
+        );
 
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
 
