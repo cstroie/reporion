@@ -56,8 +56,8 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <span class="wk-actions">
 <form action="<?= $b ?>/admin/ai/enabled" method="post" data-autosubmit>
 <span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.ai.enabled')) ?>">
-<label class="seg-opt"><input type="radio" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="ai_enabled" value="0"<?= $ai->enabled ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 </span>
 <noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>

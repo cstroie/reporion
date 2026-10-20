@@ -281,7 +281,7 @@ exactly one is on, drawn as a bar with the chosen one filled in accent.
 - A `.seg` in a filter bar (`.wk-filters`) is flush: options the same width, a straight divider,
   rounded at the ends only.
 
-### Enabled | Disabled
+### Disabled | Enabled
 
 The switch for turning a thing on or off (a plugin, the assistant) is **one markup, on every page**
 (`admin-plugins.php`, `admin-ai.php`):
@@ -290,8 +290,8 @@ The switch for turning a thing on or off (a plugin, the assistant) is **one mark
 <span class="wk-actions">
 <form action="/admin/…/toggle" method="post" data-autosubmit>
 <span class="seg seg-sm" role="radiogroup" aria-label="State">
-<label class="seg-opt"><input type="radio" name="enabled" value="1" checked>Enabled</label>
 <label class="seg-opt"><input type="radio" name="enabled" value="0">Disabled</label>
+<label class="seg-opt"><input type="radio" name="enabled" value="1" checked>Enabled</label>
 </span>
 <noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i>Apply</button></noscript>
 </form>
@@ -302,7 +302,7 @@ The switch for turning a thing on or off (a plugin, the assistant) is **one mark
   the on/off state belongs to the whole panel.
 - **`.seg.seg-sm` with `role="radiogroup"`** (not `group`: its options are radios) and an
   `aria-label` naming what is switched; no `title` repeating it.
-- **Labels are always** "Enabled" first, "Disabled" second (`admin.plugins.enabled|disabled`), the
+- **Labels are always** "Disabled" first, "Enabled" second (`admin.plugins.disabled|enabled`; 2026-10-20: off on the left, on on the right), the
   current one `checked`. The radio is named for the setting (`enabled`, `ai_enabled`), value `1` / `0`.
 - **It saves by itself**: `data-autosubmit` on the form submits on change (`assets/js/shell.js`),
   so there is no Save button. For a browser without JavaScript the form carries a
@@ -393,7 +393,7 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
   panel of a grid (`.wk-panels`) the footer sticks to the bottom (`margin-top: auto`).
 - **Where a footer is not used**: a form that *is* a `.group` (add a site, choose the AI server)
   keeps its button as the group's own action. A form in the panel's header (Empty trash, the
-  assistant's Enabled | Disabled) is a header action: `span.wk-actions > form` (see Action rows).
+  assistant's Disabled | Enabled) is a header action: `span.wk-actions > form` (see Action rows).
 - **A panel has one footer**, at its bottom, and the footer strip bleeds to the panel's edges. A
   second action with its own form (Rename beside Save, Delete) gets **its own panel** (Admin → Tags
   does this for Rename), or is a destructive outline button in the single footer when it needs no

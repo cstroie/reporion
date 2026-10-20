@@ -59,8 +59,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endif; ?>
 <form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/toggle" method="post" data-autosubmit>
 <span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.plugins.state')) ?>">
-<label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="enabled" value="0"<?= $on ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 </span>
 <noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>
