@@ -2,15 +2,15 @@
 
 Reporion: a flat-file wiki for imaging reports. PHP 8.x, on-disk pages, SQLite index.
 
-*draft 4 · 23 Sep 2026 · D1–D28 decided, D35–D37 supersede D6/D13/D14 · multi-user, small-team deployment*
+*draft 5 · 20 Oct 2026 · D1–D28 decided, D35–D37 supersede D6/D13/D14 · multi-user, small-team deployment · storage rewritten for 2.0 (D54, built 2026-10-20: docs/architecture-v2.md)*
 
-The disk is the database. Every page is a directory of plain text that a radiologist could read with `cat` in twenty years, and the SQLite index is a disposable cache that can be deleted at any moment and rebuilt from those files. Everything below follows from that one commitment.
+The disk is the database. Every page is a plain-text file that a radiologist could read with `cat` in twenty years, its history one zip beside it, and the SQLite index is a disposable cache that can be deleted at any moment and rebuilt from those files. Operational state (comments, moves, media names, drafts, counters) lives in the permanent `data/reporion.sqlite`, which is backed up with `data/` and is not a cache. Everything below follows from that one commitment.
 
 ## 1. Principles
 
-- **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in SQLite.
+- **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in the *index* (`reporion.sqlite` is the permanent state database, not the index: D54).
 
-- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, `comments.json` and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last: the commit point, since a directory with `meta.json` is a page, and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
+- **A page is a file, plus its history and its row (D54, 2026-10-20; was: a page is a directory).** `pages/{ns…}/{slug}.md` is the page's current state, `attic/{ns…}/{slug}.zip` its history (every revision plus the revision log and signatures, so each zip verifies on its own), and its `page` row in `data/reporion.sqlite` everything else (pid↔path, moves, redirects, media names, comments, deliveries, share token, drafts). The three move together under one journal line. Namespaces are directories, so a page `a:b` is `a/b.md` beside the namespace `a/b/`, and a page with pages under it moves and deletes alone. See docs/architecture-v2.md.
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
@@ -22,68 +22,72 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 ## 2. Page identity and paths
 
-A page has two names. The **path** is what people type and see:`reports:mri:mioveni:260922-ionescu-maria`, colon-separated, mapping directly to directories. The **pid** is a 26-character ULID minted at creation, stored in `meta.json`, and never changed by anything, including a move between hospitals.
+A page has two names. The **path** is what people type and see:`reports:mri:mioveni:260922-ionescu-maria`, colon-separated, mapping directly to directories and a file name (`a:b:c` is `pages/a/b/c.md`). The **pid** is a 26-character ULID minted at creation, stored in the page's row in `reporion.sqlite` and as the last key of the page file's frontmatter (D54), and never changed by anything, including a move between hospitals.
 
 #### Slug rules
 
-Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. A namespace's description is the page with the namespace's own name (`reports:mri:mioveni` for the Mioveni site, 2026-09-26), shown on the namespace index; `_index` still works where it exists. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`. `title`/`summary`/`tags`/`visibility` on that description page are already generic page frontmatter (TODO 13, no schema); `priority` (`low`/`medium`/`high`, unset by default) joins them the same way: a purely decorative background tint on that namespace's card wherever it is listed as a sub-namespace (`Controller\NamespaceController`, `assets/css/wiki.css`'s `.wk-nscard[data-priority]`), read from disk like `tags` rather than as an indexed column, since nothing needs to search or sort by it.
+Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. A segment may not end in `.md`, `.zip` or `.lock`, contain `.tmp-` or start with `.` (`FileTree::isValidPath`); since D54 `rev`, `meta.json`, `current.md`, `comments.json`, `redirect` and `autosave.*` are ordinary names. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. A namespace's description is the page with the namespace's own name (`reports:mri:mioveni` for the Mioveni site, 2026-09-26), shown on the namespace index; `_index` still works where it exists. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`. `title`/`summary`/`tags`/`visibility` on that description page are already generic page frontmatter (TODO 13, no schema); `priority` (`low`/`medium`/`high`, unset by default) joins them the same way: a purely decorative background tint on that namespace's card wherever it is listed as a sub-namespace (`Controller\NamespaceController`, `assets/css/wiki.css`'s `.wk-nscard[data-priority]`), read from disk like `tags` rather than as an indexed column, since nothing needs to search or sort by it.
 
 > **D1: decided: keep the patient name in the path**:`{yymmdd}-{name}`, because it is the single biggest driver of day-to-day speed. The compensating rules are now requirements, not suggestions: the path never appears in an export, an externally shared URL, a log line, an audit entry (which stores `path_hash`) or an AI prompt: those all use the pid. Amended 2026-10-11 (owner's decision): an export's *file name* is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller, so reports sent to the imaging center are never mixed up; an anonymous export of a public page keeps `{accession or pid}-rev{N}`. The pattern still comes from site settings and no code may assume which one is in force.
 
-**The directory is the page's path (2026-10-14).** `meta.json`'s `path` is a hint that should agree with where the directory is, not a second source of identity. Reads (`FlatFile::read()`), the index snapshot (`snapshot()`, so `index:rebuild` too) and `index:verify` (the path is part of its disk facts) all take the path from the directory, so a page moved on the filesystem by hand is found, indexed and reported at its new path at once. The hint stays for the places with no pages/ location to read (trash and restore). Three things reconcile it: `integrity:verify` reports `path_drift` (and `duplicate_pid`, two directories with one pid: a copy); `bin/reporion pages:repair-paths` (also Admin → Maintenance) rewrites meta.json's `path` atomically, adds a `moves` entry and indexes the page (`FlatFile::reconcilePath()`; no revision, so not history); and a **signed-in lookup that misses the index** (`Index\Sqlite::findByPath()` through `onMiss()`, wired to `FlatFile::adopt()`) does the same for a page that is on disk and not indexed, then asks the index again, so visibility is still decided there (invariant 6). Anonymous lookups never write. The repair is refused for a page an open journal intent names, so `journal:replay`'s `finishMove()` (which compares meta.json's path with the intent's) still writes the stub; a directory whose pid is already indexed at a path that still holds it (a copy) is not adopted.
+**The page file is the page's path (2026-10-14; rewritten 2026-10-20, D54).** The `page` row's `path` says where the file should be; reads (`FileTree::read()`), the index snapshot (so `index:rebuild` too) and `index:verify` (the path is part of its disk facts) look at the file, so a page file moved on the filesystem by hand is found by `strayPaths()` (a `.md` with no row at its path). It is rejoined to its row by the `pid` in its frontmatter, else, for a file without one (a page converted from 1.x keeps its bytes until its next save), by the bytes its page last had (the row's `file_sha`, only for a row whose own file is gone). Three things reconcile it: `integrity:verify` reports `path_drift` (a page file moved by hand), `duplicate_pid` (a copy: left alone, `FileTree::PATH_COPY`) and `stray_files` (a file no page is known for); `bin/reporion pages:repair-paths` (also Admin → Maintenance) moves the row and the attic zip to the file's path, adds a `move` and a `redirect` row and indexes the page (`FileTree::reconcilePath()`; no revision, so not history), and adopts a file no page is known for as a new page (its bytes revision 1, revlog note `adopted`, auto); and a **signed-in lookup that misses the index** (`Index\Sqlite::findByPath()` through `onMiss()`, wired to `FileTree::adopt()`) does the same, then asks the index again, so visibility is still decided there (invariant 6). Anonymous lookups never write. The repair is refused for a page an open journal intent names (left for `journal:replay`).
 
 #### Moves and redirects
 
-A move rewrites the directory location, records the move in `meta.json`'s `moves` list (`{from, to, ts, by}`, not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number), and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index (there is no `redirects` table; an unused one that `001_init.sql` used to create, until 2026-10-14, stays harmlessly in an older index) but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
+*Rewritten 2026-10-20 (D54): a move was a directory rename plus a `redirect` stub directory.*
+
+A move renames the page file and its attic zip, then in one state transaction sets the row's `path`, adds a `move` row (`{from_path, to_path, ts, by}`; not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number) and a `redirect` row for the old path (`path → pid`; every older redirect to the same pid is kept). Redirects are rows, not stub directories: they are not in the tree or the index but resolve on request, to the pid's *current* path, so every link, bookmark and `priors:` reference in another report keeps working forever and a chain cannot form. A page with pages under it moves alone: a page `a:b` is the file `a/b.md` beside the namespace directory `a/b/`, which never travel together.
 
 ## 3. On-disk layout
 
+*Rewritten 2026-10-20 (D54, docs/architecture-v2.md §3): a page was a directory (`current.md`, `meta.json`, `rev/NNNN.md.gz`, `media.json`, `comments.json`, `autosave.*.json`).*
+
 ```
 data/
-├─ pages/
-│  └─ reports/mri/mioveni/260922-ionescu-maria/
-│     ├─ current.md            latest body + frontmatter (authoritative)
-│     ├─ meta.json             system state: pid, acl, revlog, signatures
-│     ├─ rev/
-│     │  ├─ 0001.md.gz         immutable, append-only
-│     │  ├─ …
-│     │  └─ 0007.md.gz         == current.md, gzipped
-│     ├─ media.json            attached files: sha256, ext, human name, size, who/when
-│     ├─ comments.json         the page's comments (D52, 2026-10-19): a sidecar, not history, never indexed, not signed
-│     └─ autosave.{user}.json  a user's server-side editor draft (D25, 2026-10-12): disposable, not history, never indexed
+├─ pages/                      current state only: what `cat` shows is the wiki
+│  └─ reports/mri/mioveni/
+│     └─ 260922-ionescu-maria.md   frontmatter (ending in `pid`) + body; == newest revision (D2)
+├─ attic/                      history, mirroring pages/
+│  └─ reports/mri/mioveni/
+│     └─ 260922-ionescu-maria.zip  0001.md … 0007.md + revlog.json (revlog, signatures, status)
+├─ reporion.sqlite (+ -wal)    PERMANENT operational state: page rows (pid↔path), mirrors of the zips,
+│                              moves, redirects, media manifest, comments (D52), deliveries, share token,
+│                              editor drafts (D25), accession counters (D20). Backed up with data/
+├─ index.sqlite (+ -wal)       derived: deletable, rebuilt from the page files + the page rows
+├─ vectors.sqlite (+ -wal)     derived: the embeddings of Similar reports; deletable, rebuilt by index:vectors
+├─ snapshot/reporion.sqlite    VACUUM INTO copy for rsync (D49); never opened by the app
 ├─ users/{username}.json       accounts and their own grants (D35/D36); never in the index
 ├─ groups/{name}.json          named sets of grants + a radiologist flag (D47); accounts name them; never in the index
 ├─ media/                      shared media, addressed by content hash (D27)
 │  └─ 2026/8f2c41…e9.jpg
-├─ index.sqlite                derived: deletable
-├─ index.sqlite-wal
-├─ vectors.sqlite              derived: the embeddings of Similar reports (D54 step 2); deletable, rebuilt by index:vectors
-├─ reporion.sqlite             D54's permanent database: created empty, written from 2.0 (docs/architecture-v2.md)
 ├─ journal/
 │  └─ 2026-09-22.ndjson        write-intent log for crash recovery
 ├─ audit/
 │  └─ 2026-09.ndjson           reads/writes of non-public pages
 ├─ trash/
-│  └─ 260904-olaru-x.8f2c41/   soft-deleted page dirs, purged by cron
+│  └─ {pid}/                   a deleted page: page.md, attic.zip and `path` (the path it had); purged by cron
 ├─ tmp/
 │  └─ dicom/{token}            an upload kept only until used (Service\TempUploads): read once and removed;
 │                              older than an hour is never given and is swept on the next upload. Holds
 │                              nothing else: deleting tmp/ loses nothing (invariant 1)
 conf/
-└─ local.php                   strict configuration: the data path and the session secret.
+└─ local.php                   strict configuration: the data path and the session secret
+                               (`paths.state` / `paths.vectors` default to data/reporion.sqlite and data/vectors.sqlite).
                                Site settings are data/settings.yaml; accounts data/users/, groups data/groups/
 resources/                     shipped with the code, git-tracked (not instance data)
 ├─ schema/                     per-modality metadata schemas (§7)
 └─ synonyms.txt                seed of the tag dictionary (data/tags.yaml)
 ```
 
-> **D2: why `current.md` duplicates the newest revision**. Reading a report is the most common operation in the system and must never require gunzip. `current.md` is a plain-text fast path; `rev/NNNN.md.gz` is the archival copy. They are written in one transaction and verified by checksum during `index:verify`. Cost: ~2× storage on the newest revision, which at 2.4 kB a report is nothing.
+`reporion.sqlite` is **not a cache**: comments, media names, moves and redirects, deliveries, share tokens and drafts exist only there, so every backup must carry it (docs/FORMATS.md §14). The zip wins any disagreement about revisions and signatures (`integrity:verify` `mirror_drift`, `bin/reporion db:recover`). `Storage\Databases` opens it as `main` with the index (`idx`) and vectors (`vec`) attached, so `Search\Query::visibilityClause()` stays one predicate in one query.
+
+> **D2: why the page file duplicates the newest revision**. Reading a report is the most common operation in the system and must never require unzipping. The page file (`pages/…/{slug}.md`) is the plain-text fast path and what `cat` shows; the attic zip's newest entry is the archival copy. They are written in one journalled sequence and verified by checksum (the row's `file_sha`, `integrity:verify`'s `current_stale`). Cost: ~2× storage on the newest revision, which at 2.4 kB a report is nothing. (Was `current.md` beside `rev/NNNN.md.gz`, until D54, 2026-10-20.)
 
 ## 4. File formats
 
-### current.md
+### The page file
 
-YAML frontmatter followed by markdown. Frontmatter is **editorial** metadata: what a radiologist would consider part of the document. It is written by humans and by the HL7 bridge, and it is what the schema in §7 validates.
+The file is YAML frontmatter followed by markdown (`pages/{ns…}/{slug}.md`, once `current.md`). Frontmatter is **editorial** metadata: what a radiologist would consider part of the document. It is written by humans and by the HL7 bridge, and it is what the schema in §7 validates.
 
 ```
 ---
@@ -126,63 +130,49 @@ the same rows whichever shape the files are in.
 the report header. An imported report keeps its original `Indicație` sentence in the body (D31) and
 has no `indication` field until someone fills it in, so nothing is printed twice.
 
-### meta.json
+### The record: `revlog.json` and the state database
 
-**System** state: what the application knows about the page and a human would not type. Kept out of the markdown so that frontmatter stays legible and diffs stay meaningful.
+*Replaces `meta.json` (D54, 2026-10-20): the file is gone. Its history fields moved into the attic zip; the rest into `data/reporion.sqlite` (docs/architecture-v2.md §4, §6).*
 
-```
-{
-  "pid": "01JB8X4MT7QK2V9Z0C3R5H6ND",
-  "created": "2026-09-22T09:14:02+03:00",
-  "created_by": "svc-hl7-bridge",
-  "path": "reports:mri:mioveni:260922-ionescu-maria",
-  "rev": 7,
-  "revlog": [
-    { "n": 7, "ts": "2026-09-22T09:41:11+03:00", "by": "a.barbu",
-      "note": "corectat numărul de leziuni juxtacorticale",
-      "bytes": 2412, "sha256": "…", "minor": false, "kind": "edit",
-      "chain": "…" }
-  ],
-  "signatures": [
-    { "rev": 6, "by": "a.barbu", "ts": "…", "alg": "sha256",
-      "digest": "…", "parafa": "AG-04127",
-      "field_order": { "title": {}, "modality": {}, "patient": { "fields": { "name": {}, "born": {} } } } }
-  ],
-  "status": "draft",
-  "visibility": "private",
-  "share_token": null,
-  "locks": null
-}
-```
+**System** state: what the application knows about the page and a human would not type. Kept out of the markdown so that frontmatter stays legible and diffs stay meaningful. `PageRecord->meta` still has the same keys, assembled from two places:
 
-> ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards: **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one. CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
+- `attic/{ns…}/{slug}.zip`'s `revlog.json` `{v: 2, pid, status, archived, revlog, signatures}`: the legal record, authoritative. `revlog` entries are `{n, ts, by, note, bytes, sha256, minor, kind, chain}`; `signatures` entries `{rev, by, ts, alg, digest, parafa, field_order}`.
+- `reporion.sqlite`: the `page` row (`pid`, `path`, `rev`, `status`, `visibility`, `created`, `created_by`, `file_sha`/`file_mtime`/`file_bytes`, `trashed_at`/`trashed_by`), the `revision` and `signature` mirrors, `move`, `redirect`, `delivery` and `share` (the share token's hash). The mirrors are rebuilt from the zip when they disagree (`integrity:verify` says `mirror_drift`, `db:recover` repairs); everything else in the database is the only copy.
 
-> **History hash chain (2026-10-17).** Every `revlog` entry written from now on carries `chain` = sha256 of `previous \n n \n ts \n by \n sha256`, where `previous` is the preceding entry's `chain` (or, for an entry written before the chain existed, its `sha256`; the first revision's is the page's pid). `Support\Revlog::chained()` writes it at every append, a minor edit re-links its own (newest) entry, and journal recovery does the same. History already on disk is never rewritten (D3, invariant 3): it is anchored by the first chained entry. `integrity:verify` reports `chain_broken` (an entry, or a revision dropped or reordered, no longer follows) and `chain_missing` (a link stripped after the chain started). This is tamper *evidence*: whoever can rewrite `meta.json` can recompute every link, so it catches partial or accidental changes, not a determined attacker with the whole page directory.
+`created`, `created_by`, `visibility` and the path are the row's. `moves` and `deliveries` are in `PageRecord->meta` only when there are some. There is no `locks` key.
 
-> **Autosave drafts (2026-10-12).** `autosave.{username}.json` (docs/FORMATS.md §3l) is the other thing besides `meta.json` and `current.md` that changes in a page directory. It is written with `AtomicWriter::put` (temp file, `fsync`, `rename()`: invariant 7's atomic half) but **without a journal line**: it is never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index, `index:rebuild` or `integrity:verify`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move, delete and restore carry it with the page (`movePageEntries`); a purge deletes it. Only an existing page has one, at most `FlatFile::DRAFT_MAX_BYTES` (2 MB).
+> ⚠︎ **Invariant.** The zip is rewritten atomically (temp file, read back and checked, `rename()`) and no earlier entry of it ever changes. Anything appended to `revlog` or `signatures` is never edited afterwards: **except** a minor edit (`revlog[].minor: true`, `Storage\FileTree::saveMinor()`), which replaces its own revision's entry in place (`NNNN.md` and its revlog line) instead of appending a new one, and only while that revision is unsigned. CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
+
+> **History hash chain (2026-10-17).** Every `revlog` entry written from now on carries `chain` = sha256 of `previous \n n \n ts \n by \n sha256`, where `previous` is the preceding entry's `chain` (or, for an entry written before the chain existed, its `sha256`; the first revision's is the page's pid). `Support\Revlog::chained()` writes it at every append, a minor edit re-links its own (newest) entry, and journal recovery does the same. History already on disk is never rewritten (D3, invariant 3): it is anchored by the first chained entry. `integrity:verify` reports `chain_broken` (an entry, or a revision dropped or reordered, no longer follows) and `chain_missing` (a link stripped after the chain started). This is tamper *evidence*: whoever can rewrite the zip can recompute every link, so it catches partial or accidental changes, not a determined attacker with the whole `data/` tree.
+
+> **Autosave drafts (2026-10-12; since D54, 2026-10-20, the `draft` table).** A draft (docs/FORMATS.md §3l) is one row per page and user in `reporion.sqlite`, replacing `autosave.{username}.json` in the page directory. It is a state-only write (one transaction, **no journal line**): never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index or `index:rebuild`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move carries it with the page's pid; a purge deletes it. Only an existing page has one, at most 2 MB.
 
 ## 5. Revisions, signing and amendment
 
 ### The write path
 
+*Rewritten 2026-10-20 (D54): the 1.x sequence was `rev/000N.md.gz`, `current.md`, `meta.json`. Detail in docs/architecture-v2.md §8.*
+
+All of it under one write lock (`data/.write.lock`).
+
 - Validate frontmatter against the modality schema (§7). Hard errors block the save; soft warnings are returned to the editor.
 
-- Append a write-intent line to `journal/`: pid, target rev, body hash. This is what makes step 3–6 recoverable.
+- Append a write-intent line to `journal/`: op, pid, path, target rev, document sha256. This is what makes the steps below recoverable.
 
-- Write `rev/000N.md.gz`, `fsync`. If this file already exists, the save is a duplicate submission and is idempotently ignored.
+- Write the attic zip (`Storage\Attic`): the new `NNNN.md` and `revlog.json`, earlier entries copied byte for byte, temp file `fsync`ed and read back and checked (`AtomicWriter::putChecked()`), then `rename()`. If the revision is already in the zip, the save is a duplicate submission and is idempotently ignored.
 
-- Write `current.md.tmp`, `fsync`, `rename()` over `current.md`.
+- Write the page file (`pages/{ns…}/{slug}.md`): temp, `fsync`, `rename()`. Its frontmatter ends with `pid`, written by `Storage` (never in `PageRecord->frontmatter` or the index).
 
-- Append to `revlog`, rewrite `meta.json` atomically.
+- One state transaction: the `page` row (rev, status, file sha/mtime/bytes), the `revision` and `signature` mirrors, moves.
 
 - Index in one SQLite transaction (§6). Mark the journal line done.
 
-A crash between 3 and 6 leaves an open journal line; the first request more than a minute later replays it (or `bin/reporion journal:replay`, docs/FORMATS.md §2). A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
+A crash after the intent leaves an open journal line; the first request more than a minute later replays it (or `bin/reporion journal:replay`, docs/FORMATS.md §2): replay compares what exists with the intent and re-syncs the page from its zip (file missing: written from the zip's entry; row behind: mirrored from `revlog.json`; index behind: reindexed). A crash before the zip rename leaves nothing. A reader sees the row's committed rev while a write is in flight, never a partial file. Signing is journalled too (op `sign`: it rewrites `revlog.json` and the row).
 
 ### Revert
 
 `Storage::revert($path, $toRev, $actor)` is a second entry into this exact same write path: same
-journal intent (`op: "revert"`), same `rev/000N.md.gz` + `current.md` sequence, same crash-recovery
+journal intent (`op: "revert"`), same attic zip + page file sequence, same crash-recovery
 replay: with one difference: the bytes it writes as revision N+1 are revision `$toRev`'s own bytes,
 read back off disk and replayed verbatim, never re-encoded from a caller-supplied frontmatter/body.
 That is what makes A2 ("revision 8's content equals revision 6's") literally, byte-for-byte true
@@ -200,15 +190,15 @@ a `signed` page produces a fresh `draft` (D3: it needs signing again, in its own
 
 Signing computes `sha256` over the canonical bytes of that revision (LF line endings, frontmatter key order normalised) and appends a signature record. From then on, that revision is legally the report.
 
-> **D3: decided: correction by re-signing, not by addendum**. Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in `meta.json` and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the revisions screen marks which signed revision was current at any date.
+> **D3: decided: correction by re-signing, not by addendum**. Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in the zip's `revlog.json` (mirrored in the state DB) and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the revisions screen marks which signed revision was current at any date.
 
 > ⚠︎ **Consequence worth stating plainly.** A PDF already sent to a referrer may no longer match the current page. Each export therefore embeds the revision number and a verification URL (`/r/<pid>/<rev>`) that renders exactly those signed bytes, that link, not the page, is the citable document.
 
-> **D3b: no deletion of signed content**. A signed revision cannot be deleted, only superseded. Page deletion moves the directory to `trash/` with a 30-day purge; purging a page with signatures requires an explicit admin override and writes an audit entry naming the operator. Not configurable.
+> **D3b: no deletion of signed content**. A signed revision cannot be deleted, only superseded. Page deletion moves the page file and its zip to `trash/{pid}/` with a 30-day purge; purging a page with signatures requires an explicit admin override and writes an audit entry naming the operator. Not configurable.
 
 ### Concurrency
 
-Optimistic, not locked. The editor submits the rev it started from; if the current rev is higher, the API returns `409` with both bodies and a section-level three-way merge suggestion (the mockup's conflict state). A soft advisory lock is written into `meta.json.locks` when an editor opens a page, expires after 15 minutes, and only produces a warning banner: never a hard block, because a radiologist with a locked page and a waiting patient will simply lose trust in the tool.
+Optimistic, not locked. The editor submits the rev it started from; if the current rev is higher, the API returns `409` with both bodies and a section-level three-way merge suggestion (the mockup's conflict state). A soft advisory lock (not built; meta.json is gone, D54) would expire after 15 minutes and only produce a warning banner: never a hard block, because a radiologist with a locked page and a waiting patient will simply lose trust in the tool.
 
 ## 6. The SQLite index
 
@@ -218,7 +208,7 @@ One file, `data/index.sqlite`, WAL mode, `busy_timeout=5000`, `synchronous=NORMA
 
 ```
 CREATE TABLE pages (
-  pid              TEXT PRIMARY KEY,     -- ULID, from meta.json
+  pid              TEXT PRIMARY KEY,     -- ULID, from the page file's `pid` / the state DB's `page` row
   path             TEXT NOT NULL UNIQUE, -- colon path
   ns               TEXT NOT NULL,        -- parent namespace
   title            TEXT NOT NULL,
@@ -234,7 +224,7 @@ CREATE TABLE pages (
   updated          TEXT NOT NULL,
   updated_by       TEXT NOT NULL,
   edited           TEXT, edited_by TEXT, -- newest hand edit (003_hand_edits.sql)
-  signed_at        TEXT, signed_by TEXT, -- first signature, meta.json signatures[0] (004_signed.sql)
+  signed_at        TEXT, signed_by TEXT, -- first signature, first revlog signature, from the state DB's `signature` mirror (004_signed.sql)
   bytes            INTEGER NOT NULL,
   mtime            INTEGER NOT NULL,     -- for reconciliation
   body_sha         TEXT NOT NULL,
@@ -260,7 +250,7 @@ CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT N
 
 > This is the illustrative shape; `migrations/index/*.sql` (the vectors' `migrations/vectors/*.sql`, the permanent state's `migrations/state/*.sql`, D54) is the only place the schema is
 > actually defined (per the working agreement: when a doc and the code disagree, the doc is
-> wrong). It also carries `page_tags`, `links`, a `revisions` mirror, the
+> wrong). It also carries `page_tags`, `links`, `page_exams` and `fts` (the `revisions` mirror is gone, D54), the
 > `import_review` queue (legacy, unused since the importer was removed) and `schema_meta.schema_version`: see that file for the full DDL.
 
 > **D4: typed columns for the facet set, JSON for the tail**. Fields you filter or sort on get real columns; everything else lives in `meta_json` and is reachable with SQLite's JSON functions when needed. Promoting a field from the tail to a column is a migration plus a reindex: cheap, and the schema file in §7 declares which fields are promoted, so the migration is generated rather than hand-written. The alternative, a generic key/value table, makes every faceted query a pile of self-joins; at 10k reports you would feel it.
@@ -384,9 +374,11 @@ Three mechanisms, in increasing cost:
 |---|---|---|---|
 | incremental | every save, move, delete | < 5 ms | nothing; it is the normal path |
 | `index:verify` | cron, nightly | ~1 s (stat only) | mtime/size/hash drift, orphan rows, missing pages |
-| `index:rebuild` | manual, or version bump | ~40 s (with embeddings, minutes) | everything; it is the ground truth |
+| `index:rebuild` | manual, or version bump | ~40 s (with embeddings, minutes) | everything; it is the ground truth (reads `SELECT pid, path FROM page WHERE trashed_at IS NULL` and opens each page file, D54) |
 
 *Table 1: index consistency mechanisms.*
+
+`integrity:verify` (D54, 2026-10-20) reads each zip, page file and state row against the others. Codes: `rev_missing`, `rev_corrupt`, `rev_changed`, `rev_extra`, `chain_broken`, `chain_missing`, `signature_orphan`, `signature_mismatch`, `current_stale` (the page file is not the newest revision), `mirror_drift` (state rows disagree with the zip: `bin/reporion db:recover`), `state_corrupt` (SQLite integrity or foreign-key check), `media_missing`, `media_changed`, `path_drift`, `duplicate_pid`, `stray_files`, `page_file_missing` (a row whose file is gone), `attic_orphan` (a zip no row has), `journal_open`, `index_*`; `--backup=<dir>` reads `<dir>/attic/`. `db:recover [--dry-run] [--json]` (`Storage\StateRecovery`) adds a row for every zip that has none and puts path and mirror right for the rest (a trashed page's path from `trash/{pid}/path`); it never removes a row and counts conflicts; what only the database held (comments, media names, moves and redirects, deliveries, drafts) does not come back. `doctor` fails when `reporion.sqlite` is missing while pages exist (it never creates one) or fails `PRAGMA quick_check`. The 1.x to 2.0 converter is `php tools/migrate-v2.php --from=data --to=data.v2` (docs/architecture-v2.md §11).
 
 The index carries a `schema_version`; a mismatch on boot triggers a rebuild automatically. That is the escape hatch that lets you change the schema fearlessly, which matters a lot for a system you will extend for years.
 
@@ -451,7 +443,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 ## 10. Decisions, resolved
 
-- **D10: decided: content-addressed, page-local view.** Bytes live once in `data/media/<aa>/<bb>/<sha256>.<ext>`; each page directory carries a `media/` manifest mapping human names to hashes, so a key slice reused in a teaching case is stored once and a human browsing the page folder still sees sensible filenames. Refcounted; an unreferenced blob is swept after 30 days.
+- **D10: decided: content-addressed, page-local view.** Bytes live once in `data/media/<aa>/<bb>/<sha256>.<ext>`; each page carries a manifest mapping human names to hashes (the `media` table of `reporion.sqlite` since D54, 2026-10-20), so a key slice reused in a teaching case is stored once and the page still shows sensible filenames. Refcounted; an unreferenced blob is swept after 30 days.
 
 - **D11: decided: CNP when known, hash fallback otherwise.** `patient.cnp` is an optional frontmatter field; when present, `patient_key = sha256(cnp)` and the timeline is exact. When absent: the normal case: the key is `sha256(normalise(name) | born | sex)`, diacritic-folded and space-collapsed. Because the two coexist, the index stores **both** keys per page (`patient_key`, `patient_key_weak`) and the timeline groups on the strong key when available, falling back to the weak one. Entering a CNP later on any one report of a patient retroactively links the set at next index pass, which makes filling it in worthwhile without ever being mandatory. Near-key "possible matches" surface marriage names and typos on the patient tab (`Index::findPossiblePatientMatches()`); confirming one (2026-09-28, TODO 13) writes an explicit `patient.key` frontmatter override onto the target page, set to the source's own key:`Index\Sqlite::write()` prefers it over the cnp-derived value. No separate `conf/patient_merges.json`: the override is on the page itself, disk-authoritative per invariant 1, and undone by deleting the field.
 
@@ -482,9 +474,9 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D19: decided: existing templates were imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create. (The import tool that brought them in was removed 2026-10-09.)
 
-- **D20: decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable, when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`): both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
+- **D20: decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in the `counter` table of `data/reporion.sqlite` (was `data/counters.json` until D54, 2026-10-20) and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable, when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, the `counter` table): both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
 
-- **D21: decided: app-managed history, not git.** `rev/NNNN.md.gz` plus `revlog` is the history; no git repository, no auto-commit. Backup is `rsync` to another machine, and because the store is plain files that is a complete backup: no dump step, no consistency window beyond the atomic rename.
+- **D21: decided: app-managed history, not git.** The attic zip (`attic/{ns…}/{slug}.zip`: one entry per revision plus `revlog.json`) is the history (was `rev/NNNN.md.gz` plus `meta.json`'s `revlog`, until D54, 2026-10-20); no git repository, no auto-commit. Backup is `rsync` to another machine, and because the store is plain files that is a complete backup: no dump step, no consistency window beyond the atomic rename.
 
 - **D22: decided: rsync, unencrypted at rest.** Recorded as your decision. What I would still do, because it is nearly free: run rsync over SSH (transport is then encrypted regardless), keep the backup target on a full-disk-encrypted volume, and use `--link-dest` dated snapshots so a bad sync or a mistaken purge is recoverable rather than propagated. A backup that faithfully mirrors a deletion is not a backup.
 
@@ -492,7 +484,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D24: decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`): stored as pages under `templates:snippets:` (amended 2026-09-26, phase 11: shared ones, plus `templates:snippets:{modality ns}:` for that modality's reports), not in settings, which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
 
-- **D25: decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved: reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine. Amended 2026-10-12: a server-side autosave draft as well (`saveDraft`/`readDraft`/`discardDraft`), never a revision.
+- **D25: decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved: reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine. Amended 2026-10-12: a server-side autosave draft as well (`saveDraft`/`readDraft`/`discardDraft`), never a revision. **Amended by D54 (2026-10-20):** the draft is a row of `reporion.sqlite` (`draft`, one per page and user), not a file in the page directory.
 
 - **D26: decided: English interface.** Chrome, admin and error messages in English; report content Romanian. No i18n layer yet, but no hard-coded strings in templates either: they come from one `lang/en.php` map, so adding `ro.php` later is a translation job rather than a refactor.
 
@@ -506,7 +498,7 @@ Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an 
 
 ## 11. What Claude Code should build first
 
-- `Storage\FlatFile`: read, write, revisions, atomic rename, journal replay. With tests that kill the process mid-write.
+- `Storage\FileTree` (was `FlatFile`, D54): read, write, revisions in the attic zip, atomic rename, journal replay. With tests that kill the process mid-write.
 
 - `Index\Sqlite`: schema, incremental upsert, `verify`, `rebuild`. Rebuild must be correct before anything else is built on top.
 

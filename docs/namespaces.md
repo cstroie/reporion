@@ -56,7 +56,7 @@ One root per kind, nothing else decides a kind:
 `ai` namespace pages, and stay.
 
 **To run** (by the owner, on the live instance:`sudo -u www-data` from the checkout; each prints
-what it does and leaves a redirect stub; links, `reference:`, `priors:` and template keys in unsigned
+what it does and leaves a redirect (a row, D54); links, `reference:`, `priors:` and template keys in unsigned
 pages are fixed in the same pass):
 
 ```
@@ -67,7 +67,7 @@ sudo -u www-data bin/reporion page:move mgm:instruire docs:mgm:instruire
 sudo -u www-data bin/reporion page:move mgm:protocoale docs:mgm:protocoale
 ```
 
-All six are leaf pages (only `rev/` below them), so none is refused for having children. Then
+All six are leaf pages. Since D54 (2026-10-20) a page with pages under it moves alone, so none would be refused anyway. Then
 delete the 51 `dokullm` pages from the namespace view (they go to Trash; `trash:purge` removes them
 for good) and `rmdir` the two empty directories `data/pages/mri/scuc` and `data/pages/mri`. Check
 `site.home_page`, `references.namespaces` and any user's grants/pins that name `docs:presentations` or
@@ -75,11 +75,11 @@ for good) and `rmdir` the two empty directories `data/pages/mri/scuc` and `data/
 
 ## 4. Moving pages: what `page:move` and the bulk Move do
 
-`Service\PageMoves`: the page moves and leaves a redirect stub; then **one** pass over every
+`Service\PageMoves`: the page moves and leaves a redirect (a `redirect` row, old path → pid); then **one** pass over every
 unsigned page rewrites: markdown links in the body (three forms), `reference:`, `priors:`,
 `template:` and each `exams[].template:`. A signed page is never edited (D3): it is counted, and its
-links resolve through the stub. A signed report's `template` therefore keeps the old path;
-`TemplatePages::read()` follows the stub once, so its checklist and reference still show.
+links resolve through the redirect. A signed report's `template` therefore keeps the old path;
+`TemplatePages::read()` follows the redirect once, so its checklist and reference still show.
 
 **Not rewritten**: the owner changes these by hand after a move of a namespace they name:
 `site.home_page`, `references.namespaces`, `ai.namespaces`, `ai.prompt_profile`, `ai.fallback_profile`,
@@ -87,8 +87,7 @@ links resolve through the stub. A signed report's `template` therefore keeps the
 (`data/users/*.json`); plain-text mentions of a path; the index columns derived from a path on
 creation only (`FrontmatterGuess`).
 
-**Mechanics that shape a restructure.** A page with child pages cannot be moved ("move those first"),
-so a namespace is moved leaf by leaf, bottom-up; the bulk Move moves the pages directly in a
+**Mechanics that shape a restructure.** A page with pages under it moves alone (since D54, 2026-10-20: a page is a file, its namespace a directory; was refused with "move those first"), so a namespace is still moved page by page; the bulk Move moves the pages directly in a
 namespace only. A move changes `ns` in the index, so visibility follows the new path at once. Moving
-reports means a stub per report (40,900 here) and no cheap undo: do not move `reports:` without an
+reports means a redirect row per report (40,900 here) and no cheap undo: do not move `reports:` without an
 approved layout, a backup (`backup:create`) and a dry run.

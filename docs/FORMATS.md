@@ -16,7 +16,7 @@ Two exams for the same patient on the same day produce the same path
 
 The suffix is allocated inside the same journal-protected create that mints the pid, so two
 concurrent creates cannot collide. The suffix is **never** reused after a delete: the trash
-still holds the original, and a purge does not free the slug (the redirect table remembers it).
+still holds the original, and a purge does not free the slug (the `redirect` table remembers it).
 The UI shows the collision explicitly at create time:"a page for this patient and date
 exists: `…-maria` (CT, 09:14). Create `…-maria-2`?", because silently creating a second page
 is how a report gets written in the wrong document. **Built** in the new-report form (phase 7):
@@ -29,13 +29,15 @@ Different modality or site already differ earlier in the path, so the collision 
 applies within one namespace.
 
 **A namespace is not a collision** (decided 2026-09-26). A page and a namespace may share a name,
-as in DokuWiki: `reports:mri:mioveni` (the site's description) lives in the same directory as the
-reports under `reports:mri:mioveni:*`. Creating the page claims that directory with an atomic
-`mkdir` of its `rev/` instead of taking `…mioveni-2`; only an existing page gets the suffix.
+as in DokuWiki: `reports:mri:mioveni` (the site's description) is the file `mioveni.md` beside the
+directory `mioveni/` that holds the reports under `reports:mri:mioveni:*`. The two never share a
+directory, so creating the page does not touch the namespace and does not take `…mioveni-2`; only
+an existing page (a live row, a page file or an attic zip at the path) gets the suffix.
+*Rewritten 2026-10-20 (D54): the page used to claim the namespace directory with an atomic `mkdir` of its `rev/`.*
 
-**A redirect stub is not a collision either** (decided 2026-10-12). The stub a move leaves holds
-no text and no history (those went with the page, whose `moves` records it), so a create at that
-name removes the stub and takes the path: a page moved to a proper name just to free the old one
+**A redirect is not a collision either** (decided 2026-10-12). The `redirect` row a move leaves
+holds no text and no history (those went with the page, whose `move` rows record it), so a create at that
+name removes the row and takes the path: a page moved to a proper name just to free the old one
 can be replaced by a better page there. Links to the old name reach the new page from then on.
 
 **A create *of a path* is exclusive** (decided 2026-10-09). The suffix is for creates that mean
@@ -56,11 +58,17 @@ boot; a line with no matching `done` is an incomplete write.
 {"ts":"2026-09-22T09:41:10.941+03:00","pid":"01JB8X4MT7QK2V9Z0C3R5H6ND","rev":8,"state":"done"}
 ```
 
-`op` ∈ `create|save|revert|move|delete|restore|purge|sign|import`. Recovery is idempotent: replaying a
-`done` line is a no-op, replaying an `intent` re-runs the write from `rev/NNNN.md.gz` if that
-file exists, or discards the intent if it does not. An intent whose revision a later write has
-already superseded (`meta.json` rev is higher) is closed without touching `current.md`. Every
-outcome except `corrupt` appends a `done` line, so nothing is replayed twice.
+`op` ∈ `create|save|revert|minor|move|delete|restore|purge|sign|import`. Ops that keep the page's rev
+(`move`, `restore`, `purge`, `delete`, `minor`, `sign`: `Journal::KEYED_OPS`) put their op in the
+intent's key, so a `done` line closes the right one. Signing is journalled since D54 (2026-10-20): it
+rewrites the attic zip's `revlog.json` and then the page's state row. Recovery is idempotent:
+replaying a `done` line is a no-op; replaying an `intent` re-syncs the page from its attic zip: the
+revision is in the zip and the page file is not: the file is written from the zip's entry; the file
+is there and the state row is behind: the row is mirrored from `revlog.json`; the index behind:
+reindexed. An intent whose revision is not in the zip is discarded; one a later write has already
+superseded (the row's rev is higher) is closed without touching the page file. Every
+outcome except `corrupt` appends a `done` line, so nothing is replayed twice. *Was: replay from
+`rev/NNNN.md.gz` and `meta.json` (until D54, 2026-10-20).*
 
 **When replay runs** (decided 2026-09-26): on every request, the front controller reads what was
 appended since last time and replays intents **older than 60 s**: there is no page write lock, so
@@ -73,40 +81,46 @@ boot replay starts from the journal's current end: intents already open are a ba
 age, left to `journal:replay --dry-run` and an operator, never replayed unseen by whichever request
 comes first.
 
-## 3. `data/counters.json`
+## 3. Accession counters: the `counter` table of `data/reporion.sqlite`
 
-Accession sequences (D20) for reports created in the app (`Service\Accessions`): the last number
-issued per site + modality + year, keyed `{site code, lower-case}:{MOD}:{yy}`:
+*Replaces `data/counters.json` (D54, 2026-10-20); the file is no longer read or written.*
 
-```json
-{"scuc:MR:26": 1764, "mioveni:CT:26": 412}
+Accession sequences (D20) for reports created in the app (`Service\Accessions`, `FileTree::nextAccession()`):
+the last number issued per site + modality + year, one row `counter(key, value)` keyed
+`{site code, lower-case}:{MOD}:{yy}`:
+
+```
+key = "scuc:MR:26"  value = 1764        key = "mioveni:CT:26"  value = 412
 ```
 
-Allocated under `counters.json.lock`, written atomically, just **before** the page is created
+Allocated in a `BEGIN IMMEDIATE` transaction, just **before** the page is created
 so a crash between the two leaves a gap in the sequence, never a duplicate. A key used for the
-first time is seeded from the highest number already in any page's `accession:` on disk (the same
-rule the old importer followed, `Support\AccessionFormat`), and every allocation also stays above the
+first time is seeded from the highest number already in any page's `accession:` on disk (`Support\AccessionFormat`),
+and every allocation also stays above the
 highest number the index holds for that key, so a batch brought in since cannot be collided with.
 Formatted with `accession.pattern` / `seq_pad` from config: the live archive reads
 `SCUC-MR-23-1764`:`{SITE}` is the site code upper-cased (or the site's `accession_code` from
 Admin → Settings), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
 The accession is for the team (screen, search, index); it is not printed: an export shows the
-PACS's `pacs_accession` instead (§3f, 2026-10-12).
+PACS's `pacs_accession` instead (§3f, 2026-10-12). Lost with the database, the counters are
+re-seeded from the accessions on disk by `db:recover` (docs/architecture-v2.md §10).
 
-## 3b. `{page}/media.json`: attached files (D10/D27)
+## 3b. Attached files: the `media` table (D10/D27)
 
-A JSON list in the page's directory, appended by `Storage::attachMedia()` under a lock and written
-atomically; it moves, trashes and restores with the page. The bytes live once in
+*Replaces `{page}/media.json` (D54, 2026-10-20).* One row per attached file in `reporion.sqlite`:
+`media(pid, sha256, ext, name, bytes, w, h, added, by)`, appended by `Storage::attachMedia()` in one
+transaction; it follows the page's pid, so it moves, trashes and restores with the page. The bytes live once in
 `data/media/{year}/{sha256}.{ext}` (written first, `link()`-once), so a crash between the two
-writes leaves an unreferenced file, never an entry without its file: no journal intent.
+writes leaves an unreferenced file, never a row without its file: no journal intent.
 
 ```json
-[{"sha256":"8f2c41…e9","ext":"png","name":"Axial T2.png","bytes":48213,"w":512,"h":512,"added":"2026-09-26T11:14:02+03:00","by":"a.barbu"}]
+{"sha256":"8f2c41…e9","ext":"png","name":"Axial T2.png","bytes":48213,"w":512,"h":512,"added":"2026-09-26T11:14:02+03:00","by":"a.barbu"}
 ```
 
 Not revisioned: attaching is not an edit of the report. The index derives `links.kind = media`
 rows from it, which is what `GET /media/…` checks access against. Unreferenced blobs are not swept
-yet.
+yet. The names exist only in the database: `db:recover` cannot bring them back, and `integrity:verify` reports
+`media_missing` (a row whose file is gone) and `media_changed` (bytes that no longer hash to their name).
 
 ## 3c. `data/maintenance/`: maintenance runs
 
@@ -442,11 +456,12 @@ Metadata view's *Title* is cleared. Nothing clears them in bulk; a signed revisi
 part of its digest (§8) and is never rewritten. After this change, run `index:rebuild` once (as the
 owner of `data/`) so the index lists heading-titled pages by their heading.
 
-## 3l. `{page}/autosave.{username}.json`: a user's editor draft (2026-10-12, D25 amended)
+## 3l. A user's editor draft: the `draft` table (2026-10-12, D25 amended; D54, 2026-10-20)
 
 The editor posts its whole form to the server a minute after a change that was not saved
-(`PUT /api/v1/pages/{path}/autosave`), so work survives a lost browser. One file per user, in the
-page's own directory beside `meta.json`:
+(`PUT /api/v1/pages/{path}/autosave`), so work survives a lost browser. One row per page and user in `reporion.sqlite`,
+`draft(pid, username, base_rev, raw, form, saved)` (it was `autosave.{username}.json` beside the page's `meta.json`);
+as JSON the draft reads:
 
 ```json
 {"v": 1, "base_rev": 7, "ts": "2026-10-12T09:30:00+00:00", "raw": false, "form": "<urlencoded editor form>"}
@@ -454,42 +469,76 @@ page's own directory beside `meta.json`:
 
 `base_rev` is the revision the form was made on, `raw` whether it came from the raw-document
 editor (else the curated one), `form` the form exactly as the editor would POST it. A draft is
-**not a revision**: never in `rev/` or `revlog`, never signed, never indexed, not audited, written
-atomically (`AtomicWriter::put`) without a journal line, at most 2 MB (`FlatFile::DRAFT_MAX_BYTES`).
+**not a revision**: never in the attic or `revlog`, never signed, never indexed, not audited, one state
+transaction without a journal line, at most 2 MB (`FileTree::DRAFT_MAX_BYTES`).
 Only an existing page has one. It is removed by its author's next Save, minor Save or revert (and
-by the editor when the form returns to clean), travels with the page on move, delete and restore,
-and is deleted by a purge. A page path segment starting with `autosave.` is refused.
+by the editor when the form returns to clean), follows the page (by pid) on move, delete and restore,
+and is deleted by a purge. `autosave.*` is an ordinary page name now.
 Restore re-renders the editor from the stored form without running any Save side effect; a draft
 whose `base_rev` is older than the current revision is still offered, with a warning, and keeps its
 `base_rev`, so Save then shows the conflict screen.
 
-## 3m. `{page}/comments.json`: a page's comments (2026-10-19, D52)
+## 3m. A page's comments: the `comment` table (2026-10-19, D52; D54, 2026-10-20)
 
-Comments on a page, kept beside it so the report itself is untouched (Notion's comments). One file in
-the page's own directory next to `meta.json`:
+Comments on a page, kept beside it so the report itself is untouched (Notion's comments). One row each in
+`reporion.sqlite`, `comment(id, pid, by, ts, text, quote, rev, resolved_by, resolved_ts)`; it was the sidecar
+`comments.json` in the page's directory. As JSON a comment reads:
 
 ```json
-{"v": 1, "comments": [{"id": "01JB…", "by": "mihai", "ts": "2026-10-19T09:30:00+03:00",
-  "text": "Verificați lateralitatea.", "quote": "leziune stângă", "rev": 7, "resolved": null}]}
+{"id": "01JB…", "by": "mihai", "ts": "2026-10-19T09:30:00+03:00",
+  "text": "Verificați lateralitatea.", "quote": "leziune stângă", "rev": 7, "resolved": null}
 ```
 
 `id` is a ULID, `by` the username, `rev` the revision current when it was written, `quote` the text
 selected in the page or the editor (may be empty), `resolved` `null` or `{"by": "…", "ts": "…"}`.
-Limits: at most 500 comments (`FlatFile::COMMENTS_MAX`, the oldest dropped), `text` at most 4000
-characters, `quote` at most 300. Written by `Storage::updateComments()` under a lock with
-`AtomicWriter::put`: one file, no journal line, no revision. **Why not front matter:** a signature
+Limits: at most 500 comments per page (`FileTree::COMMENTS_MAX`, the oldest dropped), `text` at most 4000
+characters, `quote` at most 300. Written by `Storage::updateComments()` in one state transaction: no journal line, no revision. **Why not front matter:** a signature
 covers the whole front matter (§8), so a comment there would need a new revision and a new
-signature. A comments file is **not** a revision, not indexed, not signed, and never in print, PDF,
-ODT, the API's `meta` or `current.md`. It is in `FlatFile::PAGE_ENTRIES`: it moves, goes to the
-trash and comes back with the page, and a page path segment may not be named `comments.json`.
-Read by `Service\Comments` (page view panel, editor rail section, `GET /pages/{path}/comments`) and
-by `integrity:verify`, which reports a file that does not decode (`comments_corrupt`). Any signed-in
+signature. A comment is **not** a revision, not indexed, not signed, and never in print, PDF,
+ODT, the API's `meta` or the page file. It follows the page's pid: it moves, goes to the
+trash and comes back with the page. Comments exist only in the database: `db:recover` cannot bring them back, so they
+are as safe as the last backup of `reporion.sqlite` (§14).
+Read by `Service\Comments` (page view panel, editor rail section, `GET /pages/{path}/comments`).
+Any signed-in
 reader of the page adds, resolves and reopens; delete is the author's or an owner's. Audited
 (§6) by pid and comment id, never the text.
 
+## 3n. The page file and the attic zip (D54, 2026-10-20)
+
+*Replaces the page directory (`current.md`, `meta.json`, `rev/NNNN.md.gz`). The full account is docs/architecture-v2.md §3–§5.*
+
+A page `a:b:c` is `data/pages/a/b/c.md` (frontmatter, then body; it equals the newest revision, D2) and
+its history `data/attic/a/b/c.zip`:
+
+```
+0001.md … NNNN.md   each revision's exact bytes, raw DEFLATE
+revlog.json         {"v": 2, "pid": "…", "status": "draft|signed|archived", "archived": null|{…},
+                     "revlog": [{n, ts, by, note, bytes, sha256, minor, kind, chain}],
+                     "signatures": [{rev, by, ts, alg, digest, parafa, field_order}]}
+```
+
+- `Storage` writes a `pid` key as the **last** frontmatter key of every page file it saves; an incoming `pid` is
+  ignored (the row's is written). `PageRecord->frontmatter` and the index never contain it. A page converted
+  from 1.x keeps its bytes (no `pid`) until its next save.
+- A zip is built by `Storage\Attic` over `Support\Zip` (plain PHP, no ext-zip). Every write rebuilds the
+  container, copies earlier entries byte for byte, and reads the fsynced temp file back before the `rename()`
+  (`AtomicWriter::putChecked()`); a failed check leaves the old zip. The minor-edit exception
+  (`FileTree::saveMinor()`) replaces only an unsigned newest entry.
+- A path segment may not end in `.md`, `.zip` or `.lock`, contain `.tmp-`, or start with `.`
+  (`FileTree::isValidPath`); `rev`, `meta.json`, `current.md`, `comments.json`, `redirect` and `autosave.*` are ordinary names.
+- A deleted page is `data/trash/{pid}/` holding `page.md`, `attic.zip` and `path` (the path it had); the `page`
+  row's `trashed_at` / `trashed_by` say when and who.
+- Moves, redirects, deliveries, the share token, the media manifest, comments, drafts and counters are tables of
+  `data/reporion.sqlite` (§3, §3b, §3l, §3m, §4, §4b; the `move` table is `{pid, from_path, to_path, ts, by}`, the
+  `redirect` table `{path, pid}`: an old path resolves to the pid's current path).
+- `bin/reporion integrity:verify` reads zip, page file and rows against each other (codes in
+  docs/architecture-storage-index.md and the command's `--help`).
+
 ## 4. Share tokens
 
-`meta.json.share_token` stores a **hash**, never the token itself:
+*Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,
+`share(pid, hash, created, expires, uses, max_uses, note)`; `PageRecord->meta['share_token']` still has the old shape.*
+It stores a **hash**, never the token itself:
 
 ```json
 {"share_token":{"hash":"sha256:7b1e…","created":"2026-09-22T10:02:00+03:00","expires":"2026-10-22T10:02:00+03:00","uses":3,"max_uses":null,"note":"pentru dr. Neagu"}}
@@ -498,19 +547,21 @@ reader of the page adds, resolves and reopens; delete is the author's or an owne
 The token handed out is 32 bytes of `random_bytes`, base64url, shown **once** at creation.
 `GET /s/{token}` hashes the input and compares in constant time. Default expiry 30 days,
 configurable; expired tokens are matched and rejected with 404 (not 410: the existence of the
-page is still not disclosed). Revoking sets `share_token` to `null`.
+page is still not disclosed). Revoking deletes the row (`share_token` is `null`).
 
 ## 4b. `deliveries`, where a signed report was sent (2026-10-02, roadmap phase 22)
 
-`meta.json.deliveries` lists every attempt to deliver the page elsewhere, oldest first, at most
-200 kept: today the dicom plugin's *Send SR to PACS* (`to: pacs`):
+*Was `meta.json.deliveries` (D54, 2026-10-20): now the `delivery` table of `reporion.sqlite`,
+`delivery(pid, target, rev, at, by, outcome, extra)`, `target` being the `to` below, `extra` the JSON of the other scalar fields.*
+Every attempt to deliver the page elsewhere, oldest first, at most
+200 kept (`FileTree::DELIVERIES_KEPT`): today the dicom plugin's *Send SR to PACS* (`to: pacs`). `PageRecord->meta['deliveries']` reads:
 
 ```json
 {"deliveries":[{"to":"pacs","rev":3,"at":"2026-10-02T14:05:11+03:00","by":"cstroie","outcome":"ok","site":"mioveni","study_uid":"1.2.840…","sop_instance":"2.25.…"}]}
 ```
 
 `outcome` is `ok` or the refusal's code (`refused`, `unreachable`, `rejected`, `timeout`, `no-tool`,
-`failed`). Written by `Storage::recordDelivery()` under a lock, never through the frontmatter: no
+`failed`). Written by `Storage::recordDelivery()` in one state transaction, never through the frontmatter: no
 revision is made and a signature stays valid (D3). Only scalar fields; no patient data beyond the
 study UID. Also an audit `report.deliver` line (pid, rev, outcome: never the path).
 
@@ -1064,8 +1115,11 @@ conf/local.php             when present
 manifest.json              last
 ```
 
-Left out of `data/`: `index.sqlite*` and `vectors.sqlite*` (caches), `tmp/`, `import/`, `backups/`, `.pre-restore-*/`, `*.lock`,
-`*.part`, symbolic links and special files. Refused on read: absolute names, `..` or empty
+Left out of `data/`: `index.sqlite*` and `vectors.sqlite*` (caches), `snapshot/`, `tmp/`, `import/`, `backups/`, `.pre-restore-*/`, `*.lock`,
+`*.part`, symbolic links and special files. **`data/reporion.sqlite` is in the archive (D54, 2026-10-20) as a
+`VACUUM INTO` copy taken just before** (`Databases::snapshotState()`), never the live file or its `-wal`: it holds the only copy of
+comments, media names, moves and redirects, deliveries, share tokens, drafts and counters. A restore puts it
+back like any other file, then `journal:replay`, an index rebuild and `integrity:verify`. Refused on read: absolute names, `..` or empty
 segments, backslashes, control characters, links, devices, anything outside the list above, a
 file listed twice, any entry after the manifest.
 
