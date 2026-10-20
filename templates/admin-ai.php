@@ -223,7 +223,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?= $notice('prompts') ?>
 <div class="wk-ai-profiles">
 <?php foreach ($overview as $profile => $o): $p = (string) $profile; ?>
-<?php $mappedHere = array_keys($ai->profileMap, $p, true); $on = array_values(array_filter($o['reserved'], static fn (array $r): bool => $r['present'])); $off = array_values(array_filter($o['reserved'], static fn (array $r): bool => !$r['present'])); ?>
+<?php $mappedHere = array_keys($ai->profileMap, $p, true); $on = array_values(array_filter($o['reserved'], static fn (array $r): bool => $r['present'])); $off = array_values(array_filter($o['reserved'], static fn (array $r): bool => !$r['present'] && \in_array($o['target'], \Reporion\Service\Ai\DefaultPrompts::CATALOGUE[$r['id']]['targets'] ?? [], true))); /* a feature made for the other target (Recall in a generic profile) is not offered; one already set up still shows */ ?>
 <section class="wk-ai-profile"<?= $o['serves'] !== '' ? ' data-on="1"' : '' ?>>
 <header class="wk-ai-profile-h">
 <h3><a href="<?= $b ?>/<?= $e($o['path']) ?>"><?= $e($p) ?></a></h3>
@@ -246,7 +246,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php endforeach; ?>
 </ul><?php endif; ?>
 
-<h4><?= $e(t('admin.ai.reserved')) ?> <span class="wk-dim"><?= $e(t('admin.ai.features_on', [\count($on), \count($o['reserved'])])) ?></span></h4>
+<h4><?= $e(t('admin.ai.reserved')) ?> <span class="wk-dim"><?= $e(t('admin.ai.features_on', [\count($on), \count($on) + \count($off)])) ?></span></h4>
 <?php if ($on !== []): ?><ul class="wk-ai-features">
 <?php foreach ($on as $r): ?>
 <li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?></small></li>
