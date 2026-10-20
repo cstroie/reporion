@@ -17,6 +17,12 @@ use RuntimeException;
  */
 final class Journal
 {
+    /**
+     * Ops that keep the page's rev, so their op is part of their key(); `sign`
+     * is FileTree's (D54: signing rewrites the attic zip, then the state DB)
+     */
+    public const KEYED_OPS = ['move', 'restore', 'purge', 'delete', 'minor', 'sign'];
+
     public function __construct(private readonly string $dir)
     {
     }
@@ -74,7 +80,7 @@ final class Journal
         // mints a new one. CLAUDE.md invariant 3's one exception): the
         // same reason move/restore/purge/delete need op in the key: pid#rev
         // already names the ordinary write that first produced that rev.
-        return \in_array($op, ['move', 'restore', 'purge', 'delete', 'minor'], true) ? $key . '#' . $op : $key;
+        return \in_array($op, self::KEYED_OPS, true) ? $key . '#' . $op : $key;
     }
 
     /**

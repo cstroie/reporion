@@ -348,11 +348,21 @@ signing are all touched).
    `AtomicWriter::putChecked()`: append, minor replace, record-only write, `problems()`; tests
    for every refusal, a corrupt entry, a stray temp file and a process killed before the rename.
    *Done 2026-10-20.*
-4. `FileTree` driver behind `StorageInterface`: create, save, minor, revert, sign, move,
-   delete, restore, purge, media, comments, drafts, deliveries, share; journal replay.
-5. Index on the state DB.
-6. Callers outside `src/Storage/` moved behind `Storage`.
-7. Backup, rsync, doctor, integrity, `db:recover`, installer.
-8. `tools/migrate-v2.php`, tested on the synthetic fixtures, then on a copy of the live
-   archive (5,340 pages): counts, `integrity:verify` clean, `index:rebuild` under 60 s.
-9. Switch the Kernel to `FileTree`, flip CLAUDE.md's invariants, remove `FlatFile`, tag 2.0.
+4. `Storage\FileTree` (FlatFile's constructor and public API, so callers switch by name) and
+   `Storage\StateDb` (all SQL of `reporion.sqlite`; `migrations/state/002_page_visibility.sql`
+   adds the page's visibility, kept as 1.x kept it in meta.json). One write lock
+   (`data/.write.lock`) around every page write; `sign` is journalled now (two writes);
+   replay re-syncs a page from its zip. The page file's frontmatter carries `pid` (last key);
+   `PageRecord->frontmatter` and the index never see it. A page and a namespace of the same
+   name are a file and a directory, so the "has pages under it" refusals are gone. Rejoin
+   (`reconcilePath()`, `PATH_COPY` for a copy) and adoption of a hand-made page file;
+   accession counters (`nextAccession()`). *Done 2026-10-20.*
+5. The index's `revisions` table dropped: written only, never read, and the state DB mirrors
+   every revision now.
+6. The switch: the Kernel, the CLI and the installer build `FileTree`; every service that read
+   the 1.x layout (integrity, doctor, path repair, accessions, index maintenance) goes through
+   it (invariant 5); the tests move to `FileTree`.
+7. Backup and rsync with the `VACUUM INTO` snapshot, restore, doctor, `db:recover`.
+8. `tools/migrate-v2.php`, tested on synthetic 1.x trees; then on a copy of the live archive
+   (5,340 pages): counts, `integrity:verify` clean, `index:rebuild` under 60 s.
+9. `FlatFile` removed, CLAUDE.md's invariants flipped, the 1.x docs updated, tag 2.0.

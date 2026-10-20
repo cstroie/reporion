@@ -60,6 +60,24 @@ final class Databases
         return new self($statePath ?? $dir . '/' . $state, $indexPath, $vectorsPath ?? $dir . '/' . $vectors, $migrationsRoot);
     }
 
+    /** The shipped migrations: the repository's own migrations/ */
+    public static function migrationsRoot(): string
+    {
+        return \dirname(__DIR__, 2) . '/migrations';
+    }
+
+    /**
+     * The permanent file alone, migrated: Storage's own connection (it needs
+     * nothing of the caches, and an IndexInterface may not be Sqlite at all).
+     */
+    public static function openState(string $statePath, ?string $migrationsRoot = null): PDO
+    {
+        $self = new self($statePath, '', '', $migrationsRoot ?? self::migrationsRoot());
+        $self->migrate($statePath, 'state', true);
+
+        return self::open($statePath, true);
+    }
+
     public function connect(): PDO
     {
         $this->migrate($this->vectorsPath, 'vectors', false);

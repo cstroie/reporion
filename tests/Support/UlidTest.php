@@ -24,6 +24,14 @@ final class UlidTest extends TestCase
         self::assertLessThan($later, $earlier);
     }
 
+    public function testIsValidAcceptsWhatGenerateWritesOnly(): void
+    {
+        self::assertTrue(Ulid::isValid(Ulid::generate()));
+        foreach (['', 'forged', strtolower(Ulid::generate()), '01JB8X4MT7QK2V9Z0C3R5H6NDI', '01JB8X4MT7QK2V9Z0C3R5H6ND'] as $bad) {
+            self::assertFalse(Ulid::isValid($bad), $bad);
+        }
+    }
+
     public function testIsUnique(): void
     {
         self::assertNotSame(Ulid::generate(), Ulid::generate());

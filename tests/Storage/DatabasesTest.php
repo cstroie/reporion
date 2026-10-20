@@ -47,7 +47,7 @@ final class DatabasesTest extends TestCase
         self::assertNotContains('page_vectors', self::tables($pdo, 'idx'));
         self::assertSame(['page_vectors', 'schema_meta'], self::tables($pdo, 'vec'));
 
-        self::assertSame(1, self::version($pdo, 'main'));
+        self::assertSame(self::latest('state'), self::version($pdo, 'main'));
         self::assertSame(self::latest('index'), self::version($pdo, 'idx'));
         self::assertSame(1, self::version($pdo, 'vec'));
     }
