@@ -21,3 +21,4 @@
 .aider*
 /conf/.install-state.json
 /dist/
+*.key
