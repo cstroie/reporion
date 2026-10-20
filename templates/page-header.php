@@ -60,7 +60,14 @@ $copyId = $headerPid !== ''
     : '';
 echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
+<div class="wk-doc-titlerow">
+<h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1>
+<?php if ($canFollowUp ?? false): ?>
+<div class="wk-actions">
+<a class="btn btn-secondary" href="<?= $p ?>/new" title="<?= htmlspecialchars(t('page.follow_up_title'), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.follow_up'), ENT_QUOTES) ?></span></a>
+</div>
+<?php endif; ?>
+</div>
 <div class="wk-badges">
 <?= \Reporion\Support\Visibility::badge($headerVisibility) ?>
 <span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>" title="<?= htmlspecialchars($headerStatus, ENT_QUOTES) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $headerStatus) ?>" aria-hidden="true"></i><span class="tag-word"> <?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> ·</span> rev <?= $headerRev ?></span>

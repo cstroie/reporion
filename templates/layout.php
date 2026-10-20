@@ -60,19 +60,11 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $editorShell ??= false;
 $quick ??= ['fixed' => [], 'pinned' => [], 'related' => [], 'here' => '', 'herePinned' => false];
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
-/* + New is context-sensitive (2026-09-30): on a report page, it starts a
- * new report for that same patient: the same /{path}/new flow already
- * offered from the page's ⋯ menu and the patient timeline
- * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
- * on report/revisions/timeline routes): instead of a blank page in
- * whatever namespace happens to be on screen. */
-if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
-    $newHref = $b . '/' . $headerPath . '/new';
-    $newTitle = t('page.new_exam');
-} else {
-    $newHref = $b . (($newNs ?? $shellNs) === '' ? '' : '/' . ($newNs ?? $shellNs)) . '/new';
-    $newTitle = t('nav.new');
-}
+/* + New starts a new page in the namespace on screen; on a report page that is
+ * a de novo exam at the same site. The follow-up for the same patient is the
+ * page header's own button (templates/page-header.php). */
+$newHref = $b . (($newNs ?? $shellNs) === '' ? '' : '/' . ($newNs ?? $shellNs)) . '/new';
+$newTitle = t('nav.new');
 ?>
 <!doctype html>
 <html lang="en">

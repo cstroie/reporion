@@ -29,9 +29,6 @@ $ap = $ab . '/' . $ah($actPath);
 <a class="wk-mi" href="<?= $ap ?>/visibility"><i class="ph <?= Visibility::icon($actVisibility) ?>"></i><?= $ah(t('page.visibility_menu')) ?><span class="wk-mi-end wk-dim"><?= $ah(Visibility::label($actVisibility)) ?></span></a>
 <a class="wk-mi" href="<?= $ap ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= $ah(t('page.move')) ?></a>
 <a class="wk-mi" href="<?= $ap ?>/rename"><i class="ph ph-text-aa"></i><?= $ah(t('page.rename')) ?></a>
-<?php if ($actFollowUp ?? false): ?>
-<a class="wk-mi" href="<?= $ap ?>/new"><i class="ph ph-user-plus"></i><?= $ah(t('page.new_exam')) ?></a>
-<?php endif; ?>
 <a class="wk-mi" href="<?= $ab ?>/new?from=<?= $ah(rawurlencode($actPath)) ?>"><i class="ph ph-copy-simple"></i><?= $ah(t('page.duplicate')) ?></a>
 <?php foreach ($actPlugins ?? [] as $slot): ?>
 <a class="wk-mi" href="<?= $ab . $ah(str_replace('{pid}', rawurlencode($actPid ?? ''), $slot['href'])) ?>"><i class="ph ph-<?= $ah($slot['icon']) ?>"></i><?= $ah(t($slot['label'])) ?></a>
