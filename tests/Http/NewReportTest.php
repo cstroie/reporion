@@ -59,7 +59,7 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(1, $page->rev, 'the first Save is revision 1');
         $fm = $page->frontmatter;
         self::assertSame(['visibility', 'modality', 'site', 'device', 'study_date', 'patient', 'referrer', 'indication', 'exams'], array_keys($fm), 'nothing of the exam is copied to the top level');
-        self::assertSame('# POPESCU Ana Maria', strtok($page->body, "\n"), 'titled by its heading, the patient (D30 as amended 2026-10-13)');
+        self::assertSame('# Popescu Ana Maria', strtok($page->body, "\n"), 'titled by its heading, the patient (D30 as amended 2026-10-13)');
         self::assertSame('RM coloana lombara', $fm['exams'][0]['title'], "the template's title, for exports");
         self::assertSame('private', $fm['visibility']);
         self::assertSame(['MR'], $fm['modality']);
@@ -68,10 +68,10 @@ final class NewReportTest extends HttpTestCase
         self::assertSame('2026-09-26', (string) $fm['study_date'], 'the day; the time is the exam\'s');
         self::assertSame('09:30', $fm['exams'][0]['time']);
         self::assertSame('MV-MR-26-0001', $fm['exams'][0]['accession']);
-        self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
+        self::assertSame(['name' => 'Popescu Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
         self::assertSame('spine-lumbar-v2', $fm['exams'][0]['protocol'], 'on its exam (phase 27)');
         self::assertSame('templates:mri:lombar', $fm['exams'][0]['template']);
-        self::assertSame("# POPESCU Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
+        self::assertSame("# Popescu Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
         self::assertSame('draft', $page->status);
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
@@ -106,7 +106,7 @@ final class NewReportTest extends HttpTestCase
 
         self::assertSame('IRM Genunchi', $page->frontmatter['exams'][0]['title']);
         self::assertSame(['msk'], $page->frontmatter['exams'][0]['region'], "the template's region is the default");
-        self::assertSame("# POPESCU Ana Maria\n\n## IRM Genunchi\n", $page->body, "the template's name is not in the report, nor its text");
+        self::assertSame("# Popescu Ana Maria\n\n## IRM Genunchi\n", $page->body, "the template's name is not in the report, nor its text");
     }
 
     public function testTheRegionsTheFormSendsBeatTheTemplatesAndTheTypedTitleBeatsItsExam(): void
@@ -267,13 +267,13 @@ final class NewReportTest extends HttpTestCase
         self::assertStringNotContainsString('MV-MR-26-0001', $opened->body, 'no number taken from the client');
         self::assertFileDoesNotExist($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson', 'nothing audited');
 
-        $saved = $this->saveOpened($opened, $this->cookie('owner'), ['body' => "# POPESCU Ana Maria\n\n## IRM cerebral\n\nText.\n"]);
+        $saved = $this->saveOpened($opened, $this->cookie('owner'), ['body' => "# Popescu Ana Maria\n\n## IRM cerebral\n\nText.\n"]);
         self::assertSame(302, $saved->status);
         $page = $this->storage()->read(self::PATH);
         self::assertSame(1, $page->rev);
-        self::assertSame("# POPESCU Ana Maria\n\n## IRM cerebral\n\nText.\n", $page->body);
+        self::assertSame("# Popescu Ana Maria\n\n## IRM cerebral\n\nText.\n", $page->body);
         self::assertSame('Cefalee.', $page->frontmatter['indication']);
-        self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980], $page->frontmatter['patient']);
+        self::assertSame(['name' => 'Popescu Ana Maria', 'sex' => 'F', 'born' => 1980], $page->frontmatter['patient']);
         self::assertSame('MV-MR-26-0001', $page->frontmatter['exams'][0]['accession'], 'allocated at the first Save (D20)');
     }
 
@@ -288,10 +288,10 @@ final class NewReportTest extends HttpTestCase
         self::assertArrayNotHasKey('title', $page->frontmatter);
         self::assertSame('IRM Cerebral', $page->frontmatter['exams'][0]['title']);
 
-        self::assertStringContainsString('POPESCU Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
+        self::assertStringContainsString('Popescu Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
 
         $print = $this->get('owner', '/export/' . self::PATH . '.html')->body;
-        self::assertStringContainsString('<h1 class="doc-title">POPESCU Ana Maria', $print, 'the patient titles the printed report');
+        self::assertStringContainsString('<h1 class="doc-title">Popescu Ana Maria', $print, 'the patient titles the printed report');
         self::assertStringContainsString('<td class="pt-v pt-strong">IRM Cerebral</td>', $print, 'and the exam is the block\'s first field');
         self::assertStringNotContainsString('<h1 id="popescu-ana-maria"', $print, 'no name heading in the text');
 
@@ -304,7 +304,7 @@ final class NewReportTest extends HttpTestCase
         $copy = json_decode(Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/pages/' . self::PATH . '/duplicate', cookies: ['reporion' => $this->cookie('owner')], body: (string) json_encode(['to' => 'docs:caz-didactic'])))->body, true);
         $duplicate = $storage->read((string) $copy['path']);
         self::assertSame('IRM Cerebral', $duplicate->frontmatter['title']);
-        self::assertStringNotContainsString('POPESCU', $duplicate->body);
+        self::assertStringNotContainsString('Popescu', $duplicate->body);
     }
 
     public function testPlusExamAddsARowAndRemoveTakesItAwayWithoutCreating(): void
@@ -345,7 +345,7 @@ final class NewReportTest extends HttpTestCase
             ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0003'],
         ], $fm['exams']);
         self::assertSame(
-            "# POPESCU Ana Maria\n\n## IRM genunchi drept\n\n### Descriere\n\n### Concluzii\n\n## IRM genunchi stâng\n\n### Descriere\n\n### Concluzii\n\n## IRM coloană lombară\n\n### Descriere\n\n### Concluzii\n",
+            "# Popescu Ana Maria\n\n## IRM genunchi drept\n\n### Descriere\n\n### Concluzii\n\n## IRM genunchi stâng\n\n### Descriere\n\n### Concluzii\n\n## IRM coloană lombară\n\n### Descriere\n\n### Concluzii\n",
             $page->body
         );
         self::assertSame([], \Reporion\Support\Exams::problems($fm, $page->body), 'whole from the start');
@@ -429,7 +429,7 @@ final class NewReportTest extends HttpTestCase
 
         $page = $this->storage()->read(self::PATH);
         self::assertCount(1, $page->frontmatter['exams']);
-        self::assertSame("# POPESCU Ana Maria\n\n## IRM cerebral\n", $page->body, 'one ## as before, no sections forced');
+        self::assertSame("# Popescu Ana Maria\n\n## IRM cerebral\n", $page->body, 'one ## as before, no sections forced');
     }
 
     /**

@@ -49,7 +49,7 @@ final class FollowUpExamTest extends HttpTestCase
     {
         $body = $this->get('owner', '/' . self::PREVIOUS . '/new')->body;
 
-        self::assertStringContainsString('name="name" value="TEST SUBJECT"', $body);
+        self::assertStringContainsString('name="name" value="Test Subject"', $body);
         self::assertStringContainsString('name="cnp" value="' . $this->cnp . '"', $body);
         self::assertStringContainsString('name="date" value="" required', $body, 'the exam date is left for the user to enter');
         self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $body, 'the first modality');
@@ -116,7 +116,7 @@ final class FollowUpExamTest extends HttpTestCase
 
         $body = $this->get('owner', '/reports:mri:mioveni:200101-old-import/new')->body;
 
-        self::assertStringContainsString('name="name" value="OLD IMPORT"', $body);
+        self::assertStringContainsString('name="name" value="Old Import"', $body);
         self::assertStringContainsString('name="cnp" value=""', $body);
         self::assertStringNotContainsString('wk-field-err', $body, 'no complaints before the first submit');
     }

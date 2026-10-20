@@ -19,6 +19,7 @@ use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
 use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
+use Reporion\Support\PersonName;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 use Reporion\Support\TemplateHeadings;
@@ -198,7 +199,7 @@ final class NewReport
             }
         }
         $v = self::examAction($v, \is_string($raw['action'] ?? null) ? $raw['action'] : '');
-        $v['name'] = (string) preg_replace('/\s+/u', ' ', $v['name']);
+        $v['name'] = PersonName::normalize($v['name']);
         $v['cnp'] = (string) preg_replace('/\s+/', '', $v['cnp']);
         $errors = [];
         $options = $this->options($principal);
