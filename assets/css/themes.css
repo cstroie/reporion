@@ -103,7 +103,8 @@ body.palette-crt.theme-light { background: repeating-linear-gradient(to bottom, 
 body.palette-film:not(.theme-light) { background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(156,184,214,.09), transparent 70%) fixed, #070b0e; }
 /* the light scheme is the light box: a bright, even glow in the middle falling off to the cooler steel of the frame */
 body.palette-film.theme-light { background: radial-gradient(ellipse 80% 65% at 50% 38%, #f3f8fc, #e3ecf4 45%, transparent 100%) fixed, #b4c4d4; }
-.palette-film.theme-light .input { background: rgba(255,255,255,.7); }
+.palette-film.theme-light .input:not(textarea) { background: rgba(255,255,255,.7); }
+.palette-film.theme-light textarea.input { background: inherit; }
 .palette-film:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: #0f1a22; box-shadow: 0 0 0 1px #3a5166, inset 0 1px 0 rgba(180,204,228,.10), 0 0 40px rgba(156,184,214,.05); }
 .palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f4f8fc; box-shadow: 0 0 0 1px #9fb4c8, 0 0 44px rgba(255,255,255,.85); }
 

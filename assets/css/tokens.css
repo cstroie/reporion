@@ -605,3 +605,24 @@ select.input:not([multiple]):not([size]) {
 .theme-light.palette-film a:not(.btn):hover,
 .theme-light.palette-blueprint a:not(.btn):hover,
 .theme-light.palette-cyberpunk a:not(.btn):hover { color: var(--color-accent-800); }
+
+/* The browser's scrollbars follow the palette (2026-10-21): thumb then track, both schemes (Cyberpunk's dark one is in
+ * cyberpunk.css). The scrollbar is the root's and the palette classes are on <body>, so they are reached from <html>
+ * with :has(); the default palette has no class. */
+html:has(> body:not([class*="palette-"]):not(.theme-light)) { scrollbar-color: #3a4a6e #0d1017; }
+html:has(> body:not([class*="palette-"]).theme-light) { scrollbar-color: #9fb4dc #f1f3f8; }
+html:has(> body.palette-lime:not(.theme-light)) { scrollbar-color: #4a5a28 #121413; }
+html:has(> body.palette-lime.theme-light) { scrollbar-color: #a9bb78 #f3f5f0; }
+html:has(> body.palette-amber:not(.theme-light)) { scrollbar-color: #6a4f20 #141414; }
+html:has(> body.palette-amber.theme-light) { scrollbar-color: #d3b27a #f4f3f0; }
+html:has(> body.palette-afterglow:not(.theme-light)) { scrollbar-color: #1c4a4b #0b1213; }
+html:has(> body.palette-afterglow.theme-light) { scrollbar-color: #86b0ae #cfe8e6; }
+html:has(> body.palette-reading-room:not(.theme-light)) { scrollbar-color: #5a3818 #0f0a07; }
+html:has(> body.palette-reading-room.theme-light) { scrollbar-color: #bda780 #dcc7a8; }
+html:has(> body.palette-crt:not(.theme-light)) { scrollbar-color: #1c8a46 #020a04; }
+html:has(> body.palette-crt.theme-light) { scrollbar-color: #6f855a #bccca0; }
+html:has(> body.palette-film:not(.theme-light)) { scrollbar-color: #3a5166 #070b0e; }
+html:has(> body.palette-film.theme-light) { scrollbar-color: #8ea6bb #c9d6e2; }
+html:has(> body.palette-blueprint:not(.theme-light)) { scrollbar-color: #3b78c2 #0a2346; }
+html:has(> body.palette-blueprint.theme-light) { scrollbar-color: #8fb2dc #eef5fd; }
+html:has(> body.palette-cyberpunk.theme-light) { scrollbar-color: #a3189a #f2f5fc; }
