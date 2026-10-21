@@ -2043,6 +2043,16 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 40px; height: 40px; }
 }
 
+/* A phone: a page list uses the width for its text. Less padding in the panel and the rows, and the select box and the ⋯ menu narrower, hugging the right edge */
+@media (max-width: 575.98px) {
+  .wk-panel-menus { padding: var(--space-2) var(--space-1); }
+  table.table.table-cards.table-cards-compact tr { padding: var(--space-3) var(--space-2); }
+  table.table.table-cards.table-cards-compact tr:has(> td.wk-selcol) { padding-right: 36px; }
+  table.table.table-cards.table-cards-compact td.wk-selcol { right: 2px; width: 32px; }
+  table.table.table-cards.table-cards-compact td.wk-rowact { right: 2px; width: 32px; top: 42px; }
+  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 32px; height: 32px; }
+}
+
 /* The start page (templates/dashboard.php, 2026-10-01): counts, two-column
  * panels that stack on a phone, and a compact row with tags and actions on
  * the right. Existing tokens only. */
