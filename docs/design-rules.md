@@ -270,7 +270,7 @@ exactly one is on, drawn as a bar with the chosen one filled in accent.
 
 | Use | Markup | Examples |
 |---|---|---|
-| **A choice that submits** (radios) | `.seg` of `label.seg-opt` each with `<input type="radio">` | Enabled / Disabled for the assistant and a plugin; Sync / Whole in compare; Prose / Unified / Split / Rendered in the diff |
+| **A choice that submits** (radios) | `.seg` of `label.seg-opt` each with `<input type="radio">` | Enabled / Disabled for the assistant and a plugin; Sync / Whole in compare |
 | **A filter that navigates** (links) | `.seg` of `a.seg-opt`, the current one `.seg-on` + `aria-current="true"` | period, site and modality on Statistics and Recent |
 | **A choice that is a button** | `.seg` of `<button class="seg-opt">`, the current one `.seg-on` / `aria-pressed="true"` | theme Dark / Light in the appearance menu |
 
@@ -325,6 +325,13 @@ Use it where an input and its action are one thing.
 | `.group-date` | a date input at its natural width | a date in a bar |
 | `.group-wide` | a free-text control that takes the rest of its line when stacked (in the CSS; no template uses it yet) | |
 | `.grow` | opt in: take a share of the leftover width | an input that should fill its group |
+
+**A view toolbar** (2026-10-21, the Revisions diff): a `.group.group-fill` of a totals `group-addon`, a
+filler `group-addon` (`flex: 1`), then `.btn.btn-sm` cells that are plain when off and accent-filled when
+on (`aria-pressed="true"`, or a `label.btn` whose radio is checked). This is the one exception to "a
+group's button is primary": every cell is a toggle or a step, none is the action. Labels drop to icons
+under 1024 px (`.wk-btn-label`). Hidden inputs and the no-JS Apply button sit outside the strip
+(`form="…"`) so they do not take its corners. Elsewhere a choice that submits stays a `.seg`.
 
 ```html
 <!-- one field: an input and its button -->

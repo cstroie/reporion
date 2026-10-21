@@ -85,38 +85,6 @@ $bar = static function (?array $c): string {
 <h2 class="wk-sec-title"><?= $e(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)])) ?></h2>
 <p class="wk-dim"><?= $e(t('revisions.subtitle') . ($canWrite ? ' ' . t('revisions.subtitle_restore') : '')) ?></p>
 </hgroup>
-<?php if (\count($rows) >= 2 || $template !== null): ?>
-<?php /* The diff style: re-renders an open diff, or sets the style the next comparison uses */ ?>
-<form class="wk-actions" method="get" action="<?= $p ?>/revisions" id="rev-style-form">
-<?php if ($diff !== null): ?>
-<input type="hidden" name="from" value="<?= $from ?>">
-<input type="hidden" name="to" value="<?= $to ?>">
-<?php endif; ?>
-<span class="seg" role="radiogroup" aria-label="<?= $e(t('revisions.style')) ?>">
-<label class="seg-opt"><input type="radio" name="style" value="word"<?= $requestedStyle === 'word' ? ' checked' : '' ?>><?= $e(t('revisions.style_word')) ?></label>
-<label class="seg-opt"><input type="radio" name="style" value="line"<?= $requestedStyle === 'line' ? ' checked' : '' ?>><?= $e(t('revisions.style_line')) ?></label>
-<label class="seg-opt"><input type="radio" name="style" value="split"<?= $requestedStyle === 'split' ? ' checked' : '' ?>><?= $e(t('revisions.style_split')) ?></label>
-<label class="seg-opt"><input type="radio" name="style" value="side"<?= $requestedStyle === 'side' ? ' checked' : '' ?>><?= $e(t('revisions.style_side')) ?></label>
-</span>
-<span class="seg" role="radiogroup" aria-label="<?= $e(t('revisions.space')) ?>">
-<label class="seg-opt"><input type="radio" name="ws" value="0"<?= !$ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.space_keep')) ?></label>
-<label class="seg-opt"><input type="radio" name="ws" value="1"<?= $ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.space_ignore')) ?></label>
-</span>
-<button type="submit" class="btn btn-secondary" id="rev-style-apply"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('revisions.style_apply')) ?></button>
-</form>
-<script>
-(function() {
-  var form = document.getElementById('rev-style-form');
-  var btn = document.getElementById('rev-style-apply');
-  // With JS, picking a style re-submits immediately; the button hides once
-  // this runs, and stays a working fallback without JS.
-  if (btn) btn.hidden = true;
-  Array.prototype.forEach.call(form.querySelectorAll('[name="style"], [name="ws"]'), function(radio) {
-    radio.addEventListener('change', function() { form.submit(); });
-  });
-})();
-</script>
-<?php endif; ?>
 </div>
 
 <?php if ($diff === null && \count($rows) < 2 && $template === null): ?>
@@ -197,17 +165,46 @@ $bar = static function (?array $c): string {
 <?php if ($diff['style'] !== $requestedStyle): ?>
 <?php $noticeKind = 'warn'; $noticeText = t('revisions.style_fallback'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
-<?php if ($diff['style'] === 'word'): ?>
+<?php
+$withNav = $diff['style'] !== 'side' && ($diff['stats']['add'] + $diff['stats']['remove']) > 0;
+?>
+<?php /* The one toolbar of the diff, a joined .group strip (the look of the search bars): totals, then changes, wrap, whitespace and the style, the last two always rightmost. Sticky under the top bar. The hidden inputs and the Apply button are outside the strip (form="rev-style-form") so they do not take its corners */ ?>
+<input type="hidden" name="from" value="<?= $from ?>" form="rev-style-form">
+<input type="hidden" name="to" value="<?= $to ?>" form="rev-style-form">
+<?php if ($ignoreSpace): ?><input type="hidden" name="ws" value="1" form="rev-style-form"><?php /* kept when the style changes; the Whitespace button, after it, sends 0 and wins */ ?><?php endif; ?>
 <div class="wk-difftools" data-difftools>
-<span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_words')) ?></span></span>
-<span class="wk-actions">
-<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
-<button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
-<span class="seg-opt seg-pos wk-mono" data-diff-pos aria-live="polite"></span>
-<button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
-</span>
-</span>
+<form class="group group-fill" method="get" action="<?= $p ?>/revisions" id="rev-style-form" role="toolbar" aria-label="<?= $e(t('revisions.toolbar')) ?>">
+<?php if ($diff['stats'] !== null): ?>
+<span class="group-addon wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span>&nbsp;<span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span>&nbsp;<span class="wk-dim"><?= $e(t($diff['style'] === 'word' ? 'revisions.stat_words' : 'revisions.stat_lines')) ?></span></span>
+<?php endif; ?>
+<span class="group-addon wk-gfill" aria-hidden="true"></span>
+<?php if ($withNav): ?>
+<button type="button" class="btn btn-sm" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>" aria-label="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.prev_change')) ?></span></button>
+<span class="group-addon wk-gpos wk-mono" data-diff-pos aria-live="polite"></span>
+<button type="button" class="btn btn-sm" data-diff-next title="<?= $e(t('revisions.next_change')) ?>" aria-label="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.next_change')) ?></span></button>
+<?php endif; ?>
+<?php if (\in_array($diff['style'], ['line', 'split'], true)): ?>
+<button type="button" class="btn btn-sm" data-diff-wrap aria-pressed="true" title="<?= $e(t('revisions.wrap_help')) ?>"><i class="ph ph-text-align-left" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.wrap')) ?></span></button>
+<?php endif; ?>
+<button type="submit" class="btn btn-sm" name="ws" value="<?= $ignoreSpace ? '0' : '1' ?>" aria-pressed="<?= $ignoreSpace ? 'false' : 'true' ?>" title="<?= $e(t('revisions.space_help')) ?>"><i class="ph ph-text-indent" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.space')) ?></span></button>
+<?php foreach (['word' => 'style_word', 'line' => 'style_line', 'split' => 'style_split', 'side' => 'style_side'] as $value => $key): ?>
+<label class="btn btn-sm wk-gopt"><input type="radio" name="style" value="<?= $value ?>"<?= $requestedStyle === $value ? ' checked' : '' ?>><?= $e(t('revisions.' . $key)) ?></label>
+<?php endforeach; ?>
+</form>
 </div>
+<button type="submit" class="btn btn-secondary btn-sm" id="rev-style-apply" form="rev-style-form"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('revisions.style_apply')) ?></button>
+<script>
+(function() {
+  var form = document.getElementById('rev-style-form');
+  var btn = document.getElementById('rev-style-apply');
+  // With JS, picking a style re-submits at once; the button hides, and stays the fallback without JS
+  if (btn) btn.hidden = true;
+  Array.prototype.forEach.call(form.querySelectorAll('[name="style"]'), function(radio) {
+    radio.addEventListener('change', function() { form.submit(); });
+  });
+})();
+</script>
+<?php if ($diff['style'] === 'word'): ?>
 <div class="wk-worddiff wk-prose" data-wordtext><?php foreach ($diff['ops'] as $op): ?><?php
     $text = htmlspecialchars($op['line'], ENT_QUOTES);
     echo match ($op['op']) {
@@ -264,21 +261,6 @@ $segs = static function (string $text, ?array $parts, string $kind) use ($e): st
 $foldLabel = static fn (array $row): string => t('revisions.unchanged', [(int) $row['n']]) . ($row['heading'] !== '' ? ' · ' . $row['heading'] : '');
 $foldId = 0;
 ?>
-<div class="wk-difftools" data-difftools>
-<span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_lines')) ?></span></span>
-<span class="wk-actions">
-<?php if ($diff['stats']['add'] + $diff['stats']['remove'] > 0): ?>
-<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
-<button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
-<span class="seg-opt seg-pos wk-mono" data-diff-pos aria-live="polite"></span>
-<button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
-</span>
-<?php endif; ?>
-<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.display')) ?>">
-<button type="button" class="seg-opt seg-on" data-diff-wrap aria-pressed="true"><i class="ph ph-text-align-left" aria-hidden="true"></i><?= $e(t('revisions.wrap')) ?></button>
-</span>
-</span>
-</div>
 <?php if ($diff['stats']['add'] + $diff['stats']['remove'] === 0): ?>
 <?php $noticeKind = 'info'; $noticeText = t('revisions.no_changes'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
@@ -380,7 +362,6 @@ $foldId = 0;
   if (wrap && box) wrap.addEventListener('click', function() {
     var on = wrap.getAttribute('aria-pressed') !== 'true';
     wrap.setAttribute('aria-pressed', on ? 'true' : 'false');
-    wrap.classList.toggle('seg-on', on);
     box.classList.toggle('wk-dt-wrapped', on);
   });
   // Jump between the changes: whole changed blocks in a line diff, ins/del runs in a prose one
