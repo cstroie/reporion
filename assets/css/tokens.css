@@ -175,6 +175,12 @@ a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
 /* a placeholder takes the palette's dimmed text, not the browser's grey */
 ::placeholder { color: var(--color-dimmer); opacity: 1; }
+/* the date picker's icon is the browser's white or black: paint it in the palette's accent */
+input[type=date]::-webkit-calendar-picker-indicator {
+  background: var(--color-accent); opacity: .85; cursor: pointer;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 1v2M12 1v2M2 5h12M3 3h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 1v2M12 1v2M2 5h12M3 3h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+input[type=date]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 .theme-light a:hover { color: #16306e; }
 
 /* palettes (A6): */
