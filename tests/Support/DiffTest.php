@@ -167,18 +167,48 @@ final class DiffTest extends TestCase
     }
 
     /**
-     * words()'s LCS table is (tokens+1)² nested arrays (see the class
-     * docblock): a body ordinary enough for D2's "short prose" still
-     * exhausted a 128M PHP-FPM worker in production (2026-09-30). This is
-     * the guard CompareController checks before calling words(), not a
-     * change to words() itself.
+     * The engine is Myers' O(ND) after prefix/suffix trimming (2026-10-21):
+     * a 3 000-word body is no longer a memory problem, only an absurd one is refused.
      */
-    public function testWordsFitsRejectsATooLargeBody(): void
+    public function testWordsFitsOnlyRefusesAnAbsurdBody(): void
     {
         self::assertTrue(Diff::wordsFits('a few words here', 'a few words there'));
-
-        // ~3 000 tokens each side, the size that actually crashed
         $big = str_repeat('word ', 3040);
-        self::assertFalse(Diff::wordsFits($big, $big));
+        self::assertTrue(Diff::wordsFits($big, $big . 'x'));
+        $huge = str_repeat('word ', 50_001);
+        self::assertFalse(Diff::wordsFits($huge, $huge));
+    }
+
+    public function testLargeBodyWithOneChangeIsCheap(): void
+    {
+        $big = str_repeat("some line of text\n", 20000);
+        $changed = substr_replace($big, 'CHANGED', 10000, 7);
+        $counts = Diff::counts($big, $changed);
+        self::assertSame(['add' => 1, 'remove' => 1], $counts);
+    }
+
+    public function testNumberedCarriesLineNumbersOnBothSides(): void
+    {
+        $ops = Diff::numbered("a\nb\nc", "a\nB\nc\nd");
+        self::assertSame(['equal', 1, 1], [$ops[0]['op'], $ops[0]['a'], $ops[0]['b']]);
+        self::assertSame(['remove', 2, null], [$ops[1]['op'], $ops[1]['a'], $ops[1]['b']]);
+        self::assertSame(['add', null, 2], [$ops[2]['op'], $ops[2]['a'], $ops[2]['b']]);
+        self::assertSame(['add', null, 4], [$ops[4]['op'], $ops[4]['a'], $ops[4]['b']]);
+    }
+
+    public function testIgnoreSpaceTreatsReindentedLinesAsEqual(): void
+    {
+        $ops = Diff::numbered("if (x) {\n  y();\n}", "if (x) {\n    y();\n}", true);
+        self::assertSame(['equal', 'equal', 'equal'], array_column($ops, 'op'));
+        self::assertSame('    y();', $ops[1]['line']);
+        self::assertSame(['add' => 1, 'remove' => 1], Diff::counts("if (x) {\n  y();\n}", "if (x) {\n    y();\n}"));
+    }
+
+    public function testBeyondTheEditLimitTheMiddleIsReplacedNotCrashed(): void
+    {
+        $a = implode("\n", range(1, 2000));
+        $b = implode("\n", range(5001, 7000));
+        $counts = Diff::counts($a, $b);
+        self::assertSame(['add' => 2000, 'remove' => 2000], $counts);
     }
 }

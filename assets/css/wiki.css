@@ -934,8 +934,8 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 /* Filter fields in the bar (the PACS worklist): as compact as the bar's buttons */
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 @media (max-width: 1023.98px) { table.table.wk-rev :is(th, td) { padding-inline: var(--space-2); } } /* a tablet: every column, the actions included, fits without a sideways scroll */
-.wk-add, .wk-al { color: #7fb59a; }
-.wk-del, .wk-dl { color: #e08a8a; }
+.wk-add, .wk-al { color: var(--state-ok); }
+.wk-del, .wk-dl { color: var(--state-error); }
 .wk-diff { margin-top: var(--space-4); }
 .wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
 .wk-difftext span { display: block; }
@@ -945,8 +945,8 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-hunk { font-weight: 600; margin-top: var(--space-3); }
 .wk-hunk:first-child { margin-top: 0; }
 .wk-difftext .wk-mark { display: inline; }
-.wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
-.wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
+.wk-al { background: color-mix(in srgb, var(--state-ok) 12%, transparent); }
+.wk-dl { background: color-mix(in srgb, var(--state-error) 12%, transparent); }
 /* The "side" style (2026-09-30): the old Compare tab's other render, two
  * full pages through the canonical renderer, side by side: restored from
  * design/mockup/WikiCompare.dc.html's .wk-cmp when it briefly went away
@@ -976,9 +976,51 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 /* Boxed like .wk-ta/.wk-difftext (2026-09-30): this is the same body text
  * in the same font, so it reads in the same frame rather than sitting bare
  * on the page. */
-.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-4); box-sizing: border-box; }
-.wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
-.wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
+/* Prose view (2026-10-21): the reading font and measure, not the editor's monospace; added text is
+ * underlined and removed text struck through, so the change reads without its colour */
+.wk-worddiff { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: var(--text-base); line-height: 1.7; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-5) var(--space-6); box-sizing: border-box; }
+.wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); border-radius: 2px; }
+.wk-worddiff ins { color: var(--state-ok); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; background: color-mix(in srgb, var(--state-ok) 14%, transparent); border-radius: 2px; }
+
+/* The bar above a diff: totals, jump to the previous/next change, wrap */
+.wk-difftools { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); font-size: var(--text-sm); }
+.wk-difftools .wk-actions { flex-wrap: wrap; }
+.wk-diffstat { font-family: var(--font-mono); }
+.wk-inlinecheck { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); white-space: nowrap; cursor: pointer; }
+.wk-dt-now, .wk-worddiff ins.wk-dt-now, .wk-worddiff del.wk-dt-now { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* Unified and split line diffs: a table, one row a line, a gutter of line numbers each side */
+.wk-dt-wrap { border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); overflow-x: auto; }
+.theme-light .wk-dt-wrap { background: var(--color-neutral-100); }
+.wk-dt { border-collapse: collapse; width: max-content; min-width: 100%; font-size: var(--text-sm); line-height: 1.55; tab-size: 4; }
+.wk-dt-wrapped .wk-dt { width: 100%; table-layout: fixed; }
+.wk-dt col.wk-dt-n { width: 3.6rem; }
+.wk-dt col.wk-dt-s { width: 1.6rem; }
+.wk-dt-split col.wk-dt-c { width: calc(50% - 3.6rem); }
+.wk-dt td { padding: 0 var(--space-2); vertical-align: top; }
+.wk-dt td.wk-dt-n { text-align: right; color: color-mix(in srgb, var(--color-text) 45%, transparent); user-select: none; border-right: 1px solid var(--color-divider); font-variant-numeric: tabular-nums; }
+.wk-dt td.wk-dt-s { text-align: center; user-select: none; font-weight: 700; }
+.wk-dt td.wk-dt-c { white-space: pre; padding-left: var(--space-3); }
+.wk-dt-wrapped td.wk-dt-c { white-space: pre-wrap; overflow-wrap: anywhere; }
+.wk-dt-split td.wk-dt-c + td.wk-dt-n { border-left: 1px solid var(--color-divider); }
+.wk-dt td.wk-dt-add { background: color-mix(in srgb, var(--state-ok) 13%, transparent); }
+.wk-dt td.wk-dt-del { background: color-mix(in srgb, var(--state-error) 13%, transparent); }
+.wk-dt td.wk-dt-n.wk-dt-add, .wk-dt td.wk-dt-s.wk-dt-add { background: color-mix(in srgb, var(--state-ok) 26%, transparent); color: var(--state-ok); }
+.wk-dt td.wk-dt-n.wk-dt-del, .wk-dt td.wk-dt-s.wk-dt-del { background: color-mix(in srgb, var(--state-error) 26%, transparent); color: var(--state-error); }
+.wk-dt td.wk-dt-empty { background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--color-text) 6%, transparent) 6px 7px); }
+.wk-dt mark { color: inherit; border-radius: 2px; }
+.wk-dt mark.wk-mark-add { background: color-mix(in srgb, var(--state-ok) 38%, transparent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wk-dt mark.wk-mark-del { background: color-mix(in srgb, var(--state-error) 38%, transparent); text-decoration: line-through; }
+.wk-dt tr.wk-dt-now td { box-shadow: inset 0 2px 0 var(--color-accent); }
+.wk-dt-fold td { padding: 0; background: color-mix(in srgb, var(--color-accent) 8%, transparent); border-block: 1px solid var(--color-divider); }
+.wk-dt-fold button { display: flex; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-1) var(--space-4); font: inherit; font-size: var(--text-sm); color: color-mix(in srgb, var(--color-text) 65%, transparent); background: none; border: 0; cursor: pointer; text-align: left; }
+.wk-dt-fold button:hover { color: var(--color-accent); }
+
+/* The revision list's change column: five squares, as green as the change is an addition */
+.wk-bar { display: inline-flex; gap: 2px; margin-left: var(--space-2); vertical-align: middle; }
+.wk-bar i { width: 8px; height: 8px; border-radius: 1px; }
+.wk-bar-add { background: var(--state-ok); }
+.wk-bar-del { background: var(--state-error); }
 
 /* editor: */
 /* The editor is the mockup's WikiEditor (design/mockup/Wiki.dc.html .wk-edit*):

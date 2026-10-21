@@ -16,8 +16,8 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
-use Reporion\Support\CommitDiff;
 use Reporion\Support\Diff;
+use Reporion\Support\DiffView;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ExamTemplates;
 use Reporion\Support\PageTitle;
@@ -120,8 +120,9 @@ final class RevisionsController
         }
 
         $requestedStyleRaw = (string) ($request->query['style'] ?? '');
-        $requestedStyle = \in_array($requestedStyleRaw, ['line', 'side'], true) ? $requestedStyleRaw : 'word';
-        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $raw, $requestedStyle, $request->basePath, $template);
+        $requestedStyle = \in_array($requestedStyleRaw, ['line', 'split', 'side'], true) ? $requestedStyleRaw : 'word';
+        $ignoreSpace = (string) ($request->query['ws'] ?? '') === '1';
+        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $raw, $requestedStyle, $request->basePath, $template, $ignoreSpace);
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/revisions.php',
@@ -132,6 +133,7 @@ final class RevisionsController
                 'from' => $from,
                 'to' => $to,
                 'requestedStyle' => $requestedStyle,
+                'ignoreSpace' => $ignoreSpace,
                 'diff' => $diff,
                 'template' => $template,
                 'basePath' => $request->basePath,
@@ -146,21 +148,22 @@ final class RevisionsController
      * @param array<int, string> $raw revisions already read, by number
      *
      * @return ?array{
-     *     style: 'word'|'line'|'side',
+     *     style: 'word'|'line'|'split'|'side',
      *     ops: ?list<array{op: string, line: string}>,
-     *     hunks?: ?list<array{heading: string, lines: list<string>}>,
+     *     rows: ?list<array<string, mixed>>,
+     *     stats?: array{add: int, remove: int, unit: string},
      *     panes: ?list<array{rev: int, ts: string, title: string, html: ?string, raw: string}>,
      *     fromTs: string, toTs: string,
      * }
      */
-    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, array $raw, string $requestedStyle, string $basePath, ?array $template = null): ?array
+    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, array $raw, string $requestedStyle, string $basePath, ?array $template = null, bool $ignoreSpace = false): ?array
     {
         $lowest = $template !== null ? 0 : 1;
         if ($from === null || $to === null || $from < $lowest || $to < $lowest || $from > $currentRev || $to > $currentRev) {
             return null;
         }
         if ($from === 0 || $to === 0) {
-            return $this->templateDiff($path, $from, $to, $revlog, $raw, $requestedStyle, $basePath, $template);
+            return $this->templateDiff($path, $from, $to, $revlog, $raw, $requestedStyle, $basePath, $template, $ignoreSpace);
         }
 
         $fromTs = $toTs = '';
@@ -179,35 +182,62 @@ final class RevisionsController
                 $this->pane($path, $to, $revlog, $raw, $basePath),
             ];
 
-            return ['style' => 'side', 'ops' => null, 'panes' => $panes, 'fromTs' => $fromTs, 'toTs' => $toTs];
+            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => $panes, 'fromTs' => $fromTs, 'toTs' => $toTs];
         }
 
         $fromRaw = $this->revision($path, $from, $raw);
         $toRaw = $this->revision($path, $to, $raw);
 
-        $ops = null;
-        $style = $requestedStyle;
         if ($requestedStyle === 'word') {
             try {
                 [, $fromBody] = DocumentFormat::parse($fromRaw);
                 [, $toBody] = DocumentFormat::parse($toRaw);
                 if (Diff::wordsFits($fromBody, $toBody)) {
-                    $ops = Diff::words($fromBody, $toBody);
+                    return $this->wordDiff($fromBody, $toBody, $fromTs, $toTs, $ignoreSpace);
                 }
             } catch (RuntimeException | ParseException) {
                 // Unparseable frontmatter: fall through to the line diff,
                 // which works on the raw bytes and needs no parse at all.
             }
-        }
-        $hunks = null;
-        if ($ops === null) {
-            // The line diff is the change-summary format (CommitDiff), the whole-text one only past its size limit
-            $hunks = CommitDiff::display($fromRaw, $toRaw);
-            $ops = $hunks === null ? Diff::lines($fromRaw, $toRaw) : null;
-            $style = 'line';
+            $requestedStyle = 'line';
         }
 
-        return ['style' => $style, 'ops' => $ops, 'hunks' => $hunks, 'panes' => null, 'fromTs' => $fromTs, 'toTs' => $toTs];
+        return $this->lineDiff($fromRaw, $toRaw, $requestedStyle, $fromTs, $toTs, $ignoreSpace);
+    }
+
+    /**
+     * The prose view: the word diff of two bodies, with the words added and removed counted.
+     *
+     * @return array<string, mixed>
+     */
+    private function wordDiff(string $from, string $to, string $fromTs, string $toTs, bool $ignoreSpace): array
+    {
+        $ops = Diff::words($from, $to, $ignoreSpace);
+        $add = 0;
+        $remove = 0;
+        foreach ($ops as $op) {
+            $n = preg_match_all('/\S+/u', $op['line']);
+            if ($op['op'] === 'add') {
+                $add += $n;
+            } elseif ($op['op'] === 'remove') {
+                $remove += $n;
+            }
+        }
+
+        return ['style' => 'word', 'ops' => $ops, 'rows' => null, 'stats' => ['add' => $add, 'remove' => $remove, 'unit' => 'words'], 'panes' => null, 'fromTs' => $fromTs, 'toTs' => $toTs];
+    }
+
+    /**
+     * The unified ('line') or two-column ('split') view of two texts.
+     *
+     * @return array<string, mixed>
+     */
+    private function lineDiff(string $from, string $to, string $style, string $fromTs, string $toTs, bool $ignoreSpace): array
+    {
+        $view = DiffView::chunks($from, $to, $ignoreSpace);
+        $rows = $style === 'split' ? DiffView::split($view['chunks']) : DiffView::unified($view['chunks']);
+
+        return ['style' => $style, 'ops' => null, 'rows' => $rows, 'stats' => ['add' => $view['add'], 'remove' => $view['remove'], 'unit' => 'lines'], 'panes' => null, 'fromTs' => $fromTs, 'toTs' => $toTs];
     }
 
     /**
@@ -307,7 +337,7 @@ final class RevisionsController
      *
      * @return array<string, mixed>
      */
-    private function templateDiff(string $path, int $from, int $to, array $revlog, array $raw, string $requestedStyle, string $basePath, array $template): array
+    private function templateDiff(string $path, int $from, int $to, array $revlog, array $raw, string $requestedStyle, string $basePath, array $template, bool $ignoreSpace = false): array
     {
         $side = function (int $rev) use ($path, $revlog, $raw, $template): array {
             if ($rev === 0) {
@@ -330,13 +360,13 @@ final class RevisionsController
         if ($requestedStyle === 'side') {
             $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->body($s['body'], $s['fm'], $basePath)->html, 'raw' => $s['body']];
 
-            return ['style' => 'side', 'ops' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
+            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
         }
-        $style = $requestedStyle === 'word' && Diff::wordsFits($a['body'], $b['body']) ? 'word' : 'line';
-        $hunks = $style === 'line' ? CommitDiff::display($a['body'], $b['body']) : null;
-        $ops = $style === 'word' ? Diff::words($a['body'], $b['body']) : ($hunks === null ? Diff::lines($a['body'], $b['body']) : null);
+        if ($requestedStyle === 'word' && Diff::wordsFits($a['body'], $b['body'])) {
+            return $this->wordDiff($a['body'], $b['body'], $a['ts'], $b['ts'], $ignoreSpace);
+        }
 
-        return ['style' => $style, 'ops' => $ops, 'hunks' => $hunks, 'panes' => null, 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
+        return $this->lineDiff($a['body'], $b['body'], $requestedStyle === 'split' ? 'split' : 'line', $a['ts'], $b['ts'], $ignoreSpace);
     }
 
     /**

@@ -93,21 +93,22 @@ final class RevisionsTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-difftext', $response->body);
-        preg_match('~<pre class="wk-mono wk-difftext">(.*?)</pre>~s', $response->body, $pre);
-        self::assertStringNotContainsString("\n", $pre[1], 'no newline between the lines: in a <pre> it would be a blank line');
-        // The change-summary format (Support\CommitDiff): a hunk, the word changed inline, coloured
-        self::assertStringContainsString('<span class="wk-al wk-mark">{+ changed+}</span>', $pre[1]);
-        self::assertStringContainsString('line one', $pre[1]);
+        self::assertStringContainsString('class="wk-dt wk-mono"', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        // Both lines of the pair are there, with the words that changed marked inside them
+        self::assertStringContainsString('<mark class="wk-mark-add"> changed</mark>', $response->body);
+        self::assertStringContainsString('<td class="wk-dt-s wk-dt-add" aria-hidden="true">+</td>', $response->body);
+        self::assertStringContainsString('<td class="wk-dt-s wk-dt-del" aria-hidden="true">−</td>', $response->body);
     }
 
-    public function testLineStyleShowsHunksHeadedByTheirSectionWithoutContextLines(): void
+    public function testLineStyleFoldsLongUnchangedRunsUnderTheirSection(): void
     {
-        $body = "# Name\n\n## Exam\n\n### Tehnica\n\nNative acquisition of the knee.\n\n### Concluzie\n\nLesion of 12 mm in the right lobe, stable.\n";
+        $filler = implode("\n", array_map(static fn (int $i): string => 'Unchanged sentence number ' . $i . '.', range(1, 20)));
+        $body = "# Name\n\n## Exam\n\n### Tehnica\n\n" . $filler . "\n\n### Concluzie\n\nLesion of 12 mm in the right lobe, stable.\n";
         $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => $body]);
         $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
             'meta' => ['title' => 'v1', 'visibility' => 'private'],
-            'body' => str_replace(['12 mm', "stable.\n"], ['15 mm', "stable.\n\nControl in 3 months.\n"], $body),
+            'body' => str_replace('12 mm', '15 mm', $body),
             'base_rev' => 1,
         ]);
 
@@ -118,12 +119,51 @@ final class RevisionsTest extends HttpTestCase
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        preg_match('~<pre class="wk-mono wk-difftext">(.*?)</pre>~s', $response->body, $pre);
-        self::assertStringContainsString('@@ ### Concluzie', $pre[1], 'the hunk is headed by its section');
-        self::assertStringContainsString('<span class="wk-dl wk-mark">[-12-]</span><span class="wk-al wk-mark">{+15+}</span> mm', $pre[1]);
-        self::assertStringContainsString('<span class="wk-al">+Control in 3 months.</span>', $pre[1]);
-        self::assertStringNotContainsString('Native acquisition', $pre[1], 'no context lines: the unchanged technique is not there');
-        self::assertStringNotContainsString('@@ ### Tehnica', $pre[1]);
+        self::assertStringContainsString('class="wk-dt-fold"', $response->body, 'the long unchanged run is folded');
+        self::assertMatchesRegularExpression('~unchanged lines · ### Tehnica|unchanged lines · ### Concluzie~u', $response->body);
+        self::assertStringContainsString('data-foldrow="1" hidden', $response->body, 'its lines are in the page, hidden until opened');
+        self::assertStringContainsString('<mark class="wk-mark-add">15</mark>', $response->body);
+    }
+
+    public function testSplitStyleAlignsTheTwoSides(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => "one\ntwo\nthree"]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => "one\ntwo changed\nthree\nfour",
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'split'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertStringContainsString('wk-dt-split', $response->body);
+        self::assertStringContainsString('wk-dt-empty', $response->body, 'an added line has nothing opposite it');
+        self::assertStringContainsString('<mark class="wk-mark-add"> changed</mark>', $response->body);
+    }
+
+    public function testIgnoreWhitespaceHidesAReindent(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => "if (x) {\n  y();\n}"]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => "if (x) {\n    y();\n}",
+            'base_rev' => 1,
+        ]);
+        $get = fn (array $q): string => Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'line'] + $q,
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ))->body;
+
+        self::assertStringContainsString('<tr data-change>', $get([]));
+        self::assertStringNotContainsString('<tr data-change>', $get(['ws' => '1']));
+        self::assertStringContainsString(t('revisions.no_changes'), $get(['ws' => '1']));
     }
 
     /**
@@ -152,7 +192,7 @@ final class RevisionsTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-worddiff', $response->body);
-        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('class="wk-dt', $response->body);
         self::assertStringContainsString('<del>are</del>', $response->body);
         self::assertStringContainsString('<ins>sunt</ins>', $response->body);
     }
@@ -189,7 +229,7 @@ Leziune nouă.',
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-cmp', $response->body);
         self::assertStringNotContainsString('wk-worddiff', $response->body);
-        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('class="wk-dt', $response->body);
         self::assertStringContainsString('<p>Normal.</p>', $response->body);
         self::assertStringContainsString('<p>Leziune nouă.</p>', $response->body);
         self::assertStringNotContainsString('<ins>', $response->body);
@@ -210,7 +250,7 @@ Leziune nouă.',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('class="wk-dt', $response->body);
         self::assertStringNotContainsString('wk-worddiff', $response->body);
         self::assertStringContainsString('only one revision', $response->body);
     }
@@ -222,7 +262,7 @@ Leziune nouă.',
      */
     public function testWordStyleFallsBackToLineForATooLargeBody(): void
     {
-        $big = str_repeat('word ', 3040);
+        $big = str_repeat('word ', 50_001);
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
             'meta' => ['title' => 'v1', 'visibility' => 'private'],
@@ -243,7 +283,7 @@ Leziune nouă.',
 
         self::assertSame(200, $response->status);
         self::assertStringNotContainsString('wk-worddiff', $response->body);
-        self::assertStringContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('wk-dt', $response->body);
         self::assertStringContainsString(t('revisions.style_fallback'), $response->body);
     }
 

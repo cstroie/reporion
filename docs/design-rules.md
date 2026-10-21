@@ -270,7 +270,7 @@ exactly one is on, drawn as a bar with the chosen one filled in accent.
 
 | Use | Markup | Examples |
 |---|---|---|
-| **A choice that submits** (radios) | `.seg` of `label.seg-opt` each with `<input type="radio">` | Enabled / Disabled for the assistant and a plugin; Sync / Whole in compare; word / line in the diff |
+| **A choice that submits** (radios) | `.seg` of `label.seg-opt` each with `<input type="radio">` | Enabled / Disabled for the assistant and a plugin; Sync / Whole in compare; Prose / Unified / Split / Rendered in the diff |
 | **A filter that navigates** (links) | `.seg` of `a.seg-opt`, the current one `.seg-on` + `aria-current="true"` | period, site and modality on Statistics and Recent |
 | **A choice that is a button** | `.seg` of `<button class="seg-opt">`, the current one `.seg-on` / `aria-pressed="true"` | theme Dark / Light in the appearance menu |
 

@@ -49,6 +49,7 @@ declare(strict_types=1);
 /** @var ?int $from */
 /** @var ?int $to */
 /** @var string $requestedStyle */
+/** @var bool $ignoreSpace */
 /** @var ?array{style: string, ops: ?list<array{op: string, line: string}>, panes: ?list<array{rev: int, ts: string, title: string, html: ?string, raw: string}>, fromTs: string, toTs: string} $diff */
 /** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
 /** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
@@ -58,6 +59,26 @@ declare(strict_types=1);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = $e($basePath);
 $p = $b . '/' . $e($path);
+$keep = '&amp;style=' . $e($requestedStyle) . ($ignoreSpace ? '&amp;ws=1' : '');
+$bar = static function (?array $c): string {
+    if ($c === null || ($c['add'] === 0 && $c['remove'] === 0)) {
+        return '';
+    }
+    $total = $c['add'] + $c['remove'];
+    $green = (int) round(5 * $c['add'] / $total);
+    if ($c['add'] > 0) {
+        $green = max(1, $green);
+    }
+    if ($c['remove'] > 0) {
+        $green = min(4, $green);
+    }
+    $out = '<span class="wk-bar" aria-hidden="true">';
+    for ($i = 0; $i < 5; ++$i) {
+        $out .= '<i class="' . ($i < $green ? 'wk-bar-add' : 'wk-bar-del') . '"></i>';
+    }
+
+    return $out . '</span>';
+};
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><hgroup>
@@ -74,8 +95,10 @@ $p = $b . '/' . $e($path);
 <span class="seg" role="radiogroup" aria-label="<?= $e(t('revisions.style')) ?>">
 <label class="seg-opt"><input type="radio" name="style" value="word"<?= $requestedStyle === 'word' ? ' checked' : '' ?>><?= $e(t('revisions.style_word')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="line"<?= $requestedStyle === 'line' ? ' checked' : '' ?>><?= $e(t('revisions.style_line')) ?></label>
+<label class="seg-opt"><input type="radio" name="style" value="split"<?= $requestedStyle === 'split' ? ' checked' : '' ?>><?= $e(t('revisions.style_split')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="side"<?= $requestedStyle === 'side' ? ' checked' : '' ?>><?= $e(t('revisions.style_side')) ?></label>
 </span>
+<label class="wk-inlinecheck"><input type="checkbox" name="ws" value="1"<?= $ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.ignore_space')) ?></label>
 <button type="submit" class="btn btn-secondary" id="rev-style-apply"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('revisions.style_apply')) ?></button>
 </form>
 <script>
@@ -85,7 +108,7 @@ $p = $b . '/' . $e($path);
   // With JS, picking a style re-submits immediately; the button hides once
   // this runs, and stays a working fallback without JS.
   if (btn) btn.hidden = true;
-  Array.prototype.forEach.call(form.querySelectorAll('[name="style"]'), function(radio) {
+  Array.prototype.forEach.call(form.querySelectorAll('[name="style"], [name="ws"]'), function(radio) {
     radio.addEventListener('change', function() { form.submit(); });
   });
 })();
@@ -124,6 +147,7 @@ $p = $b . '/' . $e($path);
 <?php if ($row['counts'] !== null): ?>
 <?php if ($row['counts']['add'] > 0): ?><span class="wk-add">+<?= $row['counts']['add'] ?></span><?php endif; ?>
 <?php if ($row['counts']['remove'] > 0): ?> <span class="wk-del">−<?= $row['counts']['remove'] ?></span><?php endif; ?>
+<?= $bar($row['counts']) ?>
 <?php endif; ?>
 </div></td>
 <td class="wk-dim<?= (string) ($entry['note'] ?? '') === '' ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><?= $e((string) ($entry['note'] ?? '')) ?></div></td>
@@ -139,7 +163,7 @@ $p = $b . '/' . $e($path);
 <button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('revisions.restore')) ?></button>
 </form>
 <?php endif; ?>
-<a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
+<a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?><?= $keep ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
 </div>
 <?php endif; ?>
 </td>
@@ -155,7 +179,7 @@ $p = $b . '/' . $e($path);
 <td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
 <td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
 <td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
-<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="?from=0&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a></div></td>
+<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="?from=0&amp;to=<?= $currentRev ?><?= $keep ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a></div></td>
 </tr>
 <?php endif; ?>
 </tbody>
@@ -171,7 +195,15 @@ $p = $b . '/' . $e($path);
 <?php $noticeKind = 'warn'; $noticeText = t('revisions.style_fallback'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($diff['style'] === 'word'): ?>
-<div class="wk-worddiff wk-prose"><?php foreach ($diff['ops'] as $op): ?><?php
+<div class="wk-difftools" data-difftools>
+<span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_words')) ?></span></span>
+<span class="wk-actions">
+<button type="button" class="btn btn-secondary btn-sm" data-diff-prev><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<button type="button" class="btn btn-secondary btn-sm" data-diff-next><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
+<span class="wk-dim wk-mono" data-diff-pos aria-live="polite"></span>
+</span>
+</div>
+<div class="wk-worddiff wk-prose" data-wordtext><?php foreach ($diff['ops'] as $op): ?><?php
     $text = htmlspecialchars($op['line'], ENT_QUOTES);
     echo match ($op['op']) {
         'add' => '<ins>' . $text . '</ins>',
@@ -193,34 +225,79 @@ $p = $b . '/' . $e($path);
 </div>
 <?php endforeach; ?>
 </div>
-<?php elseif (($diff['hunks'] ?? null) !== null): ?>
-<?php /* The change-summary format (Support\CommitDiff): each hunk headed by the section it is in, no context lines, a paragraph changed in a few words inline as [-old-]{+new+} */ ?>
-<pre class="wk-mono wk-difftext"><?php foreach ($diff['hunks'] as $hunk): ?><?php
-    // No newline between the spans: they are blocks, and in a <pre> a newline would be one more line
-?><span class="wk-ctx wk-hunk"><?= htmlspecialchars('@@' . ($hunk['heading'] !== '' ? ' ' . $hunk['heading'] : ''), ENT_QUOTES) ?></span><?php foreach ($hunk['lines'] as $line): ?><?php
-    $class = match ($line[0]) {
-        '+' => 'wk-al',
-        '-' => 'wk-dl',
-        default => 'wk-inl',
-    };
-    $text = htmlspecialchars($line, ENT_QUOTES);
-    // The inline marks keep their text, coloured: removed [-…-], added {+…+}
-    $text = (string) preg_replace(['/\[-(.*?)-\]/su', '/\{\+(.*?)\+\}/su'], ['<span class="wk-dl wk-mark">[-$1-]</span>', '<span class="wk-al wk-mark">{+$1+}</span>'], $text);
-?><span class="<?= $class ?>"><?= $text ?></span><?php endforeach; ?><?php endforeach; ?></pre>
 <?php else: ?>
-<pre class="wk-mono wk-difftext"><?php foreach ($diff['ops'] as $line): ?><?php
-    $class = match ($line['op']) {
-        'add' => 'wk-al',
-        'remove' => 'wk-dl',
-        default => 'wk-ctx',
-    };
-    $prefix = match ($line['op']) {
-        'add' => '+ ',
-        'remove' => '- ',
-        default => '  ',
-    };
-    // No newline between the spans: they are blocks, and in a <pre> a newline would be one more line
-?><span class="<?= $class ?>"><?= htmlspecialchars($prefix . $line['line'], ENT_QUOTES) ?></span><?php endforeach; ?></pre>
+<?php
+$split = $diff['style'] === 'split';
+$segs = static function (string $text, ?array $parts, string $kind) use ($e): string {
+    if ($parts === null) {
+        return $e($text);
+    }
+    $out = '';
+    foreach ($parts as [$k, $part]) {
+        $out .= $k === 'chg' ? '<mark class="wk-mark-' . $kind . '">' . $e($part) . '</mark>' : $e($part);
+    }
+
+    return $out;
+};
+$foldLabel = static fn (array $row): string => t('revisions.unchanged', [(int) $row['n']]) . ($row['heading'] !== '' ? ' · ' . $row['heading'] : '');
+$foldId = 0;
+?>
+<div class="wk-difftools" data-difftools>
+<span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_lines')) ?></span></span>
+<span class="wk-actions">
+<?php if ($diff['stats']['add'] + $diff['stats']['remove'] > 0): ?>
+<button type="button" class="btn btn-secondary btn-sm" data-diff-prev><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<button type="button" class="btn btn-secondary btn-sm" data-diff-next><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
+<span class="wk-dim wk-mono" data-diff-pos aria-live="polite"></span>
+<?php endif; ?>
+<label class="wk-inlinecheck"><input type="checkbox" data-diff-wrap checked><?= $e(t('revisions.wrap')) ?></label>
+</span>
+</div>
+<?php if ($diff['stats']['add'] + $diff['stats']['remove'] === 0): ?>
+<?php $noticeKind = 'info'; $noticeText = t('revisions.no_changes'); include __DIR__ . '/partials/notice.php'; ?>
+<?php endif; ?>
+<div class="wk-dt-wrap wk-dt-wrapped" data-dtwrap>
+<table class="wk-dt<?= $split ? ' wk-dt-split' : '' ?> wk-mono">
+<?php if ($split): ?>
+<colgroup><col class="wk-dt-n"><col class="wk-dt-c"><col class="wk-dt-n"><col class="wk-dt-c"></colgroup>
+<?php else: ?>
+<colgroup><col class="wk-dt-n"><col class="wk-dt-n"><col class="wk-dt-s"><col class="wk-dt-c"></colgroup>
+<?php endif; ?>
+<tbody>
+<?php foreach ($diff['rows'] as $row): ?>
+<?php if ($split): ?>
+<?php if (isset($row['fold'])): $foldId++; ?>
+<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><?= $e($foldLabel($row)) ?></button></td></tr>
+<?php foreach ($row['rows'] as $hid): ?>
+<tr class="wk-dt-hid" data-foldrow="<?= $foldId ?>" hidden><td class="wk-dt-n"><?= (int) $hid['l']['n'] ?></td><td class="wk-dt-c"><?= $e($hid['l']['text']) ?></td><td class="wk-dt-n"><?= (int) $hid['r']['n'] ?></td><td class="wk-dt-c"><?= $e($hid['r']['text']) ?></td></tr>
+<?php endforeach; ?>
+<?php else: ?>
+<?php $l = $row['l']; $r = $row['r']; ?>
+<tr<?= ($l !== null && $l['t'] !== 'ctx') || ($r !== null && $r['t'] !== 'ctx') ? ' data-change' : '' ?>>
+<td class="wk-dt-n<?= $l !== null && $l['t'] === 'del' ? ' wk-dt-del' : '' ?>"><?= $l !== null ? (int) $l['n'] : '' ?></td>
+<td class="wk-dt-c<?= $l === null ? ' wk-dt-empty' : ($l['t'] === 'del' ? ' wk-dt-del' : '') ?>"><?= $l !== null ? $segs($l['text'], $l['segs'], 'del') : '' ?></td>
+<td class="wk-dt-n<?= $r !== null && $r['t'] === 'add' ? ' wk-dt-add' : '' ?>"><?= $r !== null ? (int) $r['n'] : '' ?></td>
+<td class="wk-dt-c<?= $r === null ? ' wk-dt-empty' : ($r['t'] === 'add' ? ' wk-dt-add' : '') ?>"><?= $r !== null ? $segs($r['text'], $r['segs'], 'add') : '' ?></td>
+</tr>
+<?php endif; ?>
+<?php else: ?>
+<?php if ($row['t'] === 'fold'): $foldId++; ?>
+<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><?= $e($foldLabel($row)) ?></button></td></tr>
+<?php foreach ($row['rows'] as $hid): ?>
+<tr class="wk-dt-hid" data-foldrow="<?= $foldId ?>" hidden><td class="wk-dt-n"><?= (int) $hid['a'] ?></td><td class="wk-dt-n"><?= (int) $hid['b'] ?></td><td class="wk-dt-s"></td><td class="wk-dt-c"><?= $e($hid['text']) ?></td></tr>
+<?php endforeach; ?>
+<?php else: ?>
+<?php
+    $cls = $row['t'] === 'add' ? ' wk-dt-add' : ($row['t'] === 'del' ? ' wk-dt-del' : '');
+    $sign = $row['t'] === 'add' ? '+' : ($row['t'] === 'del' ? '−' : '');
+?>
+<tr<?= $row['t'] !== 'ctx' ? ' data-change' : '' ?>><td class="wk-dt-n<?= $cls ?>"><?= $row['a'] !== null ? (int) $row['a'] : '' ?></td><td class="wk-dt-n<?= $cls ?>"><?= $row['b'] !== null ? (int) $row['b'] : '' ?></td><td class="wk-dt-s<?= $cls ?>" aria-hidden="true"><?= $sign ?></td><td class="wk-dt-c<?= $cls ?>"><?= $segs($row['text'], $row['segs'], $row['t']) ?></td></tr>
+<?php endif; ?>
+<?php endif; ?>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
 <?php endif; ?>
 </section>
 <?php endif; ?>
@@ -255,9 +332,54 @@ $p = $b . '/' . $e($path);
       // The second pick runs the diff immediately: no separate "Compare selected" step
       if (selected.length === 2) {
         var nums = selected.map(Number).sort(function(a, b) { return a - b; });
-        location.search = '?from=' + nums[0] + '&to=' + nums[1] + '&style=' + encodeURIComponent(style);
+        location.search = '?from=' + nums[0] + '&to=' + nums[1] + '&style=' + encodeURIComponent(style) + <?= $ignoreSpace ? "'&ws=1'" : "''" ?>;
       }
     });
   });
+})();
+</script>
+<script>
+(function() {
+  // Unchanged runs folded away: a click opens them
+  Array.prototype.forEach.call(document.querySelectorAll('.wk-dt-fold button'), function(btn) {
+    btn.addEventListener('click', function() {
+      var id = btn.getAttribute('data-fold');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-foldrow="' + id + '"]'), function(r) { r.hidden = false; });
+      var row = btn.closest('tr');
+      row.parentNode.removeChild(row);
+    });
+  });
+  var wrap = document.querySelector('[data-diff-wrap]');
+  var box = document.querySelector('[data-dtwrap]');
+  if (wrap && box) wrap.addEventListener('change', function() { box.classList.toggle('wk-dt-wrapped', wrap.checked); });
+  // Jump between the changes: whole changed blocks in a line diff, ins/del runs in a prose one
+  var prev = document.querySelector('[data-diff-prev]');
+  var next = document.querySelector('[data-diff-next]');
+  var pos = document.querySelector('[data-diff-pos]');
+  if (!prev || !next) return;
+  var stops = [];
+  var text = document.querySelector('[data-wordtext]');
+  if (text) {
+    stops = Array.prototype.slice.call(text.querySelectorAll('ins, del'));
+  } else {
+    var before = null;
+    Array.prototype.forEach.call(document.querySelectorAll('.wk-dt tr'), function(tr) {
+      var changed = tr.hasAttribute('data-change');
+      if (changed && !before) stops.push(tr);
+      before = changed;
+    });
+  }
+  var at = -1;
+  function go(delta) {
+    if (!stops.length) return;
+    at = Math.max(0, Math.min(stops.length - 1, at + delta));
+    stops[at].scrollIntoView({block: 'center'});
+    stops.forEach(function(el) { el.classList.remove('wk-dt-now'); });
+    stops[at].classList.add('wk-dt-now');
+    if (pos) pos.textContent = (at + 1) + ' / ' + stops.length;
+  }
+  if (!stops.length) { prev.disabled = true; next.disabled = true; }
+  prev.addEventListener('click', function() { go(-1); });
+  next.addEventListener('click', function() { go(1); });
 })();
 </script>
