@@ -327,7 +327,7 @@ Use it where an input and its action are one thing.
 | `.grow` | opt in: take a share of the leftover width | an input that should fill its group |
 
 **A view toolbar** (2026-10-21, the Revisions diff): one strip in the look of the search bars, in
-groups a hair apart. The parent (`.wk-gbar`) is a flex row with `gap: 1px`; each child is a `.group`
+groups a hair apart. The parent (`.wk-gbar`) is a flex row with `gap: var(--space-1)`; each child is a `.group`
 (totals `group-addon` + a filler `group-addon` with `flex: 1`; changes; view toggles; the style radios as
 `label.btn`). Only the strip's own ends are rounded. Its cells are `.btn.btn-sm`, plain when off and
 accent-filled when on (`aria-pressed="true"`, or a `label.btn` whose radio is checked); one that does not
