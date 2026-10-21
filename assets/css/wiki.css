@@ -2195,3 +2195,4 @@ button.wk-chip { background: transparent; color: var(--color-text); cursor: poin
 button.wk-chip:hover { border-color: var(--color-accent); }
 button.wk-chip.wk-chip-on { color: var(--color-accent); border-color: var(--color-accent); }
 .wk-wl-empty { padding: var(--space-3); font-size: var(--text-sm); }
+body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inherit; text-decoration: none; }
