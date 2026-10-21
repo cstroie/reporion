@@ -989,6 +989,11 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-difftools .group > .btn[aria-pressed="true"], .wk-difftools .group > .wk-gopt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); border-color: color-mix(in srgb, var(--color-bg) 40%, var(--color-accent)); } /* a darker edge, so two filled cells side by side stay two */
 .wk-difftools .group > .btn[aria-pressed="true"]:hover, .wk-difftools .group > .wk-gopt:has(input:checked):hover { background: var(--color-accent-300); color: var(--color-bg); }
 .wk-difftools .wk-gopt input { display: none; }
+/* a narrow screen: a group may not outgrow the bar; its cells shrink (uppercase, letter-spaced palettes made four style cells wider than 400px) */
+@media (max-width: 575.98px) {
+  .wk-difftools .group { max-width: 100%; }
+  .wk-difftools .group > .btn { min-width: 0; padding-inline: var(--space-2); letter-spacing: 0; }
+}
 .wk-gbar { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--space-1); } /* one strip, in groups a hair apart: only the strip's own ends are rounded */
 .wk-gbar > .group > * { border-radius: 0; }
 .wk-gbar > .group:first-child > :first-child { border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); }
