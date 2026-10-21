@@ -9,6 +9,7 @@ namespace Reporion\Tests\Http;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
+use Reporion\Http\Theme;
 use Reporion\Kernel;
 
 /**
@@ -218,5 +219,35 @@ final class ThemeTest extends HttpTestCase
         preg_match('/<body class="([^"]*)"/', $cyberpunk->body, $body);
         self::assertStringEndsWith('palette-cyberpunk', $body[1] ?? '');
         self::assertStringContainsString('css/cyberpunk.css', $royalBlue->body);
+    }
+
+    /**
+     * Reading room, Phosphor (`crt`), Film and Blueprint: on the allowlist, one stylesheet
+     * (themes.css) for the four, loaded on every page like cyberpunk's.
+     */
+    public function testTheFourThemesAreOnTheAllowlistAndShareOneStylesheet(): void
+    {
+        foreach (['reading-room', 'crt', 'film', 'blueprint'] as $palette) {
+            self::assertSame($palette, Theme::palette($palette));
+            self::assertStringStartsWith('reporion_palette=' . $palette . ';', Theme::paletteCookieHeader($palette));
+            self::assertNotSame('palette.' . $palette, t('palette.' . $palette), 'a label for ' . $palette);
+        }
+
+        $this->createOwner();
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body');
+        $cookie = (new Session(
+            (string) $this->config['auth']['session_secret'],
+            (string) $this->config['auth']['session_name'],
+            (int) $this->config['auth']['session_lifetime'],
+            new FlatFileUserStore($this->dataRoot),
+        ))->issue('owner');
+        $page = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a',
+            cookies: ['reporion' => $cookie, 'reporion_palette' => 'blueprint']
+        ));
+        preg_match('/<body class="([^"]*)"/', $page->body, $body);
+        self::assertStringEndsWith('palette-blueprint', $body[1] ?? '');
+        self::assertStringContainsString('css/themes.css', $page->body);
     }
 }

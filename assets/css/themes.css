@@ -1,0 +1,74 @@
+/* assets/css/themes.css: the personality of four palettes (2026-10-21): Reading room, Phosphor
+ * (`crt`), Film and Blueprint. Their colours, radii and fonts are tokens (assets/css/tokens.css);
+ * this file places type, texture and backdrop, and nothing else. Same rules as cyberpunk.css:
+ * loaded on every page (shell.js switches palettes in place), every rule scoped to its palette
+ * class, screen only (print and the PDF are print.css, D34), nothing moves, and the report text
+ * (.wk-prose) and the editor textarea (.wk-ta: external dictation types into it) get no glow and
+ * no texture. Dark-only effects are scoped :not(.theme-light); the light schemes are quieter. */
+
+@media screen {
+
+/* the focus ring takes the palette's accent on every control, not the browser's default */
+:is(.palette-reading-room, .palette-crt, .palette-film, .palette-blueprint) :focus-visible { outline-color: var(--color-accent); }
+
+/* ---- Reading room: a dark room, after the PACS viewer ------------------------------------ */
+.palette-reading-room ::selection { background: var(--color-accent-800); color: var(--color-accent-100); }
+.palette-reading-room:not(.theme-light) .wk-prose img,
+.palette-reading-room:not(.theme-light) .wk-preview img { filter: brightness(.85); } /* a white image must not flash in a dark room */
+.palette-reading-room:not(.theme-light) :is(.btn-primary, .btn-primary:hover) { box-shadow: none; }
+
+/* ---- Phosphor: a terminal. Mono everywhere (the tokens), spaced uppercase chrome ---------- */
+.palette-crt :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4),
+.palette-crt :is(.btn, .wk-tab, .wk-eyebrow, table.table th, .tag, .wk-chip) { font-weight: 400; }
+.palette-crt :is(.btn, .wk-tab, .wk-eyebrow) { text-transform: uppercase; letter-spacing: .06em; }
+.palette-crt .wk-brand { text-transform: uppercase; letter-spacing: .16em; }
+.palette-crt ::selection { background: var(--color-accent); color: var(--color-bg); }
+.palette-crt .btn:not(.btn-primary):not(.btn-ghost) { border-color: var(--color-divider); }
+body.palette-crt:not(.theme-light) { background: #020a04; }
+body.palette-crt:not(.theme-light)::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,.28) 0 1px, transparent 1px 3px), /* scanlines, behind the content, never over it */
+    radial-gradient(ellipse at 50% 40%, rgba(92,240,138,.07), transparent 70%);      /* the tube's faint glow */
+}
+.palette-crt:not(.theme-light) :is(.wk-brand, .wk-doc-title, .wk-topnav .ph, .wk-tab[data-on="1"]) { text-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 55%, transparent); }
+.palette-crt:not(.theme-light) .btn-primary { box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 40%, transparent); }
+.palette-crt:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
+  background: rgba(7, 20, 10, .86); box-shadow: 0 0 0 1px #14522a, 0 0 18px rgba(92,240,138,.10);
+}
+.palette-crt.theme-light .wk-panes[data-pad="read"] .wk-panebox { box-shadow: 0 0 0 1px #aec4a0; } /* a pale LCD: flat, ruled */
+
+/* ---- Film: X-ray film on a light box ------------------------------------------------------- */
+.palette-film :is(.wk-eyebrow, table.table th) { letter-spacing: .08em; text-transform: uppercase; }
+.palette-film ::selection { background: var(--color-accent-800); color: var(--color-accent-100); }
+body.palette-film:not(.theme-light) { background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(127,212,232,.09), transparent 70%) fixed, #090d11; }
+body.palette-film.theme-light { background: radial-gradient(ellipse 90% 70% at 50% -10%, #fff, transparent 75%) fixed, #dde6ec; } /* back-lit */
+.palette-film:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: #10171e; box-shadow: 0 0 0 1px #33444f, inset 0 1px 0 rgba(169,228,241,.10), 0 0 40px rgba(127,212,232,.05); }
+.palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f3f7fa; box-shadow: 0 0 0 1px #c9d7e0, 0 0 44px rgba(255,255,255,.9); }
+
+/* ---- Blueprint: cyan line-work on drafting blue (a ruled grid behind the page) -------------- */
+.palette-blueprint :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4) { font-weight: 400; }
+.palette-blueprint :is(.btn, .wk-tab, .wk-eyebrow, table.table th) { font-family: var(--font-mono); font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
+.palette-blueprint .btn:not(.btn-primary):not(.btn-ghost) { border-color: color-mix(in srgb, var(--color-accent) 55%, transparent); }
+.palette-blueprint hr { border-style: dashed; }
+.palette-blueprint ::selection { background: var(--color-accent); color: var(--color-bg); }
+body.palette-blueprint:not(.theme-light) {
+  background:
+    linear-gradient(rgba(127,208,255,.055) 1px, transparent 1px) 0 0 / 24px 24px fixed,
+    linear-gradient(90deg, rgba(127,208,255,.055) 1px, transparent 1px) 0 0 / 24px 24px fixed,
+    linear-gradient(rgba(127,208,255,.11) 1px, transparent 1px) 0 0 / 120px 120px fixed,
+    linear-gradient(90deg, rgba(127,208,255,.11) 1px, transparent 1px) 0 0 / 120px 120px fixed,
+    #0a2346;
+}
+body.palette-blueprint.theme-light {
+  background:
+    linear-gradient(rgba(11,85,184,.06) 1px, transparent 1px) 0 0 / 24px 24px fixed,
+    linear-gradient(90deg, rgba(11,85,184,.06) 1px, transparent 1px) 0 0 / 24px 24px fixed,
+    linear-gradient(rgba(11,85,184,.12) 1px, transparent 1px) 0 0 / 120px 120px fixed,
+    linear-gradient(90deg, rgba(11,85,184,.12) 1px, transparent 1px) 0 0 / 120px 120px fixed,
+    #eef5fd;
+}
+.palette-blueprint .wk-panes[data-pad="read"] .wk-panebox { background: var(--color-surface); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent); } /* text never sits on the grid */
+.palette-blueprint :is(.wk-ta, #editor-ai, .wk-side) { background: var(--color-surface); } /* nor behind the editor, its rail or the left panel */
+
+}

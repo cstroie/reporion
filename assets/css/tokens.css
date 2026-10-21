@@ -376,8 +376,235 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --shadow-md: 0 0 0 1px #c7d6e8, 0 7.5px 23px rgba(0,32,63,.10);
   --shadow-lg: 0 0 0 1px #a9bfd8, 0 20.5px 51.5px rgba(0,32,63,.16);
 }
+/* Reading room, Phosphor, Film and Blueprint (2026-10-21): four more whole themes, tokens
+ * here, the personality (type, texture, backdrop) in assets/css/themes.css. Each has a dark
+ * and a light scheme; state colours are defined in both, so a notice needs no per-theme rule.
+ * Reading room: near-black neutrals, no blue, one dim sepia accent, no glow (a dark room,
+ * after the PACS viewer). Phosphor ("crt"): a green monochrome terminal; its light scheme is a
+ * pale LCD. Film: cool X-ray film on a light box. Blueprint: cyan line-work on drafting blue. */
+.palette-reading-room {
+  --color-bg:        #0a0a0b;
+  --color-surface:   #131315;
+  --color-text:      #c6c6c9;
+  --color-dim:       color-mix(in srgb, var(--color-text) 64%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #b89a6a;
+  --color-divider:   color-mix(in srgb, #c6c6c9 14%, transparent);
+  --color-accent-100: #f3ece0;
+  --color-accent-200: #e2d3b8;
+  --color-accent-300: #d3bd94;
+  --color-accent-800: #4a3d26;
+  --color-accent-900: #2c2416;
+  --color-neutral-100: #f2f2f3;
+  --color-neutral-300: #b9b9bd;
+  --color-neutral-700: #4d4d52;
+  --color-neutral-800: #2b2b2f;
+  --color-neutral-900: #101012;
+  --state-ok:    #79a98a;
+  --state-warn:  #c99a4b;
+  --state-error: #cf7468;
+  --diff-add:    #79a98a;
+  --diff-del:    #cf7468;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --shadow-sm: 0 0 0 1px #2b2b2f;
+  --shadow-md: 0 0 0 1px #38383d, 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #6a6a70, 0 20.5px 51.5px rgba(0,0,0,.7);
+}
+.theme-light.palette-reading-room {
+  --color-bg:        #e8e8ea;
+  --color-surface:   #f5f5f6;
+  --color-text:      #1c1c1f;
+  --color-dim:       #55555b;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #7a5a24;
+  --color-accent-300: #5e4418;
+  --color-accent-800: #4a3612;
+  --color-accent-100: #f6efe2;
+  --color-accent-200: #e8dcc2;
+  --color-neutral-100: #f1f1f2;
+  --color-divider:   color-mix(in srgb, #1c1c1f 15%, transparent);
+  --color-neutral-200: #dadade;
+  --color-neutral-700: #46464b;
+  --state-ok:    #2f7048;
+  --state-warn:  #8a5a00;
+  --state-error: #a8372b;
+  --diff-add:    #2f7048;
+  --diff-del:    #a8372b;
+  --shadow-sm: 0 0 0 1px #d4d4d8;
+  --shadow-md: 0 0 0 1px #d4d4d8, 0 7.5px 23px rgba(28,28,31,.10);
+  --shadow-lg: 0 0 0 1px #bdbdc3, 0 20.5px 51.5px rgba(28,28,31,.16);
+}
+.palette-crt {
+  --color-bg:        #020a04;
+  --color-surface:   #07140a;
+  --color-text:      #5cf08a;
+  --color-dim:       color-mix(in srgb, var(--color-text) 78%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #9dffb8;
+  --color-divider:   #14522a;
+  --color-accent-100: #e8fff0;
+  --color-accent-200: #c4ffd6;
+  --color-accent-300: #d2ffe0;
+  --color-accent-800: #0f4a24;
+  --color-accent-900: #072612;
+  --color-neutral-100: #e8fff0;
+  --color-neutral-300: #8ff5ad;
+  --color-neutral-700: #1c8a46;
+  --color-neutral-800: #0f4a24;
+  --color-neutral-900: #03100a;
+  --state-ok:    #5cf08a;
+  --state-warn:  #ffcf40;
+  --state-error: #ff6a4d;
+  --diff-add:    #5cf08a;
+  --diff-del:    #ff6a4d;
+  --font-body:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 0; --radius-md: 2px; --radius-lg: 3px;
+  --shadow-sm: 0 0 0 1px #14522a;
+  --shadow-md: 0 0 0 1px #1c8a46, 0 0 14px rgba(92,240,138,.14), 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #5cf08a, 0 0 24px rgba(92,240,138,.24), 0 20.5px 51.5px rgba(0,0,0,.7);
+}
+.theme-light.palette-crt {
+  --color-bg:        #d3e2c8;
+  --color-surface:   #e4eedb;
+  --color-text:      #10260f;
+  --color-dim:       #33502f;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #17601f;
+  --color-accent-300: #0f4a17;
+  --color-accent-800: #0c3a12;
+  --color-accent-100: #e4f0dc;
+  --color-accent-200: #c9e0bd;
+  --color-neutral-100: #e6efdd;
+  --color-divider:   color-mix(in srgb, #10260f 28%, transparent);
+  --color-neutral-200: #c2d6b4;
+  --color-neutral-700: #2e4a2a;
+  --state-ok:    #17601f;
+  --state-warn:  #7a5200;
+  --state-error: #a3200d;
+  --diff-add:    #17601f;
+  --diff-del:    #a3200d;
+  --font-body:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 0; --radius-md: 2px; --radius-lg: 3px;
+  --shadow-sm: 0 0 0 1px #aec4a0;
+  --shadow-md: 0 0 0 1px #aec4a0, 0 7.5px 23px rgba(16,38,15,.10);
+  --shadow-lg: 0 0 0 1px #8fab7e, 0 20.5px 51.5px rgba(16,38,15,.16);
+}
+.palette-film {
+  --color-bg:        #090d11;
+  --color-surface:   #10171e;
+  --color-text:      #d3dfe7;
+  --color-dim:       color-mix(in srgb, var(--color-text) 66%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #7fd4e8;
+  --color-divider:   color-mix(in srgb, #d3dfe7 15%, transparent);
+  --color-accent-100: #eafafe;
+  --color-accent-200: #c5eef7;
+  --color-accent-300: #a9e4f1;
+  --color-accent-800: #1b5566;
+  --color-accent-900: #103341;
+  --color-neutral-100: #f1f8fb;
+  --color-neutral-300: #b7c8d3;
+  --color-neutral-700: #475a68;
+  --color-neutral-800: #24323d;
+  --color-neutral-900: #0c1218;
+  --state-ok:    #74c9a3;
+  --state-warn:  #e0b25c;
+  --state-error: #e58a8a;
+  --diff-add:    #74c9a3;
+  --diff-del:    #e58a8a;
+  --radius-sm: 3px; --radius-md: 5px; --radius-lg: 8px;
+  --shadow-sm: 0 0 0 1px #24323d;
+  --shadow-md: 0 0 0 1px #33444f, inset 0 1px 0 rgba(169,228,241,.08), 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #6b8493, inset 0 1px 0 rgba(169,228,241,.12), 0 20.5px 51.5px rgba(0,0,0,.7);
+}
+.theme-light.palette-film {
+  --color-bg:        #dde6ec;
+  --color-surface:   #f3f7fa;
+  --color-text:      #0e1922;
+  --color-dim:       #4a5c69;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #16657d;
+  --color-accent-300: #0f4c5f;
+  --color-accent-800: #0b3a49;
+  --color-accent-100: #e3f3f8;
+  --color-accent-200: #c3e4ee;
+  --color-neutral-100: #eef3f7;
+  --color-divider:   color-mix(in srgb, #0e1922 16%, transparent);
+  --color-neutral-200: #cddae3;
+  --color-neutral-700: #3a4c59;
+  --state-ok:    #1f7a55;
+  --state-warn:  #8a5a00;
+  --state-error: #b03030;
+  --diff-add:    #1f7a55;
+  --diff-del:    #b03030;
+  --shadow-sm: 0 0 0 1px #c9d7e0;
+  --shadow-md: 0 0 0 1px #c9d7e0, 0 7.5px 23px rgba(14,25,34,.10);
+  --shadow-lg: 0 0 0 1px #aebfcb, 0 20.5px 51.5px rgba(14,25,34,.16);
+}
+.palette-blueprint {
+  --color-bg:        #0a2346;
+  --color-surface:   #0d2d5a;
+  --color-text:      #d6e8ff;
+  --color-dim:       color-mix(in srgb, var(--color-text) 74%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #7fd0ff;
+  --color-divider:   color-mix(in srgb, #7fd0ff 32%, transparent);
+  --color-accent-100: #eaf6ff;
+  --color-accent-200: #c6e6ff;
+  --color-accent-300: #a9dcff;
+  --color-accent-800: #134a85;
+  --color-accent-900: #0b3566;
+  --color-neutral-100: #f0f7ff;
+  --color-neutral-300: #a9c6e8;
+  --color-neutral-700: #3d6ba6;
+  --color-neutral-800: #1a4a86;
+  --color-neutral-900: #071b38;
+  --state-ok:    #6ee7a0;
+  --state-warn:  #ffc247;
+  --state-error: #ff7b7b;
+  --diff-add:    #6ee7a0;
+  --diff-del:    #ff7b7b;
+  --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 0; --radius-md: 0; --radius-lg: 2px;
+  --shadow-sm: 0 0 0 1px #1d4f90;
+  --shadow-md: 0 0 0 1px #3b78c2, 0 7.5px 23px rgba(0,10,30,.5);
+  --shadow-lg: 0 0 0 1px #7fd0ff, 0 20.5px 51.5px rgba(0,10,30,.6);
+}
+.theme-light.palette-blueprint {
+  --color-bg:        #eef5fd;
+  --color-surface:   #fbfdff;
+  --color-text:      #0a2346;
+  --color-dim:       #38557c;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #0b55b8;
+  --color-accent-300: #083f8a;
+  --color-accent-800: #062f66;
+  --color-accent-100: #e6f1ff;
+  --color-accent-200: #c9e0fa;
+  --color-neutral-100: #f4f9ff;
+  --color-divider:   color-mix(in srgb, #0b55b8 28%, transparent);
+  --color-neutral-200: #d6e5f6;
+  --color-neutral-700: #2c4a73;
+  --state-ok:    #117a4a;
+  --state-warn:  #8a5a00;
+  --state-error: #b3261e;
+  --diff-add:    #117a4a;
+  --diff-del:    #b3261e;
+  --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 0; --radius-md: 0; --radius-lg: 2px;
+  --shadow-sm: 0 0 0 1px #b9d0ea;
+  --shadow-md: 0 0 0 1px #b9d0ea, 0 7.5px 23px rgba(10,35,70,.10);
+  --shadow-lg: 0 0 0 1px #8fb2dc, 0 20.5px 51.5px rgba(10,35,70,.16);
+}
+
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover,
 .theme-light.palette-teal a:hover,
 .theme-light.palette-slate a:hover,
+.theme-light.palette-reading-room a:hover,
+.theme-light.palette-crt a:hover,
+.theme-light.palette-film a:hover,
+.theme-light.palette-blueprint a:hover,
 .theme-light.palette-cyberpunk a:hover { color: var(--color-accent-800); }

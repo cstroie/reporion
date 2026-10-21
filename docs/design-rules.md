@@ -532,7 +532,12 @@ less.
 
 - **Palettes are Shell C's, not the Reading room's** (2026-09-30): Royal blue (default), Lime,
   Amber, Teal, plus Slate (Pico's named hue) and Cyberpunk (a whole theme with its own stylesheet,
-  `assets/css/cyberpunk.css`). Each has a dark and a light theme. Rose is not offered.
+  `assets/css/cyberpunk.css`), and four more whole themes (2026-10-21): Reading room, Phosphor
+  (`crt`), Film and Blueprint (`assets/css/themes.css`). Each has a dark and a light theme. Rose
+  is not offered.
+- **A theme's backdrop never sits behind text**: the reading column is a solid (or near-opaque)
+  panel, the report text and the editor textarea get no glow or texture, nothing moves. Every
+  state colour is defined in both schemes and checked for 4.5:1 on the surface.
 - **Theme and palette are per-user display preferences** (a cookie); anonymous and new users get
   royal blue and the system theme.
 - **Everything coloured is a token**: `--color-bg`, `--color-text`, `--color-dim`, `--color-dimmer`
