@@ -982,6 +982,12 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); border-radius: 2px; }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; background: color-mix(in srgb, var(--state-ok) 14%, transparent); border-radius: 2px; }
 
+/* The style form (view, whitespace, apply) wraps instead of widening the page on a phone */
+#rev-style-form { flex-wrap: wrap; justify-content: flex-start; max-width: 100%; }
+#rev-style-form .seg { max-width: 100%; flex-wrap: wrap; }
+.wk-dt tr, .wk-worddiff ins, .wk-worddiff del { scroll-margin-top: 5rem; }
+.theme-light .wk-dt td.wk-dt-add { background: color-mix(in srgb, var(--state-ok) 22%, transparent); }
+
 /* The bar above a diff: totals, jump to the previous/next change, wrap */
 .wk-difftools { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); font-size: var(--text-sm); }
 .wk-difftools .wk-actions { flex-wrap: wrap; }
@@ -1017,7 +1023,8 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-dt-fold button:hover { color: var(--color-accent); }
 
 /* The revision list's change column: five squares, as green as the change is an addition */
-.wk-bar { display: inline-flex; gap: 2px; margin-left: var(--space-2); vertical-align: middle; }
+.wk-rev .wk-cell:has(> .wk-bar) { display: flex; align-items: center; gap: var(--space-2); }
+.wk-bar { display: inline-flex; gap: 2px; margin-left: auto; padding-left: var(--space-2); vertical-align: middle; }
 .wk-bar i { width: 8px; height: 8px; border-radius: 1px; }
 .wk-bar-add { background: var(--state-ok); }
 .wk-bar-del { background: var(--state-error); }

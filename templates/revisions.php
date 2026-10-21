@@ -98,7 +98,10 @@ $bar = static function (?array $c): string {
 <label class="seg-opt"><input type="radio" name="style" value="split"<?= $requestedStyle === 'split' ? ' checked' : '' ?>><?= $e(t('revisions.style_split')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="side"<?= $requestedStyle === 'side' ? ' checked' : '' ?>><?= $e(t('revisions.style_side')) ?></label>
 </span>
-<label class="wk-inlinecheck"><input type="checkbox" name="ws" value="1"<?= $ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.ignore_space')) ?></label>
+<span class="seg" role="radiogroup" aria-label="<?= $e(t('revisions.space')) ?>">
+<label class="seg-opt"><input type="radio" name="ws" value="0"<?= !$ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.space_keep')) ?></label>
+<label class="seg-opt"><input type="radio" name="ws" value="1"<?= $ignoreSpace ? ' checked' : '' ?>><?= $e(t('revisions.space_ignore')) ?></label>
+</span>
 <button type="submit" class="btn btn-secondary" id="rev-style-apply"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('revisions.style_apply')) ?></button>
 </form>
 <script>
