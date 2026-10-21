@@ -63,8 +63,7 @@ body {
 }
 
 
-a { color: var(--color-accent); text-decoration: none; }
-a:hover { color: var(--color-accent-300); text-decoration: underline; }
+/* a, a:hover: in tokens.css (loaded first), with the theme and palette overrides */
 
 /* base primitives (authored, not extracted: see header note): */
 
@@ -417,9 +416,6 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 .wk-row { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-3); border-radius: var(--radius-md); cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; color: inherit; }
 .wk-row:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .wk-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 14%, transparent); box-shadow: inset 2.5px 0 0 var(--color-accent); }
-.wk-row-t { display: flex; align-items: center; gap: 7.5px; font-weight: 500; font-size: var(--text-base); }
-.wk-row-m { font-size: var(--text-xs); opacity: .6; }
-.wk-row-s { font-size: var(--text-sm); opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wk-vis { font-size: var(--text-xs); opacity: .55; margin-left: auto; }
 
 
@@ -880,7 +876,7 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 :is(.wk-sec, .wk-doc-titlerow) hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
 /* an empty state inside a panel: an icon and one line */
 .wk-log { white-space: pre-wrap; margin: var(--space-2) 0 0; font-size: 12px; } /* a tool's output under a table row */
-.wk-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); color: var(--color-dim); text-align: center; }
+.wk-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); text-align: center; }
 .wk-empty > i { font-size: 2rem; opacity: .6; }
 .wk-empty p { margin: 0; font-size: var(--text-sm); }
 
