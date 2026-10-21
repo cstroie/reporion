@@ -173,6 +173,8 @@ html { font-size: 100%; }
 
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
+/* a placeholder takes the palette's dimmed text, not the browser's grey */
+::placeholder { color: var(--color-dimmer); opacity: 1; }
 .theme-light a:hover { color: #16306e; }
 
 /* palettes (A6): */
