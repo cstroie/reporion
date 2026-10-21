@@ -32,9 +32,32 @@ body.palette-crt:not(.theme-light)::before {
     radial-gradient(ellipse at 50% 40%, rgba(92,240,138,.07), transparent 70%);      /* the tube's faint glow */
 }
 .palette-crt:not(.theme-light) :is(.wk-brand, .wk-doc-title, .wk-topnav .ph, .wk-tab[data-on="1"]) { text-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 55%, transparent); }
+/* imperfect analog rendering (2026-10-21): every letter of the chrome blooms a little and its edges
+ * fringe red and blue by under a pixel, like a tube slightly out of convergence; borders glow the
+ * same way. The report text (.wk-prose, .wk-preview) and the editor textarea (.wk-ta) are left
+ * crisp: they are read for a diagnosis and external dictation types into them. */
+.palette-crt:not(.theme-light) {
+  --crt-bloom: 40%; /* how much of a letter's own colour blooms around it: a dim letter blooms dimly */
+}
+body.palette-crt:not(.theme-light) {
+  text-shadow: -.45px 0 rgba(255,70,70,.16), .45px 0 rgba(70,130,255,.14), 0 0 4px color-mix(in srgb, currentColor var(--crt-bloom), transparent);
+}
+.palette-crt:not(.theme-light) :is(.wk-prose, .wk-preview, .wk-ta, .wk-ta *, .wk-prose *, .wk-preview *) { text-shadow: none; }
+/* a border glows in its own colour, so a bright line glows more than a dim one; hover, focus and the active state brighten both */
+.palette-crt:not(.theme-light) :is(.input, .btn:not(.btn-primary)) { box-shadow: 0 0 0 1px var(--color-divider), 0 0 2px var(--color-divider), inset 0 0 2px var(--color-divider); }
+.palette-crt:not(.theme-light) :is(.input, .btn:not(.btn-primary)):is(:hover, :focus-visible) { box-shadow: 0 0 0 1px var(--color-accent), 0 0 3px var(--color-accent), inset 0 0 3px var(--color-accent); }
+.palette-crt:not(.theme-light) :is(.tag, .wk-chip, .notice) { box-shadow: 0 0 2px color-mix(in srgb, currentColor 50%, transparent), inset 0 0 2px color-mix(in srgb, currentColor 40%, transparent); }
+.palette-crt:not(.theme-light) :is(hr, .wk-mi-sep) { box-shadow: 0 0 2px var(--color-divider); }
+/* barely-visible scanlines over everything, a hair of vignette at the corners; clicks pass through */
+body.palette-crt:not(.theme-light)::after {
+  content: ""; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,.07) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(0,0,0,.22) 100%);
+}
 .palette-crt:not(.theme-light) .btn-primary { box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 40%, transparent); }
 .palette-crt:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
-  background: rgba(7, 20, 10, .86); box-shadow: 0 0 0 1px #14522a, 0 0 18px rgba(92,240,138,.10);
+  background: rgba(7, 20, 10, .86); box-shadow: 0 0 0 1px #14522a, 0 0 4px rgba(92,240,138,.08), inset 0 0 5px rgba(92,240,138,.06);
 }
 .palette-crt.theme-light .wk-panes[data-pad="read"] .wk-panebox { box-shadow: 0 0 0 1px #aec4a0; } /* a pale LCD: flat, ruled */
 
