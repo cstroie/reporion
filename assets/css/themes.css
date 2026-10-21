@@ -41,10 +41,10 @@ body.palette-crt:not(.theme-light)::before {
 /* ---- Film: X-ray film on a light box ------------------------------------------------------- */
 .palette-film :is(.wk-eyebrow, table.table th) { letter-spacing: .08em; text-transform: uppercase; }
 .palette-film ::selection { background: var(--color-accent-800); color: var(--color-accent-100); }
-body.palette-film:not(.theme-light) { background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(127,212,232,.09), transparent 70%) fixed, #090d11; }
-body.palette-film.theme-light { background: radial-gradient(ellipse 90% 70% at 50% -10%, #fff, transparent 75%) fixed, #dde6ec; } /* back-lit */
-.palette-film:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: #10171e; box-shadow: 0 0 0 1px #33444f, inset 0 1px 0 rgba(169,228,241,.10), 0 0 40px rgba(127,212,232,.05); }
-.palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f3f7fa; box-shadow: 0 0 0 1px #c9d7e0, 0 0 44px rgba(255,255,255,.9); }
+body.palette-film:not(.theme-light) { background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(156,184,214,.09), transparent 70%) fixed, #070b0e; }
+body.palette-film.theme-light { background: radial-gradient(ellipse 90% 70% at 50% -10%, #fff, transparent 75%) fixed, #d9e2ea; } /* back-lit */
+.palette-film:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: #0f1a22; box-shadow: 0 0 0 1px #3a5166, inset 0 1px 0 rgba(180,204,228,.10), 0 0 40px rgba(156,184,214,.05); }
+.palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f2f6fa; box-shadow: 0 0 0 1px #c6d3e0, 0 0 44px rgba(255,255,255,.9); }
 
 /* ---- Blueprint: cyan line-work on drafting blue (a ruled grid behind the page) -------------- */
 .palette-blueprint :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4) { font-weight: 400; }

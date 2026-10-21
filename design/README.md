@@ -83,8 +83,8 @@ reads like the magenta primary button.
 dark and a light scheme, none from the mockup. *Reading room*: near-black neutrals, no blue, one dim
 sepia accent, no glow, images dimmed (a dark room, after the PACS viewer); light is quiet grey.
 *Phosphor* (palette `crt`, so as not to be taken for the icon font): a green monochrome terminal in
-mono type with scanlines and a faint glow; its light scheme is a pale LCD. *Film*: cool X-ray film,
-a pale-cyan accent on near-black, and a back-lit light box for the light scheme. *Blueprint*: cyan
+mono type with scanlines and a faint glow; its light scheme is a pale LCD. *Film*: X-ray film, the steel blue of a conventional hand radiograph (AGFA),
+a pale steel-blue accent on near-black, and a back-lit light box for the light scheme. *Blueprint*: cyan
 line-work on drafting blue with a ruled grid behind the page (the light scheme is the print on
 white). Tokens in `assets/css/tokens.css`, type, texture and backdrop in `assets/css/themes.css`;
 the reading column is always a solid panel over any backdrop.
