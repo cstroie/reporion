@@ -11,11 +11,36 @@
 /* the focus ring takes the palette's accent on every control, not the browser's default */
 :is(.palette-reading-room, .palette-crt, .palette-film, .palette-blueprint) :focus-visible { outline-color: var(--color-accent); }
 
-/* ---- Reading room: a dark room, after the PACS viewer ------------------------------------ */
+/* ---- Reading room: the coffee left on the desk of a reading room -------------------------- */
 .palette-reading-room ::selection { background: var(--color-accent-800); color: var(--color-accent-100); }
+.palette-reading-room :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-preview h1, .wk-preview h2) { font-weight: 600; letter-spacing: .01em; }
 .palette-reading-room:not(.theme-light) .wk-prose img,
 .palette-reading-room:not(.theme-light) .wk-preview img { filter: brightness(.85); } /* a white image must not flash in a dark room */
 .palette-reading-room:not(.theme-light) :is(.btn-primary, .btn-primary:hover) { box-shadow: none; }
+/* the desk: a paper grain, a cup's ring and a few drops, all behind the page (z-index -1), never under a word */
+body.palette-reading-room::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    /* the cup's ring, a second one overlapping it, and a splash beside them */
+    radial-gradient(circle at 82% 62%, transparent 0 74px, rgba(var(--stain), .10) 75px 77px, rgba(var(--stain), .05) 77px 82px, transparent 83px),
+    radial-gradient(circle at 79.5% 65%, transparent 0 69px, rgba(var(--stain), .07) 70px 71.5px, transparent 73px),
+    radial-gradient(circle at 82% 62%, rgba(var(--stain), .045), transparent 74px),
+    radial-gradient(circle at 70% 74%, rgba(var(--stain), .10) 0 2px, transparent 3px),
+    radial-gradient(circle at 68.5% 76%, rgba(var(--stain), .08) 0 1.4px, transparent 2.4px),
+    radial-gradient(circle at 72.5% 72.5%, rgba(var(--stain), .07) 0 1px, transparent 2px),
+    /* the pool of light from a desk lamp */
+    radial-gradient(ellipse 70% 55% at 30% 0%, rgba(var(--lamp), .07), transparent 70%),
+    /* paper grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+body.palette-reading-room:not(.theme-light) { --stain: 196, 138, 78; --lamp: 255, 214, 160; background: #0f0a07; }
+body.palette-reading-room.theme-light { --stain: 96, 52, 16; --lamp: 255, 250, 238; }
+/* with milk: the light scheme's desk is a latte, crema at the edges and foam in the middle, the stains darker */
+body.palette-reading-room.theme-light { background: radial-gradient(ellipse 75% 60% at 38% 30%, #ead9bd, transparent 80%) fixed, #d4bb98; }
+body.palette-reading-room.theme-light::before { opacity: 1; }
+/* the reading column is a sheet of paper laid on the desk */
+.palette-reading-room:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: rgba(23, 16, 11, .94); box-shadow: 0 0 0 1px #382c22, 0 10px 30px rgba(8,4,0,.5); }
+.palette-reading-room.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f6ebd9; box-shadow: 0 0 0 1px #cdb68f, 0 10px 28px rgba(42,28,17,.12); }
 
 /* ---- Phosphor: a terminal. Mono everywhere (the tokens), spaced uppercase chrome ---------- */
 .palette-crt :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4),

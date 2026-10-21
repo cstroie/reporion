@@ -399,60 +399,61 @@ select.input:not([multiple]):not([size]) {
 /* Reading room, Phosphor, Film and Blueprint (2026-10-21): four more whole themes, tokens
  * here, the personality (type, texture, backdrop) in assets/css/themes.css. Each has a dark
  * and a light scheme; state colours are defined in both, so a notice needs no per-theme rule.
- * Reading room: near-black neutrals, no blue, one dim sepia accent, no glow (a dark room,
- * after the PACS viewer). Phosphor ("crt"): a green monochrome terminal; its light scheme is a
+ * Reading room: the reading room's coffee: espresso browns and cream, a caramel accent, serif
+ * headings; the dark scheme is the black coffee, the light scheme the same cup with milk: a latte, foam-white paper. Phosphor ("crt"): a green monochrome terminal; its light scheme is a
  * pale LCD. Film: cool X-ray film on a light box. Blueprint: cyan line-work on drafting blue. */
 .palette-reading-room {
-  --color-bg:        #0a0a0b;
-  --color-surface:   #131315;
-  --color-text:      #c6c6c9;
-  --color-dim:       color-mix(in srgb, var(--color-text) 64%, var(--color-bg));
+  --color-bg:        #0f0a07;
+  --color-surface:   #17100b;
+  --color-text:      #e8dcc8;
+  --color-dim:       color-mix(in srgb, var(--color-text) 66%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #b89a6a;
-  --color-divider:   color-mix(in srgb, #c6c6c9 14%, transparent);
-  --color-accent-100: #f3ece0;
-  --color-accent-200: #e2d3b8;
-  --color-accent-300: #d3bd94;
-  --color-accent-800: #4a3d26;
-  --color-accent-900: #2c2416;
-  --color-neutral-100: #f2f2f3;
-  --color-neutral-300: #b9b9bd;
-  --color-neutral-700: #4d4d52;
-  --color-neutral-800: #2b2b2f;
-  --color-neutral-900: #101012;
-  --state-ok:    #79a98a;
-  --state-warn:  #c99a4b;
-  --state-error: #cf7468;
-  --diff-add:    #79a98a;
-  --diff-del:    #cf7468;
+  --color-accent:    #d49a5a;
+  --color-divider:   color-mix(in srgb, #e8dcc8 15%, transparent);
+  --color-accent-100: #fbf1e2;
+  --color-accent-200: #f0dcbc;
+  --color-accent-300: #e3bd88;
+  --color-accent-800: #5a3818;
+  --color-accent-900: #36210d;
+  --color-neutral-100: #f6efe4;
+  --color-neutral-300: #c9b9a0;
+  --color-neutral-700: #5b4a3a;
+  --color-neutral-800: #382c22;
+  --color-neutral-900: #19120d;
+  --state-ok:    #8fb078;
+  --state-warn:  #e0a443;
+  --state-error: #d9806a;
+  --diff-add:    #8fb078;
+  --diff-del:    #d9806a;
+  --font-heading: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
   --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
-  --shadow-sm: 0 0 0 1px #2b2b2f;
-  --shadow-md: 0 0 0 1px #38383d, 0 7.5px 23px rgba(0,0,0,.6);
-  --shadow-lg: 0 0 0 1px #6a6a70, 0 20.5px 51.5px rgba(0,0,0,.7);
+  --shadow-sm: 0 0 0 1px #382c22;
+  --shadow-md: 0 0 0 1px #4a3b2e, 0 7.5px 23px rgba(8,4,0,.6);
+  --shadow-lg: 0 0 0 1px #806a54, 0 20.5px 51.5px rgba(8,4,0,.7);
 }
 .theme-light.palette-reading-room {
-  --color-bg:        #e8e8ea;
-  --color-surface:   #f5f5f6;
-  --color-text:      #1c1c1f;
-  --color-dim:       #55555b;
+  --color-bg:        #dcc7a8;
+  --color-surface:   #f6ebd9;
+  --color-text:      #2c1b0e;
+  --color-dim:       #5e4630;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #7a5a24;
-  --color-accent-300: #5e4418;
-  --color-accent-800: #4a3612;
-  --color-accent-100: #f6efe2;
-  --color-accent-200: #e8dcc2;
-  --color-neutral-100: #f1f1f2;
-  --color-divider:   color-mix(in srgb, #1c1c1f 15%, transparent);
-  --color-neutral-200: #dadade;
-  --color-neutral-700: #46464b;
-  --state-ok:    #2f7048;
+  --color-accent:    #7a4519;
+  --color-accent-300: #5c3310;
+  --color-accent-800: #47260b;
+  --color-accent-100: #f6e8d2;
+  --color-accent-200: #e6cfa8;
+  --color-neutral-100: #f1e5d1;
+  --color-divider:   color-mix(in srgb, #2c1b0e 19%, transparent);
+  --color-neutral-200: #d3bd9b;
+  --color-neutral-700: #4a3826;
+  --state-ok:    #3a6a3a;
   --state-warn:  #8a5a00;
   --state-error: #a8372b;
-  --diff-add:    #2f7048;
+  --diff-add:    #3a6a3a;
   --diff-del:    #a8372b;
-  --shadow-sm: 0 0 0 1px #d4d4d8;
-  --shadow-md: 0 0 0 1px #d4d4d8, 0 7.5px 23px rgba(28,28,31,.10);
-  --shadow-lg: 0 0 0 1px #bdbdc3, 0 20.5px 51.5px rgba(28,28,31,.16);
+  --shadow-sm: 0 0 0 1px #cdb68f;
+  --shadow-md: 0 0 0 1px #cdb68f, 0 7.5px 23px rgba(44,27,14,.12);
+  --shadow-lg: 0 0 0 1px #b39a70, 0 20.5px 51.5px rgba(44,27,14,.18);
 }
 .palette-crt {
   --color-bg:        #020a04;

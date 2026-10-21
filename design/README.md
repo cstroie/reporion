@@ -80,9 +80,9 @@ tokens only. The one colour it doesn't take from the source is the error red, so
 reads like the magenta primary button.
 
 **Reading room, Phosphor, Film and Blueprint** (2026-10-21) are four more whole themes, each with a
-dark and a light scheme, none from the mockup. *Reading room*: near-black neutrals, no blue, one dim
-sepia accent, no glow, images dimmed (a dark room, after the PACS viewer); light is quiet grey.
-*Phosphor* (palette `crt`, so as not to be taken for the icon font): a green monochrome terminal in
+dark and a light scheme, none from the mockup. *Reading room*: the coffee left on a reading-room desk: espresso browns and cream, a caramel
+accent, serif headings, a paper grain and a cup's ring and a few drops behind the page (never under
+text), images dimmed in the dark scheme; light is cream paper. *Phosphor* (palette `crt`, so as not to be taken for the icon font): a green monochrome terminal in
 mono type with scanlines and a faint glow; its light scheme is a pale LCD. *Film*: X-ray film, the steel blue of a conventional hand radiograph (AGFA),
 a pale steel-blue accent on near-black, and a back-lit light box for the light scheme. *Blueprint*: cyan
 line-work on drafting blue with a ruled grid behind the page (the light scheme is the print on
