@@ -201,9 +201,11 @@ $bar = static function (?array $c): string {
 <div class="wk-difftools" data-difftools>
 <span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_words')) ?></span></span>
 <span class="wk-actions">
-<button type="button" class="btn btn-secondary btn-sm" data-diff-prev><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
-<button type="button" class="btn btn-secondary btn-sm" data-diff-next><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
-<span class="wk-dim wk-mono" data-diff-pos aria-live="polite"></span>
+<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
+<button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
+</span>
+<span class="wk-dim wk-mono wk-diffpos" data-diff-pos aria-live="polite"></span>
 </span>
 </div>
 <div class="wk-worddiff wk-prose" data-wordtext><?php foreach ($diff['ops'] as $op): ?><?php
@@ -266,11 +268,15 @@ $foldId = 0;
 <span class="wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span> <span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span> <span class="wk-dim"><?= $e(t('revisions.stat_lines')) ?></span></span>
 <span class="wk-actions">
 <?php if ($diff['stats']['add'] + $diff['stats']['remove'] > 0): ?>
-<button type="button" class="btn btn-secondary btn-sm" data-diff-prev><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
-<button type="button" class="btn btn-secondary btn-sm" data-diff-next><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
-<span class="wk-dim wk-mono" data-diff-pos aria-live="polite"></span>
+<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
+<button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
+</span>
+<span class="wk-dim wk-mono wk-diffpos" data-diff-pos aria-live="polite"></span>
 <?php endif; ?>
-<label class="wk-inlinecheck"><input type="checkbox" data-diff-wrap checked><?= $e(t('revisions.wrap')) ?></label>
+<span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.display')) ?>">
+<button type="button" class="seg-opt seg-on" data-diff-wrap aria-pressed="true"><i class="ph ph-text-align-left" aria-hidden="true"></i><?= $e(t('revisions.wrap')) ?></button>
+</span>
 </span>
 </div>
 <?php if ($diff['stats']['add'] + $diff['stats']['remove'] === 0): ?>
@@ -371,7 +377,12 @@ $foldId = 0;
   });
   var wrap = document.querySelector('[data-diff-wrap]');
   var box = document.querySelector('[data-dtwrap]');
-  if (wrap && box) wrap.addEventListener('change', function() { box.classList.toggle('wk-dt-wrapped', wrap.checked); });
+  if (wrap && box) wrap.addEventListener('click', function() {
+    var on = wrap.getAttribute('aria-pressed') !== 'true';
+    wrap.setAttribute('aria-pressed', on ? 'true' : 'false');
+    wrap.classList.toggle('seg-on', on);
+    box.classList.toggle('wk-dt-wrapped', on);
+  });
   // Jump between the changes: whole changed blocks in a line diff, ins/del runs in a prose one
   var prev = document.querySelector('[data-diff-prev]');
   var next = document.querySelector('[data-diff-next]');

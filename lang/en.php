@@ -1071,6 +1071,8 @@ return [
     'revisions.space'       => 'Whitespace',
     'revisions.space_keep'  => 'Whitespace',
     'revisions.space_ignore' => 'Ignore whitespace',
+    'revisions.changes_nav' => 'Changes',
+    'revisions.display'     => 'Display',
     'revisions.wrap'        => 'Wrap lines',
     'revisions.prev_change' => 'Previous',
     'revisions.next_change' => 'Next',
