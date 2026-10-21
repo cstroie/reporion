@@ -90,15 +90,22 @@ body.palette-crt:not(.theme-light)::after {
 .palette-crt:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
   background: rgba(7, 20, 10, .86); box-shadow: 0 0 0 1px #14522a, 0 0 4px rgba(92,240,138,.08), inset 0 0 5px rgba(92,240,138,.06);
 }
-.palette-crt.theme-light .wk-panes[data-pad="read"] .wk-panebox { box-shadow: 0 0 0 1px #aec4a0; } /* a pale LCD: flat, ruled */
+/* the light scheme is a reflective LCD: olive-green glass, dark pixel ink with a faint ghost, a ruled pixel grid, recessed fields */
+body.palette-crt.theme-light { background: repeating-linear-gradient(to bottom, rgba(21,36,12,.05) 0 1px, transparent 1px 3px), repeating-linear-gradient(to right, rgba(21,36,12,.04) 0 1px, transparent 1px 3px), radial-gradient(ellipse 90% 70% at 50% 30%, #c8d6ad, transparent 100%) fixed, #aebf92; }
+.palette-crt.theme-light { text-shadow: 1px 1px 0 rgba(21,36,12,.13); }
+.palette-crt.theme-light :is(.wk-prose, .wk-preview, .wk-ta, .wk-ta *, .wk-prose *, .wk-preview *) { text-shadow: none; }
+.palette-crt.theme-light .input { background: #c1d0a5; box-shadow: inset 1px 1px 0 rgba(21,36,12,.28), inset -1px -1px 0 rgba(255,255,255,.3); }
+.palette-crt.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #cfdcb6; box-shadow: 0 0 0 1px #6f855a, 4px 4px 0 rgba(21,36,12,.16); }
 
 /* ---- Film: X-ray film on a light box ------------------------------------------------------- */
 .palette-film :is(.wk-eyebrow, table.table th) { letter-spacing: .08em; text-transform: uppercase; }
 .palette-film ::selection { background: var(--color-accent-800); color: var(--color-accent-100); }
 body.palette-film:not(.theme-light) { background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(156,184,214,.09), transparent 70%) fixed, #070b0e; }
-body.palette-film.theme-light { background: radial-gradient(ellipse 90% 70% at 50% -10%, #fff, transparent 75%) fixed, #d9e2ea; } /* back-lit */
+/* the light scheme is the light box: a bright, even glow in the middle falling off to the cooler steel of the frame */
+body.palette-film.theme-light { background: radial-gradient(ellipse 80% 65% at 50% 38%, #f3f8fc, #e3ecf4 45%, transparent 100%) fixed, #b4c4d4; }
+.palette-film.theme-light .input { background: rgba(255,255,255,.7); }
 .palette-film:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: #0f1a22; box-shadow: 0 0 0 1px #3a5166, inset 0 1px 0 rgba(180,204,228,.10), 0 0 40px rgba(156,184,214,.05); }
-.palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f2f6fa; box-shadow: 0 0 0 1px #c6d3e0, 0 0 44px rgba(255,255,255,.9); }
+.palette-film.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f4f8fc; box-shadow: 0 0 0 1px #9fb4c8, 0 0 44px rgba(255,255,255,.85); }
 
 /* ---- Blueprint: cyan line-work on drafting blue (a ruled grid behind the page) -------------- */
 .palette-blueprint :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4) { font-weight: 400; }

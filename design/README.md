@@ -73,8 +73,8 @@ theme after [Cyberpunk Neon](https://github.com/Roboron3042/Cyberpunk-Neon): its
 role (ink background, cyan text, magenta titles and accent, purple selection, blue fills), square
 corners, mono chrome type, neon glows and, in the dark theme, a static synthwave backdrop (stars,
 wireframe mountains, a horizon streak, a perspective grid) that fades out under the text column.
-Tokens in `assets/css/tokens.css`, the rest in `assets/css/cyberpunk.css`; the light theme is
-tokens only. The one colour it doesn't take from the source is the error red, so that Delete never
+Tokens in `assets/css/tokens.css`, the rest in `assets/css/cyberpunk.css`; the light theme (2026-10-21) is a riso print: a fine cyan grid, magenta and cyan ink, hard offset shadows, HUD brackets in ink, in its own section of that file.
+The one colour it doesn't take from the source is the error red, so that Delete never
 reads like the magenta primary button.
 
 **Reading room, Phosphor, Film and Blueprint** (2026-10-21) are four more whole themes, each with a

@@ -10,8 +10,8 @@
  * scoped to body.palette-cyberpunk, because assets/js/shell.js switches
  * palettes in place without a reload. Two scopes:
  *  - .palette-cyberpunk: the chrome typography, both themes;
- *  - .palette-cyberpunk:not(.theme-light): glows and the backdrop: the
- *    light theme is tokens only.
+ *  - .palette-cyberpunk:not(.theme-light): glows and the backdrop;
+ *    .palette-cyberpunk.theme-light: its own section at the end (riso sheet: grid, hard shadows).
  * Screen only (@media screen): print and the PDF are assets/css/print.css
  * (D34) and never see any of it.
  *
@@ -338,6 +338,65 @@ body.palette-cyberpunk:not(.theme-light)::before {
 .palette-cyberpunk:not(.theme-light) table.table tbody tr:not(:last-child) td { border-bottom-style: dashed; }
 .palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) hr { border: 0; border-top: 1px dashed #1c61c2; }
 .palette-cyberpunk:not(.theme-light) :is(.wk-mi-sep, .wk-quick-sep) { background: none; border-top: 1px dashed #133e7c; height: 0; }
+
+
+/* ---- the light scheme (2026-10-21): the same console in daylight, as a printed riso sheet:
+     cyan and magenta ink on white stock, a fine cyan grid, hard offset shadows instead of glows,
+     the HUD corner brackets in ink. Still static; the reading column stays a plain white panel. ---- */
+.palette-cyberpunk.theme-light {
+  --cp-ink: #00203f; --cp-cyan: #00707a; --cp-magenta: #a3189a;
+  --cp-brackets-l:
+    linear-gradient(#00707a, #00707a) 0 0 / 12px 2px no-repeat,
+    linear-gradient(#00707a, #00707a) 0 0 / 2px 12px no-repeat,
+    linear-gradient(#00707a, #00707a) 100% 0 / 12px 2px no-repeat,
+    linear-gradient(#00707a, #00707a) 100% 0 / 2px 12px no-repeat,
+    linear-gradient(#00707a, #00707a) 0 100% / 12px 2px no-repeat,
+    linear-gradient(#00707a, #00707a) 0 100% / 2px 12px no-repeat,
+    linear-gradient(#00707a, #00707a) 100% 100% / 12px 2px no-repeat,
+    linear-gradient(#00707a, #00707a) 100% 100% / 2px 12px no-repeat;
+}
+body.palette-cyberpunk.theme-light {
+  background:
+    linear-gradient(rgba(0,112,122,.07) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(0,112,122,.07) 1px, transparent 1px) 0 0 / 32px 32px,
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(163,24,154,.10), transparent 70%) fixed,
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(0,112,122,.12), transparent 70%) fixed,
+    #f2f5fc;
+  background-attachment: fixed, fixed, fixed, fixed, fixed;
+}
+.palette-cyberpunk.theme-light ::selection { background: var(--cp-magenta); color: #fff; }
+.palette-cyberpunk.theme-light .wk-topnav { border-bottom: 0; background-color: #fff; box-shadow: 0 2px 0 var(--cp-magenta), 0 4px 0 var(--cp-cyan); }
+.palette-cyberpunk.theme-light .wk-brand { color: var(--cp-cyan); }
+.palette-cyberpunk.theme-light .wk-brand:hover { color: var(--cp-magenta); }
+.palette-cyberpunk.theme-light .wk-doc-title { color: var(--cp-magenta); }
+.palette-cyberpunk.theme-light .wk-doc-title::before { content: "> "; color: var(--cp-cyan); }
+.palette-cyberpunk.theme-light .wk-eyebrow { color: var(--cp-cyan); }
+.palette-cyberpunk.theme-light .wk-eyebrow:not(summary .wk-eyebrow)::before { content: "//"; color: var(--cp-magenta); margin-right: .5em; }
+.palette-cyberpunk.theme-light :is(.wk-prose, .wk-preview) :is(h1, h2) { color: var(--cp-magenta); }
+.palette-cyberpunk.theme-light :is(.wk-prose, .wk-preview) h3 { color: var(--cp-cyan); }
+.palette-cyberpunk.theme-light :is(.wk-meta, .wk-panel) { background: var(--cp-brackets-l), #fff; }
+.palette-cyberpunk.theme-light .wk-menu { background: var(--cp-brackets-l), #fff; box-shadow: 4px 4px 0 rgba(0,32,63,.18); border: 1px solid var(--cp-ink); }
+.palette-cyberpunk.theme-light .input, .palette-cyberpunk.theme-light .group-addon { background: #fff; border-color: rgba(0,32,63,.38); }
+.palette-cyberpunk.theme-light .input:focus-visible { border-color: var(--cp-magenta); box-shadow: 2px 2px 0 var(--cp-cyan); }
+.palette-cyberpunk.theme-light .btn-primary, .palette-cyberpunk.theme-light .group > .btn:not(.btn-danger):not(.btn-secondary):not(.btn-ghost) { background: var(--cp-magenta); border-color: var(--cp-magenta); color: #fff; box-shadow: 3px 3px 0 var(--cp-cyan); }
+/* hover keeps the white-on-magenta contrast: the base rule's accent-300 would be a pale pink */
+.palette-cyberpunk.theme-light :is(.btn-primary, .group > .btn:not(.btn-danger)):hover { background: #84107c; border-color: #84107c; color: #fff; box-shadow: 4px 4px 0 var(--cp-cyan); }
+.palette-cyberpunk.theme-light .btn-primary:active { box-shadow: 1px 1px 0 var(--cp-cyan); }
+.palette-cyberpunk.theme-light .btn-primary:disabled { box-shadow: none; }
+.palette-cyberpunk.theme-light .btn-secondary:not(.btn-danger) { border-color: var(--cp-cyan); color: var(--cp-cyan); box-shadow: 2px 2px 0 rgba(0,112,122,.3); }
+.palette-cyberpunk.theme-light .btn-secondary:not(.btn-danger):hover { background: rgba(0,112,122,.08); box-shadow: 3px 3px 0 rgba(0,112,122,.45); }
+.palette-cyberpunk.theme-light .btn::before { content: "["; opacity: .55; }
+.palette-cyberpunk.theme-light .btn::after { content: "]"; opacity: .55; }
+.palette-cyberpunk.theme-light .wk-pagetabs .wk-tab[data-on="1"] { color: var(--cp-magenta); box-shadow: inset 0 -2.5px 0 var(--cp-magenta); }
+.palette-cyberpunk.theme-light .wk-tab:hover { background: rgba(0,112,122,.08); }
+.palette-cyberpunk.theme-light .wk-row:hover { background: rgba(0,112,122,.07); }
+.palette-cyberpunk.theme-light .wk-row.wk-sel { background: rgba(163,24,154,.10); box-shadow: inset 2.5px 0 0 var(--cp-magenta); }
+.palette-cyberpunk.theme-light .tag-accent { background: var(--cp-magenta); color: #fff; box-shadow: 2px 2px 0 var(--cp-cyan); }
+.palette-cyberpunk.theme-light table.table th { color: var(--cp-cyan); border-bottom-color: var(--cp-cyan); }
+.palette-cyberpunk.theme-light table.table tbody tr:not(:last-child) td { border-bottom-style: dashed; }
+.palette-cyberpunk.theme-light :is(.wk-mi-sep, .wk-quick-sep) { background: none; border-top: 1px dashed rgba(0,32,63,.3); height: 0; }
+.palette-cyberpunk.theme-light :is(.wk-kv, table.table, .wk-mi, .field label, .input, .wk-toc, .wk-crumbs, .wk-who) { font-family: var(--font-mono); }
+.palette-cyberpunk.theme-light .field label { text-transform: uppercase; letter-spacing: .08em; font-size: var(--text-xs); }
 
 }
 

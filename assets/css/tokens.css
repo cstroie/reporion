@@ -193,7 +193,10 @@ select.input:not([multiple]):not([size]) {
   background-image: linear-gradient(45deg, transparent 50%, var(--color-accent) 50%), linear-gradient(135deg, var(--color-accent) 50%, transparent 50%);
   background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
-.theme-light a:hover { color: #16306e; }
+.theme-light a:not(.btn):hover { color: #16306e; }
+/* a primary button darkens on hover in the light schemes, so its text stays the light page colour (an anchor's
+ * hover colour above never reaches a button: it was turning the text dark on the darker fill); the text goes lighter, the surface white */
+.theme-light :is(.btn-primary, .group > .btn:not(.btn-danger)):not(:disabled):hover { background: var(--color-accent-800); color: var(--color-surface); }
 
 /* palettes (A6): */
 .palette-lime {
@@ -351,13 +354,14 @@ select.input:not([multiple]):not([size]) {
   --shadow-lg: 0 0 0 1px #0abdc6, 0 0 26px rgba(10,189,198,.28), 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-cyberpunk {
-  --color-bg:        #eef4fa;
+  --color-bg:        #f2f5fc;
   --color-surface:   #fff;
   --color-text:      #00203f;
   --color-dim:       #3b5770;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #8e2988;
-  --color-divider:   #c7d6e8;
+  --color-accent:    #a3189a;
+  --color-accent-300: #84107c;
+  --color-divider:   color-mix(in srgb, #00203f 24%, transparent);
   --color-neutral-200: #dbe5f1;
   --color-neutral-700: #1c4a7c;
   --state-ok:    #00804a;
@@ -459,31 +463,31 @@ select.input:not([multiple]):not([size]) {
   --shadow-lg: 0 0 0 1px #5cf08a, 0 0 24px rgba(92,240,138,.24), 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-crt {
-  --color-bg:        #d3e2c8;
-  --color-surface:   #e4eedb;
-  --color-text:      #10260f;
-  --color-dim:       #33502f;
+  --color-bg:        #bccca0;
+  --color-surface:   #cfdcb6;
+  --color-text:      #15240c;
+  --color-dim:       #3a5030;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #17601f;
-  --color-accent-300: #0f4a17;
-  --color-accent-800: #0c3a12;
-  --color-accent-100: #e4f0dc;
-  --color-accent-200: #c9e0bd;
-  --color-neutral-100: #e6efdd;
-  --color-divider:   color-mix(in srgb, #10260f 28%, transparent);
-  --color-neutral-200: #c2d6b4;
-  --color-neutral-700: #2e4a2a;
-  --state-ok:    #17601f;
-  --state-warn:  #7a5200;
-  --state-error: #a3200d;
-  --diff-add:    #17601f;
-  --diff-del:    #a3200d;
+  --color-accent:    #1f5216;
+  --color-accent-300: #163d10;
+  --color-accent-800: #0f3009;
+  --color-accent-100: #dfe9c9;
+  --color-accent-200: #c4d4a6;
+  --color-neutral-100: #d9e4c2;
+  --color-divider:   color-mix(in srgb, #15240c 34%, transparent);
+  --color-neutral-200: #aabd8c;
+  --color-neutral-700: #2c4423;
+  --state-ok:    #1f5216;
+  --state-warn:  #6e4a00;
+  --state-error: #9c1d0a;
+  --diff-add:    #1f5216;
+  --diff-del:    #9c1d0a;
   --font-body:    "JetBrains Mono", ui-monospace, Menlo, monospace;
   --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --radius-sm: 0; --radius-md: 2px; --radius-lg: 3px;
-  --shadow-sm: 0 0 0 1px #aec4a0;
-  --shadow-md: 0 0 0 1px #aec4a0, 0 7.5px 23px rgba(16,38,15,.10);
-  --shadow-lg: 0 0 0 1px #8fab7e, 0 20.5px 51.5px rgba(16,38,15,.16);
+  --shadow-sm: 0 0 0 1px #8ea374;
+  --shadow-md: 0 0 0 1px #8ea374, 0 7.5px 23px rgba(21,36,12,.12);
+  --shadow-lg: 0 0 0 1px #6f855a, 0 20.5px 51.5px rgba(21,36,12,.18);
 }
 .palette-film {
   --color-bg:        #070b0e;
@@ -514,28 +518,28 @@ select.input:not([multiple]):not([size]) {
   --shadow-lg: 0 0 0 1px #7893ad, inset 0 1px 0 rgba(180,204,228,.12), 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-film {
-  --color-bg:        #d9e2ea;
-  --color-surface:   #f2f6fa;
-  --color-text:      #0d1a26;
-  --color-dim:       #46596b;
+  --color-bg:        #c9d6e2;
+  --color-surface:   #f4f8fc;
+  --color-text:      #0b1722;
+  --color-dim:       #425568;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #3a5f85;
-  --color-accent-300: #2a486a;
-  --color-accent-800: #1f3a57;
-  --color-accent-100: #e4edf6;
-  --color-accent-200: #c6d8ea;
-  --color-neutral-100: #eef3f8;
-  --color-divider:   color-mix(in srgb, #0d1a26 16%, transparent);
-  --color-neutral-200: #ccd9e6;
+  --color-accent:    #2f5a86;
+  --color-accent-300: #234669;
+  --color-accent-800: #1a3654;
+  --color-accent-100: #e2ecf6;
+  --color-accent-200: #c2d5e8;
+  --color-neutral-100: #eaf1f8;
+  --color-divider:   color-mix(in srgb, #0b1722 20%, transparent);
+  --color-neutral-200: #bccbda;
   --color-neutral-700: #34485c;
   --state-ok:    #1f7a55;
   --state-warn:  #8a5a00;
   --state-error: #b03030;
   --diff-add:    #1f7a55;
   --diff-del:    #b03030;
-  --shadow-sm: 0 0 0 1px #c6d3e0;
-  --shadow-md: 0 0 0 1px #c6d3e0, 0 7.5px 23px rgba(13,26,38,.10);
-  --shadow-lg: 0 0 0 1px #a9bccf, 0 20.5px 51.5px rgba(13,26,38,.16);
+  --shadow-sm: 0 0 0 1px #aebfcf;
+  --shadow-md: 0 0 0 1px #aebfcf, 0 7.5px 23px rgba(11,23,34,.12);
+  --shadow-lg: 0 0 0 1px #8ea6bb, 0 20.5px 51.5px rgba(11,23,34,.18);
 }
 .palette-blueprint {
   --color-bg:        #0a2346;
@@ -593,11 +597,11 @@ select.input:not([multiple]):not([size]) {
   --shadow-lg: 0 0 0 1px #8fb2dc, 0 20.5px 51.5px rgba(10,35,70,.16);
 }
 
-.theme-light.palette-lime a:hover,
-.theme-light.palette-amber a:hover,
-.theme-light.palette-afterglow a:hover,
-.theme-light.palette-reading-room a:hover,
-.theme-light.palette-crt a:hover,
-.theme-light.palette-film a:hover,
-.theme-light.palette-blueprint a:hover,
-.theme-light.palette-cyberpunk a:hover { color: var(--color-accent-800); }
+.theme-light.palette-lime a:not(.btn):hover,
+.theme-light.palette-amber a:not(.btn):hover,
+.theme-light.palette-afterglow a:not(.btn):hover,
+.theme-light.palette-reading-room a:not(.btn):hover,
+.theme-light.palette-crt a:not(.btn):hover,
+.theme-light.palette-film a:not(.btn):hover,
+.theme-light.palette-blueprint a:not(.btn):hover,
+.theme-light.palette-cyberpunk a:not(.btn):hover { color: var(--color-accent-800); }
