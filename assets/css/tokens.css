@@ -206,37 +206,59 @@ select.input:not([multiple]):not([size]) {
 .theme-light :is(.btn-primary, .group > .btn:not(.btn-danger)):not(:disabled):hover { background: var(--color-accent-800); color: var(--color-surface); }
 
 /* palettes (A6): */
+/* Lime, the Mojito (2026-10-21): dark is a tropical night (palm-black greens, a glowing lime accent, the coral of a beach-bar
+ * neon for warnings), light is a sunny day (sun-bleached cream, mint-white glass, a deep leaf green for the accent: a true
+ * lime would not read on it). */
 .palette-lime {
-  --color-bg:        #121413;
-  --color-surface:   #1c1f1d;
-  --color-text:      #e4e8e4;
-  --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-bg:        #07100a;
+  --color-surface:   #0f1c13;
+  --color-text:      #e4f3dc;
+  --color-dim:       color-mix(in srgb, var(--color-text) 64%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #a9c94a;
-  --color-divider:   color-mix(in srgb, #e4e8e4 15%, transparent);
-  --color-accent-100: #f3f8e2;
-  --color-accent-200: #e0ebbb;
-  --color-accent-300: #c8dc87;
-  --color-accent-800: #3f4e18;
-  --color-accent-900: #28320f;
-  --color-neutral-900: #191c1a;
-  --color-neutral-800: #31362f;
-  --color-neutral-300: #ccd1c9;
-  --shadow-sm: 0 0 0 1px #31362f;
-  --shadow-md: 0 0 0 1px #41473e, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #838a7c, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #b4e14a;
+  --color-divider:   color-mix(in srgb, #e4f3dc 15%, transparent);
+  --color-accent-100: #f5ffe0;
+  --color-accent-200: #e2f7b3;
+  --color-accent-300: #cdee83;
+  --color-accent-800: #3b5a12;
+  --color-accent-900: #243a0a;
+  --color-neutral-100: #f1f8ea;
+  --color-neutral-300: #bcd1ae;
+  --color-neutral-700: #3f5a3a;
+  --color-neutral-800: #1f3324;
+  --color-neutral-900: #0b140d;
+  --state-ok:    #8be28a;
+  --state-warn:  #ff9a5c;
+  --state-error: #ff7a6b;
+  --diff-add:    #8be28a;
+  --diff-del:    #ff7a6b;
+  --shadow-sm: 0 0 0 1px #1f3324;
+  --shadow-md: 0 0 0 1px #2e4a33, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #6f9a6a, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
 .theme-light.palette-lime {
-  --color-bg:        #f3f5f0;
-  --color-surface:   #fff;
-  --color-text:      #1b1e1a;
-  --color-accent:    #4d6112;
-  --color-divider:   color-mix(in srgb, #1b1e1a 15%, transparent);
-  --color-neutral-200: #e5e8de;
-  --color-neutral-700: #505549;
-  --shadow-sm: 0 0 0 1px #e0e4d9;
-  --shadow-md: 0 0 0 1px #e0e4d9, 0 7.5px 23px rgba(27,30,26,.10);
-  --shadow-lg: 0 0 0 1px #ccd1c2, 0 20.5px 51.5px rgba(27,30,26,.16);
+  --color-bg:        #f1efd6;
+  --color-surface:   #fcfff2;
+  --color-text:      #14240d;
+  --color-dim:       #4d6240;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #3d6212;
+  --color-accent-300: #2f4f0c;
+  --color-accent-800: #243d08;
+  --color-accent-100: #eaf5cf;
+  --color-accent-200: #d3e9a0;
+  --color-neutral-100: #eef4dc;
+  --color-divider:   color-mix(in srgb, #14240d 18%, transparent);
+  --color-neutral-200: #dde5c0;
+  --color-neutral-700: #41563a;
+  --state-ok:    #2e7d32;
+  --state-warn:  #9a5200;
+  --state-error: #b3261e;
+  --diff-add:    #2e7d32;
+  --diff-del:    #b3261e;
+  --shadow-sm: 0 0 0 1px #d8e0b8;
+  --shadow-md: 0 0 0 1px #d8e0b8, 0 7.5px 23px rgba(20,36,13,.10);
+  --shadow-lg: 0 0 0 1px #bccb96, 0 20.5px 51.5px rgba(20,36,13,.16);
 }
 .palette-amber {
   --color-bg:        #141414;
@@ -620,8 +642,8 @@ select.input:not([multiple]):not([size]) {
  * scrollbar-color. */
 html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #2c3f66; --sb-track: #070d18; --sb-arrow: #78a6ff; }
 html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #9fb4dc; --sb-track: #e7eef7; --sb-arrow: #1b3f9e; }
-html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #4a5a28; --sb-track: #121413; --sb-arrow: #a9c94a; }
-html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f3f5f0; --sb-arrow: #4d6112; }
+html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #3b5a12; --sb-track: #07100a; --sb-arrow: #b4e14a; }
+html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f1efd6; --sb-arrow: #3d6212; }
 html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #6a4f20; --sb-track: #141414; --sb-arrow: #e3a33c; }
 html:has(> body.palette-amber.theme-light) { --sb-thumb: #d3b27a; --sb-track: #f4f3f0; --sb-arrow: #8a5a10; }
 html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #1c4a4b; --sb-track: #0b1213; --sb-arrow: #74d8d2; }

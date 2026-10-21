@@ -41,7 +41,7 @@ return [
     'nav.page'            => 'Page',
     'nav.breadcrumb'      => 'Breadcrumb',
     'palette.royal-blue'  => 'Royal blue',
-    'palette.lime'        => 'Lime',
+    'palette.lime'        => 'Mojito',
     'palette.amber'       => 'Amber',
     'palette.afterglow'   => 'Afterglow',
     'palette.cyberpunk'   => 'Cyberpunk',

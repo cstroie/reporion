@@ -530,7 +530,7 @@ less.
 
 ## Colour, themes and palettes
 
-- **Palettes are Shell C's, not the Reading room's** (2026-09-30): Royal blue (default), Lime,
+- **Palettes are Shell C's, not the Reading room's** (2026-09-30): Royal blue (default), Mojito (key `lime`),
   Amber, Afterglow, plus Cyberpunk (a whole theme with its own stylesheet,
   `assets/css/cyberpunk.css`), and four more whole themes (2026-10-21): Reading room, Phosphor
   (`crt`), Film and Blueprint (`assets/css/themes.css`). Each has a dark and a light theme. Rose

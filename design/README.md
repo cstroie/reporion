@@ -62,7 +62,7 @@ values came from the design tool directly):
 | Product name | Mockup name | `bpal` |
 |---|---|---|
 | **Royal blue** (default) | ink + signal blue | `azure` |
-| **Lime** | slate + lime | `lime` |
+| **Mojito** (was Lime, renamed 2026-10-21, key stays `lime`) | slate + lime, recoloured as a lime cocktail: a tropical night and a sunny day | `lime` |
 | **Amber** | graphite + amber | `amber` |
 | **Afterglow** (was Teal, renamed 2026-10-21, key `afterglow`) | cold teal, recoloured after a lit television | `afterglow` |
 
