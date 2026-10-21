@@ -2054,14 +2054,16 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards.table-cards-compact tr:has(> td.wk-selcol) { padding-right: 36px; }
   table.table.table-cards.table-cards-compact td.wk-selcol { right: 2px; width: 32px; }
   table.table.table-cards.table-cards-compact td.wk-rowact { right: 2px; width: 32px; top: 42px; }
-  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 32px; height: 32px; }  /* The page footer and the comment box: closer together, the comment text, its field and its help smaller */
+  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 32px; height: 32px; }
+  /* The page footer and the comment box: closer together, the comment text, its field and its help smaller */
   .wk-doc-foot { gap: var(--space-4); }
   .wk-doc-foot .wk-comments { gap: var(--space-2); }
   .wk-comments .wk-comment-list > li.wk-mono { font-size: var(--text-sm); }
   .wk-comment { padding: var(--space-2); }
   .wk-comment-form textarea { min-height: 0; field-sizing: content; }
   .wk-comment-form label > small { font-size: 11px; line-height: 1.35; }
-  .wk-comment-form .wk-recall-row .btn { width: 100%; justify-content: center; }  /* Dialogs: the header's meta (server · model · time) on a line of its own under the title, the footer's buttons share one row */
+  .wk-comment-form .wk-recall-row .btn { width: 100%; justify-content: center; }
+  /* Dialogs: the header's meta (server · model · time) on a line of its own under the title, the footer's buttons share one row */
   .wk-modal > header { flex-wrap: wrap; gap: 0 var(--space-2); }
   .wk-modal > header > h2 { flex: 1 1 0; margin: 0; }
   .wk-modal > header > .wk-tbtn { order: 2; }
