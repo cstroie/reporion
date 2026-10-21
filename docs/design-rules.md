@@ -60,8 +60,13 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   `proseTool`/`mask`, with a node test, a `data-edit-tool` button and a status line; it never calls
   the server. A conversion that is only needed while an archive is migrated belongs in a plugin, so it
   can be switched off.
-- **Not built**: the mockup's `.wk-dock`, a list column, a Workbench tab strip above the document, a
-  status bar.
+- **Left panel on the page view only** (2026-10-21, owner's request: the Workbench's `WikiWorklist`
+  column): the pages of the namespace on screen, newest first (`Index::listWorklist()`, the
+  visibility predicate), the open one highlighted, from 1100px up, hidden below; a search box, chips
+  (each modality present, last 30d, mine) and a sort button that only hide or reorder the rows in
+  the browser (`assets/js/worklist.js`; no endpoint). The editor and every other screen have none.
+- **Not built**: the mockup's `.wk-dock`, a list column on other screens, a Workbench tab strip above
+  the document, a status bar.
 - **Admin is one route per tab**, with the shared tab row `templates/admin-tabs.php`; not one tabbed
   island.
 

@@ -269,6 +269,22 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('id="irm-cerebral"', $response->body, 'the exam heading stays');
     }
 
+    public function testTheLeftPanelListsTheNamespacesPagesAndMarksTheOpenOne(): void
+    {
+        $this->createPage('docs:alpha', 'private', 'Pagina Alfa', 'Text.');
+        $this->createPage('docs:beta', 'private', 'Pagina Beta', 'Text.');
+        $this->createPage('other:gamma', 'private', 'Pagina Gamma', 'Text.');
+        $this->createOwner();
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/docs:alpha', cookies: ['reporion' => $cookie]));
+
+        self::assertStringContainsString('data-island="worklist"', $response->body);
+        self::assertStringContainsString('href="/docs:beta"', $response->body, 'a sibling is listed');
+        self::assertMatchesRegularExpression('/class="wk-row wk-sel" href="\/docs:alpha"/', $response->body, 'the open page is marked');
+        self::assertStringNotContainsString('href="/other:gamma"', $response->body, 'another namespace is not');
+    }
+
     public function testUnlistedPageIsReachableByDirectPathForAnonymous(): void
     {
         $this->createPage('reports:mri:mioveni:unlisted-x', 'unlisted', 'Titlu Nelistat', 'Text.');

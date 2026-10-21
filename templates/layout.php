@@ -13,6 +13,8 @@
  *   (namespace index, search). Under 576px: brand · search · account on the
  *   first row, the icon buttons on the second; the brand is an icon under 1024px.
  * - One centred reading column (.wk-panes[data-pad="read"]).
+ * - The page view also has a left panel of its namespace's pages
+ *   ($worklist, templates/partials/worklist.php), from 1100px up.
  * - templates/page-header.php at the top of that column when the screen
  *   is one of a page's routes ($headerPath set): page actions live there.
  * - Except the editor ($editorShell, Controller\EditorController): the
@@ -154,7 +156,11 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <?= $content ?>
 </main>
 <?php else: ?>
-<main class="wk-panes" data-pad="read">
+<?php /* The page view (templates/page-view.php) gets the left panel of the namespace's pages (templates/partials/worklist.php); the editor and every other screen have none */ ?>
+<main class="wk-panes<?= isset($worklist) ? ' wk-panes-side' : '' ?>" data-pad="read">
+<?php if (isset($worklist)) {
+    include __DIR__ . '/partials/worklist.php';
+} ?>
 <div class="wk-panebox">
 <?php if (isset($headerPath)) {
     include __DIR__ . '/page-header.php';

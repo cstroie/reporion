@@ -2177,3 +2177,21 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-ask-open { margin-top: var(--space-1); font-size: var(--text-xs); display: inline-flex; align-items: center; gap: var(--space-1); }
 @media (max-width: 767.98px) { .wk-ask-keys { display: none; } .wk-ask-compose > footer { justify-content: flex-end; } }
 @media (prefers-reduced-motion: no-preference) { .wk-ask-source { transition: background .15s; } }
+
+/* The page view's left panel (templates/partials/worklist.php; the mockup's WikiWorklist in a .wk-side column): beside the reading column from 1100px, hidden below (the mockup hides it under 980px). Sticky under the top bar, scrolling by itself. */
+.wk-side { display: none; }
+@media (min-width: 1100px) {
+  .wk-panes-side { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
+  .wk-panes-side > .wk-side { display: block; position: sticky; top: var(--wk-topbar-h); height: calc(100vh - var(--wk-topbar-h)); overflow-y: auto; border-right: 1px solid var(--color-divider); }
+}
+.wk-row[hidden] { display: none; }
+.wk-row .wk-vis { margin-left: auto; opacity: .6; flex: none; }
+.wk-wl-search { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0 var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+.wk-wl-search:focus-within { border-color: var(--color-accent); }
+.wk-wl-search input { flex: 1; min-width: 0; margin: 0; padding: var(--space-2) 0; border: 0; box-shadow: none; background: transparent; color: inherit; font-size: var(--text-sm); }
+.wk-wl-search input:focus { outline: none; box-shadow: none; }
+.wk-list .wk-filters { padding-inline: 0; }
+button.wk-chip { background: transparent; color: var(--color-text); cursor: pointer; }
+button.wk-chip:hover { border-color: var(--color-accent); }
+button.wk-chip.wk-chip-on { color: var(--color-accent); border-color: var(--color-accent); }
+.wk-wl-empty { padding: var(--space-3); font-size: var(--text-sm); }

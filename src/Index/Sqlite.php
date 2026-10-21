@@ -327,11 +327,11 @@ final class Sqlite implements IndexInterface
 
     /**
      * Same rows as listNamespace(), ordered most-recently-updated first
-     * the namespace drawer's "what's active in this namespace right now"
-     * framing (`templates/drawer.php`), as opposed to
-     * listNamespace()'s alphabetical "browse everything here" framing
-     * (`GET /{ns}:`). No filters yet (modality/date-range/"mine" chips in
-     * the mockup): see docs/BUILD_LOG.md; this is the plain listing only.
+     * the page view's left panel ("what's active in this namespace right
+     * now", templates/partials/worklist.php), as opposed to listNamespace()'s
+     * alphabetical "browse everything here" framing (`GET /{ns}:`). Each row
+     * carries its modalities (comma-joined); the panel's chips and search box
+     * filter these rows in the browser.
      *
      * @return list<array<string, mixed>>
      */
@@ -339,7 +339,8 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
+                    (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = pages.pid) AS modality
              FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY updated DESC LIMIT :limit'
         );
         foreach (['ns' => $ns] + $clauseParams as $key => $value) {

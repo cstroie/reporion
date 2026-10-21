@@ -29,6 +29,9 @@ final class PageTemplateRenderer
     /** Frontmatter fields templates/layout-public.php prints: nothing else reaches it */
     private const PUBLIC_FIELDS = ['device'];
 
+    /** Rows the page view's left panel lists (the chips and the search box filter these in the browser) */
+    private const WORKLIST_ROWS = 150;
+
     public function __construct(
         private readonly Render $render,
         private readonly IndexInterface $index,
@@ -130,6 +133,8 @@ final class PageTemplateRenderer
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
         // No header for the stub home page: there is no page to act on
         if ($record->pid !== '') {
+            // The left panel: the namespace's pages the caller may read, newest first (listWorklist(), invariant 6)
+            $vars['worklist'] = $this->index->listWorklist(ChromeVars::namespaceOf($record->path), $principal, self::WORKLIST_ROWS);
             $vars += ChromeVars::pageHeader(
                 $principal,
                 $record->path,
