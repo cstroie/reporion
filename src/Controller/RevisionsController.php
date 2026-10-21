@@ -40,7 +40,8 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * renders. One screen now: the row picker (unchanged) chooses from/to,
  * defaulting to previous→current same as Compare did; a style switch picks
  * the render:
- * - **word** (default). Compare's track-changes read (Support\Diff::words()).
+ * - **split** (default, 2026-10-21): two aligned columns (Support\DiffView).
+ * - **word**. Compare's track-changes read (Support\Diff::words()).
  *   Needs both sides' body text to parse and Diff::wordsFits() to hold
  *   (2026-09-30 incident: a body too large exhausted a PHP-FPM worker, see
  *   `Diff`'s docblock): either failing falls back to **line**.
@@ -121,7 +122,7 @@ final class RevisionsController
         }
 
         $requestedStyleRaw = (string) ($request->query['style'] ?? '');
-        $requestedStyle = \in_array($requestedStyleRaw, ['line', 'split', 'side'], true) ? $requestedStyleRaw : 'word';
+        $requestedStyle = \in_array($requestedStyleRaw, ['word', 'line', 'side'], true) ? $requestedStyleRaw : 'split';
         $ignoreSpace = (string) ($request->query['ws'] ?? '') === '1';
         $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $raw, $requestedStyle, $request->basePath, $template, $ignoreSpace);
 
@@ -295,36 +296,59 @@ final class RevisionsController
     }
 
     /**
-     * The template the page names, as revision 0: null when it names none,
-     * or one the caller cannot read (the listing predicate, invariant 6).
+     * The templates the page names, as revision 0: null when it names none the
+     * caller can read (the listing predicate, invariant 6). A report of several
+     * exams is the concatenation of its exams' templates, in exam order, each
+     * without its `#` name heading, as the report's own body is built; one
+     * template used by two exams counts twice, as the report holds both exams.
      * $current is the newest revision, already read: the page as it is now (D2).
      *
-     * @return ?array{path: string, title: string, body: string, ts: string, by: string}
+     * @return ?array{path: string, paths: list<string>, title: string, body: string, ts: string, by: string}
      */
     private function template(string $path, ?string $current, ?User $principal): ?array
     {
         try {
-            // The first exam's own template: revision 0 is one template's text
-            $name = $current !== null ? (ExamTemplates::of(DocumentFormat::parse($current)[0])[0][1] ?? null) : null;
+            $names = $current !== null ? array_column(ExamTemplates::of(DocumentFormat::parse($current)[0]), 1) : [];
         } catch (RuntimeException | ParseException) {
-            $name = null;
+            $names = [];
         }
-        if (!\is_string($name) || trim($name, ': ') === '') {
+
+        $bodies = [];
+        $paths = [];
+        $titles = [];
+        $ts = '';
+        $by = '';
+        foreach ($names as $name) {
+            $name = trim((string) $name, ': ');
+            if ($name === '' || $name === $path) {
+                continue;
+            }
+            $row = $this->index->findByPath($name, $principal);
+            if ($row === null) {
+                continue;
+            }
+            $bodies[] = trim(TemplateHeadings::withoutName($this->storage->read($name)->body));
+            if (!\in_array($name, $paths, true)) {
+                $paths[] = $name;
+                $titles[] = (string) ($row['title'] ?? '');
+            }
+            // The newest of the templates dates the whole
+            if ((string) ($row['updated'] ?? '') >= $ts) {
+                $ts = (string) ($row['updated'] ?? '');
+                $by = (string) ($row['updated_by'] ?? '');
+            }
+        }
+        if ($bodies === []) {
             return null;
         }
-        $name = trim($name, ': ');
-        $row = $this->index->findByPath($name, $principal);
-        if ($row === null || $name === $path) {
-            return null;
-        }
-        $record = $this->storage->read($name);
 
         return [
-            'path' => $name,
-            'title' => (string) ($row['title'] ?? ''),
-            'body' => $record->body,
-            'ts' => (string) ($row['updated'] ?? ''),
-            'by' => (string) ($row['updated_by'] ?? ''),
+            'path' => $paths[0],
+            'paths' => $paths,
+            'title' => implode(' + ', array_filter($titles, static fn (string $t): bool => $t !== '')),
+            'body' => implode("\n\n", $bodies) . "\n",
+            'ts' => $ts,
+            'by' => $by,
         ];
     }
 

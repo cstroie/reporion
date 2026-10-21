@@ -171,7 +171,7 @@ final class RevisionsTest extends HttpTestCase
      * style, a track-changes read rather than a line-oriented patch, and
      * from/to default to previous→current with no query string at all.
      */
-    public function testWordStyleIsTheDefaultAndFromToDefaultToPreviousAndCurrent(): void
+    public function testSplitStyleIsTheDefaultAndFromToDefaultToPreviousAndCurrent(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -191,10 +191,20 @@ final class RevisionsTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-worddiff', $response->body);
-        self::assertStringNotContainsString('class="wk-dt', $response->body);
-        self::assertStringContainsString('<del>are</del>', $response->body);
-        self::assertStringContainsString('<ins>sunt</ins>', $response->body);
+        self::assertStringContainsString('wk-dt-split', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('<mark class="wk-mark-add">sunt</mark>', $response->body);
+
+        $word = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['style' => 'word'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+        self::assertStringContainsString('wk-worddiff', $word->body);
+        self::assertStringNotContainsString('class="wk-dt', $word->body);
+        self::assertStringContainsString('<del>are</del>', $word->body);
+        self::assertStringContainsString('<ins>sunt</ins>', $word->body);
     }
 
     /**
@@ -278,7 +288,7 @@ Leziune nouă.',
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
             '/reports:mri:mioveni:a/revisions',
-            query: ['from' => '1', 'to' => '2'],
+            query: ['from' => '1', 'to' => '2', 'style' => 'word'],
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -463,6 +473,26 @@ Leziune nouă.',
         self::assertStringNotContainsString('# Test A', $diff, 'the name heading is not compared');
         self::assertStringNotContainsString('visibility: private', $diff, 'nor the frontmatter');
         self::assertStringNotContainsString('name="to" value="0"', $diff, 'revision zero is never restored');
+    }
+
+    public function testRevisionZeroOfSeveralExamsIsTheirTemplatesConcatenated(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'templates:ct:cerebral', 'meta' => ['title' => 'CT Cerebral', 'visibility' => 'private'], 'body' => "# CT Cerebral\n\n## CT cerebral\n\n### Descriere\n\nParenchim cerebral normal."]);
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'templates:ct:cervical', 'meta' => ['title' => 'CT Cervical', 'visibility' => 'private'], 'body' => "# CT Cervical\n\n## CT cervical\n\n### Descriere\n\nColoana cervicală aliniată."]);
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:260101-test-d', 'meta' => [
+            'title' => 'Test D', 'visibility' => 'private', 'patient' => ['name' => 'Test D'],
+            'exams' => [['title' => 'CT cerebral', 'template' => 'templates:ct:cerebral'], ['title' => 'CT cervical', 'template' => 'templates:ct:cervical']],
+        ], 'body' => "# Test D\n\n## CT cerebral\n\n### Descriere\n\nParenchim cerebral normal.\n\n## CT cervical\n\n### Descriere\n\nColoana cervicală aliniată, osteofit."]);
+
+        $list = $this->ownerRequest('GET', '/reports:mri:mioveni:260101-test-d/revisions', [])->body;
+        self::assertStringContainsString('href="/templates:ct:cerebral"', $list);
+        self::assertStringContainsString('href="/templates:ct:cervical"', $list, 'both templates are linked from revision zero');
+
+        $diff = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-d/revisions', query: ['from' => '0', 'to' => '1', 'style' => 'line'], cookies: ['reporion' => $this->issueCookie('owner')]))->body;
+        // Both exams are in revision zero, so only the added word differs
+        self::assertStringContainsString('<mark class="wk-mark-add">, osteofit</mark>', $diff);
+        self::assertSame(1, substr_count($diff, '<td class="wk-dt-s wk-dt-del"'), 'only the edited line differs: the other exam\'s template text is in revision zero too');
+        self::assertStringContainsString('Parenchim cerebral normal.', $diff);
     }
 
     public function testNoRevisionZeroWithoutAReadableTemplate(): void

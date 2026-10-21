@@ -51,8 +51,8 @@ declare(strict_types=1);
 /** @var string $requestedStyle */
 /** @var bool $ignoreSpace */
 /** @var ?array{style: string, ops: ?list<array{op: string, line: string}>, panes: ?list<array{rev: int, ts: string, title: string, html: ?string, raw: string}>, fromTs: string, toTs: string} $diff */
-/** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
-/** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
+/** @var ?array{path: string, paths: list<string>, title: string, body: string, ts: string, by: string} $template */
+/** @var ?array{path: string, paths: list<string>, title: string, body: string, ts: string, by: string} $template */
 /** @var bool $canWrite */
 /** @var string $basePath */
 
@@ -131,7 +131,7 @@ $bar = static function (?array $c): string {
 <?php if ($canWrite): ?>
 <form action="<?= $p ?>/revisions/revert" method="post">
 <input type="hidden" name="to" value="<?= $rev ?>">
-<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('revisions.restore')) ?></button>
+<button class="btn btn-ghost btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('revisions.restore')) ?></button>
 </form>
 <?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?><?= $keep ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
@@ -148,7 +148,7 @@ $bar = static function (?array $c): string {
 <td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($template['ts'] !== '' ? $template['ts'] : null)) ?></div></td>
 <td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e($template['by'] !== '' ? display_name($template['by']) : 'n/a') ?></div></td>
 <td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
-<td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
+<td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <?php foreach ($template['paths'] as $i => $templatePath): ?><?= $i > 0 ? ' + ' : '' ?><a class="wk-mono" href="<?= $b ?>/<?= $e($templatePath) ?>"><?= $e($templatePath) ?></a><?php endforeach; ?></div></td>
 <td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
 <td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="?from=0&amp;to=<?= $currentRev ?><?= $keep ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a></div></td>
 </tr>
@@ -264,6 +264,7 @@ $segs = static function (string $text, ?array $parts, string $kind) use ($e): st
     return $out;
 };
 $foldLabel = static fn (array $row): string => t('revisions.unchanged', [(int) $row['n']]) . ($row['heading'] !== '' ? ' · ' . $row['heading'] : '');
+$foldHideLabel = static fn (array $row): string => t('revisions.fold_hide', [(int) $row['n']]) . ($row['heading'] !== '' ? ' · ' . $row['heading'] : '');
 $foldId = 0;
 ?>
 <?php if ($diff['stats']['add'] + $diff['stats']['remove'] === 0): ?>
@@ -280,7 +281,7 @@ $foldId = 0;
 <?php foreach ($diff['rows'] as $row): ?>
 <?php if ($split): ?>
 <?php if (isset($row['fold'])): $foldId++; ?>
-<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><?= $e($foldLabel($row)) ?></button></td></tr>
+<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>" aria-expanded="false" data-show="<?= $e($foldLabel($row)) ?>" data-hide="<?= $e($foldHideLabel($row)) ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><span><?= $e($foldLabel($row)) ?></span></button></td></tr>
 <?php foreach ($row['rows'] as $hid): ?>
 <tr class="wk-dt-hid" data-foldrow="<?= $foldId ?>" hidden><td class="wk-dt-n"><?= (int) $hid['l']['n'] ?></td><td class="wk-dt-c"><?= $e($hid['l']['text']) ?></td><td class="wk-dt-n"><?= (int) $hid['r']['n'] ?></td><td class="wk-dt-c"><?= $e($hid['r']['text']) ?></td></tr>
 <?php endforeach; ?>
@@ -295,7 +296,7 @@ $foldId = 0;
 <?php endif; ?>
 <?php else: ?>
 <?php if ($row['t'] === 'fold'): $foldId++; ?>
-<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><?= $e($foldLabel($row)) ?></button></td></tr>
+<tr class="wk-dt-fold"><td colspan="4"><button type="button" data-fold="<?= $foldId ?>" aria-expanded="false" data-show="<?= $e($foldLabel($row)) ?>" data-hide="<?= $e($foldHideLabel($row)) ?>"><i class="ph ph-arrows-out-line-vertical" aria-hidden="true"></i><span><?= $e($foldLabel($row)) ?></span></button></td></tr>
 <?php foreach ($row['rows'] as $hid): ?>
 <tr class="wk-dt-hid" data-foldrow="<?= $foldId ?>" hidden><td class="wk-dt-n"><?= (int) $hid['a'] ?></td><td class="wk-dt-n"><?= (int) $hid['b'] ?></td><td class="wk-dt-s"></td><td class="wk-dt-c"><?= $e($hid['text']) ?></td></tr>
 <?php endforeach; ?>
@@ -353,13 +354,14 @@ $foldId = 0;
 </script>
 <script>
 (function() {
-  // Unchanged runs folded away: a click opens them
+  // Unchanged runs folded away: a click opens them, and the same row hides them again
   Array.prototype.forEach.call(document.querySelectorAll('.wk-dt-fold button'), function(btn) {
     btn.addEventListener('click', function() {
-      var id = btn.getAttribute('data-fold');
-      Array.prototype.forEach.call(document.querySelectorAll('[data-foldrow="' + id + '"]'), function(r) { r.hidden = false; });
-      var row = btn.closest('tr');
-      row.parentNode.removeChild(row);
+      var open = btn.getAttribute('aria-expanded') !== 'true';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-foldrow="' + btn.getAttribute('data-fold') + '"]'), function(r) { r.hidden = !open; });
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.querySelector('span').textContent = btn.getAttribute(open ? 'data-hide' : 'data-show');
+      btn.querySelector('i').className = 'ph ' + (open ? 'ph-arrows-in-line-vertical' : 'ph-arrows-out-line-vertical');
     });
   });
   var wrap = document.querySelector('[data-diff-wrap]');
