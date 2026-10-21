@@ -502,6 +502,10 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
   .wk-doc-titlerow > .wk-doc-title { min-width: 0; }
   .wk-doc-titlerow.wk-doc-titlerow > hgroup { flex: 1 1 0; }
   .wk-doc-titlerow > .wk-actions { flex: none; }
+  /* The start page has up to four actions: they do not fit beside the greeting, so they take their own line */
+  .wk-doc-titlerow:has(> .wk-start-hello) { flex-wrap: wrap; }
+  .wk-doc-titlerow.wk-doc-titlerow > hgroup.wk-start-hello { flex: 1 1 100%; min-width: 0; }
+  .wk-doc-titlerow:has(> .wk-start-hello) > .wk-actions { margin-left: 0; justify-content: flex-start; }
 }
 /* Print preview (templates/print-preview.php, design/mockup/WikiPrint): the
    document on a sheet of paper on a desk. The sheet is paper: white in every
@@ -2050,7 +2054,21 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards.table-cards-compact tr:has(> td.wk-selcol) { padding-right: 36px; }
   table.table.table-cards.table-cards-compact td.wk-selcol { right: 2px; width: 32px; }
   table.table.table-cards.table-cards-compact td.wk-rowact { right: 2px; width: 32px; top: 42px; }
-  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 32px; height: 32px; }
+  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 32px; height: 32px; }  /* The page footer and the comment box: closer together, the comment text, its field and its help smaller */
+  .wk-doc-foot { gap: var(--space-4); }
+  .wk-doc-foot .wk-comments { gap: var(--space-2); }
+  .wk-comments .wk-comment-list > li.wk-mono { font-size: var(--text-sm); }
+  .wk-comment { padding: var(--space-2); }
+  .wk-comment-form textarea { min-height: 0; field-sizing: content; }
+  .wk-comment-form label > small { font-size: 11px; line-height: 1.35; }
+  .wk-comment-form .wk-recall-row .btn { width: 100%; justify-content: center; }  /* Dialogs: the header's meta (server · model · time) on a line of its own under the title, the footer's buttons share one row */
+  .wk-modal > header { flex-wrap: wrap; gap: 0 var(--space-2); }
+  .wk-modal > header > h2 { flex: 1 1 0; margin: 0; }
+  .wk-modal > header > .wk-tbtn { order: 2; }
+  .wk-modal > header > .wk-mono { order: 3; flex: 1 1 100%; padding: 0 var(--space-2) var(--space-2) 0; overflow-wrap: anywhere; }
+  .wk-modal > header > .wk-mono:empty { display: none; }
+  .wk-modal > footer { flex-wrap: nowrap; padding: var(--space-2) var(--space-3); }
+  .wk-modal > footer > :is(.btn, button, a) { flex: 1 1 0; min-width: 0; justify-content: center; }
 }
 
 /* The start page (templates/dashboard.php, 2026-10-01): counts, two-column
