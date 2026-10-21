@@ -260,17 +260,12 @@ select.input:not([multiple]):not([size]) {
   --shadow-md: 0 0 0 1px #e2dfd7, 0 7.5px 23px rgba(31,30,27,.10);
   --shadow-lg: 0 0 0 1px #cfcbc0, 0 20.5px 51.5px rgba(31,30,27,.16);
 }
-/* Teal and slate (2026-09-30). Teal is the mockup's "cold teal" Workbench
- * option (design/README.md: listed but never wired until now): colours
- * verbatim from the design tool, shadow blur/spread scaled ×18/14 like
- * lime/amber above (6px/18px/16px/40px → 7.5/23/20.5/51.5); its light
- * theme isn't in the mockup, derived here the same way lime/amber's was
- * (a darker shade of the same accent for AA contrast on white). Slate is
- * Pico CSS's own named hue (picocss.com/docs/colors, its published
- * pico.colors.css), not the mockup's: real Pico shade values throughout,
- * including --pico-color-slate itself (#525f7a) as the light-theme accent,
- * the one Pico would show as "Slate" on a white swatch. */
-/* Teal (2026-10-21): after a photo of an old television glowing in a dark room: the pale aqua
+/* Teal (2026-09-30), the mockup's "cold teal" Workbench option (design/README.md: listed but
+ * never wired until now): colours verbatim from the design tool, shadow blur/spread scaled
+ * ×18/14 like lime/amber above (6px/18px/16px/40px → 7.5/23/20.5/51.5); its light theme isn't in
+ * the mockup, derived the same way lime/amber's was (a darker shade of the same accent for AA
+ * contrast on white). Recoloured 2026-10-21, below. */
+/* Afterglow, key `teal` (2026-10-21): after a photo of an old television glowing in a dark room: the pale aqua
  * of the lit screen as the text and accent, the charcoal of its case as the ground, the
  * teal-grey of the wall and the dusk blue of the carpet in the neutrals. */
 .palette-teal {
@@ -304,38 +299,6 @@ select.input:not([multiple]):not([size]) {
   --shadow-sm: 0 0 0 1px #c5d8d7;
   --shadow-md: 0 0 0 1px #c5d8d7, 0 7.5px 23px rgba(15,28,30,.10);
   --shadow-lg: 0 0 0 1px #a9c2c1, 0 20.5px 51.5px rgba(15,28,30,.16);
-}
-.palette-slate {
-  --color-bg:        #0e1118;
-  --color-surface:   #181c25;
-  --color-text:      #dfe3eb;
-  --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
-  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #8191b5;
-  --color-divider:   color-mix(in srgb, #dfe3eb 15%, transparent);
-  --color-accent-100: #eff1f4;
-  --color-accent-200: #cfd5e2;
-  --color-accent-300: #a0acc7;
-  --color-accent-800: #2a3140;
-  --color-accent-900: #181c25;
-  --color-neutral-900: #181c25;
-  --color-neutral-800: #2a3140;
-  --color-neutral-300: #b0b9d0;
-  --shadow-sm: 0 0 0 1px #2a3140;
-  --shadow-md: 0 0 0 1px #333c4e, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #687899, 0 20.5px 51.5px rgba(0,0,0,.65);
-}
-.theme-light.palette-slate {
-  --color-bg:        #eff1f4;
-  --color-surface:   #fff;
-  --color-text:      #181c25;
-  --color-accent:    #525f7a;
-  --color-divider:   color-mix(in srgb, #181c25 15%, transparent);
-  --color-neutral-200: #cfd5e2;
-  --color-neutral-700: #3d475c;
-  --shadow-sm: 0 0 0 1px #cfd5e2;
-  --shadow-md: 0 0 0 1px #cfd5e2, 0 7.5px 23px rgba(24,28,37,.10);
-  --shadow-lg: 0 0 0 1px #b0b9d0, 0 20.5px 51.5px rgba(24,28,37,.16);
 }
 /* Cyberpunk (2026-10-06): a whole theme, not just an accent: after
  * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
@@ -626,7 +589,6 @@ select.input:not([multiple]):not([size]) {
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover,
 .theme-light.palette-teal a:hover,
-.theme-light.palette-slate a:hover,
 .theme-light.palette-reading-room a:hover,
 .theme-light.palette-crt a:hover,
 .theme-light.palette-film a:hover,

@@ -531,7 +531,7 @@ less.
 ## Colour, themes and palettes
 
 - **Palettes are Shell C's, not the Reading room's** (2026-09-30): Royal blue (default), Lime,
-  Amber, Teal, plus Slate (Pico's named hue) and Cyberpunk (a whole theme with its own stylesheet,
+  Amber, Afterglow (key `teal`), plus Cyberpunk (a whole theme with its own stylesheet,
   `assets/css/cyberpunk.css`), and four more whole themes (2026-10-21): Reading room, Phosphor
   (`crt`), Film and Blueprint (`assets/css/themes.css`). Each has a dark and a light theme. Rose
   is not offered.

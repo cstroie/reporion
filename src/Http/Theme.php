@@ -18,8 +18,8 @@ final class Theme
     public const COOKIE_NAME = 'reporion_theme';
     public const PALETTE_COOKIE_NAME = 'reporion_palette';
 
-    /** A6: royal blue (the default), lime, amber, teal, slate, cyberpunk, reading-room, crt (shown as Phosphor), film, blueprint: design/README.md */
-    public const PALETTES = ['royal-blue', 'lime', 'amber', 'teal', 'slate', 'cyberpunk', 'reading-room', 'crt', 'film', 'blueprint'];
+    /** A6: royal blue (the default), lime, amber, teal, cyberpunk, reading-room, crt (shown as Phosphor), film, blueprint: design/README.md */
+    public const PALETTES = ['royal-blue', 'lime', 'amber', 'teal', 'cyberpunk', 'reading-room', 'crt', 'film', 'blueprint'];
     public const DEFAULT_PALETTE = 'royal-blue';
 
     public static function cookieHeader(string $theme): string

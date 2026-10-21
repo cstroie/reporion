@@ -64,11 +64,9 @@ values came from the design tool directly):
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Lime** | slate + lime | `lime` |
 | **Amber** | graphite + amber | `amber` |
-| **Teal** | cold teal | `teal` |
+| **Afterglow** (was Teal, renamed 2026-10-21; the key stays `teal`) | cold teal, recoloured after a lit television | `teal` |
 
-**Slate** (2026-09-30) is not from the mockup at all: [Pico CSS's own named hue](https://picocss.com/docs/colors)
-(its published `pico.colors.css`), real Pico shade values throughout, including
-`--pico-color-slate` itself as the light-theme accent.
+(**Slate**, a Pico named hue added 2026-09-30, was removed 2026-10-21; a saved `slate` choice falls back to royal blue.)
 
 **Cyberpunk** (2026-10-06) is not from the mockup either, and is more than an accent: a whole
 theme after [Cyberpunk Neon](https://github.com/Roboron3042/Cyberpunk-Neon): its colours by
