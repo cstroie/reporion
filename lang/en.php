@@ -1075,6 +1075,7 @@ return [
     'revisions.prev_change' => 'Previous',
     'revisions.next_change' => 'Next',
     'revisions.unchanged'   => '%d unchanged lines',
+    'revisions.reordered'   => 'The sections of the left-hand revision are moved to sit beside their counterparts in %s.',
     'revisions.stat_words'  => 'words',
     'revisions.stat_lines'  => 'lines',
     'revisions.no_changes'  => 'No differences between these two revisions.',

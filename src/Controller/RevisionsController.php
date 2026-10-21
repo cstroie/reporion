@@ -16,6 +16,7 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\CompareSections;
 use Reporion\Support\Diff;
 use Reporion\Support\DiffView;
 use Reporion\Support\DocumentFormat;
@@ -182,7 +183,7 @@ final class RevisionsController
                 $this->pane($path, $to, $revlog, $raw, $basePath),
             ];
 
-            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => $panes, 'fromTs' => $fromTs, 'toTs' => $toTs];
+            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => $panes, 'aligned' => self::align($panes), 'fromTs' => $fromTs, 'toTs' => $toTs];
         }
 
         $fromRaw = $this->revision($path, $from, $raw);
@@ -203,6 +204,27 @@ final class RevisionsController
         }
 
         return $this->lineDiff($fromRaw, $toRaw, $requestedStyle, $fromTs, $toTs, $ignoreSpace);
+    }
+
+    /**
+     * The two rendered panes lined up section by section (Support\CompareSections, as the
+     * report-vs-prior Compare does): the pane picked first on the left. Null when a side is shown
+     * as source.
+     *
+     * @param list<array{rev: int, ts: string, title: string, html: ?string, raw: string}> $panes
+     *
+     * @return ?array{rows: list<array{0: string, 1: string}>, reordered: bool}
+     */
+    private static function align(array $panes): ?array
+    {
+        if ($panes[0]['html'] === null || $panes[1]['html'] === null) {
+            return null;
+        }
+        // align() keeps its first argument's order and puts it on the left: the right pane leads, then the columns swap back
+        $aligned = CompareSections::align($panes[1]['html'], $panes[0]['html']);
+        $aligned['rows'] = array_map(static fn (array $r): array => [$r[1], $r[0]], $aligned['rows']);
+
+        return $aligned;
     }
 
     /**
@@ -360,7 +382,7 @@ final class RevisionsController
         if ($requestedStyle === 'side') {
             $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->body($s['body'], $s['fm'], $basePath)->html, 'raw' => $s['body']];
 
-            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
+            return ['style' => 'side', 'ops' => null, 'rows' => null, 'stats' => null, 'panes' => [$pane($a), $pane($b)], 'aligned' => self::align([$pane($a), $pane($b)]), 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
         }
         if ($requestedStyle === 'word' && Diff::wordsFits($a['body'], $b['body'])) {
             return $this->wordDiff($a['body'], $b['body'], $a['ts'], $b['ts'], $ignoreSpace);

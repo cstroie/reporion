@@ -228,6 +228,7 @@ Leziune nouă.',
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-cmp', $response->body);
+        self::assertStringContainsString('wk-cmp-sync', $response->body, 'the two revisions are lined up section by section');
         self::assertStringNotContainsString('wk-worddiff', $response->body);
         self::assertStringNotContainsString('class="wk-dt', $response->body);
         self::assertStringContainsString('<p>Normal.</p>', $response->body);

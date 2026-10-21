@@ -976,11 +976,10 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 /* Boxed like .wk-ta/.wk-difftext (2026-09-30): this is the same body text
  * in the same font, so it reads in the same frame rather than sitting bare
  * on the page. */
-/* Prose view (2026-10-21): the reading font and measure, not the editor's monospace; added text is
- * underlined and removed text struck through, so the change reads without its colour */
+/* Prose view (2026-10-21): the reading font and measure, not the editor's monospace; text keeps its own colour; removed words are dimmed and struck through, added ones sit on a soft tint */
 .wk-worddiff { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: var(--text-base); line-height: 1.7; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-5) var(--space-6); box-sizing: border-box; }
-.wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); border-radius: 2px; }
-.wk-worddiff ins { color: var(--state-ok); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; background: color-mix(in srgb, var(--state-ok) 14%, transparent); border-radius: 2px; }
+.wk-worddiff del { color: color-mix(in srgb, var(--color-text) 55%, transparent); text-decoration: line-through; text-decoration-color: var(--state-error); text-decoration-thickness: 1px; background: color-mix(in srgb, var(--state-error) 8%, transparent); }
+.wk-worddiff ins { color: inherit; text-decoration: none; background: color-mix(in srgb, var(--state-ok) 16%, transparent); }
 
 /* The style form (view, whitespace, apply) wraps instead of widening the page on a phone */
 #rev-style-form { flex-wrap: wrap; justify-content: flex-start; max-width: 100%; }

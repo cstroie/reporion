@@ -215,10 +215,26 @@ $bar = static function (?array $c): string {
     };
 ?><?php endforeach; ?></div>
 <?php elseif ($diff['style'] === 'side'): ?>
+<?php $paneName = static fn (array $pane): string => $pane['rev'] === 0 ? t('revisions.template') : t('revisions.rev_label', [$pane['rev']]); ?>
+<?php $paneHead = static fn (array $pane): string => '<div class="wk-crumbs wk-mono"><b>' . htmlspecialchars($paneName($pane), ENT_QUOTES) . '</b><span class="wk-dim">' . htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) . '</span></div>'; ?>
+<?php if (($diff['aligned'] ?? null) !== null): ?>
+<?php /* One grid, two columns: each section's two cells share a row (Support\CompareSections, as the Compare screen does); one column under 1024px, each cell naming its revision */ ?>
+<?php if ($diff['aligned']['reordered']): ?>
+<p class="wk-dim wk-cmp-note"><i class="ph ph-arrows-down-up" aria-hidden="true"></i> <?= $e(t('revisions.reordered', [$paneName($diff['panes'][1])])) ?></p>
+<?php endif; ?>
+<div class="wk-cmp wk-cmp-sync">
+<div class="wk-cmp-cap"><?= $paneHead($diff['panes'][0]) ?></div>
+<div class="wk-cmp-cap"><?= $paneHead($diff['panes'][1]) ?></div>
+<?php foreach ($diff['aligned']['rows'] as [$left, $right]): ?>
+<div class="wk-prose wk-cmp-cell<?= $left === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($paneName($diff['panes'][0])) ?></span><?= $left /* Render::toHtml() output, split at its headings */ ?></div>
+<div class="wk-prose wk-cmp-cell<?= $right === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($paneName($diff['panes'][1])) ?></span><?= $right ?></div>
+<?php endforeach; ?>
+</div>
+<?php else: ?>
 <div class="wk-cmp">
 <?php foreach ($diff['panes'] as $pane): ?>
 <div>
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars($pane['rev'] === 0 ? t('revisions.template') : t('revisions.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) ?></span></div>
+<?= $paneHead($pane) ?>
 <?php if ($pane['html'] !== null): ?>
 <?php if ($pane['title'] !== ''): ?><h4 class="wk-cmp-title"><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h4><?php endif; ?>
 <div class="wk-prose"><?= $pane['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>
@@ -228,6 +244,7 @@ $bar = static function (?array $c): string {
 </div>
 <?php endforeach; ?>
 </div>
+<?php endif; ?>
 <?php else: ?>
 <?php
 $split = $diff['style'] === 'split';
