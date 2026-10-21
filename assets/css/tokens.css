@@ -265,10 +265,10 @@ select.input:not([multiple]):not([size]) {
  * ×18/14 like lime/amber above (6px/18px/16px/40px → 7.5/23/20.5/51.5); its light theme isn't in
  * the mockup, derived the same way lime/amber's was (a darker shade of the same accent for AA
  * contrast on white). Recoloured 2026-10-21, below. */
-/* Afterglow, key `teal` (2026-10-21): after a photo of an old television glowing in a dark room: the pale aqua
+/* Afterglow (2026-10-21; was `teal`): after a photo of an old television glowing in a dark room: the pale aqua
  * of the lit screen as the text and accent, the charcoal of its case as the ground, the
  * teal-grey of the wall and the dusk blue of the carpet in the neutrals. */
-.palette-teal {
+.palette-afterglow {
   --color-bg:        #0b1213;
   --color-surface:   #132021;
   --color-text:      #d8f2f0;
@@ -288,17 +288,24 @@ select.input:not([multiple]):not([size]) {
   --shadow-md: 0 0 0 1px #34465a, 0 7.5px 23px rgba(0,0,0,.55);
   --shadow-lg: 0 0 0 1px #6f8a98, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
-.theme-light.palette-teal {
-  --color-bg:        #dde9e8;
-  --color-surface:   #f2faf9;
-  --color-text:      #0f1c1e;
-  --color-accent:    #14736f;
-  --color-divider:   color-mix(in srgb, #0f1c1e 16%, transparent);
-  --color-neutral-200: #cbdcdc;
-  --color-neutral-700: #3d5456;
-  --shadow-sm: 0 0 0 1px #c5d8d7;
-  --shadow-md: 0 0 0 1px #c5d8d7, 0 7.5px 23px rgba(15,28,30,.10);
-  --shadow-lg: 0 0 0 1px #a9c2c1, 0 20.5px 51.5px rgba(15,28,30,.16);
+.theme-light.palette-afterglow {
+  --color-bg:        #cfe8e6;
+  --color-surface:   #f3fdfc;
+  --color-text:      #0b1a1d;
+  --color-dim:       #3d5d60;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #0e6a67;
+  --color-accent-300: #0a504e;
+  --color-accent-800: #083e3d;
+  --color-accent-100: #e0f6f4;
+  --color-accent-200: #bfe8e5;
+  --color-neutral-100: #e9f8f7;
+  --color-divider:   color-mix(in srgb, #0b1a1d 20%, transparent);
+  --color-neutral-200: #b9d8d6;
+  --color-neutral-700: #34504f;
+  --shadow-sm: 0 0 0 1px #a8cac8;
+  --shadow-md: 0 0 0 1px #a8cac8, 0 7.5px 23px rgba(11,26,29,.12);
+  --shadow-lg: 0 0 0 1px #86b0ae, 0 20.5px 51.5px rgba(11,26,29,.18);
 }
 /* Cyberpunk (2026-10-06): a whole theme, not just an accent: after
  * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
@@ -588,7 +595,7 @@ select.input:not([multiple]):not([size]) {
 
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover,
-.theme-light.palette-teal a:hover,
+.theme-light.palette-afterglow a:hover,
 .theme-light.palette-reading-room a:hover,
 .theme-light.palette-crt a:hover,
 .theme-light.palette-film a:hover,

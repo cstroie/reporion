@@ -43,8 +43,10 @@ body.palette-reading-room.theme-light::before { opacity: 1; }
 .palette-reading-room.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f6ebd9; box-shadow: 0 0 0 1px #cdb68f, 0 10px 28px rgba(42,28,17,.12); }
 
 /* ---- Teal: the room lit by an old television --------------------------------------------- */
-body.palette-teal:not(.theme-light) { background: radial-gradient(ellipse 70% 50% at 50% -8%, rgba(116,216,210,.10), transparent 72%) fixed, #0b1213; }
-body.palette-teal.theme-light { background: radial-gradient(ellipse 80% 55% at 50% -8%, #f6fcfb, transparent 75%) fixed, #dde9e8; }
+body.palette-afterglow:not(.theme-light) { background: radial-gradient(ellipse 70% 50% at 50% -8%, rgba(116,216,210,.10), transparent 72%) fixed, #0b1213; }
+/* the light scheme is the lit screen itself: bright aqua-white in the middle, falling off to the tube's deeper edge */
+body.palette-afterglow.theme-light { background: radial-gradient(ellipse 85% 70% at 50% 30%, #f1fdfc, #dff3f1 45%, transparent 100%) fixed, #bcdcda; }
+.palette-afterglow.theme-light .input { background: rgba(255,255,255,.6); }
 
 /* ---- Phosphor: a terminal. Mono everywhere (the tokens), spaced uppercase chrome ---------- */
 .palette-crt :is(.wk-brand, .wk-doc-title, .wk-prose h1, .wk-prose h2, .wk-prose h3, .wk-prose h4, .wk-preview h1, .wk-preview h2, .wk-preview h3, .wk-preview h4),

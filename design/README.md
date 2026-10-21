@@ -64,7 +64,7 @@ values came from the design tool directly):
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Lime** | slate + lime | `lime` |
 | **Amber** | graphite + amber | `amber` |
-| **Afterglow** (was Teal, renamed 2026-10-21; the key stays `teal`) | cold teal, recoloured after a lit television | `teal` |
+| **Afterglow** (was Teal, renamed 2026-10-21, key `afterglow`) | cold teal, recoloured after a lit television | `afterglow` |
 
 (**Slate**, a Pico named hue added 2026-09-30, was removed 2026-10-21; a saved `slate` choice falls back to royal blue.)
 

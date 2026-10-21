@@ -43,7 +43,7 @@ return [
     'palette.royal-blue'  => 'Royal blue',
     'palette.lime'        => 'Lime',
     'palette.amber'       => 'Amber',
-    'palette.teal'        => 'Afterglow',
+    'palette.afterglow'   => 'Afterglow',
     'palette.cyberpunk'   => 'Cyberpunk',
     'palette.reading-room' => 'Reading room',
     'palette.crt'         => 'Phosphor',
