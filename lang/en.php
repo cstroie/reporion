@@ -42,7 +42,7 @@ return [
     'nav.breadcrumb'      => 'Breadcrumb',
     'palette.royal-blue'  => 'Royal blue',
     'palette.lime'        => 'Mojito',
-    'palette.amber'       => 'Amber',
+    'palette.amber'       => 'Safelight',
     'palette.afterglow'   => 'Afterglow',
     'palette.cyberpunk'   => 'Cyberpunk',
     'palette.reading-room' => 'Reading room',

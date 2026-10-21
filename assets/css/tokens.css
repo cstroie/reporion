@@ -260,37 +260,58 @@ select.input:not([multiple]):not([size]) {
   --shadow-md: 0 0 0 1px #d8e0b8, 0 7.5px 23px rgba(20,36,13,.10);
   --shadow-lg: 0 0 0 1px #bccb96, 0 20.5px 51.5px rgba(20,36,13,.16);
 }
+/* Amber, the Safelight (2026-10-21): graphite and one amber, the way a darkroom has one lamp (the only light film can be
+ * handled in); light is paper with a trace of the same amber. Kept to a single hue so it never reads as the Reading room's coffee. */
 .palette-amber {
-  --color-bg:        #141414;
-  --color-surface:   #1e1d1b;
-  --color-text:      #e8e6e1;
+  --color-bg:        #0d0c0a;
+  --color-surface:   #171613;
+  --color-text:      #e8e3d3;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #e3a33c;
-  --color-divider:   color-mix(in srgb, #e8e6e1 15%, transparent);
-  --color-accent-100: #fdf3e2;
-  --color-accent-200: #f7e0b8;
-  --color-accent-300: #efc686;
-  --color-accent-800: #5a4118;
-  --color-accent-900: #38290f;
-  --color-neutral-900: #1b1a18;
-  --color-neutral-800: #35332e;
-  --color-neutral-300: #d2cfc7;
-  --shadow-sm: 0 0 0 1px #35332e;
-  --shadow-md: 0 0 0 1px #45423b, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #8a8577, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #ffb52e;
+  --color-divider:   color-mix(in srgb, #e8e3d3 15%, transparent);
+  --color-accent-100: #fff6df;
+  --color-accent-200: #ffe6ae;
+  --color-accent-300: #ffd270;
+  --color-accent-800: #5e4308;
+  --color-accent-900: #382806;
+  --color-neutral-100: #f5f1e6;
+  --color-neutral-300: #cfc9b8;
+  --color-neutral-700: #4d493e;
+  --color-neutral-800: #2f2d27;
+  --color-neutral-900: #12110e;
+  --state-ok:    #98bf80;
+  --state-warn:  #ffc247;
+  --state-error: #ff7358;
+  --diff-add:    #98bf80;
+  --diff-del:    #ff7358;
+  --shadow-sm: 0 0 0 1px #2f2d27;
+  --shadow-md: 0 0 0 1px #46433a, 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #8a8575, 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-amber {
-  --color-bg:        #f4f3f0;
-  --color-surface:   #fff;
-  --color-text:      #1f1e1b;
-  --color-accent:    #8a5a10;
-  --color-divider:   color-mix(in srgb, #1f1e1b 15%, transparent);
-  --color-neutral-200: #e7e4dd;
-  --color-neutral-700: #565349;
-  --shadow-sm: 0 0 0 1px #e2dfd7;
-  --shadow-md: 0 0 0 1px #e2dfd7, 0 7.5px 23px rgba(31,30,27,.10);
-  --shadow-lg: 0 0 0 1px #cfcbc0, 0 20.5px 51.5px rgba(31,30,27,.16);
+  --color-bg:        #ece8dc;
+  --color-surface:   #fffdf6;
+  --color-text:      #1d1b15;
+  --color-dim:       #5c574a;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
+  --color-accent:    #8a5a00;
+  --color-accent-300: #6b4600;
+  --color-accent-800: #4a3000;
+  --color-accent-100: #faf0d3;
+  --color-accent-200: #efdca3;
+  --color-neutral-100: #f2eee2;
+  --color-divider:   color-mix(in srgb, #1d1b15 16%, transparent);
+  --color-neutral-200: #ddd8c8;
+  --color-neutral-700: #4f4a3c;
+  --state-ok:    #3d6b1f;
+  --state-warn:  #8a5a00;
+  --state-error: #b3261e;
+  --diff-add:    #3d6b1f;
+  --diff-del:    #b3261e;
+  --shadow-sm: 0 0 0 1px #d6d1bf;
+  --shadow-md: 0 0 0 1px #d6d1bf, 0 7.5px 23px rgba(29,27,21,.10);
+  --shadow-lg: 0 0 0 1px #bdb79f, 0 20.5px 51.5px rgba(29,27,21,.16);
 }
 /* Teal (2026-09-30), the mockup's "cold teal" Workbench option (design/README.md: listed but
  * never wired until now): colours verbatim from the design tool, shadow blur/spread scaled
@@ -646,8 +667,8 @@ html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #2c3f6
 html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #9fb4dc; --sb-track: #e7eef7; --sb-arrow: #1b3f9e; }
 html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #3b5a12; --sb-track: #07100a; --sb-arrow: #b4e14a; }
 html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f1efd6; --sb-arrow: #3d6212; }
-html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #6a4f20; --sb-track: #141414; --sb-arrow: #e3a33c; }
-html:has(> body.palette-amber.theme-light) { --sb-thumb: #d3b27a; --sb-track: #f4f3f0; --sb-arrow: #8a5a10; }
+html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #4d4630; --sb-track: #0d0c0a; --sb-arrow: #ffb52e; }
+html:has(> body.palette-amber.theme-light) { --sb-thumb: #c9c0a0; --sb-track: #ece8dc; --sb-arrow: #8a5a00; }
 html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #1c4a4b; --sb-track: #0b1213; --sb-arrow: #74d8d2; }
 html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #86b0ae; --sb-track: #cfe8e6; --sb-arrow: #0e6a67; }
 html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #5a3818; --sb-track: #0f0a07; --sb-arrow: #d49a5a; }

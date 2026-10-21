@@ -1838,7 +1838,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-swatch { width: 15.5px; height: 15.5px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }
 .wk-swatch-royal-blue { background: linear-gradient(135deg, #78a6ff 50%, #0f1828 50%); box-shadow: 0 0 0 1px #33466a; }
 .wk-swatch-lime { background: linear-gradient(135deg, #b4e14a 50%, #0f1c13 50%); box-shadow: 0 0 0 1px #3b5a12; }
-.wk-swatch-amber { background: linear-gradient(135deg, #e3a33c 50%, #1e1d1b 50%); box-shadow: 0 0 0 1px #6a4f20; }
+.wk-swatch-amber { background: linear-gradient(135deg, #ffb52e 50%, #171613 50%); box-shadow: 0 0 0 1px #4d4630; }
 .wk-swatch-afterglow { background: linear-gradient(135deg, #74d8d2 50%, #132021 50%); box-shadow: 0 0 0 1px #2c6663; }
 .wk-swatch-reading-room { background: linear-gradient(135deg, #b89a6a 50%, #131315 50%); box-shadow: 0 0 0 1px #4d4d52; }
 .wk-swatch-crt { background: linear-gradient(135deg, #5cf08a 50%, #020a04 50%); box-shadow: 0 0 0 1px #1c8a46; }

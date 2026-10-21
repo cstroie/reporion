@@ -63,7 +63,7 @@ values came from the design tool directly):
 |---|---|---|
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Mojito** (was Lime, renamed 2026-10-21, key stays `lime`) | slate + lime, recoloured as a lime cocktail: a tropical night and a sunny day | `lime` |
-| **Amber** | graphite + amber | `amber` |
+| **Safelight** (was Amber, renamed 2026-10-21, key stays `amber`) | graphite + a single amber, as a darkroom safelight; light is warm paper | `amber` |
 | **Afterglow** (was Teal, renamed 2026-10-21, key `afterglow`) | cold teal, recoloured after a lit television | `afterglow` |
 
 (**Slate**, a Pico named hue added 2026-09-30, was removed 2026-10-21; a saved `slate` choice falls back to royal blue.)
