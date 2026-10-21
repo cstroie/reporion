@@ -496,6 +496,13 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: nowrap; justify-content: flex-end; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
+/* Below md the actions are icon-only (see .wk-btn-label below): they stay on the title's line, in every page that shares this layout, instead of wrapping under a 334px-minimum title */
+@media (max-width: 767.98px) {
+  .wk-doc-titlerow { flex-wrap: nowrap; }
+  .wk-doc-titlerow > .wk-doc-title { min-width: 0; }
+  .wk-doc-titlerow.wk-doc-titlerow > hgroup { flex: 1 1 0; }
+  .wk-doc-titlerow > .wk-actions { flex: none; }
+}
 /* Print preview (templates/print-preview.php, design/mockup/WikiPrint): the
    document on a sheet of paper on a desk. The sheet is paper: white in every
    theme, as in the mockup; the document inside is an iframe with print.css of
@@ -1830,6 +1837,10 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-swatch-amber { background: #e3a33c; }
 .wk-swatch-teal { background: #5fc2c0; }
 .wk-swatch-slate { background: #8191b5; }
+.wk-swatch-reading-room { background: linear-gradient(135deg, #b89a6a 50%, #131315 50%); box-shadow: 0 0 0 1px #4d4d52; }
+.wk-swatch-crt { background: linear-gradient(135deg, #5cf08a 50%, #020a04 50%); box-shadow: 0 0 0 1px #1c8a46; }
+.wk-swatch-film { background: linear-gradient(135deg, #7fd4e8 50%, #10171e 50%); box-shadow: 0 0 0 1px #475a68; }
+.wk-swatch-blueprint { background: linear-gradient(135deg, #7fd0ff 50%, #0a2346 50%); box-shadow: 0 0 0 1px #3d6ba6; }
 .wk-swatch-cyberpunk { background: linear-gradient(135deg, #d34fca 50%, #0abdc6 50%); box-shadow: 0 0 0 1px #133e7c; }
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
