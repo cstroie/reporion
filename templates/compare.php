@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /{path}/compare[?with={pid}] (Controller\CompareController): a report
- * beside another study of the same patient, newer on the left
+ * beside another study of the same patient, older on the left and newer on the right
  * (design/mockup/WikiCompare.dc.html, its report-vs-prior half). Content
  * only: Http\View::page() wraps it in templates/layout.php, under the
  * Timeline tab. "Sync sections" lines the two up by exam and section, by
@@ -81,18 +81,18 @@ $caption = static function (array $side) use ($e, $b): string {
 <?php if ($aligned['reordered']): ?>
 <p class="wk-dim wk-cmp-note"><i class="ph ph-arrows-down-up" aria-hidden="true"></i> <?= $e(t('compare.reordered', [$older['date']])) ?></p>
 <?php endif; ?>
-<?php /* One grid, two columns: each section's two cells share a row. Under 1024px it is one column, newer then older per section: each cell names its date there */ ?>
+<?php /* One grid, two columns: each section's two cells share a row. Under 1024px it is one column, older then newer per section: each cell names its date there */ ?>
 <div class="wk-cmp wk-cmp-sync">
-<div class="wk-cmp-cap"><?= $caption($newer) ?></div>
 <div class="wk-cmp-cap"><?= $caption($older) ?></div>
+<div class="wk-cmp-cap"><?= $caption($newer) ?></div>
 <?php foreach ($aligned['rows'] as [$left, $right]): ?>
-<div class="wk-prose wk-cmp-cell<?= $left === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($newer['date']) ?></span><?= $left /* Render::toHtml() output, split at its headings */ ?></div>
-<div class="wk-prose wk-cmp-cell<?= $right === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($older['date']) ?></span><?= $right ?></div>
+<div class="wk-prose wk-cmp-cell<?= $left === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($older['date']) ?></span><?= $left /* Render::toHtml() output, split at its headings */ ?></div>
+<div class="wk-prose wk-cmp-cell<?= $right === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($newer['date']) ?></span><?= $right ?></div>
 <?php endforeach; ?>
 </div>
 <?php else: ?>
 <div class="wk-cmp">
-<?php foreach ([$newer, $older] as $side): ?>
+<?php foreach ([$older, $newer] as $side): ?>
 <div>
 <?= $caption($side) ?>
 <div class="wk-prose"><?= $side['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>

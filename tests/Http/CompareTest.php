@@ -54,10 +54,10 @@ final class CompareTest extends HttpTestCase
         self::assertStringContainsString('Leziune 11 mm.', $body);
         self::assertStringNotContainsString('Normal.', $body, 'the study before this one, not every prior');
         self::assertStringContainsString('wk-cmp-sync', $body);
-        // Newer on the left: its Descriere cell comes before the older one's
-        self::assertLessThan(strpos($body, 'Leziune 11 mm.'), strpos($body, 'Leziune 12 mm.'));
-        // "Concluzii" and "Concluzie" share a row: the newer's cell is right before the older's
-        self::assertMatchesRegularExpression('#Stabil\.</p>\s*</div>\s*<div class="wk-prose wk-cmp-cell"><span[^>]*>2026-03-04</span><h3[^>]*>Concluzie#u', $body);
+        // Older on the left: its Descriere cell comes before the newer one's
+        self::assertLessThan(strpos($body, 'Leziune 12 mm.'), strpos($body, 'Leziune 11 mm.'));
+        // "Concluzie" and "Concluzii" share a row: the older's cell is right before the newer's
+        self::assertMatchesRegularExpression('#active\.</p>\s*</div>\s*<div class="wk-prose wk-cmp-cell"><span[^>]*>2026-09-22</span><h3[^>]*>Concluzii#u', $body);
         // The older-only Tehnică has an empty cell beside it
         self::assertStringContainsString('wk-cmp-cell wk-cmp-none', $body);
         self::assertStringContainsString(t('compare.interval', ['6 months 18 days']), $body);
@@ -87,7 +87,7 @@ final class CompareTest extends HttpTestCase
         self::assertStringNotContainsString('wk-cmp-sync', $response->body, 'sync=0: the two pages whole');
 
         $newest = $this->get(self::CT . '/compare', ['with' => (string) $this->storage->read(self::NEW)->pid]);
-        self::assertLessThan(strpos($newest->body, 'Normal.'), strpos($newest->body, 'Leziune 12 mm.'), 'newer on the left even from the older page');
+        self::assertLessThan(strpos($newest->body, 'Leziune 12 mm.'), strpos($newest->body, 'Normal.'), 'older on the left even from the newer page');
     }
 
     public function testTheOldestStudyHasNoPriorAndAnotherPatientIsNotFound(): void

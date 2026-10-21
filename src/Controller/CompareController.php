@@ -34,7 +34,7 @@ use Reporion\Support\ReportPath;
  * this caller: the timeline's own predicate, so visibility and grants are
  * applied in the query (invariant 6) and another patient's report, an
  * invisible one and a missing one are the same 404. Both are rendered whole
- * through Render::toHtml() (invariant 4), newer on the left, by sections
+ * through Render::toHtml() (invariant 4), older on the left, newer on the right, by sections
  * (Support\CompareSections) unless `sync=0`. No diff: word or line diffs
  * between two different reports say nothing useful.
  *
@@ -94,7 +94,7 @@ final class CompareController
                 'older' => $older,
                 'interval' => self::interval($older['date'], $newer['date']),
                 'sync' => $sync,
-                'aligned' => $sync ? CompareSections::align($newer['html'], $older['html']) : ['rows' => [], 'reordered' => false],
+                'aligned' => $sync ? self::oldToNew(CompareSections::align($newer['html'], $older['html'])) : ['rows' => [], 'reordered' => false],
                 'aiEvolution' => $principal !== null && $principal->canWrite($path)
                     && $this->aiActions?->special($path, 'evolution') !== null,
                 'basePath' => $request->basePath,
@@ -141,6 +141,21 @@ final class CompareController
     }
 
     /** "6 months 18 days" between two Y-m-d dates; '' when either is unknown */
+    /**
+     * CompareSections lines up the newer report's order first; the screen reads from old to new,
+     * so each row's two cells swap sides.
+     *
+     * @param array{rows: list<array{0: string, 1: string}>, reordered: bool} $aligned
+     *
+     * @return array{rows: list<array{0: string, 1: string}>, reordered: bool}
+     */
+    private static function oldToNew(array $aligned): array
+    {
+        $aligned['rows'] = array_map(static fn (array $row): array => [$row[1], $row[0]], $aligned['rows']);
+
+        return $aligned;
+    }
+
     private static function interval(string $from, string $to): string
     {
         $a = DateTimeImmutable::createFromFormat('!Y-m-d', $from);

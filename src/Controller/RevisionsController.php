@@ -110,6 +110,10 @@ final class RevisionsController
 
         $from = self::queryInt($request, 'from');
         $to = self::queryInt($request, 'to');
+        // Always old to new: from is the earlier revision, to the later (a swapped pair in the URL is put right)
+        if ($from !== null && $to !== null && $from > $to) {
+            [$from, $to] = [$to, $from];
+        }
         // Defaults: previous → current (Compare's old default): nothing to
         // default to with fewer than two revisions, same as before.
         if ($from === null && $to === null && \count($revlog) >= 2) {

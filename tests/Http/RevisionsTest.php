@@ -125,6 +125,19 @@ final class RevisionsTest extends HttpTestCase
         self::assertStringContainsString('<mark class="wk-mark-add">15</mark>', $response->body);
     }
 
+    public function testAPairGivenNewestFirstIsPutRightOldToNew(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => 'alpha beta gamma']);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', ['meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => 'one two three', 'base_rev' => 1]);
+
+        $body = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/revisions', query: ['from' => '2', 'to' => '1'], cookies: ['reporion' => $this->issueCookie('owner')]))->body;
+
+        self::assertStringContainsString('name="from" value="1"', $body);
+        self::assertStringContainsString('name="to" value="2"', $body);
+        // Left column the older text, right column the newer
+        self::assertLessThan(strpos($body, 'one two three'), strpos($body, 'alpha beta gamma'));
+    }
+
     public function testSplitStyleAlignsTheTwoSides(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => "one\ntwo\nthree"]);
