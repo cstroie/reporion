@@ -190,6 +190,8 @@ body.palette-cyberpunk:not(.theme-light)::after {
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .palette-cyberpunk:not(.theme-light) .wk-mi:hover { background: #711c91; color: #fff; }
+/* (a link's pink hover colour outweighed the white above: 3.75:1 on the purple) */
+.palette-cyberpunk:not(.theme-light) a.wk-mi:hover { color: #fff; }
 .palette-cyberpunk:not(.theme-light) .wk-mi-danger:hover { background: rgba(255,42,61,.18); color: #ff2a3d; }
 .palette-cyberpunk:not(.theme-light) .wk-row:hover { background: rgba(19,62,124,.45); }
 .palette-cyberpunk:not(.theme-light) .wk-row.wk-sel { background: rgba(113,28,145,.4); box-shadow: inset 2.5px 0 0 #d34fca; }

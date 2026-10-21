@@ -491,32 +491,34 @@ select.input:not([multiple]):not([size]) {
   --shadow-md: 0 0 0 1px #1c8a46, 0 0 14px rgba(92,240,138,.14), 0 7.5px 23px rgba(0,0,0,.6);
   --shadow-lg: 0 0 0 1px #5cf08a, 0 0 24px rgba(92,240,138,.24), 0 20.5px 51.5px rgba(0,0,0,.7);
 }
+/* Phosphor's light scheme is the other display of the era: an early-80s LCD watch's display (a Ricoh calendar watch): the
+ * pale greenish-yellow sage of the glass, one near-black green ink, an amber tint for the one thing that must stand out. The dark scheme is the CRT. */
 .theme-light.palette-crt {
-  --color-bg:        #bccca0;
-  --color-surface:   #cfdcb6;
-  --color-text:      #15240c;
-  --color-dim:       #3a5030;
+  --color-bg:        #b7bf93;
+  --color-surface:   #c5cca1;
+  --color-text:      #222c1d;
+  --color-dim:       #475238;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #1f5216;
-  --color-accent-300: #163d10;
-  --color-accent-800: #0f3009;
-  --color-accent-100: #dfe9c9;
-  --color-accent-200: #c4d4a6;
-  --color-neutral-100: #d9e4c2;
-  --color-divider:   color-mix(in srgb, #15240c 34%, transparent);
-  --color-neutral-200: #aabd8c;
-  --color-neutral-700: #2c4423;
-  --state-ok:    #1f5216;
-  --state-warn:  #6e4a00;
-  --state-error: #9c1d0a;
-  --diff-add:    #1f5216;
-  --diff-del:    #9c1d0a;
+  --color-accent:    #222c1d;
+  --color-accent-300: #161d12;
+  --color-accent-800: #0f140c;
+  --color-accent-100: #d3d9b2;
+  --color-accent-200: #bfc79a;
+  --color-neutral-100: #cdd4a9;
+  --color-divider:   color-mix(in srgb, #222c1d 34%, transparent);
+  --color-neutral-200: #a3ac7d;
+  --color-neutral-700: #36432c;
+  --state-ok:    #2e5a1c;
+  --state-warn:  #8a5410;
+  --state-error: #a3321a;
+  --diff-add:    #2e5a1c;
+  --diff-del:    #a3321a;
   --font-body:    "JetBrains Mono", ui-monospace, Menlo, monospace;
   --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
-  --radius-sm: 0; --radius-md: 2px; --radius-lg: 3px;
-  --shadow-sm: 0 0 0 1px #8ea374;
-  --shadow-md: 0 0 0 1px #8ea374, 0 7.5px 23px rgba(21,36,12,.12);
-  --shadow-lg: 0 0 0 1px #6f855a, 0 20.5px 51.5px rgba(21,36,12,.18);
+  --radius-sm: 0; --radius-md: 2px; --radius-lg: 4px;
+  --shadow-sm: 0 0 0 1px #8e9868;
+  --shadow-md: 0 0 0 1px #8e9868, 3px 3px 0 rgba(34,44,29,.16);
+  --shadow-lg: 0 0 0 1px #6f7a4c, 5px 5px 0 rgba(34,44,29,.22);
 }
 .palette-film {
   --color-bg:        #070b0e;
@@ -651,7 +653,7 @@ html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #86b0ae; --sb-track
 html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #5a3818; --sb-track: #0f0a07; --sb-arrow: #d49a5a; }
 html:has(> body.palette-reading-room.theme-light) { --sb-thumb: #bda780; --sb-track: #dcc7a8; --sb-arrow: #7d4a1c; }
 html:has(> body.palette-crt:not(.theme-light)) { --sb-thumb: #1c8a46; --sb-track: #020a04; --sb-arrow: #5cf08a; }
-html:has(> body.palette-crt.theme-light) { --sb-thumb: #6f855a; --sb-track: #bccca0; --sb-arrow: #1f5216; }
+html:has(> body.palette-crt.theme-light) { --sb-thumb: #8e9a66; --sb-track: #b7bf93; --sb-arrow: #222c1d; }
 html:has(> body.palette-film:not(.theme-light)) { --sb-thumb: #3a5166; --sb-track: #070b0e; --sb-arrow: #9cb8d6; }
 html:has(> body.palette-film.theme-light) { --sb-thumb: #8ea6bb; --sb-track: #c9d6e2; --sb-arrow: #2f5a86; }
 html:has(> body.palette-blueprint:not(.theme-light)) { --sb-thumb: #3b78c2; --sb-track: #0a2346; --sb-arrow: #7fd0ff; }

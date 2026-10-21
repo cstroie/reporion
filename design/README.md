@@ -81,7 +81,7 @@ reads like the magenta primary button.
 dark and a light scheme, none from the mockup. *Reading room*: the coffee left on a reading-room desk: espresso browns and cream, a caramel
 accent, serif headings, a paper grain and a cup's ring and a few drops behind the page (never under
 text), images dimmed in the dark scheme; light is cream paper. *Phosphor* (palette `crt`, so as not to be taken for the icon font): a green monochrome terminal in
-mono type with scanlines and a faint glow; its light scheme is a pale LCD. *Film*: X-ray film, the steel blue of a conventional hand radiograph (AGFA),
+mono type with scanlines and a faint glow; its light scheme is an early-80s LCD watch's display (a Ricoh calendar watch: pale greenish-yellow sage glass, near-black green ink, a sheen across the reading window, the unlit "88:88" faint in a corner). *Film*: X-ray film, the steel blue of a conventional hand radiograph (AGFA),
 a pale steel-blue accent on near-black, and a back-lit light box for the light scheme. *Blueprint*: cyan
 line-work on drafting blue with a ruled grid behind the page (the light scheme is the print on
 white). Tokens in `assets/css/tokens.css`, type, texture and backdrop in `assets/css/themes.css`;
