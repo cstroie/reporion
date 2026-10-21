@@ -100,6 +100,16 @@ final class SignButtonTest extends HttpTestCase
         self::assertStringNotContainsString('popescu', $audit, 'invariant 8: no patient path in the audit');
     }
 
+    public function testTheSignScreenStartsWithTheStampCodeOfTheProfile(): void
+    {
+        $this->storage()->create(self::PATH, self::completeMeta(), 'Text.', 'owner');
+        $users = new FlatFileUserStore($this->dataRoot);
+        $users->save($users->find('mihai')->with(stamp: 'P-4471'));
+
+        self::assertStringContainsString('name="parafa" value="P-4471"', $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body);
+        self::assertStringContainsString('name="parafa" value=""', $this->as('owner', 'GET', '/' . self::PATH . '/sign')->body, 'an account with no stamp code starts empty');
+    }
+
     public function testTheCheckBeforeSigningWarnsAndIsAuditedAsCounts(): void
     {
         $body = "## IRM genunchi stâng\n\n### Descriere\n\nGenunchi stâng: menisc fisurat.\n\n### Concluzii\n\nFisură meniscală dreaptă.\n";

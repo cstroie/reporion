@@ -53,7 +53,7 @@ final class SignController
             return Response::redirect($request->basePath . '/' . $record->path);
         }
 
-        return $this->render($request, $record, $principal, stale: false, parafa: '', status: 200);
+        return $this->render($request, $record, $principal, stale: false, parafa: mb_substr($principal->stamp, 0, 32), status: 200);
     }
 
     /**

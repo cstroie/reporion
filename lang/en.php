@@ -81,7 +81,7 @@ return [
     'sign.exam_conclusion' => 'A conclusion (### Concluzii) in exam %d',
     'sign.edit'           => 'Edit the report',
     'sign.parafa'         => 'Parafă',
-    'sign.parafa_help' => 'Optional',
+    'sign.parafa_help' => 'Optional; filled in from your profile when it has one',
     'sign.submit'         => 'Sign revision %d',
     'sign.stale'          => 'The report changed since you opened this; it is now at revision %d. Nothing was signed: read it again, then sign.',
     'page.duplicate'      => 'Duplicate',
