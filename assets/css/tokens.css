@@ -71,25 +71,28 @@ html { font-size: 100%; }
 
 :root {
   color-scheme: dark;
-  --color-bg:        #0d1017;
-  --color-surface:   #161b25;
-  --color-text:      #dfe4ed;
-  --color-dim:       #939bab;
+  /* Royal blue (2026-10-21), cold and arctic: the chancellery's blue ink on official papers and
+   * signatures. Dark is the polar night (ice-white text, ink-blue accent lit to read on black),
+   * light is the glacier-white paper with blue-black ink and the signature's royal blue. */
+  --color-bg:        #070d18;
+  --color-surface:   #0f1828;
+  --color-text:      #dbe8f6;
+  --color-dim:       #8fa3bd;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #6f9dff;
-  --color-divider:   #2a3140;
+  --color-accent:    #78a6ff;
+  --color-divider:   #22304a;
 
-  --color-accent-100: #eaf1ff;
-  --color-accent-200: #cfdeff;
-  --color-accent-300: #a8c4ff;
-  --color-accent-800: #24386b;
-  --color-accent-900: #161f3c;
+  --color-accent-100: #eaf2ff;
+  --color-accent-200: #cddfff;
+  --color-accent-300: #a9c8ff;
+  --color-accent-800: #1f3a78;
+  --color-accent-900: #12234a;
 
-  --color-neutral-100: #f3f5fe;
-  --color-neutral-300: #c3cad7;
-  --color-neutral-700: #4c5364;
-  --color-neutral-800: #2a3140;
-  --color-neutral-900: #141821;
+  --color-neutral-100: #f1f6ff;
+  --color-neutral-300: #bfcce0;
+  --color-neutral-700: #435573;
+  --color-neutral-800: #22304a;
+  --color-neutral-900: #0c1424;
 
   --state-ok:    #7fb59a;
   --state-warn:  #d8b06a;
@@ -150,25 +153,29 @@ html { font-size: 100%; }
    * new corner to add. */
   --radius-sm: 5px; --radius-md: 7.5px; --radius-lg: 13px;
 
-  --shadow-sm: 0 0 0 1px #2a3140;
-  --shadow-md: 0 0 0 1px #384154, 0 7.5px 23px rgba(0,0,0,.6);
-  --shadow-lg: 0 0 0 1px #7e879b, 0 20.5px 51.5px rgba(0,0,0,.68);
+  --shadow-sm: 0 0 0 1px #22304a;
+  --shadow-md: 0 0 0 1px #33466a, 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #7189b0, 0 20.5px 51.5px rgba(0,0,0,.68);
 }
 
 .theme-light {
   color-scheme: light;
-  --color-bg:      #f1f3f8;
-  --color-surface: #ffffff;
-  --color-text:    #151922;
-  --color-dim:     #5a6174;
+  --color-bg:      #e7eef7;
+  --color-surface: #fbfdff;
+  --color-text:    #0c1838;
+  --color-dim:     #4a5878;
   --color-dimmer:  color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:  #2a4fa8;
-  --color-divider: #dde1ec;
-  --color-neutral-200: #e0e4ee;
-  --color-neutral-700: #4c5364;
-  --shadow-sm: 0 0 0 1px #dde1ec;
-  --shadow-md: 0 0 0 1px #dde1ec, 0 7.5px 23px rgba(21,25,34,.10);
-  --shadow-lg: 0 0 0 1px #c7cddc, 0 20.5px 51.5px rgba(21,25,34,.16);
+  --color-accent:  #1b3f9e;
+  --color-accent-300: #14307f;
+  --color-accent-800: #102a6e;
+  --color-accent-100: #e3ebfa;
+  --color-accent-200: #c6d6f5;
+  --color-divider: #cbd7e9;
+  --color-neutral-200: #d3deef;
+  --color-neutral-700: #3a4a6a;
+  --shadow-sm: 0 0 0 1px #cbd7e9;
+  --shadow-md: 0 0 0 1px #cbd7e9, 0 7.5px 23px rgba(12,24,56,.10);
+  --shadow-lg: 0 0 0 1px #aabdd9, 0 20.5px 51.5px rgba(12,24,56,.16);
 }
 
 a { color: var(--color-accent); text-decoration: none; }
@@ -193,7 +200,7 @@ select.input:not([multiple]):not([size]) {
   background-image: linear-gradient(45deg, transparent 50%, var(--color-accent) 50%), linear-gradient(135deg, var(--color-accent) 50%, transparent 50%);
   background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
-.theme-light a:not(.btn):hover { color: #16306e; }
+.theme-light a:not(.btn):hover { color: #102a6e; }
 /* a primary button darkens on hover in the light schemes, so its text stays the light page colour (an anchor's
  * hover colour above never reaches a button: it was turning the text dark on the darker fill); the text goes lighter, the surface white */
 .theme-light :is(.btn-primary, .group > .btn:not(.btn-danger)):not(:disabled):hover { background: var(--color-accent-800); color: var(--color-surface); }
@@ -609,8 +616,8 @@ select.input:not([multiple]):not([size]) {
 /* The browser's scrollbars follow the palette (2026-10-21): thumb then track, both schemes (Cyberpunk's dark one is in
  * cyberpunk.css). The scrollbar is the root's and the palette classes are on <body>, so they are reached from <html>
  * with :has(); the default palette has no class. */
-html:has(> body:not([class*="palette-"]):not(.theme-light)) { scrollbar-color: #3a4a6e #0d1017; }
-html:has(> body:not([class*="palette-"]).theme-light) { scrollbar-color: #9fb4dc #f1f3f8; }
+html:has(> body:not([class*="palette-"]):not(.theme-light)) { scrollbar-color: #2c3f66 #070d18; }
+html:has(> body:not([class*="palette-"]).theme-light) { scrollbar-color: #9fb4dc #e7eef7; }
 html:has(> body.palette-lime:not(.theme-light)) { scrollbar-color: #4a5a28 #121413; }
 html:has(> body.palette-lime.theme-light) { scrollbar-color: #a9bb78 #f3f5f0; }
 html:has(> body.palette-amber:not(.theme-light)) { scrollbar-color: #6a4f20 #141414; }
