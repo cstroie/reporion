@@ -17,7 +17,7 @@
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
  * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $headerIsReport, $canWrite,
- * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
+ * $canSign, $canCorrect, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
  * $headerTabs (false: crumbs, title and badges only: the print preview)
  * every gate is computed there, the template only reads it.
  */
@@ -62,9 +62,16 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 ?>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1>
-<?php if ($canFollowUp ?? false): ?>
+<?php if (($canFollowUp ?? false) || ($canSign ?? false) || ($canCorrect ?? false)): ?>
 <div class="wk-actions">
+<?php if ($canFollowUp ?? false): ?>
 <a class="btn btn-secondary" href="<?= $p ?>/new" title="<?= htmlspecialchars(t('page.follow_up_title'), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.follow_up'), ENT_QUOTES) ?></span></a>
+<?php endif; ?>
+<?php if ($canSign ?? false): ?>
+<a class="btn btn-primary" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-signature"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>
+<?php elseif ($canCorrect ?? false): /* a signed report: a correction is a new revision, signed again (D3) */ ?>
+<a class="btn btn-secondary" href="<?= $p ?>/edit" title="<?= htmlspecialchars(t('page.correct_title'), ENT_QUOTES) ?>"><i class="ph ph-seal-check"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.correct'), ENT_QUOTES) ?></span></a>
+<?php endif; ?>
 </div>
 <?php endif; ?>
 </div>
@@ -108,18 +115,33 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 </nav>
 </details>
 <span class="wk-tflex"></span>
-<?php if ($canSign ?? false): ?>
-<a class="btn btn-primary btn-sm" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-signature"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>
+<?php
+// What the row offers follows the tab: the text's tools on View, the export on View and Revisions, the ⋯ menu everywhere
+$onView = $headerTab === 'view';
+$hasRef = $onView && ($references ?? []) !== [];
+$hasExport = $onView || $headerTab === 'revisions';
+$refHref = $hasRef ? $b . '/' . htmlspecialchars($references[0]['path'], ENT_QUOTES) : '';
+?>
+<?php if ($onView): ?>
+<div class="wk-tgroup wk-tgroup-tools">
+<?php if ($hasRef): /* Phase 25: the template's reference page, in the slide-in panel */ ?>
+<a class="wk-tbtn" href="<?= $refHref ?>" target="_blank" rel="noopener" data-ref-open title="<?= htmlspecialchars(t('refs.open'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('refs.open'), ENT_QUOTES) ?>"><i class="ph ph-book-open"></i></a>
 <?php endif; ?>
-<?php if ($headerTab === 'view' && ($references ?? []) !== []): /* Phase 25: the template's reference page, in the slide-in panel */ ?>
-<a class="wk-tbtn wk-tbtn-text" href="<?= $b ?>/<?= htmlspecialchars($references[0]['path'], ENT_QUOTES) ?>" target="_blank" rel="noopener" data-ref-open title="<?= htmlspecialchars(t('refs.open'), ENT_QUOTES) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= htmlspecialchars(t('refs.title'), ENT_QUOTES) ?></span></a>
+<button type="button" class="wk-tbtn" data-copy-prose title="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button>
+</div>
 <?php endif; ?>
-<?php if ($headerTab === 'view'): ?>
-<button type="button" class="wk-tbtn wk-tbtn-text" data-copy-prose title="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.copy'), ENT_QUOTES) ?></span></button>
-<?php endif; ?>
+<?php if ($hasExport): ?>
+<?php if ($onView): ?><span class="wk-tsep" aria-hidden="true"></span><?php endif; ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?></span><i class="ph ph-caret-down"></i></summary>
 <div class="wk-menu wk-menu-r">
+<?php if ($onView): /* the tools fold into this menu on a phone (CSS shows these, hides the buttons) */ ?>
+<?php if ($hasRef): ?>
+<a class="wk-mi wk-mi-narrow" href="<?= $refHref ?>" target="_blank" rel="noopener" data-ref-open><i class="ph ph-book-open"></i><?= htmlspecialchars(t('refs.title'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+<button type="button" class="wk-mi wk-mi-narrow" data-copy-prose><i class="ph ph-copy"></i><?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?></button>
+<div class="wk-mi-sep wk-mi-narrow"></div>
+<?php endif; ?>
 <a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
@@ -133,6 +155,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <?php endif; ?>
 </div>
 </details>
+<?php endif; ?>
 <?php if ($canWrite): ?>
 <?php
 $actPath = $headerPath;
@@ -140,6 +163,7 @@ $actVisibility = $headerVisibility;
 $actFollowUp = $canFollowUp ?? false;
 $actPid = $headerPid;
 $actPlugins = ($showPluginActions ?? false) ? (reporion_plugin_ui()['page_action'] ?? []) : [];
+$actLabel = t('page.more_short');
 include __DIR__ . '/partials/page-actions.php';
 ?>
 <?php endif; ?>

@@ -10,7 +10,7 @@
  * Variables in scope: string $actPath (the page), string $actVisibility,
  * string $basePath; optional bool $actFollowUp (New exam), list $actPlugins
  * (plugin `page_action` slots) with string $actPid, string $actClass (extra
- * class on the button)
+ * class on the button), string $actLabel (a word beside the icon; the page header only)
  */
 
 declare(strict_types=1);
@@ -24,7 +24,7 @@ $ab = $ah($basePath);
 $ap = $ab . '/' . $ah($actPath);
 ?>
 <details class="wk-menu-wrap">
-<summary class="wk-tbtn" title="<?= $ah(t('page.more')) ?>" aria-label="<?= $ah(t('page.more')) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
+<summary class="wk-tbtn<?= ($actLabel ?? '') !== '' ? ' wk-tbtn-text' : '' ?>" title="<?= $ah(t('page.more')) ?>" aria-label="<?= $ah(t('page.more')) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i><?php if (($actLabel ?? '') !== ''): ?><span class="wk-btn-label"><?= $ah($actLabel) ?></span><?php endif; ?></summary>
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $ap ?>/visibility"><i class="ph <?= Visibility::icon($actVisibility) ?>"></i><?= $ah(t('page.visibility_menu')) ?><span class="wk-mi-end wk-dim"><?= $ah(Visibility::label($actVisibility)) ?></span></a>
 <a class="wk-mi" href="<?= $ap ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= $ah(t('page.move')) ?></a>

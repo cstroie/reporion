@@ -668,6 +668,17 @@ Decided 2026-10-19 (owner: improve the screen, be creative within the rules): `/
 - **A title may break lines** with `|` in the signature block (`Support\SignatureTitle`); elsewhere
   the lines are joined by ` · ` (2026-10-16).
 
+## Page header: title row and tab row
+
+- **The primary action is in the title row**, after Follow Up: *Sign* on a draft report the caller
+  may sign, *Correct* (opens the editor; a new revision, signed again, D3) on a signed one. Never in
+  the tab row (2026-10-21).
+- **The tab row's right side has three clusters**, left to right: the text's tools as icon-only
+  buttons with tooltips (Reference, Copy), a divider, *Export ▾*, then a labelled *More* (⋯) menu
+  for writers. All share one height and sit on the tab baseline.
+- **What it offers follows the tab**: tools on View only, Export on View and Revisions, More on every
+  tab. Below 576px the tools fold into the top of the Export menu.
+
 ## Left out on purpose
 
 The mockup shows things the decisions removed; do not build them (`design/README.md`): TOTP/2FA

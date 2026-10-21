@@ -1023,6 +1023,9 @@ return [
     'page.format_markdown' => 'markdown',
     'page.format_text'  => 'text',
     'page.signed'       => 'Signed',
+    'page.correct'      => 'Correct',
+    'page.correct_title' => 'Correct this signed report: a new revision, to be signed again',
+    'page.more_short'   => 'More',
     'page.back'           => 'Back to page',
 
     // document tab strip (Workbench chrome)
