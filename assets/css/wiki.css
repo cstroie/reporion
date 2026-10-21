@@ -995,7 +995,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-difftools button.seg-opt:disabled { opacity: .45; cursor: default; }
 .wk-difftools .seg:has(> .seg-opt:only-child) { padding: 0; } /* a lone toggle is the control itself: no frame left around its highlight */
 .wk-difftools .seg-sm:has(> .seg-opt:only-child) .seg-opt { min-height: var(--control-h-sm); }
-.wk-diffpos { min-width: 4.5ch; text-align: center; }
+.wk-difftools .seg-pos { min-width: 5.5ch; justify-content: center; padding: 0 var(--space-2); font-size: var(--text-xs); font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--color-text) 60%, transparent); cursor: default; user-select: none; border-inline: 1px solid var(--color-divider); border-radius: 0; }
 .wk-diffstat { font-family: var(--font-mono); }
 .wk-worddiff ins.wk-dt-now, .wk-worddiff del.wk-dt-now { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 

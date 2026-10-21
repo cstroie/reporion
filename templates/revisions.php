@@ -203,9 +203,9 @@ $bar = static function (?array $c): string {
 <span class="wk-actions">
 <span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
 <button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<span class="seg-opt seg-pos wk-mono" data-diff-pos aria-live="polite"></span>
 <button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
 </span>
-<span class="wk-dim wk-mono wk-diffpos" data-diff-pos aria-live="polite"></span>
 </span>
 </div>
 <div class="wk-worddiff wk-prose" data-wordtext><?php foreach ($diff['ops'] as $op): ?><?php
@@ -270,9 +270,9 @@ $foldId = 0;
 <?php if ($diff['stats']['add'] + $diff['stats']['remove'] > 0): ?>
 <span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
 <button type="button" class="seg-opt" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><?= $e(t('revisions.prev_change')) ?></button>
+<span class="seg-opt seg-pos wk-mono" data-diff-pos aria-live="polite"></span>
 <button type="button" class="seg-opt" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><?= $e(t('revisions.next_change')) ?></button>
 </span>
-<span class="wk-dim wk-mono wk-diffpos" data-diff-pos aria-live="polite"></span>
 <?php endif; ?>
 <span class="seg seg-sm" role="group" aria-label="<?= $e(t('revisions.display')) ?>">
 <button type="button" class="seg-opt seg-on" data-diff-wrap aria-pressed="true"><i class="ph ph-text-align-left" aria-hidden="true"></i><?= $e(t('revisions.wrap')) ?></button>
@@ -401,13 +401,15 @@ $foldId = 0;
     });
   }
   var at = -1;
+  function show() { if (pos) pos.textContent = (at < 0 ? '–' : at + 1) + ' / ' + stops.length; }
+  show();
   function go(delta) {
     if (!stops.length) return;
     at = Math.max(0, Math.min(stops.length - 1, at + delta));
     stops[at].scrollIntoView({block: 'center'});
     stops.forEach(function(el) { el.classList.remove('wk-dt-now'); });
     stops[at].classList.add('wk-dt-now');
-    if (pos) pos.textContent = (at + 1) + ' / ' + stops.length;
+    show();
   }
   if (!stops.length) { prev.disabled = true; next.disabled = true; }
   prev.addEventListener('click', function() { go(-1); });
