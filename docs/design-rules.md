@@ -326,12 +326,15 @@ Use it where an input and its action are one thing.
 | `.group-wide` | a free-text control that takes the rest of its line when stacked (in the CSS; no template uses it yet) | |
 | `.grow` | opt in: take a share of the leftover width | an input that should fill its group |
 
-**A view toolbar** (2026-10-21, the Revisions diff): a `.group.group-fill` of a totals `group-addon`, a
-filler `group-addon` (`flex: 1`), then `.btn.btn-sm` cells that are plain when off and accent-filled when
-on (`aria-pressed="true"`, or a `label.btn` whose radio is checked). This is the one exception to "a
-group's button is primary": every cell is a toggle or a step, none is the action. Labels drop to icons
-under 1024 px (`.wk-btn-label`). Hidden inputs and the no-JS Apply button sit outside the strip
-(`form="…"`) so they do not take its corners. Elsewhere a choice that submits stays a `.seg`.
+**A view toolbar** (2026-10-21, the Revisions diff): one strip in the look of the search bars, in
+groups a hair apart. The parent (`.wk-gbar`) is a flex row with `gap: 1px`; each child is a `.group`
+(totals `group-addon` + a filler `group-addon` with `flex: 1`; changes; view toggles; the style radios as
+`label.btn`). Only the strip's own ends are rounded. Its cells are `.btn.btn-sm`, plain when off and
+accent-filled when on (`aria-pressed="true"`, or a `label.btn` whose radio is checked); one that does not
+apply is shown and `disabled`, never removed. This is the exception to "a group's button is primary":
+every cell is a toggle or a step, none is the action. Labels drop to icons under 1024 px
+(`.wk-btn-label`). Hidden inputs and the no-JS Apply button sit outside the strip (`form="…"`) so they do
+not take its corners. Elsewhere a choice that submits stays a `.seg`.
 
 ```html
 <!-- one field: an input and its button -->

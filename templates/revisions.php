@@ -166,6 +166,7 @@ $bar = static function (?array $c): string {
 <?php $noticeKind = 'warn'; $noticeText = t('revisions.style_fallback'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php
+$canWrap = \in_array($diff['style'], ['line', 'split'], true);
 $withNav = $diff['style'] !== 'side' && ($diff['stats']['add'] + $diff['stats']['remove']) > 0;
 ?>
 <?php /* The one toolbar of the diff, a joined .group strip (the look of the search bars): totals, then changes, wrap, whitespace and the style, the last two always rightmost. Sticky under the top bar. The hidden inputs and the Apply button are outside the strip (form="rev-style-form") so they do not take its corners */ ?>
@@ -173,23 +174,27 @@ $withNav = $diff['style'] !== 'side' && ($diff['stats']['add'] + $diff['stats'][
 <input type="hidden" name="to" value="<?= $to ?>" form="rev-style-form">
 <?php if ($ignoreSpace): ?><input type="hidden" name="ws" value="1" form="rev-style-form"><?php /* kept when the style changes; the Whitespace button, after it, sends 0 and wins */ ?><?php endif; ?>
 <div class="wk-difftools" data-difftools>
-<form class="group group-fill" method="get" action="<?= $p ?>/revisions" id="rev-style-form" role="toolbar" aria-label="<?= $e(t('revisions.toolbar')) ?>">
+<form class="wk-gbar" method="get" action="<?= $p ?>/revisions" id="rev-style-form" role="toolbar" aria-label="<?= $e(t('revisions.toolbar')) ?>">
+<span class="group wk-gstat">
 <?php if ($diff['stats'] !== null): ?>
 <span class="group-addon wk-diffstat"><span class="wk-add">+<?= (int) $diff['stats']['add'] ?></span>&nbsp;<span class="wk-del">−<?= (int) $diff['stats']['remove'] ?></span>&nbsp;<span class="wk-dim"><?= $e(t($diff['style'] === 'word' ? 'revisions.stat_words' : 'revisions.stat_lines')) ?></span></span>
 <?php endif; ?>
 <span class="group-addon wk-gfill" aria-hidden="true"></span>
-<?php if ($withNav): ?>
-<button type="button" class="btn btn-sm" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>" aria-label="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.prev_change')) ?></span></button>
+</span>
+<span class="group" role="group" aria-label="<?= $e(t('revisions.changes_nav')) ?>">
+<button type="button" class="btn btn-sm" data-diff-prev title="<?= $e(t('revisions.prev_change')) ?>"<?= $withNav ? '' : ' disabled' ?> aria-label="<?= $e(t('revisions.prev_change')) ?>"><i class="ph ph-caret-up" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.prev_change')) ?></span></button>
 <span class="group-addon wk-gpos wk-mono" data-diff-pos aria-live="polite"></span>
-<button type="button" class="btn btn-sm" data-diff-next title="<?= $e(t('revisions.next_change')) ?>" aria-label="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.next_change')) ?></span></button>
-<?php endif; ?>
-<?php if (\in_array($diff['style'], ['line', 'split'], true)): ?>
-<button type="button" class="btn btn-sm" data-diff-wrap aria-pressed="true" title="<?= $e(t('revisions.wrap_help')) ?>"><i class="ph ph-text-align-left" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.wrap')) ?></span></button>
-<?php endif; ?>
+<button type="button" class="btn btn-sm" data-diff-next title="<?= $e(t('revisions.next_change')) ?>"<?= $withNav ? '' : ' disabled' ?> aria-label="<?= $e(t('revisions.next_change')) ?>"><i class="ph ph-caret-down" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.next_change')) ?></span></button>
+</span>
+<span class="group" role="group" aria-label="<?= $e(t('revisions.display')) ?>">
+<button type="button" class="btn btn-sm" data-diff-wrap aria-pressed="<?= $canWrap ? 'true' : 'false' ?>"<?= $canWrap ? '' : ' disabled' ?> title="<?= $e(t('revisions.wrap_help')) ?>"><i class="ph ph-text-align-left" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.wrap')) ?></span></button>
 <button type="submit" class="btn btn-sm" name="ws" value="<?= $ignoreSpace ? '0' : '1' ?>" aria-pressed="<?= $ignoreSpace ? 'false' : 'true' ?>" title="<?= $e(t('revisions.space_help')) ?>"><i class="ph ph-text-indent" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('revisions.space')) ?></span></button>
+</span>
+<span class="group" role="radiogroup" aria-label="<?= $e(t('revisions.style')) ?>">
 <?php foreach (['word' => 'style_word', 'line' => 'style_line', 'split' => 'style_split', 'side' => 'style_side'] as $value => $key): ?>
 <label class="btn btn-sm wk-gopt"><input type="radio" name="style" value="<?= $value ?>"<?= $requestedStyle === $value ? ' checked' : '' ?>><?= $e(t('revisions.' . $key)) ?></label>
 <?php endforeach; ?>
+</span>
 </form>
 </div>
 <button type="submit" class="btn btn-secondary btn-sm" id="rev-style-apply" form="rev-style-form"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('revisions.style_apply')) ?></button>
@@ -382,7 +387,7 @@ $foldId = 0;
     });
   }
   var at = -1;
-  function show() { if (pos) pos.textContent = (at < 0 ? '–' : at + 1) + ' / ' + stops.length; }
+  function show() { if (pos) pos.textContent = stops.length ? (at < 0 ? '–' : at + 1) + ' / ' + stops.length : '–'; }
   show();
   function go(delta) {
     if (!stops.length) return;
