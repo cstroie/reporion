@@ -55,13 +55,14 @@ $rowPath = (string) $row['path'];
 $segments = explode(':', $rowPath);
 $rowTitle = trim((string) ($row['title'] ?? '')) !== '' ? trim((string) $row['title']) : (string) end($segments);
 $meta = [(string) end($segments)];
-if (($row['updated'] ?? '') !== '') {
-    $meta[] = MetaText::date($row['updated'], 'd M');
+$examDay = trim((string) ($row['study_date'] ?? '')) !== '' ? (string) $row['study_date'] : (string) ($row['updated'] ?? '');
+if ($examDay !== '') {
+    $meta[] = MetaText::date($examDay, 'd M');
 }
 $meta[] = (string) $row['status'];
 $summary = trim((string) ($row['summary'] ?? ''));
 ?>
-<a class="wk-row<?= $rowPath === $path ? ' wk-sel' : '' ?>" href="<?= $wb ?>/<?= htmlspecialchars($rowPath, ENT_QUOTES) ?>"<?= $rowPath === $path ? ' aria-current="page"' : '' ?> data-wl-row data-mod="<?= htmlspecialchars(strtoupper(str_replace(' ', '', (string) ($row['modality'] ?? ''))), ENT_QUOTES) ?>" data-updated="<?= htmlspecialchars((string) ($row['updated'] ?? ''), ENT_QUOTES) ?>" data-by="<?= htmlspecialchars((string) ($row['updated_by'] ?? ''), ENT_QUOTES) ?>" data-title="<?= htmlspecialchars(mb_strtolower($rowTitle), ENT_QUOTES) ?>">
+<a class="wk-row<?= $rowPath === $path ? ' wk-sel' : '' ?>" href="<?= $wb ?>/<?= htmlspecialchars($rowPath, ENT_QUOTES) ?>"<?= $rowPath === $path ? ' aria-current="page"' : '' ?> data-wl-row data-mod="<?= htmlspecialchars(strtoupper(str_replace(' ', '', (string) ($row['modality'] ?? ''))), ENT_QUOTES) ?>" data-day="<?= htmlspecialchars($examDay, ENT_QUOTES) ?>" data-by="<?= htmlspecialchars((string) ($row['updated_by'] ?? ''), ENT_QUOTES) ?>" data-title="<?= htmlspecialchars(mb_strtolower($rowTitle), ENT_QUOTES) ?>">
 <span class="wk-row-t"><?= htmlspecialchars($rowTitle, ENT_QUOTES) ?><i class="ph <?= Visibility::icon((string) $row['visibility']) ?> wk-vis" title="<?= htmlspecialchars(Visibility::label((string) $row['visibility']), ENT_QUOTES) ?>"></i></span>
 <span class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', $meta), ENT_QUOTES) ?></span>
 <?php if ($summary !== ''): ?><span class="wk-row-s"><?= htmlspecialchars($summary, ENT_QUOTES) ?></span><?php endif; ?>

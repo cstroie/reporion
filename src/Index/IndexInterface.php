@@ -80,7 +80,7 @@ interface IndexInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20, bool $byStudyDate = false): array;
 
     /**
      * Recently updated pages across every namespace: the signed-in

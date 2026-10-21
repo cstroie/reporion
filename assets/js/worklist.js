@@ -4,7 +4,8 @@
  * The page view's left panel (templates/partials/worklist.php): the search
  * box, the modality / last 30 days / mine chips and the sort button only hide
  * or reorder the rows already in the page. Nothing is fetched. Without this
- * script the panel is a plain list of links.
+ * script the panel is a plain list of links. It opens filtered to the open
+ * page's modality and the last 30 days, newest first.
  */
 (function () {
   'use strict';
@@ -27,6 +28,7 @@
   chips.hidden = false;
 
   function visible(row) {
+    if (row.classList.contains('wk-sel')) return true; // the open page always stays in its list
     if (state.q) {
       var hay = (row.getAttribute('data-title') + ' ' + row.textContent).toLowerCase();
       if (state.q.split(/\s+/).some(function (word) { return word && hay.indexOf(word) === -1; })) return false;
@@ -37,7 +39,7 @@
       if (!picked.some(function (mod) { return have.indexOf(mod) !== -1; })) return false;
     }
     if (state.recent) {
-      var when = Date.parse(row.getAttribute('data-updated'));
+      var when = Date.parse(row.getAttribute('data-day'));
       if (isNaN(when) || Date.now() - when > 30 * DAY) return false;
     }
     if (state.mine && row.getAttribute('data-by') !== me) return false;
@@ -91,7 +93,18 @@
     apply();
   });
 
-  // The open page comes into view in a long list
+  // By default: the open page's own modality(ies), the last 30 days, newest first (the server's order)
   var current = root.querySelector('.wk-sel');
+  if (current) {
+    (current.getAttribute('data-mod') || '').split(',').forEach(function (mod) {
+      var chip = mod && chips.querySelector('[data-wl-mod="' + mod + '" i]');
+      if (chip) { state.mods[mod] = true; toggle(chip, true); }
+    });
+  }
+  state.recent = true;
+  toggle(chips.querySelector('[data-wl-recent]'), true);
+  apply();
+
+  // The open page comes into view in a long list
   if (current && current.scrollIntoView) current.scrollIntoView({ block: 'center' });
 })();

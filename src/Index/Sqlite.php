@@ -331,17 +331,18 @@ final class Sqlite implements IndexInterface
      * now", templates/partials/worklist.php), as opposed to listNamespace()'s
      * alphabetical "browse everything here" framing (`GET /{ns}:`). Each row
      * carries its modalities (comma-joined); the panel's chips and search box
-     * filter these rows in the browser.
+     * filter these rows in the browser. $byStudyDate orders by the exam's day
+     * (`study_date`, else the edit time) instead of the edit time.
      *
      * @return list<array<string, mixed>>
      */
-    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20, bool $byStudyDate = false): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
             'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
                     (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = pages.pid) AS modality
-             FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY updated DESC LIMIT :limit'
+             FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY ' . ($byStudyDate ? "COALESCE(NULLIF(study_date, ''), updated)" : 'updated') . ' DESC LIMIT :limit'
         );
         foreach (['ns' => $ns] + $clauseParams as $key => $value) {
             $stmt->bindValue(':' . $key, $value);

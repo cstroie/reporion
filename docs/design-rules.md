@@ -61,7 +61,7 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   the server. A conversion that is only needed while an archive is migrated belongs in a plugin, so it
   can be switched off.
 - **Left panel on the page view only** (2026-10-21, owner's request: the Workbench's `WikiWorklist`
-  column): the pages of the namespace on screen, newest first (`Index::listWorklist()`, the
+  column): the pages of the namespace on screen, newest exam first, by `study_date` else the edit time (`Index::listWorklist()`, the
   visibility predicate), the open one highlighted, from 1100px up, hidden below; a search box, chips
   (each modality present, last 30d, mine) and a sort button that only hide or reorder the rows in
   the browser (`assets/js/worklist.js`; no endpoint). The editor and every other screen have none.

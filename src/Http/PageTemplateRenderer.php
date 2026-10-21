@@ -133,8 +133,8 @@ final class PageTemplateRenderer
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
         // No header for the stub home page: there is no page to act on
         if ($record->pid !== '') {
-            // The left panel: the namespace's pages the caller may read, newest first (listWorklist(), invariant 6)
-            $vars['worklist'] = $this->index->listWorklist(ChromeVars::namespaceOf($record->path), $principal, self::WORKLIST_ROWS);
+            // The left panel: the namespace's pages the caller may read, newest exam first (listWorklist(), invariant 6)
+            $vars['worklist'] = $this->index->listWorklist(ChromeVars::namespaceOf($record->path), $principal, self::WORKLIST_ROWS, byStudyDate: true);
             $vars += ChromeVars::pageHeader(
                 $principal,
                 $record->path,

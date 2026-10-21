@@ -64,7 +64,7 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
-    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20, bool $byStudyDate = false): array
     {
         return [];
     }
