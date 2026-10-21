@@ -270,37 +270,40 @@ select.input:not([multiple]):not([size]) {
  * pico.colors.css), not the mockup's: real Pico shade values throughout,
  * including --pico-color-slate itself (#525f7a) as the light-theme accent,
  * the one Pico would show as "Slate" on a white swatch. */
+/* Teal (2026-10-21): after a photo of an old television glowing in a dark room: the pale aqua
+ * of the lit screen as the text and accent, the charcoal of its case as the ground, the
+ * teal-grey of the wall and the dusk blue of the carpet in the neutrals. */
 .palette-teal {
-  --color-bg:        #0f1519;
-  --color-surface:   #182126;
-  --color-text:      #e0e8ec;
+  --color-bg:        #0b1213;
+  --color-surface:   #132021;
+  --color-text:      #d8f2f0;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #5fc2c0;
-  --color-divider:   color-mix(in srgb, #e0e8ec 16%, transparent);
-  --color-accent-100: #e6f7f6;
-  --color-accent-200: #c6ecea;
-  --color-accent-300: #96dbd8;
-  --color-accent-800: #1d4a49;
-  --color-accent-900: #12302f;
-  --color-neutral-900: #161e23;
-  --color-neutral-800: #2c3a41;
-  --color-neutral-300: #c4d2d8;
-  --shadow-sm: 0 0 0 1px #2c3a41;
-  --shadow-md: 0 0 0 1px #3b4c54, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #7e939d, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #74d8d2;
+  --color-divider:   color-mix(in srgb, #d8f2f0 16%, transparent);
+  --color-accent-100: #e8fbfa;
+  --color-accent-200: #c9f1ee;
+  --color-accent-300: #9fe4df;
+  --color-accent-800: #1c4a4b;
+  --color-accent-900: #102f31;
+  --color-neutral-900: #0e1719;
+  --color-neutral-800: #273341;
+  --color-neutral-300: #c0d2d6;
+  --shadow-sm: 0 0 0 1px #273341;
+  --shadow-md: 0 0 0 1px #34465a, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #6f8a98, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
 .theme-light.palette-teal {
-  --color-bg:        #eff5f5;
-  --color-surface:   #fff;
-  --color-text:      #121b1c;
-  --color-accent:    #14807c;
-  --color-divider:   color-mix(in srgb, #121b1c 15%, transparent);
-  --color-neutral-200: #dbe7e7;
-  --color-neutral-700: #46595a;
-  --shadow-sm: 0 0 0 1px #d8e4e4;
-  --shadow-md: 0 0 0 1px #d8e4e4, 0 7.5px 23px rgba(18,27,28,.10);
-  --shadow-lg: 0 0 0 1px #c2d2d2, 0 20.5px 51.5px rgba(18,27,28,.16);
+  --color-bg:        #dde9e8;
+  --color-surface:   #f2faf9;
+  --color-text:      #0f1c1e;
+  --color-accent:    #14736f;
+  --color-divider:   color-mix(in srgb, #0f1c1e 16%, transparent);
+  --color-neutral-200: #cbdcdc;
+  --color-neutral-700: #3d5456;
+  --shadow-sm: 0 0 0 1px #c5d8d7;
+  --shadow-md: 0 0 0 1px #c5d8d7, 0 7.5px 23px rgba(15,28,30,.10);
+  --shadow-lg: 0 0 0 1px #a9c2c1, 0 20.5px 51.5px rgba(15,28,30,.16);
 }
 .palette-slate {
   --color-bg:        #0e1118;
