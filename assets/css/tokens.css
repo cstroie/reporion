@@ -613,23 +613,41 @@ select.input:not([multiple]):not([size]) {
 .theme-light.palette-blueprint a:not(.btn):hover,
 .theme-light.palette-cyberpunk a:not(.btn):hover { color: var(--color-accent-800); }
 
-/* The browser's scrollbars follow the palette (2026-10-21): thumb then track, both schemes (Cyberpunk's dark one is in
- * cyberpunk.css). The scrollbar is the root's and the palette classes are on <body>, so they are reached from <html>
- * with :has(); the default palette has no class. */
-html:has(> body:not([class*="palette-"]):not(.theme-light)) { scrollbar-color: #2c3f66 #070d18; }
-html:has(> body:not([class*="palette-"]).theme-light) { scrollbar-color: #9fb4dc #e7eef7; }
-html:has(> body.palette-lime:not(.theme-light)) { scrollbar-color: #4a5a28 #121413; }
-html:has(> body.palette-lime.theme-light) { scrollbar-color: #a9bb78 #f3f5f0; }
-html:has(> body.palette-amber:not(.theme-light)) { scrollbar-color: #6a4f20 #141414; }
-html:has(> body.palette-amber.theme-light) { scrollbar-color: #d3b27a #f4f3f0; }
-html:has(> body.palette-afterglow:not(.theme-light)) { scrollbar-color: #1c4a4b #0b1213; }
-html:has(> body.palette-afterglow.theme-light) { scrollbar-color: #86b0ae #cfe8e6; }
-html:has(> body.palette-reading-room:not(.theme-light)) { scrollbar-color: #5a3818 #0f0a07; }
-html:has(> body.palette-reading-room.theme-light) { scrollbar-color: #bda780 #dcc7a8; }
-html:has(> body.palette-crt:not(.theme-light)) { scrollbar-color: #1c8a46 #020a04; }
-html:has(> body.palette-crt.theme-light) { scrollbar-color: #6f855a #bccca0; }
-html:has(> body.palette-film:not(.theme-light)) { scrollbar-color: #3a5166 #070b0e; }
-html:has(> body.palette-film.theme-light) { scrollbar-color: #8ea6bb #c9d6e2; }
-html:has(> body.palette-blueprint:not(.theme-light)) { scrollbar-color: #3b78c2 #0a2346; }
-html:has(> body.palette-blueprint.theme-light) { scrollbar-color: #8fb2dc #eef5fd; }
-html:has(> body.palette-cyberpunk.theme-light) { scrollbar-color: #a3189a #f2f5fc; }
+/* The browser's scrollbars follow the palette (2026-10-21), arrows included. The scrollbar is the root's and the palette
+ * classes are on <body>, so <html> picks the colours with :has() (the default palette has no class) and every scroller
+ * inherits them: --sb-thumb, --sb-track and --sb-arrow. Chrome and Safari are drawn with ::-webkit-scrollbar, because
+ * scrollbar-color cannot colour the arrow buttons (and, set, switches that drawing off); Firefox, with no arrows, takes
+ * scrollbar-color. */
+html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #2c3f66; --sb-track: #070d18; --sb-arrow: #78a6ff; }
+html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #9fb4dc; --sb-track: #e7eef7; --sb-arrow: #1b3f9e; }
+html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #4a5a28; --sb-track: #121413; --sb-arrow: #a9c94a; }
+html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f3f5f0; --sb-arrow: #4d6112; }
+html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #6a4f20; --sb-track: #141414; --sb-arrow: #e3a33c; }
+html:has(> body.palette-amber.theme-light) { --sb-thumb: #d3b27a; --sb-track: #f4f3f0; --sb-arrow: #8a5a10; }
+html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #1c4a4b; --sb-track: #0b1213; --sb-arrow: #74d8d2; }
+html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #86b0ae; --sb-track: #cfe8e6; --sb-arrow: #0e6a67; }
+html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #5a3818; --sb-track: #0f0a07; --sb-arrow: #d49a5a; }
+html:has(> body.palette-reading-room.theme-light) { --sb-thumb: #bda780; --sb-track: #dcc7a8; --sb-arrow: #7d4a1c; }
+html:has(> body.palette-crt:not(.theme-light)) { --sb-thumb: #1c8a46; --sb-track: #020a04; --sb-arrow: #5cf08a; }
+html:has(> body.palette-crt.theme-light) { --sb-thumb: #6f855a; --sb-track: #bccca0; --sb-arrow: #1f5216; }
+html:has(> body.palette-film:not(.theme-light)) { --sb-thumb: #3a5166; --sb-track: #070b0e; --sb-arrow: #9cb8d6; }
+html:has(> body.palette-film.theme-light) { --sb-thumb: #8ea6bb; --sb-track: #c9d6e2; --sb-arrow: #2f5a86; }
+html:has(> body.palette-blueprint:not(.theme-light)) { --sb-thumb: #3b78c2; --sb-track: #0a2346; --sb-arrow: #7fd0ff; }
+html:has(> body.palette-blueprint.theme-light) { --sb-thumb: #8fb2dc; --sb-track: #eef5fd; --sb-arrow: #0b55b8; }
+html:has(> body.palette-cyberpunk:not(.theme-light)) { --sb-thumb: #711c91; --sb-track: #000b1e; --sb-arrow: #d34fca; }
+html:has(> body.palette-cyberpunk.theme-light) { --sb-thumb: #c58ac0; --sb-track: #f2f5fc; --sb-arrow: #a3189a; }
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-color: var(--sb-thumb, auto) var(--sb-track, auto); } }
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 14px; height: 14px; background: var(--sb-track); }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: var(--sb-track); }
+  ::-webkit-scrollbar-thumb { background: var(--sb-thumb); border: 3px solid var(--sb-track); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--sb-arrow); }
+  ::-webkit-scrollbar-button:single-button { display: block; width: 14px; height: 14px; background-color: var(--sb-track); background-repeat: no-repeat; background-position: center; background-size: 8px 8px; }
+  ::-webkit-scrollbar-button:single-button:hover { background-color: color-mix(in srgb, var(--sb-arrow) 14%, var(--sb-track)); }
+  ::-webkit-scrollbar-button:vertical:start:decrement { background-image: conic-gradient(from 150deg at 50% 0%, var(--sb-arrow) 60deg, transparent 0); }
+  ::-webkit-scrollbar-button:vertical:end:increment { background-image: conic-gradient(from -30deg at 50% 100%, var(--sb-arrow) 60deg, transparent 0); }
+  ::-webkit-scrollbar-button:horizontal:start:decrement { background-image: conic-gradient(from 60deg at 0% 50%, var(--sb-arrow) 60deg, transparent 0); }
+  ::-webkit-scrollbar-button:horizontal:end:increment { background-image: conic-gradient(from 240deg at 100% 50%, var(--sb-arrow) 60deg, transparent 0); }
+  ::-webkit-scrollbar-button:vertical:start:increment, ::-webkit-scrollbar-button:vertical:end:decrement,
+  ::-webkit-scrollbar-button:horizontal:start:increment, ::-webkit-scrollbar-button:horizontal:end:decrement { display: none; }
+}

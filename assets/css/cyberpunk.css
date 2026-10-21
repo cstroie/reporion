@@ -400,5 +400,3 @@ body.palette-cyberpunk.theme-light {
 
 }
 
-/* The scrollbar lives on the root, so it reaches up from the body class */
-html:has(> body.palette-cyberpunk:not(.theme-light)) { scrollbar-color: #711c91 #000b1e; }
