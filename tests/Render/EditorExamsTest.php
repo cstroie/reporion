@@ -45,6 +45,8 @@ final class EditorExamsTest extends TestCase
         yield 'a report' => [self::BODY];
         yield 'code and indented code' => ["# N\n\n## A\n\n```\n## not an exam\n```\n\n    ## indented code\n\n~~~~\n## x\n~~~\n## still code\n~~~~\n## B ##\n"];
         yield 'an empty heading and ###' => ["## \n### Sub\n##\n####### no\n##x\n"];
+        yield 'a shared conclusion' => ["# N\n\n## A\n\nX.\n\n## B\n\nY.\n\n## Concluzii\n\nZ.\n"];
+        yield 'a lone conclusion is an exam' => ["# N\n\n## Concluzii\n\nZ.\n"];
         yield 'no exams' => ["# N\n\nText.\n"];
     }
 
@@ -56,6 +58,15 @@ final class EditorExamsTest extends TestCase
         [$js] = $this->node([['fn' => 'splitBody', 'args' => [$body]]]);
 
         self::assertSame(Exams::split($body), $js);
+    }
+
+    public function testASharedConclusionKeepsTheBodyOnePlainTextarea(): void
+    {
+        $body = "# N\n\n## A\n\nX.\n\n## B\n\nY.\n\n## Concluzii\n\nZ.\n";
+        [$opened, $has] = $this->node([['fn' => 'openBody', 'args' => [$body, 2]], ['fn' => 'hasShared', 'args' => [$body]]]);
+
+        self::assertNull($opened, 'no tabs: the shared conclusion is no card\'s, and must not be lost');
+        self::assertTrue($has);
     }
 
     public function testThePanesPutBackGiveTheSameBody(): void

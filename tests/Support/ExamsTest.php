@@ -32,6 +32,31 @@ final class ExamsTest extends TestCase
         self::assertSame(self::BODY, $split['head'] . implode('', array_column($split['parts'], 'text')));
     }
 
+    private const SHARED = "# N\n\n## IRM genunchi drept\n\nA.\n\n## IRM genunchi stâng\n\nC.\n\n## Concluzii\n\nD.\n";
+
+    public function testALastConclusionAfterTheExamsIsSharedNotAnExam(): void
+    {
+        $split = Exams::split(self::SHARED);
+
+        self::assertSame(['IRM genunchi drept', 'IRM genunchi stâng'], array_column($split['parts'], 'title'));
+        self::assertSame('Concluzii', $split['shared']['title'] ?? null);
+        self::assertSame(self::SHARED, $split['head'] . implode('', array_column($split['parts'], 'text')) . $split['shared']['text']);
+        self::assertNull(Exams::split(self::BODY)['shared']);
+        self::assertNull(Exams::split("# N\n\n## Concluzii\n\nZ.\n")['shared'], 'a lone one is an exam part, as before');
+    }
+
+    public function testASharedConclusionReplacesThePerExamOne(): void
+    {
+        self::assertSame([], Exams::problems(self::FM, self::SHARED));
+    }
+
+    public function testASharedConclusionNeedsTextAndTwoExams(): void
+    {
+        self::assertSame(['exams.shared_empty'], Exams::problems(self::FM, "# N\n\n## A\n\nA.\n\n## B\n\nC.\n\n## Concluzii\n"));
+        $one = ['exams' => [['title' => 'A']]];
+        self::assertSame(['exams.shared_single'], Exams::problems($one, "# N\n\n## A\n\nA.\n\n## Concluzii\n\nD.\n"));
+    }
+
     public function testOnlyATopLevelDoubleHashOutsideCodeSplits(): void
     {
         $body = "# N\n\n## A\n\n### Descriere\n\n#### Sub\n\n```\n## not an exam\n```\n\n    ## indented code\n\n## B ##\n";

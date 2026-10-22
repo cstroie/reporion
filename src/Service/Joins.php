@@ -126,9 +126,9 @@ final class Joins
             $body = ReportName::withoutNameHeading($parent->body, $parent->frontmatter);
             $split = Exams::split($body);
             $own = Exams::of($parent->frontmatter);
-            if (\count($split['parts']) === \count($own)) {
+            if ($split['shared'] === null && \count($split['parts']) === \count($own)) {
                 $texts = array_column($split['parts'], 'text');
-            } elseif (\count($own) === 1 && $split['parts'] === []) {
+            } elseif (\count($own) === 1 && $split['parts'] === [] && $split['shared'] === null) {
                 // A one-exam report without its `##`: its whole text under its title
                 $texts = ['## ' . (MetaText::text($own[0]['title'] ?? null) ?: ReportName::examTitle($parent->frontmatter, $parent->path)) . "\n\n" . ltrim($split['head'])];
                 $split['head'] = '';

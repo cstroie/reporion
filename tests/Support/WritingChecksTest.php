@@ -37,6 +37,17 @@ final class WritingChecksTest extends TestCase
         self::assertSame([], self::codes($body, ['patient' => ['sex' => 'F']]));
     }
 
+    public function testASharedConclusionIsCheckedAgainstAllTheExams(): void
+    {
+        $fm = ['exams' => [['title' => 'IRM genunchi drept'], ['title' => 'IRM genunchi stâng']]];
+        $body = "# Nume\n\n## IRM genunchi drept\n\n### Descriere\n\nFisură a meniscului medial drept.\n\n## IRM genunchi stâng\n\n### Descriere\n\nLigamente fără leziuni.\n\n## Concluzii\n\nFisură meniscală medială dreaptă.\n";
+
+        self::assertSame([], self::codes($body, $fm));
+        $body = str_replace('Fisură meniscală medială dreaptă.', 'Ruptură de ligament încrucișat.', $body);
+        self::assertContains('not_described', self::codes($body, $fm));
+        self::assertNotContains('no_conclusion', self::codes($body, $fm));
+    }
+
     public function testLateralityComesFirstAsBefore(): void
     {
         $body = "# Nume\n\n## IRM genunchi stâng\n\n### Descriere\n\nFisură meniscală.\n\n### Concluzii\n\nFisură meniscală dreaptă.\n";

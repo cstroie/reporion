@@ -81,6 +81,8 @@ return [
     'page.exam_conclusion' => 'Exam %d has no conclusion (### Concluzii): this blocks signing.',
     'sign.exam_count'     => 'The exams in the text (## headings) and the exams list do not match in number',
     'sign.exam_title'     => 'A title for exam %d',
+    'sign.exam_shared_empty' => 'The shared conclusion (## Concluzii after the exams) has no text',
+    'sign.exam_shared_single' => 'A shared conclusion (## Concluzii after the exams) needs a report of two or more exams',
     'sign.exam_conclusion' => 'A conclusion (### Concluzii) in exam %d',
     'sign.edit'           => 'Edit the report',
     'sign.parafa'         => 'Parafă',

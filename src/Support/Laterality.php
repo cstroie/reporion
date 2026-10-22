@@ -39,7 +39,7 @@ final class Laterality
     public static function check(string $body, array $frontmatter): array
     {
         $split = Exams::split(ReportName::withoutNameHeading($body, $frontmatter));
-        $parts = $split['parts'] !== [] ? $split['parts'] : [['title' => Exams::title($frontmatter), 'text' => $split['head']]];
+        $parts = Exams::checkParts($split, $frontmatter);
         $headSections = self::sections($split['parts'] !== [] ? $split['head'] : '');
         $indicationAll = trim(($headSections['indication'] ?? '') . "\n" . MetaText::text($frontmatter['indication'] ?? null));
 

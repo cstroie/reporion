@@ -80,7 +80,7 @@ final class WritingChecks
         }
 
         $split = Exams::split($prose);
-        $parts = $split['parts'] !== [] ? $split['parts'] : [['title' => Exams::title($frontmatter), 'text' => $split['head']]];
+        $parts = Exams::checkParts($split, $frontmatter);
         foreach ($parts as $part) {
             $exam = trim($part['title']) !== '' ? trim($part['title']) : Exams::title($frontmatter);
             $sections = Laterality::sections($part['text']);

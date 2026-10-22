@@ -745,7 +745,10 @@ Every report body has one heading shape, whether it was imported or created in t
 - A single-exam report has one `##`. Several exams done together have one `##` each (roadmap
   phase 12 builds on this), with a conclusion per exam at `###`. An archive report with
   **one shared conclusion** after several exams keeps it as `## Concluzii`, a sibling of the
-  exams.
+  exams. This is a supported form (2026-10-22): a last `##` whose text names a conclusion
+  (Concluzii, Concluzie, any case, with or without diacritics), after at least one exam, is the
+  report's shared conclusion and no exam (`Support\Exams::split()` `shared`, the same in
+  `editor-exams.js`). See §12 for what signing asks of it.
 - `exam_title` names the exam(s): the heading's text for one exam, `A + B` for several.
 - **What prints.** Exports and the public layout drop the name heading, and also a lone `##`
   whose text is the exam title, which the printed title already shows
@@ -836,8 +839,15 @@ exams:
   space, a tab or the line's end, outside a fenced code block. `###` and deeper never split.
 - **A conclusion per exam**: a `### Concluzii` (or `Concluzie`, any case, with or without
   diacritics) directly under that exam's `##`.
+- **A shared conclusion** (2026-10-22): a last `## Concluzii` after the exams replaces the
+  per-exam `###` ones: none is asked of the exams then. It must have text (`exams.shared_empty`)
+  and the report must have two exams or more (`exams.shared_single`). The writing checks read it
+  against all the exams together; the page view numbers only the real exams (`exam-N`) and gives
+  it its own anchor; the editor keeps such a body in one textarea (no tabs, nothing lost); a join
+  of a report that has one is refused (it would be dropped); the summary, tags and RADS read it
+  as every conclusion (`Support\Conclusion`).
 - **Signing** needs the exams whole: as many `##` as entries, each titled (by its entry or its
-  heading), each with its conclusion. Anything less is a warning on the page and blocks signing,
+  heading), each with its conclusion (or the shared one). Anything less is a warning on the page and blocks signing,
   never saving (D7). `summary` stays one per file.
 - **A summary from the conclusion** (2026-09-29, a stopgap; kept in step 2026-10-08): a report
   saved by a user: the editor, `POST`/`PUT /api/v1/pages`: with an empty `summary` gets the first
