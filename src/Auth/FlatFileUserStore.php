@@ -108,6 +108,7 @@ final class FlatFileUserStore implements UserStoreInterface
             self::cleanGroups($user->groups),
             stamp: trim($user->stamp),
             views: SavedViews::clean($user->views),
+            fullName: trim($user->fullName),
         );
         $this->write($updated);
 
@@ -166,6 +167,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'created' => $user->createdAt,
             'updated' => $user->updatedAt,
             'display_name' => $user->displayName,
+            'full_name' => $user->fullName,
             'title' => $user->title,
             'tokens' => $user->tokens,
             'pins' => $user->pins,
@@ -234,6 +236,7 @@ final class FlatFileUserStore implements UserStoreInterface
             self::cleanGroups($decoded['groups'] ?? []),
             stamp: \is_string($decoded['stamp'] ?? null) ? $decoded['stamp'] : '',
             views: SavedViews::clean($decoded['views'] ?? []),
+            fullName: \is_string($decoded['full_name'] ?? null) ? $decoded['full_name'] : '',
         ));
     }
 

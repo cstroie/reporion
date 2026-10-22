@@ -421,7 +421,7 @@ final class Kernel
         reporion_directory(static function () use ($users): array {
             $directory = [];
             foreach ($users->all() as $account) {
-                $directory[$account->username] = $account->signatureName();
+                $directory[$account->username] = $account->shortName();
             }
 
             return $directory;

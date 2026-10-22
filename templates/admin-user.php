@@ -31,7 +31,7 @@ $b = $e($basePath);
 $u = $e(rawurlencode($account->username));
 $val = static fn (string $k, string $current): string => $old !== null ? (\is_string($old[$k] ?? null) ? $old[$k] : '') : $current;
 $groupNames = array_map(static fn (Reporion\Auth\Group $g): string => $g->name, $groups);
-$name = $account->displayName !== '' ? $account->displayName : $account->username;
+$name = $account->shortName();
 ?>
 <div class="wk-doc">
 <header class="wk-doc-head">
@@ -54,6 +54,9 @@ $name = $account->displayName !== '' ? $account->displayName : $account->usernam
 <div class="wk-two wk-panels">
 <div class="wk-panel" id="identity">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.identity')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.identity_help')) ?></p></hgroup></header>
+<div class="field"><label for="full_name"><?= $e(t('admin.users.full_name')) ?>
+<input class="input" type="text" id="full_name" name="full_name" value="<?= $e($val('full_name', $account->fullName)) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.full_name_hint')) ?>">
+<small><?= $e(t('admin.users.full_name_help')) ?></small></label></div>
 <div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?>
 <input class="input" type="text" id="display_name" name="display_name" value="<?= $e($val('display_name', $account->displayName)) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.display_name_hint')) ?>">
 <small><?= $e(t('admin.users.display_name_help')) ?></small></label></div>

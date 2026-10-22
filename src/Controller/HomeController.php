@@ -131,7 +131,7 @@ final class HomeController
                 (int) $now->format('G') < 18 => 'start.afternoon',
                 default => 'start.evening',
             }),
-            'greetingName' => \Reporion\Support\Initials::familyName($principal->signatureName()),
+            'greetingName' => \Reporion\Support\Initials::familyName($principal->shortName()),
             'today' => $now->format('l, ' . MetaText::DATE),
             'stats' => [
                 'drafts' => \count($drafts),

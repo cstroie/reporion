@@ -31,7 +31,7 @@ $b = $e($basePath);
 <div class="wk-doc">
 <header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('profile.title'), 'icon' => 'user-circle']]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e($account->signatureName()) ?></h1></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e($account->shortName()) ?></h1></div>
 <div class="wk-badges">
 <span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
@@ -74,6 +74,8 @@ $b = $e($basePath);
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.signature')) ?></h2><p class="wk-dim"><?= $e(t('profile.signature_help')) ?></p></hgroup></header>
 <?php if ($signatureError !== null): ?><?php $noticeKind = 'error'; $noticeText = $signatureError; include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/signature" method="post">
+<div class="field"><label for="full_name"><?= $e(t('profile.full_name')) ?>
+<input class="input" type="text" id="full_name" name="full_name" value="<?= $e($account->fullName) ?>" maxlength="120" placeholder="<?= $e(t('profile.full_name_hint')) ?>"><small><?= $e(t('profile.full_name_help')) ?></small></label></div>
 <div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?>
 <input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e(t('profile.display_name_hint')) ?>"><small><?= $e(t('profile.display_name_help')) ?></small></label></div>
 <div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?>

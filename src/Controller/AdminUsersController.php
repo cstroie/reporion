@@ -110,6 +110,7 @@ final class AdminUsersController
 
         $updated = $target->with(
             displayName: self::str($f, 'display_name'),
+            fullName: self::str($f, 'full_name'),
             title: self::str($f, 'title'),
             radiologist: self::checked($f, 'radiologist'),
             grants: $grants,
@@ -134,6 +135,7 @@ final class AdminUsersController
         $f = self::fields($request);
         $this->users->save($target->with(
             displayName: self::str($f, 'display_name'),
+            fullName: self::str($f, 'full_name'),
             title: self::str($f, 'title'),
             radiologist: self::checked($f, 'radiologist'),
         ));
@@ -289,6 +291,7 @@ final class AdminUsersController
 
         return array_keys(array_filter([
             'display_name' => $a->displayName !== trim($b->displayName),
+            'full_name' => $a->fullName !== trim($b->fullName),
             'title' => $a->title !== trim($b->title),
             'owner' => $a->isOwner !== $b->isOwner,
             'radiologist' => $a->radiologist !== $b->radiologist,
