@@ -74,25 +74,25 @@ html { font-size: 100%; }
   /* Royal blue (2026-10-21), cold and arctic: the chancellery's blue ink on official papers and
    * signatures. Dark is the polar night (ice-white text, ink-blue accent lit to read on black),
    * light is the glacier-white paper with blue-black ink and the signature's royal blue. */
-  --color-bg:        #070d18;
-  --color-surface:   #0f1828;
-  --color-text:      #dbe8f6;
-  --color-dim:       #8fa3bd;
+  --color-bg:        #0d1017;
+  --color-surface:   #161b25;
+  --color-text:      #dfe4ed;
+  --color-dim:       #939bab;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #78a6ff;
-  --color-divider:   #22304a;
+  --color-accent:    #6f9dff;
+  --color-divider:   #2a3140;
 
-  --color-accent-100: #eaf2ff;
-  --color-accent-200: #cddfff;
-  --color-accent-300: #a9c8ff;
-  --color-accent-800: #1f3a78;
-  --color-accent-900: #12234a;
+  --color-accent-100: #eaf1ff;
+  --color-accent-200: #cfdeff;
+  --color-accent-300: #a8c4ff;
+  --color-accent-800: #24386b;
+  --color-accent-900: #161f3c;
 
-  --color-neutral-100: #f1f6ff;
-  --color-neutral-300: #bfcce0;
-  --color-neutral-700: #435573;
-  --color-neutral-800: #22304a;
-  --color-neutral-900: #0c1424;
+  --color-neutral-100: #f3f5fe;
+  --color-neutral-300: #c3cad7;
+  --color-neutral-700: #4c5364;
+  --color-neutral-800: #2a3140;
+  --color-neutral-900: #141821;
 
   --state-ok:    #7fb59a;
   --state-warn:  #d8b06a;
@@ -160,22 +160,22 @@ html { font-size: 100%; }
 
 .theme-light {
   color-scheme: light;
-  --color-bg:      #e7eef7;
-  --color-surface: #fbfdff;
-  --color-text:    #0c1838;
-  --color-dim:     #4a5878;
+  --color-bg:      #f1f3f8;
+  --color-surface: #ffffff;
+  --color-text:    #151922;
+  --color-dim:     #5a6174;
   --color-dimmer:  color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:  #1b3f9e;
-  --color-accent-300: #14307f;
-  --color-accent-800: #102a6e;
-  --color-accent-100: #e3ebfa;
-  --color-accent-200: #c6d6f5;
-  --color-divider: #cbd7e9;
-  --color-neutral-200: #d3deef;
-  --color-neutral-700: #3a4a6a;
-  --shadow-sm: 0 0 0 1px #cbd7e9;
-  --shadow-md: 0 0 0 1px #cbd7e9, 0 7.5px 23px rgba(12,24,56,.10);
-  --shadow-lg: 0 0 0 1px #aabdd9, 0 20.5px 51.5px rgba(12,24,56,.16);
+  --color-accent:  #2a4fa8;
+  --color-accent-300: #1f3c86;
+  --color-accent-800: #16306e;
+  --color-accent-100: #e6ebf7;
+  --color-accent-200: #cdd7ee;
+  --color-divider: #dde1ec;
+  --color-neutral-200: #e0e4ee;
+  --color-neutral-700: #4c5364;
+  --shadow-sm: 0 0 0 1px #dde1ec;
+  --shadow-md: 0 0 0 1px #dde1ec, 0 7.5px 23px rgba(21,25,34,.10);
+  --shadow-lg: 0 0 0 1px #c7cddc, 0 20.5px 51.5px rgba(21,25,34,.16);
 }
 
 a { color: var(--color-accent); text-decoration: none; }
@@ -663,8 +663,8 @@ select.input:not([multiple]):not([size]) {
  * inherits them: --sb-thumb, --sb-track and --sb-arrow. Chrome and Safari are drawn with ::-webkit-scrollbar, because
  * scrollbar-color cannot colour the arrow buttons (and, set, switches that drawing off); Firefox, with no arrows, takes
  * scrollbar-color. */
-html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #2c3f66; --sb-track: #070d18; --sb-arrow: #78a6ff; }
-html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #9fb4dc; --sb-track: #e7eef7; --sb-arrow: #1b3f9e; }
+html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #384154; --sb-track: #0d1017; --sb-arrow: #6f9dff; }
+html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #b6bdd0; --sb-track: #f1f3f8; --sb-arrow: #2a4fa8; }
 html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #3b5a12; --sb-track: #07100a; --sb-arrow: #b4e14a; }
 html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f1efd6; --sb-arrow: #3d6212; }
 html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #4d4630; --sb-track: #0d0c0a; --sb-arrow: #ffb52e; }

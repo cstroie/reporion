@@ -52,8 +52,8 @@ body.palette-afterglow.theme-light { background: radial-gradient(ellipse 85% 70%
 /* the default palette has no class on <body>, hence :not([class*="palette-"]). Behind the page (z-index -1), never under a
  * word: an aurora over the polar night (dark) or frost over the glacier paper (light), and the marks of an official paper:
  * a rubber stamp's rings and our own handwritten name as the signature, in ink. */
-body:not([class*="palette-"]):not(.theme-light) { background: radial-gradient(ellipse 60% 45% at 18% -8%, rgba(88,200,224,.08), transparent 70%) fixed, radial-gradient(ellipse 55% 40% at 82% -6%, rgba(120,150,255,.09), transparent 70%) fixed, #070d18; }
-body:not([class*="palette-"]).theme-light { background: radial-gradient(ellipse 85% 60% at 50% -10%, #fbfdff, transparent 75%) fixed, #e7eef7; }
+body:not([class*="palette-"]):not(.theme-light) { background: radial-gradient(ellipse 60% 45% at 18% -8%, rgba(88,200,224,.04), transparent 70%) fixed, radial-gradient(ellipse 55% 40% at 82% -6%, rgba(120,150,255,.05), transparent 70%) fixed, #0d1017; }
+body:not([class*="palette-"]).theme-light { background: radial-gradient(ellipse 85% 60% at 50% -10%, #ffffff, transparent 75%) fixed, #f1f3f8; }
 body.wk:not([class*="palette-"])::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
@@ -66,8 +66,8 @@ body.wk:not([class*="palette-"])::after {
   background: rgba(var(--ink), .12);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 70%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cg transform=%22rotate%28-3 70 40%29 translate%2812.3 0%29 skewX%28-15%29%22%3E%3Cpath d=%22M10 44C12 34 14 18 19 8C29 4 37 11 31 19C28 24 22 25 17 24C23 26 28 33 32 41%22/%3E%3Cpath d=%22M36.8 34C41.6 34 46.4 33 47.6 30C48.8 26 44.0 24 40.4 25C35.6 27 34.4 33 36.8 37C39.2 40 45.2 40 50.0 36C51.2 32 52.4 28 53.6 25C53.6 38 51.2 50 47.6 59C46.4 48 52.4 38 57.2 30C63.2 24 69.2 29 65.6 35C62.0 40 57.2 37 59.6 33C63.2 36 68.0 30 71.6 27C75.2 24 78.8 31 74.0 35C70.4 38 68.0 32 72.8 28%22/%3E%3Cpath d=%22M76.4 40C77.6 34 78.8 30 80.0 27C81.2 33 82.4 36 84.8 33C87.2 30 90.8 28 93.2 31C94.4 34 94.4 40 93.2 42C95.6 40 98.0 35 100.4 31%22/%3E%3Cpath d=%22M102.8 38C102.8 34 105.2 30 108.8 29C113.6 28 113.6 36 107.6 38C104.0 39 105.2 31 111.2 29C113.6 31 113.6 38 112.4 42C116.0 32 122.0 25 126.8 31C129.2 36 126.8 40 125.6 43C130.4 36 137.6 28 147.2 29C159.2 30 171.2 26 185.6 18%22/%3E%3Cpath d=%22M92.6 22l3.4-1.6%22/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 70%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cg transform=%22rotate%28-3 70 40%29 translate%2812.3 0%29 skewX%28-15%29%22%3E%3Cpath d=%22M10 44C12 34 14 18 19 8C29 4 37 11 31 19C28 24 22 25 17 24C23 26 28 33 32 41%22/%3E%3Cpath d=%22M36.8 34C41.6 34 46.4 33 47.6 30C48.8 26 44.0 24 40.4 25C35.6 27 34.4 33 36.8 37C39.2 40 45.2 40 50.0 36C51.2 32 52.4 28 53.6 25C53.6 38 51.2 50 47.6 59C46.4 48 52.4 38 57.2 30C63.2 24 69.2 29 65.6 35C62.0 40 57.2 37 59.6 33C63.2 36 68.0 30 71.6 27C75.2 24 78.8 31 74.0 35C70.4 38 68.0 32 72.8 28%22/%3E%3Cpath d=%22M76.4 40C77.6 34 78.8 30 80.0 27C81.2 33 82.4 36 84.8 33C87.2 30 90.8 28 93.2 31C94.4 34 94.4 40 93.2 42C95.6 40 98.0 35 100.4 31%22/%3E%3Cpath d=%22M102.8 38C102.8 34 105.2 30 108.8 29C113.6 28 113.6 36 107.6 38C104.0 39 105.2 31 111.2 29C113.6 31 113.6 38 112.4 42C116.0 32 122.0 25 126.8 31C129.2 36 126.8 40 125.6 43C130.4 36 137.6 28 147.2 29C159.2 30 171.2 26 185.6 18%22/%3E%3Cpath d=%22M92.6 22l3.4-1.6%22/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
 }
-body.wk:not([class*="palette-"]):not(.theme-light) { --ink: 120, 166, 255; }
-body.wk:not([class*="palette-"]).theme-light { --ink: 27, 63, 158; }
+body.wk:not([class*="palette-"]):not(.theme-light) { --ink: 111, 157, 255; }
+body.wk:not([class*="palette-"]).theme-light { --ink: 42, 79, 168; }
 
 /* ---- Mojito (key `lime`): a lime cocktail, a tropical night and a sunny day ------------------ */
 /* behind the page (z-index -1), never under a word: dark has the underlit-leaf glow and a neon coral flush, light has the sun
