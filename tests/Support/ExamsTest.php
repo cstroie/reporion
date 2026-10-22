@@ -53,8 +53,6 @@ final class ExamsTest extends TestCase
     public function testASharedConclusionNeedsTextAndTwoExams(): void
     {
         self::assertSame(['exams.shared_empty'], Exams::problems(self::FM, "# N\n\n## A\n\nA.\n\n## B\n\nC.\n\n## Concluzii\n"));
-        $one = ['exams' => [['title' => 'A']]];
-        self::assertSame(['exams.shared_single'], Exams::problems($one, "# N\n\n## A\n\nA.\n\n## Concluzii\n\nD.\n"));
     }
 
     public function testOnlyATopLevelDoubleHashOutsideCodeSplits(): void

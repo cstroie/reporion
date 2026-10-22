@@ -48,6 +48,15 @@ final class WritingChecksTest extends TestCase
         self::assertNotContains('no_conclusion', self::codes($body, $fm));
     }
 
+    public function testASharedConclusionOfASingleExamIsAWarningNotABlock(): void
+    {
+        $fm = ['exams' => [['title' => 'IRM genunchi drept']]];
+        $body = "# Nume\n\n## IRM genunchi drept\n\nFisură a meniscului medial drept.\n\n## Concluzii\n\nFisură meniscală medială dreaptă.\n";
+
+        self::assertContains('shared_single', self::codes($body, $fm));
+        self::assertSame([], \Reporion\Support\Exams::problems($fm, $body));
+    }
+
     public function testLateralityComesFirstAsBefore(): void
     {
         $body = "# Nume\n\n## IRM genunchi stâng\n\n### Descriere\n\nFisură meniscală.\n\n### Concluzii\n\nFisură meniscală dreaptă.\n";

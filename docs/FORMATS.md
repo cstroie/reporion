@@ -840,8 +840,9 @@ exams:
 - **A conclusion per exam**: a `### Concluzii` (or `Concluzie`, any case, with or without
   diacritics) directly under that exam's `##`.
 - **A shared conclusion** (2026-10-22): a last `## Concluzii` after the exams replaces the
-  per-exam `###` ones: none is asked of the exams then. It must have text (`exams.shared_empty`)
-  and the report must have two exams or more (`exams.shared_single`). The writing checks read it
+  per-exam `###` ones: none is asked of the exams then. It must have text (`exams.shared_empty`,
+  blocks signing). For a report of fewer than two exams it is only a writing-check warning
+  (`shared_single`, never a block). The writing checks read it
   against all the exams together; the page view numbers only the real exams (`exam-N`) and gives
   it its own anchor; the editor keeps such a body in one textarea (no tabs, nothing lost); a join
   of a report that has one is refused (it would be dropped); the summary, tags and RADS read it

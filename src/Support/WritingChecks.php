@@ -80,6 +80,9 @@ final class WritingChecks
         }
 
         $split = Exams::split($prose);
+        if ($split['shared'] !== null && \count(Exams::of($frontmatter)) < 2) {
+            $out[] = self::warning('shared_single', '', [], trim($split['shared']['title']));
+        }
         $parts = Exams::checkParts($split, $frontmatter);
         foreach ($parts as $part) {
             $exam = trim($part['title']) !== '' ? trim($part['title']) : Exams::title($frontmatter);

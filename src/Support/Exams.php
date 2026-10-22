@@ -503,8 +503,7 @@ final class Exams
      * `exams.{n}.title` for an exam with no title, `exams.{n}.conclusion`
      * for an exam with no `### Concluzii` directly under it, unless the
      * report has a shared `## Concluzii` after its exams (then none is asked
-     * of them): `exams.shared_empty` if that has no text,
-     * `exams.shared_single` if the report declares fewer than two exams. Nothing else for a
+     * of them): `exams.shared_empty` if that has no text. Nothing for a
      * report that declares no exams, nor for a text one (D40): it has no
      * headings to check.
      *
@@ -515,14 +514,10 @@ final class Exams
     public static function problems(array $frontmatter, string $body): array
     {
         $declared = self::declared($frontmatter);
-        if (BodyFormat::isText($frontmatter)) {
+        if ($declared === [] || BodyFormat::isText($frontmatter)) {
             return [];
         }
         $split = self::split($body);
-        if ($declared === []) {
-            // The shared form is for two exams or more
-            return $split['shared'] !== null ? ['exams.shared_single'] : [];
-        }
         $parts = $split['parts'];
         $shared = $split['shared'];
         $problems = \count($parts) !== \count($declared) ? ['exams.count'] : [];
