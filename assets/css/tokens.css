@@ -263,55 +263,55 @@ select.input:not([multiple]):not([size]) {
 /* Amber, the Safelight (2026-10-21): graphite and one amber, the way a darkroom has one lamp (the only light film can be
  * handled in); light is paper with a trace of the same amber. Kept to a single hue so it never reads as the Reading room's coffee. */
 .palette-amber {
-  --color-bg:        #0d0c0a;
-  --color-surface:   #171613;
-  --color-text:      #e8e3d3;
+  --color-bg:        #141414;
+  --color-surface:   #1e1d1b;
+  --color-text:      #e8e6e1;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #ffb52e;
-  --color-divider:   color-mix(in srgb, #e8e3d3 15%, transparent);
-  --color-accent-100: #fff6df;
-  --color-accent-200: #ffe6ae;
-  --color-accent-300: #ffd270;
-  --color-accent-800: #5e4308;
-  --color-accent-900: #382806;
-  --color-neutral-100: #f5f1e6;
-  --color-neutral-300: #cfc9b8;
-  --color-neutral-700: #4d493e;
-  --color-neutral-800: #2f2d27;
-  --color-neutral-900: #12110e;
-  --state-ok:    #98bf80;
-  --state-warn:  #ffc247;
-  --state-error: #ff7358;
-  --diff-add:    #98bf80;
-  --diff-del:    #ff7358;
-  --shadow-sm: 0 0 0 1px #2f2d27;
-  --shadow-md: 0 0 0 1px #46433a, 0 7.5px 23px rgba(0,0,0,.6);
-  --shadow-lg: 0 0 0 1px #8a8575, 0 20.5px 51.5px rgba(0,0,0,.7);
+  --color-accent:    #e3a33c;
+  --color-divider:   color-mix(in srgb, #e8e6e1 15%, transparent);
+  --color-accent-100: #fdf3e2;
+  --color-accent-200: #f7e0b8;
+  --color-accent-300: #efc686;
+  --color-accent-800: #5a4118;
+  --color-accent-900: #38290f;
+  --color-neutral-100: #f3f1ec;
+  --color-neutral-300: #d2cfc7;
+  --color-neutral-700: #4a473f;
+  --color-neutral-800: #35332e;
+  --color-neutral-900: #1b1a18;
+  --state-ok:    #8fb585;
+  --state-warn:  #e0b45a;
+  --state-error: #e0806a;
+  --diff-add:    #8fb585;
+  --diff-del:    #e0806a;
+  --shadow-sm: 0 0 0 1px #35332e;
+  --shadow-md: 0 0 0 1px #45423b, 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #8a8577, 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-amber {
-  --color-bg:        #ece8dc;
-  --color-surface:   #fffdf6;
-  --color-text:      #1d1b15;
-  --color-dim:       #5c574a;
+  --color-bg:        #f4f3f0;
+  --color-surface:   #ffffff;
+  --color-text:      #1f1e1b;
+  --color-dim:       #5a574d;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #8a5a00;
-  --color-accent-300: #6b4600;
-  --color-accent-800: #4a3000;
-  --color-accent-100: #faf0d3;
-  --color-accent-200: #efdca3;
-  --color-neutral-100: #f2eee2;
-  --color-divider:   color-mix(in srgb, #1d1b15 16%, transparent);
-  --color-neutral-200: #ddd8c8;
-  --color-neutral-700: #4f4a3c;
+  --color-accent:    #8a5a10;
+  --color-accent-300: #6b4610;
+  --color-accent-800: #4a3008;
+  --color-accent-100: #f6eddb;
+  --color-accent-200: #ecdcb4;
+  --color-neutral-100: #f1efe9;
+  --color-divider:   color-mix(in srgb, #1f1e1b 16%, transparent);
+  --color-neutral-200: #e7e4dd;
+  --color-neutral-700: #565349;
   --state-ok:    #3d6b1f;
-  --state-warn:  #8a5a00;
+  --state-warn:  #8a5a10;
   --state-error: #b3261e;
   --diff-add:    #3d6b1f;
   --diff-del:    #b3261e;
-  --shadow-sm: 0 0 0 1px #d6d1bf;
-  --shadow-md: 0 0 0 1px #d6d1bf, 0 7.5px 23px rgba(29,27,21,.10);
-  --shadow-lg: 0 0 0 1px #bdb79f, 0 20.5px 51.5px rgba(29,27,21,.16);
+  --shadow-sm: 0 0 0 1px #e2dfd7;
+  --shadow-md: 0 0 0 1px #e2dfd7, 0 7.5px 23px rgba(31,30,27,.10);
+  --shadow-lg: 0 0 0 1px #cfcbc0, 0 20.5px 51.5px rgba(31,30,27,.16);
 }
 /* Teal (2026-09-30), the mockup's "cold teal" Workbench option (design/README.md: listed but
  * never wired until now): colours verbatim from the design tool, shadow blur/spread scaled
@@ -322,43 +322,43 @@ select.input:not([multiple]):not([size]) {
  * of the lit screen as the text and accent, the charcoal of its case as the ground, the
  * teal-grey of the wall and the dusk blue of the carpet in the neutrals. */
 .palette-afterglow {
-  --color-bg:        #0b1213;
-  --color-surface:   #132021;
-  --color-text:      #d8f2f0;
+  --color-bg:        #0f1519;
+  --color-surface:   #182126;
+  --color-text:      #e0e8ec;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #74d8d2;
-  --color-divider:   color-mix(in srgb, #d8f2f0 16%, transparent);
-  --color-accent-100: #e8fbfa;
-  --color-accent-200: #c9f1ee;
-  --color-accent-300: #9fe4df;
-  --color-accent-800: #1c4a4b;
-  --color-accent-900: #102f31;
-  --color-neutral-900: #0e1719;
-  --color-neutral-800: #273341;
-  --color-neutral-300: #c0d2d6;
-  --shadow-sm: 0 0 0 1px #273341;
-  --shadow-md: 0 0 0 1px #34465a, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #6f8a98, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #5fc2c0;
+  --color-divider:   color-mix(in srgb, #e0e8ec 16%, transparent);
+  --color-accent-100: #e6f7f6;
+  --color-accent-200: #c6ecea;
+  --color-accent-300: #96dbd8;
+  --color-accent-800: #1d4a49;
+  --color-accent-900: #12302f;
+  --color-neutral-900: #161e23;
+  --color-neutral-800: #2c3a41;
+  --color-neutral-300: #c4d2d8;
+  --shadow-sm: 0 0 0 1px #2c3a41;
+  --shadow-md: 0 0 0 1px #3b4c54, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #7e939d, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
 .theme-light.palette-afterglow {
-  --color-bg:        #cfe8e6;
-  --color-surface:   #f3fdfc;
-  --color-text:      #0b1a1d;
-  --color-dim:       #3d5d60;
+  --color-bg:        #eef3f5;
+  --color-surface:   #ffffff;
+  --color-text:      #172126;
+  --color-dim:       #4a5b62;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #0e6a67;
-  --color-accent-300: #0a504e;
-  --color-accent-800: #083e3d;
-  --color-accent-100: #e0f6f4;
-  --color-accent-200: #bfe8e5;
-  --color-neutral-100: #e9f8f7;
-  --color-divider:   color-mix(in srgb, #0b1a1d 20%, transparent);
-  --color-neutral-200: #b9d8d6;
-  --color-neutral-700: #34504f;
-  --shadow-sm: 0 0 0 1px #a8cac8;
-  --shadow-md: 0 0 0 1px #a8cac8, 0 7.5px 23px rgba(11,26,29,.12);
-  --shadow-lg: 0 0 0 1px #86b0ae, 0 20.5px 51.5px rgba(11,26,29,.18);
+  --color-accent:    #1c6a68;
+  --color-accent-300: #14504e;
+  --color-accent-800: #0e3d3c;
+  --color-accent-100: #e3f3f2;
+  --color-accent-200: #c3e4e2;
+  --color-neutral-100: #eef6f6;
+  --color-divider:   color-mix(in srgb, #172126 20%, transparent);
+  --color-neutral-200: #dce6ea;
+  --color-neutral-700: #4a5b62;
+  --shadow-sm: 0 0 0 1px #d7e2e6;
+  --shadow-md: 0 0 0 1px #d7e2e6, 0 7.5px 23px rgba(23,33,38,.12);
+  --shadow-lg: 0 0 0 1px #c3d3d9, 0 20.5px 51.5px rgba(23,33,38,.18);
 }
 /* Cyberpunk (2026-10-06): a whole theme, not just an accent: after
  * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
@@ -667,10 +667,10 @@ html:has(> body:not([class*="palette-"]):not(.theme-light)) { --sb-thumb: #38415
 html:has(> body:not([class*="palette-"]).theme-light) { --sb-thumb: #b6bdd0; --sb-track: #f1f3f8; --sb-arrow: #2a4fa8; }
 html:has(> body.palette-lime:not(.theme-light)) { --sb-thumb: #3b5a12; --sb-track: #07100a; --sb-arrow: #b4e14a; }
 html:has(> body.palette-lime.theme-light) { --sb-thumb: #a9bb78; --sb-track: #f1efd6; --sb-arrow: #3d6212; }
-html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #4d4630; --sb-track: #0d0c0a; --sb-arrow: #ffb52e; }
-html:has(> body.palette-amber.theme-light) { --sb-thumb: #c9c0a0; --sb-track: #ece8dc; --sb-arrow: #8a5a00; }
-html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #1c4a4b; --sb-track: #0b1213; --sb-arrow: #74d8d2; }
-html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #86b0ae; --sb-track: #cfe8e6; --sb-arrow: #0e6a67; }
+html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #45423b; --sb-track: #141414; --sb-arrow: #e3a33c; }
+html:has(> body.palette-amber.theme-light) { --sb-thumb: #cfcbc0; --sb-track: #f4f3f0; --sb-arrow: #8a5a10; }
+html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #3b4c54; --sb-track: #0f1519; --sb-arrow: #5fc2c0; }
+html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #b3c8cf; --sb-track: #eef3f5; --sb-arrow: #1c6a68; }
 html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #5a3818; --sb-track: #0f0a07; --sb-arrow: #d49a5a; }
 html:has(> body.palette-reading-room.theme-light) { --sb-thumb: #bda780; --sb-track: #dcc7a8; --sb-arrow: #7d4a1c; }
 html:has(> body.palette-crt:not(.theme-light)) { --sb-thumb: #1c8a46; --sb-track: #020a04; --sb-arrow: #5cf08a; }
