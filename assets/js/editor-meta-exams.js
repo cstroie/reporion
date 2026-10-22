@@ -39,8 +39,9 @@
     return parts.length === cards().length;
   }
 
-  function setBody(head, parts) {
+  function setBody(head, parts, shared) {
     var text = head;
+    if (shared) parts = parts.concat([shared.text]);
     parts.forEach(function (p, i) {
       if (text !== '' && !/\n\n$/.test(text)) text = text.replace(/\n?$/, '\n\n');
       text += i < parts.length - 1 ? p.replace(/\n*$/, '\n') : p;
@@ -100,7 +101,7 @@
     if (input) input.value = title;
     var texts = parts.parts.map(function (p) { return p.text; });
     texts.push('## ' + title + '\n\n### Descriere\n\n### Concluzii\n');
-    setBody(parts.head, texts);
+    setBody(parts.head, texts, parts.shared);
     wire(card);
     renumber();
     if (input) { input.focus(); input.select(); }
@@ -116,7 +117,7 @@
     card.remove();
     var texts = parts.parts.map(function (p) { return p.text; });
     texts.splice(i, 1);
-    setBody(parts.head, texts);
+    setBody(parts.head, texts, parts.shared);
     renumber();
   }
 
@@ -131,7 +132,7 @@
     if (delta < 0) box.insertBefore(card, all[to]); else box.insertBefore(card, all[to].nextSibling);
     var texts = parts.parts.map(function (p) { return p.text.replace(/\n*$/, '\n'); });
     texts.splice(to, 0, texts.splice(i, 1)[0]);
-    setBody(parts.head, texts);
+    setBody(parts.head, texts, parts.shared);
     renumber();
     card.scrollIntoView({ block: 'nearest' });
   }
@@ -143,7 +144,7 @@
     if (!inStep(parts.parts) || i < 0) return;
     var texts = parts.parts.map(function (p) { return p.text; });
     texts[i] = texts[i].replace(/^[^\n]*/, '## ' + titleOf(card));
-    setBody(parts.head, texts);
+    setBody(parts.head, texts, parts.shared);
   }
 
   function wire(card) {

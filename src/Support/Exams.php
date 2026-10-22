@@ -419,9 +419,12 @@ final class Exams
     /**
      * The body cut at its exam boundaries: the shared head, then each exam
      * from its `##` line up to the next. head . implode(parts) is the body,
-     * byte for byte.
+     * byte for byte. A last `##` that is a conclusion (Concluzii, Concluzie…),
+     * after at least one exam, is not an exam: it is the report's shared
+     * conclusion, returned as `shared` (null when there is none) and left out
+     * of `parts`; head . implode(parts) . shared text is the body.
      *
-     * @return array{head: string, parts: list<array{title: string, text: string}>}
+     * @return array{head: string, parts: list<array{title: string, text: string}>, shared: array{title: string, text: string}|null}
      */
     public static function split(string $body): array
     {
@@ -447,7 +450,50 @@ final class Exams
             }
         }
 
-        return ['head' => $head, 'parts' => $parts];
+        $shared = null;
+        $last = \count($parts) - 1;
+        if ($last >= 1 && self::isConclusionTitle($parts[$last]['title'])) {
+            $shared = array_pop($parts);
+        }
+
+        return ['head' => $head, 'parts' => $parts, 'shared' => $shared];
+    }
+
+    /**
+     * The parts the writing checks read: each exam's text, or, for a report with a
+     * shared conclusion, one part holding every exam's text then that conclusion as
+     * a `### Concluzii` (the conclusion answers all the exams, not one). A report
+     * with no `##` is one part with the body's head.
+     *
+     * @param array{head: string, parts: list<array{title: string, text: string}>, shared: array{title: string, text: string}|null} $split
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return list<array{title: string, text: string}>
+     */
+    public static function checkParts(array $split, array $frontmatter): array
+    {
+        if ($split['shared'] !== null) {
+            $text = implode('', array_column($split['parts'], 'text'));
+            $text = ($text !== '' && !str_ends_with($text, "\n") ? $text . "\n" : $text) . "### Concluzii\n" . self::withoutHeadingLine($split['shared']['text']);
+
+            return [['title' => '', 'text' => $text]];
+        }
+
+        return $split['parts'] !== [] ? $split['parts'] : [['title' => self::title($frontmatter), 'text' => $split['head']]];
+    }
+
+    /** A part's text without its first (`##`) line */
+    private static function withoutHeadingLine(string $text): string
+    {
+        $at = strpos($text, "\n");
+
+        return $at === false ? '' : substr($text, $at + 1);
+    }
+
+    /** Whether a `##` heading's text names a conclusion (Concluzii, Concluzie, Conclusions) */
+    private static function isConclusionTitle(string $title): bool
+    {
+        return preg_match('/^conclu(zi[aei]?|sions?)\b/u', self::fold(trim($title, " \t:.*_"))) === 1;
     }
 
     /**
@@ -455,7 +501,9 @@ final class Exams
      * being saved), as dotted codes the sign screen labels:
      * `exams.count` when the body's exams and the list differ in number,
      * `exams.{n}.title` for an exam with no title, `exams.{n}.conclusion`
-     * for an exam with no `### Concluzii` directly under it. Nothing for a
+     * for an exam with no `### Concluzii` directly under it, unless the
+     * report has a shared `## Concluzii` after its exams (then none is asked
+     * of them): `exams.shared_empty` if that has no text. Nothing for a
      * report that declares no exams, nor for a text one (D40): it has no
      * headings to check.
      *
@@ -469,14 +517,21 @@ final class Exams
         if ($declared === [] || BodyFormat::isText($frontmatter)) {
             return [];
         }
-        $parts = self::split($body)['parts'];
+        $split = self::split($body);
+        $parts = $split['parts'];
+        $shared = $split['shared'];
         $problems = \count($parts) !== \count($declared) ? ['exams.count'] : [];
+        if ($shared !== null) {
+            if (trim(self::withoutHeadingLine($shared['text'])) === '') {
+                $problems[] = 'exams.shared_empty';
+            }
+        }
         foreach ($declared as $i => $exam) {
             $n = $i + 1;
             if ($exam['title'] === '' && ($parts[$i]['title'] ?? '') === '') {
                 $problems[] = 'exams.' . $n . '.title';
             }
-            if (isset($parts[$i]) && !self::hasConclusion($parts[$i]['text'])) {
+            if ($shared === null && isset($parts[$i]) && !self::hasConclusion($parts[$i]['text'])) {
                 $problems[] = 'exams.' . $n . '.conclusion';
             }
         }

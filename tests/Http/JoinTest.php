@@ -211,6 +211,18 @@ final class JoinTest extends HttpTestCase
         self::assertMatchesRegularExpression('/value="join" disabled/', $screen->body);
     }
 
+    public function testAParentWithASharedConclusionIsNotJoinedWithoutIt(): void
+    {
+        $b = $this->storage()->read(self::B);
+        $fm = $b->frontmatter;
+        $fm['exams'] = [['title' => 'CT torace'], ['title' => 'CT abdomen']];
+        $this->storage()->save(self::B, $fm, "# TEST Pacient\n\n## CT torace\n\nA.\n\n## CT abdomen\n\nB.\n\n## Concluzii\n\nNodul.\n", 1, 'owner');
+
+        $screen = $this->post(['paths' => [self::A, self::B], 'ns' => 'mri']);
+
+        self::assertMatchesRegularExpression('/value="join" disabled/', $screen->body, 'its shared conclusion would be dropped');
+    }
+
     private function takenScreen(string $rk, string $lk): string
     {
         $this->storage()->create('reports:mri:mioveni:260903-test-genunchi', ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'exam_title' => 'X', 'modality' => ['MR'], 'study_date' => '2026-09-03'], "# X\n", 'owner');

@@ -122,6 +122,9 @@ final class WritingAidsController
     {
         $split = Exams::split(ReportName::withoutNameHeading($record->body, $record->frontmatter));
         $parts = $split['parts'] !== [] ? $split['parts'] : [['title' => Exams::title($record->frontmatter), 'text' => $split['head']]];
+        if ($split['shared'] !== null) {
+            $parts[] = $split['shared'];
+        }
         $out = [];
         foreach ($parts as $part) {
             $sections = [];

@@ -79,4 +79,13 @@ final class RenderFixturesTest extends TestCase
         self::assertSame(['exam-1', 'exam-2', 'exam-3'], array_values(array_filter(array_column($php->toc, 'slug'), static fn (string $s): bool => str_starts_with($s, 'exam-'))));
         self::assertStringContainsString('<h2 id="un-paragraf-subliniat">', $php->html, 'a setext heading is no exam');
     }
+
+    public function testASharedConclusionIsNoExamAnchor(): void
+    {
+        $php = (new Render())->toHtml("## A\n\nx\n\n## B\n\ny\n\n## Concluzii\n\nz\n", '', false, null, true);
+
+        self::assertStringContainsString('<h2 id="exam-2">B</h2>', $php->html);
+        self::assertStringContainsString('<h2 id="concluzii">Concluzii</h2>', $php->html);
+        self::assertStringNotContainsString('exam-3', $php->html);
+    }
 }

@@ -41,6 +41,9 @@ $label = static function (string $field): string {
     if (preg_match('/^exams\.(\d+)\.(title|conclusion)$/', $field, $m) === 1) {
         return t('sign.exam_' . $m[2], [(int) $m[1]]);
     }
+    if ($field === 'exams.shared_empty') {
+        return t('sign.' . str_replace('.', '_', $field));
+    }
     if ($field === 'exams.count') {
         return t('sign.exam_count');
     }

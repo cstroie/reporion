@@ -1193,7 +1193,7 @@
         docArea.hidden = false;
         textarea = docArea;
         // Several cards, but not one ## section each: say so where the tabs would be
-        examsUnread = count > 1;
+        examsUnread = count > 1 && !EX.hasShared(doc);
         if (tabsEl) renderTabs();
         return;
       }

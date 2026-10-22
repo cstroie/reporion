@@ -46,7 +46,17 @@
     return line.replace(/\n$/, '').replace(/^ {0,3}##(?:[ \t]+|$)/, '').replace(/(?:^|[ \t])#+[ \t]*$/, '').trim();
   }
 
-  /** The body's shared head and its exams, as Support\Exams::split() */
+  /** Whether a `##` heading's text names a conclusion, as Support\Exams::isConclusionTitle() */
+  function isConclusionTitle(title) {
+    var folded = title.replace(/^[ \t:.*_]+|[ \t:.*_]+$/g, '').toLowerCase()
+      .replace(/[ăâ]/g, 'a').replace(/î/g, 'i').replace(/[șş]/g, 's').replace(/[țţ]/g, 't');
+    return /^conclu(zi[aei]?|sions?)(?![a-z0-9_])/.test(folded);
+  }
+
+  /**
+   * The body's shared head and its exams, as Support\Exams::split(): a last `##`
+   * that is a conclusion, after at least one exam, is `shared`, not an exam
+   */
   function splitBody(body) {
     var head = '';
     var parts = [];
@@ -70,7 +80,9 @@
         parts[parts.length - 1].text += line;
       }
     });
-    return { head: head, parts: parts };
+    var shared = null;
+    if (parts.length > 1 && isConclusionTitle(parts[parts.length - 1].title)) shared = parts.pop();
+    return { head: head, parts: parts, shared: shared };
   }
 
   function withNewline(text) {
@@ -84,7 +96,8 @@
    */
   function openBody(body, count) {
     var split = splitBody(body);
-    if (count < 2 || split.parts.length !== count) return null;
+    // A shared conclusion is no card's: the body stays one textarea so it is not lost
+    if (count < 2 || split.parts.length !== count || split.shared !== null) return null;
     return { head: split.head, parts: split.parts.map(function (p) { return p.text; }) };
   }
 
@@ -139,11 +152,13 @@
   function examBefore(doc, at) {
     var front = splitFront(doc);
     var start = doc.length - front.body.length;
-    return at > start && splitBody(doc.slice(start, at)).parts.length > 0;
+    var before = splitBody(doc.slice(start, at));
+    return at > start && (before.parts.length > 0 || before.shared !== null);
   }
 
   return {
     splitBody: splitBody,
+    hasShared: function (body) { return splitBody(body).shared !== null; },
     openBody: openBody,
     joinBody: joinBody,
     spaceHeadings: spaceHeadings,

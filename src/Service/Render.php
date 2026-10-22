@@ -31,6 +31,7 @@ use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
 use Reporion\Service\Markdown\DialectExtension;
 use Reporion\Support\BodyFormat;
+use Reporion\Support\Exams;
 use Reporion\Support\InternalLink;
 use Reporion\Support\MediaRef;
 use Reporion\Support\Slug;
@@ -213,6 +214,14 @@ final class Render
         $toc = [];
         $seenSlugs = [];
         $exam = 0;
+        // A shared `## Concluzii` after the exams is no exam: it keeps its own slug
+        $sharedLine = 0;
+        if ($examLines !== null) {
+            $split = Exams::split(implode("\n", $examLines));
+            if ($split['shared'] !== null) {
+                $sharedLine = substr_count($split['head'] . implode('', array_column($split['parts'], 'text')), "\n") + 1;
+            }
+        }
 
         foreach ($document->iterator() as $node) {
             if (!$node instanceof Heading) {
@@ -220,7 +229,7 @@ final class Render
             }
 
             // Only a `##` line is an exam, as Support\Exams counts them, not a setext `---` heading
-            if ($examLines !== null && $node->getLevel() === 2 && $node->parent() instanceof Document
+            if ($examLines !== null && $node->getLevel() === 2 && $node->parent() instanceof Document && (int) $node->getStartLine() !== $sharedLine
                 && preg_match('/^ {0,3}##(?:[ \t]|$)/', $examLines[(int) $node->getStartLine() - 1] ?? '') === 1) {
                 $slug = 'exam-' . ++$exam;
                 $node->data->set('attributes/id', $slug);
