@@ -210,31 +210,31 @@ select.input:not([multiple]):not([size]) {
  * neon for warnings), light is a sunny day (sun-bleached cream, mint-white glass, a deep leaf green for the accent: a true
  * lime would not read on it). */
 .palette-lime {
-  --color-bg:        #07100a;
-  --color-surface:   #0f1c13;
-  --color-text:      #e4f3dc;
+  --color-bg:        #121413;
+  --color-surface:   #1c1f1d;
+  --color-text:      #e4e8e4;
   --color-dim:       color-mix(in srgb, var(--color-text) 64%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #b4e14a;
-  --color-divider:   color-mix(in srgb, #e4f3dc 15%, transparent);
-  --color-accent-100: #f5ffe0;
-  --color-accent-200: #e2f7b3;
-  --color-accent-300: #cdee83;
-  --color-accent-800: #3b5a12;
-  --color-accent-900: #243a0a;
-  --color-neutral-100: #f1f8ea;
-  --color-neutral-300: #bcd1ae;
-  --color-neutral-700: #3f5a3a;
-  --color-neutral-800: #1f3324;
-  --color-neutral-900: #0b140d;
-  --state-ok:    #8be28a;
-  --state-warn:  #ff9a5c;
-  --state-error: #ff7a6b;
-  --diff-add:    #8be28a;
-  --diff-del:    #ff7a6b;
-  --shadow-sm: 0 0 0 1px #1f3324;
-  --shadow-md: 0 0 0 1px #2e4a33, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #6f9a6a, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #a9c94a;
+  --color-divider:   color-mix(in srgb, #e4e8e4 15%, transparent);
+  --color-accent-100: #f3f8e2;
+  --color-accent-200: #e0ebbb;
+  --color-accent-300: #c8dc87;
+  --color-accent-800: #3f4e18;
+  --color-accent-900: #28320f;
+  --color-neutral-100: #eef1ee;
+  --color-neutral-300: #ccd1c9;
+  --color-neutral-700: #41473e;
+  --color-neutral-800: #31362f;
+  --color-neutral-900: #191c1a;
+  --state-ok:    #8cc58a;
+  --state-warn:  #d9a074;
+  --state-error: #d38477;
+  --diff-add:    #8cc58a;
+  --diff-del:    #d38477;
+  --shadow-sm: 0 0 0 1px #31362f;
+  --shadow-md: 0 0 0 1px #41473e, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #838a7c, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
 .theme-light.palette-lime {
   --color-bg:        #f1efd6;

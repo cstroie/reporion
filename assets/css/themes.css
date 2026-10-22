@@ -72,7 +72,7 @@ body.wk:not([class*="palette-"]).theme-light { --ink: 27, 63, 158; }
 /* ---- Mojito (key `lime`): a lime cocktail, a tropical night and a sunny day ------------------ */
 /* behind the page (z-index -1), never under a word: dark has the underlit-leaf glow and a neon coral flush, light has the sun
  * in a corner and the condensation of a cold glass; both have a lime wheel in cross-section (rind, pith and segments). */
-body.palette-lime:not(.theme-light) { --zest: 180, 225, 74; background: radial-gradient(ellipse 70% 45% at 50% -10%, rgba(180,225,74,.09), transparent 72%) fixed, radial-gradient(ellipse 50% 40% at 4% 104%, rgba(255,122,107,.07), transparent 70%) fixed, #07100a; }
+body.palette-lime:not(.theme-light) { --zest: 169, 201, 74; background: radial-gradient(ellipse 70% 45% at 50% -10%, rgba(169,201,74,.04), transparent 72%) fixed, radial-gradient(ellipse 50% 40% at 4% 104%, rgba(211,132,119,.03), transparent 70%) fixed, #121413; }
 body.palette-lime.theme-light { --zest: 77, 120, 14; background:
     radial-gradient(circle at 14% 58%, rgba(255,255,255,.85) 0 2px, rgba(61,98,18,.12) 2.5px 4px, transparent 4.5px),
     radial-gradient(circle at 11% 66%, rgba(255,255,255,.8) 0 1.5px, rgba(61,98,18,.10) 2px 3.2px, transparent 3.6px),
