@@ -145,8 +145,8 @@ final class NewReport
                 static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
                 $this->index->listRecent($principal, ['ns' => Templates::NS . ':' . $ns], 200)
             );
-            // Grouped by region, then by title
-            usort($templates[$code], static fn (array $a, array $b): int => [$a['region'], $a['title']] <=> [$b['region'], $b['title']]);
+            // Grouped by region, then by title, each without regard to case
+            usort($templates[$code], static fn (array $a, array $b): int => strcasecmp($a['region'], $b['region']) ?: strcasecmp($a['title'], $b['title']));
         }
         $sites = [];
         foreach ($this->sites as $code => $site) {
