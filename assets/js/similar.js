@@ -34,7 +34,7 @@
     return response.json();
   }).then(function (json) {
     var rows = json.data || [];
-    if (rows.length === 0) { note(s.none); return; }
+    if (rows.length === 0) { mount.remove(); return; } // nothing near enough: no panel
     list.textContent = '';
     rows.forEach(function (row) {
       var li = document.createElement('li');
