@@ -589,6 +589,14 @@ editor opens and never written into the new page by anything but Save: `public` 
 acknowledgement (D16), and creators without a picker (API, CLI, `/new`, copies, joins,
 duplicates) always start `private`. Existing pages never change with it.
 
+The same page's `sort` (2026-10-22; `Support\NamespaceSort`) says how the namespace lists its own
+pages: `title` (the page title, else the page name), `name` (the last path segment) or `updated`
+(newest first); unset or any other value keeps the listing's default (path in the namespace table, region
+then title in the template pickers). It orders the namespace page's table (and its sub-namespace cards by
+`title`/`name`), the New-report template picker and the editor's template picker. Text compares as
+Romanian (`ș` after `s`), numbers by value, without regard to case. Not inherited: each namespace
+names its own. Edited in the Metadata view of the description page, beside `priority`.
+
 ## 6. Audit lines:`data/audit/YYYY-MM.ndjson`
 
 ```json
