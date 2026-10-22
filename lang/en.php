@@ -124,7 +124,7 @@ return [
     'rename.name'         => 'New name',
     'rename.submit'       => 'Rename',
     'dash.title'          => 'Start',
-    'profile.signature'   => 'Signature on printed reports',
+    'profile.signature'   => 'Name and signature',
     'profile.signature_help' => 'How a report you sign names you in its signature block. Reports already signed keep the name they were signed with.',
     'profile.full_name'   => 'Full name',
     'profile.full_name_hint' => 'Dr. Ana Maria Popescu',
