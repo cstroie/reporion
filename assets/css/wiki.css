@@ -2234,6 +2234,9 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   .wk-panes-side > .wk-side { display: block; position: sticky; top: var(--wk-topbar-h); height: calc(100vh - var(--wk-topbar-h)); overflow-y: auto; border-right: 1px solid var(--color-divider); }
 }
 .wk-side .wk-list { padding-top: 0; } /* the sticky head rests where it sticks: no shift when scrolling */
+.wk-side .wk-row-t { font-size: var(--text-sm); } /* the left panel's rows a step smaller than the lists in the reading column (2026-10-22) */
+.wk-side .wk-row-m { font-size: var(--text-2xs); }
+.wk-side .wk-row-s { font-size: var(--text-xs); }
 .wk-row[hidden] { display: none; }
 .wk-row .wk-vis { margin-left: auto; opacity: .6; flex: none; }
 .wk-wl-search { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0 var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
