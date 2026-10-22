@@ -1200,6 +1200,7 @@ return [
     'details.exam_add'    => 'Exam',
     'details.exam_up'     => 'Move up',
     'details.exam_down'   => 'Move down',
+    'details.exam_template_open' => 'Open this exam’s template in a new tab',
     'details.exam_remove' => 'Remove this exam',
     'details.exam_remove_confirm' => 'Remove this exam, and its section of the text?',
     'details.exam_study'  => 'Its PACS study',

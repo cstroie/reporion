@@ -26,6 +26,17 @@
 
   var fresh = 0;
 
+  // The card's link to its template follows the select (a template is a page: base/path)
+  box.addEventListener('change', function (event) {
+    var select = event.target;
+    if (!select.matches || !select.matches('select[name$="[template]"]')) return;
+    var link = select.closest('.wk-examcard').querySelector('[data-exam-template-link]');
+    if (!link) return;
+    var root = link.getAttribute('data-root');
+    link.hidden = select.value === '';
+    link.setAttribute('href', root + '/' + select.value);
+  });
+
   function cards() {
     return Array.prototype.slice.call(box.querySelectorAll('.wk-examcard'));
   }

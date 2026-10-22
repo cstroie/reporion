@@ -59,7 +59,7 @@ $checklistRow = static function (string $id, array $row) use ($e): string {
 };
 
 /** One field's control, its label and its `fm_shown[]` marker */
-$field = static function (array $f) use ($e, $name, $checklistRow): void {
+$field = static function (array $f) use ($e, $name, $checklistRow, $b): void {
     $inputName = $name($f['key']);
     $shownMarker = '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '">';
     // The star is for the eye; a screen reader hears the words
@@ -106,7 +106,14 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
         return;
     }
 
-    echo '<label><span class="wk-field-label">' . $e($f['label']) . $req . '</span>';
+    // An exam's template, in a new tab beside its title (inside the label span: one row); the select's change keeps it in step (editor-meta-exams.js)
+    $openTemplate = '';
+    if (str_ends_with((string) $f['key'], '.template')) {
+        $tpl = (string) $f['value'];
+        $openTemplate = ' <a class="wk-exam-edit" data-exam-template-link data-root="' . $b . '" href="' . $b . '/' . $e($tpl) . '" target="_blank" rel="noopener"' . ($tpl === '' ? ' hidden' : '')
+            . ' title="' . $e(t('details.exam_template_open')) . '" aria-label="' . $e(t('details.exam_template_open')) . '"><i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>';
+    }
+    echo '<label><span class="wk-field-label">' . $e($f['label']) . $req . $openTemplate . '</span>';
     switch ($f['widget']) {
         case 'textarea':
             echo '<textarea class="input" name="' . $e($inputName) . '" rows="3">' . $e((string) $f['value']) . '</textarea>';
