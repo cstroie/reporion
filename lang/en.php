@@ -359,6 +359,7 @@ return [
     'admin.settings.err.site.icon' => 'Upload the icon with the file field.',
     'ai.err.busy'         => 'The assistant is still answering your previous request.',
     'ai.err.identifier_leak' => 'Not sent: the request still held a patient identifier. Check the prompt pages under ai:profiles.',
+    'ai.err.no_template'  => 'Not sent: this exam has no template, or it cannot be read. Pick a template in the exam’s details and try again.',
     'ai.err.not_configured' => 'The assistant is not configured.',
     'ai.err.egress_denied' => 'The assistant\'s server is outside this network, and sending report text there is not accepted (Admin → AI).',
     'ai.err.bad_endpoint' => 'The assistant\'s server address is not valid (Admin → AI).',

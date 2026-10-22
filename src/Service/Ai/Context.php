@@ -93,7 +93,7 @@ final class Context
      * @param ?int   $exam      the exam in front on a multi-exam report (1-based), for {exam}
      * @param ?string $with     narrows {history} to this one study's pid
      *
-     * @throws AiException identifier_leak
+     * @throws AiException identifier_leak, or no_template: the prompt uses {template} and the exam has none to read
      */
     public function build(Action $action, PageRecord $page, string $text, ?User $principal, string $textLabel = 'text', ?int $exam = null, string $customPrompt = '', ?string $with = null): Prompt
     {
@@ -129,7 +129,13 @@ final class Context
         $wants = static fn (string $name): bool => str_contains($action->prompt, '{' . $name . '}') || str_contains($action->system, '{' . $name . '}');
 
         $vars['template'] = '( fără șablon )';
-        if ($wants('template') && ($template = $this->readable(MetaText::text($examValue('template')), $principal)) !== null) {
+        if ($wants('template')) {
+            // A prompt that asks for the template is not sent without one: the exam names none, or the
+            // page is gone or not the caller's to read (nothing reaches a model)
+            $template = $this->readable(MetaText::text($examValue('template')), $principal);
+            if ($template === null) {
+                throw new AiException('no_template');
+            }
             $redactor->learn($template->frontmatter, $template->path);
             $vars['template'] = $redactor->redact($template->body, $template->frontmatter);
             $contextSet[] = 'template';
@@ -291,7 +297,7 @@ final class Context
      *
      * @param array<string, int> $counts tag → pages, the tags to send
      *
-     * @throws AiException identifier_leak
+     * @throws AiException identifier_leak, or no_template: the prompt uses {template} and the exam has none to read
      */
     public function vocabulary(Action $action, array $counts): Prompt
     {
@@ -344,7 +350,7 @@ final class Context
      * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages texts from outside the wiki (the `ask.sources` hook: HippoBridge), numbered after $sources;
      *                                                                                          de-identified by the name and CNP each carries
      *
-     * @throws AiException identifier_leak
+     * @throws AiException identifier_leak, or no_template: the prompt uses {template} and the exam has none to read
      */
     public function archive(Action $action, string $question, array $sources, array $passages = []): Prompt
     {

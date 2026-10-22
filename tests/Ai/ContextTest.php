@@ -162,10 +162,16 @@ final class ContextTest extends StorageTestCase
         self::assertStringContainsString('Genunchi: meniscuri normale.', $first->user);
         self::assertStringContainsString('|msk|MR|2026-09-27', $first->user, 'the modality and the day are the report\'s');
 
-        $second = $context->build($action, $page, 'B.', $this->owner(), 'exam 2', 2);
-        self::assertStringNotContainsString('Genunchi', $second->user, 'exam 2 names no template: it gets exam 1\'s never');
-        self::assertStringNotContainsString('Cerebral: parenchim', $second->user);
-        self::assertStringContainsString('( fără șablon )|neuro|MR|', $second->user);
+        // Exam 2 names no template: it never gets exam 1's, and a prompt that asks for one is refused
+        try {
+            $context->build($action, $page, 'B.', $this->owner(), 'exam 2', 2);
+            self::fail('exam 2 has no template: the prompt must be refused');
+        } catch (AiException $e) {
+            self::assertSame('no_template', $e->reason);
+        }
+        $plain = new Action('draft', 'Draft', '', '', 'show', '{region}|{modality}', '');
+        $second = $context->build($plain, $page, 'B.', $this->owner(), 'exam 2', 2);
+        self::assertStringContainsString('neuro|MR', $second->user);
         self::assertNotContains('template', $second->contextSet);
 
         $third = $context->build($action, $page, 'C.', $this->owner(), 'exam 3', 3);
@@ -255,11 +261,41 @@ final class ContextTest extends StorageTestCase
     public function testWhatTheCallerCannotReadStaysOut(): void
     {
         $viewerElsewhere = new User('v', 'x', false, [new Grant('reports:ct', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
-        $action = new Action('compare', 'Compare', '', '', 'show', '{previous}|{template}', '');
+        $action = new Action('compare', 'Compare', '', '', 'show', '{previous}', '');
 
         $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $viewerElsewhere);
 
-        self::assertSame("patient: 46y, female\nexam: IRM genunchi stâng\n\n( fără examinare anterioară )|( fără șablon )", $prompt->user);
+        self::assertSame("patient: 46y, female\nexam: IRM genunchi stâng\n\n( fără examinare anterioară )", $prompt->user);
+
+        // A prompt that wants the template it cannot read is refused, not sent without it
+        $this->expectException(AiException::class);
+        $this->expectExceptionMessage('no_template');
+        (new Context($this->storage, $this->index))->build(new Action('create', 'Create', '', '', 'insert', '{template}', ''), $this->storage->read(self::PATH), 'x', $viewerElsewhere);
+    }
+
+    public function testAPromptThatUsesTheTemplateIsRefusedWhenTheExamHasNone(): void
+    {
+        $current = 'reports:mri:mioveni:260927-popescu-ana-maria-5';
+        $this->storage->create($current, ['title' => 'POPESCU Ana Maria', 'visibility' => 'private', 'modality' => ['MR'], 'study_date' => '2026-09-27',
+            'patient' => ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'],
+            'exams' => [['title' => 'IRM genunchi', 'template' => 'templates:mri:genunchi'], ['title' => 'IRM cerebral'], ['title' => 'IRM x', 'template' => 'templates:mri:missing']],
+        ], "## IRM genunchi\n\nA.\n\n## IRM cerebral\n\nB.\n\n## IRM x\n\nC.\n", 'owner');
+        $page = $this->storage->read($current);
+        $context = new Context($this->storage, $this->index);
+        $create = new Action('create', 'Create', '', '', 'insert', '{template}|{text}', '');
+
+        self::assertStringContainsString('Genunchi: meniscuri normale.', $context->build($create, $page, 'A.', $this->owner(), 'exam 1', 1)->user);
+        foreach ([2 => 'none named', 3 => 'a template page that does not exist'] as $exam => $why) {
+            try {
+                $context->build($create, $page, 'B.', $this->owner(), 'exam ' . $exam, $exam);
+                self::fail('exam ' . $exam . ' (' . $why . ') must be refused');
+            } catch (AiException $e) {
+                self::assertSame('no_template', $e->reason, $why);
+            }
+        }
+        // An action that does not ask for the template is untouched
+        $plain = new Action('fix', 'Fix', '', '', 'replace', '{text}', '');
+        self::assertStringEndsWith('B.', $context->build($plain, $page, 'B.', $this->owner(), 'exam 2', 2)->user);
     }
 
     public function testThePatientHeaderIsAgeSexIndicationAndTheExamInFrontNeverTheName(): void
