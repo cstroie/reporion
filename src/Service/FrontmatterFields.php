@@ -236,7 +236,7 @@ final class FrontmatterFields
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
-            $key === 'template' => [['value' => '', 'label' => t('details.no_template')], ...array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal))],
+            $key === 'template' => [['value' => '', 'label' => t('details.no_template')], ...array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title'], 'region' => $tpl['region']], $this->templatesFor($path, $principal))],
             // D40: Markdown is the key left out
             $key === 'format' => [['value' => '', 'label' => t('details.format_markdown')], ['value' => BodyFormat::TEXT, 'label' => t('details.format_text')]],
             $key === 'sort' => [['value' => '', 'label' => t('details.sort_unset')], ['value' => 'title', 'label' => t('details.sort_title')], ['value' => 'name', 'label' => t('details.sort_name')], ['value' => 'updated', 'label' => t('details.sort_updated')]],

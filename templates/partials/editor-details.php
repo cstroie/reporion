@@ -122,7 +122,8 @@ $field = static function (array $f) use ($e, $name, $checklistRow, $b): void {
             // The blank choice, unless the field names its own (format: Markdown)
             echo '<select class="input" name="' . $e($inputName) . '">' . (\in_array('', array_column($f['options'], 'value'), true) ? '' : '<option value="">n/a</option>');
             foreach ($f['options'] as $opt) {
-                echo '<option value="' . $e($opt['value']) . '"' . ($opt['value'] === $f['value'] ? ' selected' : '') . '>' . $e($opt['label']) . '</option>';
+                // A template's regions ride on its option: picking it ticks them in the exam's card (editor-meta-exams.js)
+                echo '<option value="' . $e($opt['value']) . '"' . (($opt['region'] ?? '') !== '' ? ' data-region="' . $e($opt['region']) . '"' : '') . ($opt['value'] === $f['value'] ? ' selected' : '') . '>' . $e($opt['label']) . '</option>';
             }
             echo '</select>';
             break;
