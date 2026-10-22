@@ -67,7 +67,8 @@ symlink; a `.zip` extracted on some systems loses it (the installer then re-crea
   `iconv`, `gd` (images in PDFs), `ffi`, and Argon2id support in `password_hash()` (Debian/Ubuntu
   PHP packages have it). `composer install` refuses a host that lacks one of these, and `doctor`
   (step 5) names what is missing. `zip` is not needed: ODT export falls back to the PclZip bundled
-  with PHPWord. The **CLI and PHP-FPM read different `php.ini` files** (`/etc/php/8.1/cli` vs
+  with PHPWord (PHPWord 1.4 lists `ext-zip` as required, so `composer.json` declares it present under
+  `config.platform`: that is why `composer install` does not ask for it). The **CLI and PHP-FPM read different `php.ini` files** (`/etc/php/8.1/cli` vs
   `/etc/php/8.1/fpm`): check the extensions and `ffi.enable` for FPM too, not only for the CLI.
 - PHP-FPM behind lighttpd (D23): any server that can serve `public/` and route everything
   else to `public/index.php` will do, but the docs cover lighttpd.
