@@ -22,3 +22,21 @@
 /conf/.install-state.json
 /dist/
 *.key
+# Keys and credentials that must never be committed by a stray `git add -A`
+*.pem
+*.p12
+*.pfx
+*.p8
+*.kdbx
+*.gpg
+id_rsa*
+id_ed25519*
+id_ecdsa*
+.env
+.env.*
+!.env.example
+token*.txt
+*.token
+.netrc
+.npmrc
+.pypirc
