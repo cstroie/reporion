@@ -237,28 +237,28 @@ select.input:not([multiple]):not([size]) {
   --shadow-lg: 0 0 0 1px #838a7c, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
 .theme-light.palette-lime {
-  --color-bg:        #f1efd6;
-  --color-surface:   #fcfff2;
-  --color-text:      #14240d;
-  --color-dim:       #4d6240;
+  --color-bg:        #f3f5f0;
+  --color-surface:   #ffffff;
+  --color-text:      #1b1e1a;
+  --color-dim:       #555b4c;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #3d6212;
-  --color-accent-300: #2f4f0c;
-  --color-accent-800: #243d08;
-  --color-accent-100: #eaf5cf;
-  --color-accent-200: #d3e9a0;
-  --color-neutral-100: #eef4dc;
-  --color-divider:   color-mix(in srgb, #14240d 18%, transparent);
-  --color-neutral-200: #dde5c0;
-  --color-neutral-700: #41563a;
+  --color-accent:    #4d6112;
+  --color-accent-300: #3d4e0e;
+  --color-accent-800: #2f3c0a;
+  --color-accent-100: #eef3dc;
+  --color-accent-200: #dce6b8;
+  --color-neutral-100: #eef1ea;
+  --color-divider:   color-mix(in srgb, #1b1e1a 18%, transparent);
+  --color-neutral-200: #e5e8de;
+  --color-neutral-700: #505549;
   --state-ok:    #2e7d32;
   --state-warn:  #9a5200;
   --state-error: #b3261e;
   --diff-add:    #2e7d32;
   --diff-del:    #b3261e;
-  --shadow-sm: 0 0 0 1px #d8e0b8;
-  --shadow-md: 0 0 0 1px #d8e0b8, 0 7.5px 23px rgba(20,36,13,.10);
-  --shadow-lg: 0 0 0 1px #bccb96, 0 20.5px 51.5px rgba(20,36,13,.16);
+  --shadow-sm: 0 0 0 1px #e0e4d9;
+  --shadow-md: 0 0 0 1px #e0e4d9, 0 7.5px 23px rgba(27,30,26,.10);
+  --shadow-lg: 0 0 0 1px #ccd1c2, 0 20.5px 51.5px rgba(27,30,26,.16);
 }
 /* Amber, the Safelight (2026-10-21): graphite and one amber, the way a darkroom has one lamp (the only light film can be
  * handled in); light is paper with a trace of the same amber. Kept to a single hue so it never reads as the Reading room's coffee. */
