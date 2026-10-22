@@ -616,6 +616,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-exam-d { font-size: var(--text-sm); }
 .wk-exam-edit { color: var(--color-dim); font-size: var(--text-sm); }
 .wk-exam-edit:hover { color: var(--color-accent); }
+.wk-chars-toggle { cursor: pointer; }
+.wk-chars-toggle:hover { color: var(--color-accent); }
 
 /* Prose headings (2026-10-01): one family, built on the section eyebrow that
    reports already used for ### (Indicație, Descriere, Concluzii): accent,

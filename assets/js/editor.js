@@ -469,9 +469,8 @@
     var picker = null;
 
     function showChars() {
-      // A text page (D40) says so: the editor template's format switch sets data-format
-      var label = charsEl && charsEl.getAttribute('data-format') === 'text' && s.charsText ? s.charsText : s.chars;
-      if (charsEl && label) charsEl.textContent = label.replace('%d', String(docArea.value.length));
+      // The format and the unit (chars or words) are the editor template's: it renders and switches them
+      if (charsEl && window.reporionRenderCount) window.reporionRenderCount();
     }
 
     // One edit to a pane (the one in front unless said), kept on its undo stack

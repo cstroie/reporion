@@ -119,9 +119,6 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 <span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
 <span class="wk-tflex"></span>
-<?php if ($references !== []): /* Phase 25: opens the rail's Reference section */ ?>
-<a class="btn btn-secondary btn-sm" href="#editor-reference" data-rail-open="reference" title="<?= $e(t('refs.open')) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= $e(t('refs.title')) ?></span></a>
-<?php endif; ?>
 <?php if (($carried ?? null) === null): /* Raw edit is a GET: a guided report not written yet would lose its carried frontmatter */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>" title="<?= $e($rawLink['label']) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e($rawLink['label']) ?></span></a>
 <?php endif; ?>
@@ -197,7 +194,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('snippets', 'lightning', 'editor.tb.snippets', $snippets !== []) ?>
 <?= $tb('slash', 'command', 'editor.tb.slash') ?>
 <span class="wk-tflex"></span>
-<span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($raw ? (string) $document : (string) $body)]), ENT_QUOTES) ?></span>
+<span class="wk-mono wk-dim" id="editor-chars"><span class="wk-chars-toggle" role="button" tabindex="0" data-count-format title="<?= $e(t('editor.tb.chars_toggle')) ?>"><?= $e(t('editor.tb.fmt_markdown')) ?></span> · <span class="wk-chars-toggle" role="button" tabindex="0" data-count-unit title="<?= $e(t('editor.tb.unit_toggle')) ?>"><?= $e(t('editor.tb.unit_chars', [mb_strlen($raw ? (string) $document : (string) $body)])) ?></span></span>
 <?= $tb('copy', 'copy', 'editor.tb.copy') ?>
 <button type="button" class="wk-tbtn" title="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" id="editor-preview-toggle-tb"><i class="ph ph-columns"></i></button>
 <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
@@ -464,8 +461,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'autosaved' => t('editor.autosaved'),
         'mediaUploading' => t('editor.media_uploading'),
         'mediaFailed' => t('editor.media_failed'),
-        'chars' => t('editor.tb.chars'),
-        'charsText' => t('editor.tb.chars_text'),
+        'fmtMarkdown' => t('editor.tb.fmt_markdown'),
+        'fmtText' => t('editor.tb.fmt_text'),
+        'unitChars' => t('editor.tb.unit_chars'),
+        'unitWords' => t('editor.tb.unit_words'),
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
@@ -619,6 +618,22 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     });
     return true;
   };
+  // The count beside the format: characters or words, a click on it switches (kept in the browser)
+  var countBox = document.getElementById('editor-chars');
+  try { if (countBox && localStorage.getItem('reporion.editor.count') === 'words') countBox.setAttribute('data-unit', 'words'); } catch (err) { /* not kept */ }
+  function renderCount() {
+    if (!countBox) return;
+    var cfg = JSON.parse((document.getElementById('editor-config') || {}).textContent || '{}').strings || {};
+    var area = document.querySelector('[name="document"], [name="body"]');
+    var v = area ? area.value : '';
+    var words = countBox.getAttribute('data-unit') === 'words';
+    var n = words ? (v.trim() === '' ? 0 : v.trim().split(/\s+/).length) : v.length;
+    var fmt = countBox.querySelector('[data-count-format]');
+    var unit = countBox.querySelector('[data-count-unit]');
+    if (fmt && cfg.fmtMarkdown) fmt.textContent = countBox.getAttribute('data-format') === 'text' ? cfg.fmtText : cfg.fmtMarkdown;
+    if (unit && cfg.unitChars) unit.textContent = (words ? cfg.unitWords : cfg.unitChars).replace('%d', String(n));
+  }
+  window.reporionRenderCount = renderCount;
   // A text page (D40, format: text): the Metadata view's Format, or raw mode's frontmatter
   var formatPick = document.querySelector('select[name="fm[format]"]');
   function isText() {
@@ -640,16 +655,42 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     // Their separators too, and the count says what the text is
     Array.prototype.forEach.call(document.querySelectorAll('#editor-toolbar .wk-tsep'), function (sep) { sep.hidden = text; });
     var chars = document.getElementById('editor-chars');
-    if (chars) {
-      chars.setAttribute('data-format', text ? 'text' : 'markdown');
-      var cfg = JSON.parse((document.getElementById('editor-config') || {}).textContent || '{}').strings || {};
-      var label = text ? cfg.charsText : cfg.chars;
-      var area = document.querySelector('[name="document"], [name="body"]');
-      if (label && area) chars.textContent = label.replace('%d', String(area.value.length));
-    }
+    if (chars) chars.setAttribute('data-format', text ? 'text' : 'markdown');
+    renderCount();
     if (preview && !preview.hidden) show();
   }
   if (formatPick) formatPick.addEventListener('change', syncFormat);
+  // The count says what the text is, and a click on it switches: the Metadata view's Format, or raw mode's frontmatter line
+  var formatTag = countBox ? countBox.querySelector('[data-count-format]') : null;
+  var unitTag = countBox ? countBox.querySelector('[data-count-unit]') : null;
+  function toggleUnit() {
+    var words = countBox.getAttribute('data-unit') !== 'words';
+    countBox.setAttribute('data-unit', words ? 'words' : 'chars');
+    try { localStorage.setItem('reporion.editor.count', words ? 'words' : 'chars'); } catch (err) { /* not kept */ }
+    renderCount();
+  }
+  function toggleFormat() {
+    if (formatPick) {
+      formatPick.value = isText() ? '' : 'text';
+      formatPick.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    var area = document.querySelector('[name="document"]');
+    var fm = area ? /^---\n([\s\S]*?)\n---\n/.exec(area.value) : null;
+    if (!fm) return;
+    var lines = fm[1].split('\n').filter(function (l) { return !/^format:/.test(l); });
+    if (!isText()) lines.push('format: text');
+    area.value = '---\n' + lines.join('\n') + '\n---\n' + area.value.slice(fm[0].length);
+    area.dispatchEvent(new Event('input', { bubbles: true }));
+    syncFormat();
+  }
+  [[formatTag, toggleFormat], [unitTag, toggleUnit]].forEach(function (pair) {
+    if (!pair[0]) return;
+    pair[0].addEventListener('click', pair[1]);
+    pair[0].addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); pair[1](); }
+    });
+  });
   if (!toggleTb || !preview) { syncFormat(); return; }
   var seq = 0; // a newer render (or hide) makes an older answer stale
   // What the preview shows is what the text shows: with the exam tabs, the one in
