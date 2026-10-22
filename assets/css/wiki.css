@@ -1840,7 +1840,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-swatch-lime { background: linear-gradient(135deg, #b4e14a 50%, #0f1c13 50%); box-shadow: 0 0 0 1px #3b5a12; }
 .wk-swatch-amber { background: linear-gradient(135deg, #e3a33c 50%, #1e1d1b 50%); box-shadow: 0 0 0 1px #45423b; }
 .wk-swatch-afterglow { background: linear-gradient(135deg, #5fc2c0 50%, #182126 50%); box-shadow: 0 0 0 1px #3b4c54; }
-.wk-swatch-reading-room { background: linear-gradient(135deg, #b89a6a 50%, #131315 50%); box-shadow: 0 0 0 1px #4d4d52; }
+.wk-swatch-reading-room { background: linear-gradient(135deg, #d69d5c 50%, #1e1813 50%); box-shadow: 0 0 0 1px #443a2f; }
 .wk-swatch-crt { background: linear-gradient(135deg, #5cf08a 50%, #020a04 50%); box-shadow: 0 0 0 1px #1c8a46; }
 .wk-swatch-film { background: linear-gradient(135deg, #9cb8d6 50%, #0f1a22 50%); box-shadow: 0 0 0 1px #44596d; }
 .wk-swatch-blueprint { background: linear-gradient(135deg, #7fd0ff 50%, #0a2346 50%); box-shadow: 0 0 0 1px #3d6ba6; }

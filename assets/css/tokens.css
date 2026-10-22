@@ -430,57 +430,57 @@ select.input:not([multiple]):not([size]) {
  * headings; the dark scheme is the black coffee, the light scheme the same cup with milk: a latte, foam-white paper. Phosphor ("crt"): a green monochrome terminal; its light scheme is a
  * pale LCD. Film: cool X-ray film on a light box. Blueprint: cyan line-work on drafting blue. */
 .palette-reading-room {
-  --color-bg:        #0f0a07;
-  --color-surface:   #17100b;
-  --color-text:      #e8dcc8;
+  --color-bg:        #14100e;
+  --color-surface:   #1e1813;
+  --color-text:      #eae2d4;
   --color-dim:       color-mix(in srgb, var(--color-text) 66%, var(--color-bg));
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #d49a5a;
-  --color-divider:   color-mix(in srgb, #e8dcc8 15%, transparent);
-  --color-accent-100: #fbf1e2;
-  --color-accent-200: #f0dcbc;
-  --color-accent-300: #e3bd88;
-  --color-accent-800: #5a3818;
-  --color-accent-900: #36210d;
-  --color-neutral-100: #f6efe4;
-  --color-neutral-300: #c9b9a0;
-  --color-neutral-700: #5b4a3a;
-  --color-neutral-800: #382c22;
-  --color-neutral-900: #19120d;
-  --state-ok:    #8fb078;
-  --state-warn:  #e0a443;
-  --state-error: #d9806a;
-  --diff-add:    #8fb078;
-  --diff-del:    #d9806a;
+  --color-accent:    #d69d5c;
+  --color-divider:   color-mix(in srgb, #eae2d4 15%, transparent);
+  --color-accent-100: #fbf2e4;
+  --color-accent-200: #f2dec1;
+  --color-accent-300: #e6c292;
+  --color-accent-800: #5b3e1f;
+  --color-accent-900: #382614;
+  --color-neutral-100: #f5efe6;
+  --color-neutral-300: #cfc4b1;
+  --color-neutral-700: #5d5042;
+  --color-neutral-800: #3a3028;
+  --color-neutral-900: #1e1814;
+  --state-ok:    #8faf7c;
+  --state-warn:  #dca74e;
+  --state-error: #d78570;
+  --diff-add:    #8faf7c;
+  --diff-del:    #d78570;
   --font-heading: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
   --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
-  --shadow-sm: 0 0 0 1px #382c22;
-  --shadow-md: 0 0 0 1px #4a3b2e, 0 7.5px 23px rgba(8,4,0,.6);
-  --shadow-lg: 0 0 0 1px #806a54, 0 20.5px 51.5px rgba(8,4,0,.7);
+  --shadow-sm: 0 0 0 1px #3a3028;
+  --shadow-md: 0 0 0 1px #4c4034, 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #867666, 0 20.5px 51.5px rgba(0,0,0,.7);
 }
 .theme-light.palette-reading-room {
-  --color-bg:        #dcc7a8;
-  --color-surface:   #f6ebd9;
-  --color-text:      #2c1b0e;
-  --color-dim:       #5e4630;
+  --color-bg:        #eaddca;
+  --color-surface:   #faf4e9;
+  --color-text:      #2b2018;
+  --color-dim:       #5e4e3d;
   --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
-  --color-accent:    #7a4519;
-  --color-accent-300: #5c3310;
-  --color-accent-800: #47260b;
-  --color-accent-100: #f6e8d2;
-  --color-accent-200: #e6cfa8;
-  --color-neutral-100: #f1e5d1;
-  --color-divider:   color-mix(in srgb, #2c1b0e 19%, transparent);
-  --color-neutral-200: #d3bd9b;
-  --color-neutral-700: #4a3826;
+  --color-accent:    #82501e;
+  --color-accent-300: #643c14;
+  --color-accent-800: #4a2c10;
+  --color-accent-100: #f6ead6;
+  --color-accent-200: #e9d6b3;
+  --color-neutral-100: #f2e9d9;
+  --color-divider:   color-mix(in srgb, #2b2018 19%, transparent);
+  --color-neutral-200: #e0d0b8;
+  --color-neutral-700: #5e4e3d;
   --state-ok:    #3a6a3a;
   --state-warn:  #8a5a00;
   --state-error: #a8372b;
   --diff-add:    #3a6a3a;
   --diff-del:    #a8372b;
-  --shadow-sm: 0 0 0 1px #cdb68f;
-  --shadow-md: 0 0 0 1px #cdb68f, 0 7.5px 23px rgba(44,27,14,.12);
-  --shadow-lg: 0 0 0 1px #b39a70, 0 20.5px 51.5px rgba(44,27,14,.18);
+  --shadow-sm: 0 0 0 1px #dac9ad;
+  --shadow-md: 0 0 0 1px #dac9ad, 0 7.5px 23px rgba(42,38,33,.12);
+  --shadow-lg: 0 0 0 1px #c6b494, 0 20.5px 51.5px rgba(42,38,33,.18);
 }
 .palette-crt {
   --color-bg:        #020a04;
@@ -671,8 +671,8 @@ html:has(> body.palette-amber:not(.theme-light)) { --sb-thumb: #45423b; --sb-tra
 html:has(> body.palette-amber.theme-light) { --sb-thumb: #cfcbc0; --sb-track: #f4f3f0; --sb-arrow: #8a5a10; }
 html:has(> body.palette-afterglow:not(.theme-light)) { --sb-thumb: #3b4c54; --sb-track: #0f1519; --sb-arrow: #5fc2c0; }
 html:has(> body.palette-afterglow.theme-light) { --sb-thumb: #b3c8cf; --sb-track: #eef3f5; --sb-arrow: #1c6a68; }
-html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #5a3818; --sb-track: #0f0a07; --sb-arrow: #d49a5a; }
-html:has(> body.palette-reading-room.theme-light) { --sb-thumb: #bda780; --sb-track: #dcc7a8; --sb-arrow: #7d4a1c; }
+html:has(> body.palette-reading-room:not(.theme-light)) { --sb-thumb: #54402a; --sb-track: #141010; --sb-arrow: #d69d5c; }
+html:has(> body.palette-reading-room.theme-light) { --sb-thumb: #cbbb9c; --sb-track: #e9dfca; --sb-arrow: #825021; }
 html:has(> body.palette-crt:not(.theme-light)) { --sb-thumb: #1c8a46; --sb-track: #020a04; --sb-arrow: #5cf08a; }
 html:has(> body.palette-crt.theme-light) { --sb-thumb: #8e9a66; --sb-track: #b7bf93; --sb-arrow: #222c1d; }
 html:has(> body.palette-film:not(.theme-light)) { --sb-thumb: #3a5166; --sb-track: #070b0e; --sb-arrow: #9cb8d6; }

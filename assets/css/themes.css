@@ -33,14 +33,15 @@ body.palette-reading-room::before {
     /* paper grain */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
-body.palette-reading-room:not(.theme-light) { --stain: 196, 138, 78; --lamp: 255, 214, 160; background: #0f0a07; }
+body.palette-reading-room:not(.theme-light) { --stain: 207, 149, 87; --lamp: 255, 220, 175; background: #14100e; }
 body.palette-reading-room.theme-light { --stain: 96, 52, 16; --lamp: 255, 250, 238; }
 /* with milk: the light scheme's desk is a latte, crema at the edges and foam in the middle, the stains darker */
-body.palette-reading-room.theme-light { background: radial-gradient(ellipse 75% 60% at 38% 30%, #ead9bd, transparent 80%) fixed, #d4bb98; }
-body.palette-reading-room.theme-light::before { opacity: 1; }
+body.palette-reading-room.theme-light { background: radial-gradient(ellipse 75% 60% at 38% 30%, #f2e8d6, transparent 80%) fixed, #e2d3bc; }
+body.palette-reading-room.theme-light::before { opacity: .85; }
+body.palette-reading-room:not(.theme-light)::before { opacity: .85; }
 /* the reading column is a sheet of paper laid on the desk */
-.palette-reading-room:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: rgba(23, 16, 11, .94); box-shadow: 0 0 0 1px #382c22, 0 10px 30px rgba(8,4,0,.5); }
-.palette-reading-room.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #f6ebd9; box-shadow: 0 0 0 1px #cdb68f, 0 10px 28px rgba(42,28,17,.12); }
+.palette-reading-room:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox { background: rgba(30, 24, 19, .94); box-shadow: 0 0 0 1px #3a3028, 0 10px 30px rgba(4,2,0,.5); }
+.palette-reading-room.theme-light .wk-panes[data-pad="read"] .wk-panebox { background: #faf4e9; box-shadow: 0 0 0 1px #dac9ad, 0 10px 28px rgba(42,38,33,.12); }
 
 /* ---- Teal: the room lit by an old television --------------------------------------------- */
 body.palette-afterglow:not(.theme-light) { background: radial-gradient(ellipse 70% 50% at 50% -8%, rgba(95,194,192,.05), transparent 72%) fixed, #0f1519; }
