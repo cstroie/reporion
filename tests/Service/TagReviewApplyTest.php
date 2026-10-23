@@ -64,9 +64,28 @@ final class TagReviewApplyTest extends StorageTestCase
         return $report->finish();
     }
 
+    /**
+     * @param list<array<string, mixed>> $proposals
+     * @param list<int>                  $pick
+     * @param array<int, string>         $typed  the target typed in a row, by index
+     * @param list<int>                  $reject
+     *
+     * @return array{applied: int, rejected: int, changed: int, skippedSigned: int, conflicts: int}
+     */
+    private function applyTicked(array $proposals, array $pick, array $typed = [], array $reject = []): array
+    {
+        $all = TagReviewApply::proposals($this->report($proposals));
+
+        return $this->apply->apply(
+            array_map(static fn (int $i): array => ['proposal' => $all[$i], 'to' => $typed[$i] ?? null], $pick),
+            array_map(static fn (int $i): array => $all[$i], $reject),
+            'owner',
+        );
+    }
+
     public function testADropTakesTheTagOff(): void
     {
-        $done = $this->apply->apply($this->report([['op' => 'drop', 'from' => ['noise']]]), [0], [], [], 'owner');
+        $done = $this->applyTicked([['op' => 'drop', 'from' => ['noise']]], [0]);
 
         self::assertSame(1, $done['applied']);
         self::assertSame(1, $done['changed']);
@@ -75,7 +94,7 @@ final class TagReviewApplyTest extends StorageTestCase
 
     public function testAMergeUsesTheTargetTheOwnerTypedInTheRow(): void
     {
-        $done = $this->apply->apply($this->report([['op' => 'merge', 'from' => ['alpha'], 'to' => 'beta']]), [0], [0 => 'gamma'], [], 'owner');
+        $done = $this->applyTicked([['op' => 'merge', 'from' => ['alpha'], 'to' => 'beta']], [0], [0 => 'gamma']);
 
         self::assertSame(1, $done['applied']);
         self::assertContains('gamma', $this->tags('uno'));
@@ -85,7 +104,7 @@ final class TagReviewApplyTest extends StorageTestCase
     public function testAMergeTurnedRoundAlsoMergesTheProposedTargetIn(): void
     {
         // proposal: alpha → beta; the owner turned it into beta → alpha's side: the target is one of its own tags
-        $this->apply->apply($this->report([['op' => 'merge', 'from' => ['alpha', 'beta'], 'to' => 'beta']]), [0], [0 => 'alpha'], [], 'owner');
+        $this->applyTicked([['op' => 'merge', 'from' => ['alpha', 'beta'], 'to' => 'beta']], [0], [0 => 'alpha']);
 
         self::assertSame(['alpha', 'noise'], $this->tags('uno'));
         self::assertSame(['alpha'], $this->tags('doi'));
@@ -93,7 +112,7 @@ final class TagReviewApplyTest extends StorageTestCase
 
     public function testAProposalWhoseTagsAreGoneIsSkipped(): void
     {
-        $done = $this->apply->apply($this->report([['op' => 'drop', 'from' => ['vanished']]]), [0], [], [], 'owner');
+        $done = $this->applyTicked([['op' => 'drop', 'from' => ['vanished']]], [0]);
 
         self::assertSame(0, $done['applied']);
         self::assertSame(0, $done['changed']);
@@ -101,9 +120,31 @@ final class TagReviewApplyTest extends StorageTestCase
 
     public function testARejectedProposalIsCounted(): void
     {
-        $done = $this->apply->apply($this->report([['op' => 'drop', 'from' => ['noise']]]), [], [], [0], 'owner');
+        $done = $this->applyTicked([['op' => 'drop', 'from' => ['noise']]], [], [], [0]);
 
         self::assertSame(1, $done['rejected']);
         self::assertSame(['alpha', 'beta', 'noise'], $this->tags('uno'));
+    }
+
+    public function testProposalsReadsOnlyWellFormedProposalItemsByTheirIndex(): void
+    {
+        $report = new MaintenanceReport('tags:review', 'apply', 'owner', [], '2026-10-23T10:00:00Z');
+        $report->item(null, null, 'note', '', ['op' => 'drop', 'from' => ['x']]);
+        $report->item(null, null, 'proposal', '', ['op' => 'bogus', 'from' => ['x']]);
+        $report->item(null, null, 'proposal', '', ['op' => 'drop', 'from' => ['noise'], 'reason' => 'r']);
+
+        self::assertSame([2 => ['op' => 'drop', 'from' => ['noise'], 'to' => '', 'reason' => 'r', 'source' => '']], TagReviewApply::proposals($report->finish()));
+    }
+
+    public function testTheWriteLockIsReleasedWhenTheWorkThrows(): void
+    {
+        $audit = new AuditLog($this->dataRoot . '/audit');
+        $runner = new MaintenanceRunner([], $this->dataRoot, $audit);
+        try {
+            $runner->withWriteLock(static fn () => throw new \RuntimeException('boom'));
+        } catch (\RuntimeException) {
+        }
+
+        self::assertFalse($runner->isLocked());
     }
 }

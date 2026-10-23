@@ -140,8 +140,18 @@ final class AdminTagsController
         parse_str($request->body, $fields);
         $indexes = static fn (string $key): array => array_values(array_unique(array_map('intval', array_filter((array) ($fields[$key] ?? []), 'is_numeric'))));
 
+        $proposals = TagReviewApply::proposals($report);
+        $targets = (array) ($fields['to'] ?? []);
+        $picks = [];
+        foreach ($indexes('pick') as $i) {
+            if (isset($proposals[$i])) {
+                $picks[] = ['proposal' => $proposals[$i], 'to' => \is_string($targets[$i] ?? null) ? $targets[$i] : null];
+            }
+        }
+        $rejects = array_map(static fn (int $i): array => $proposals[$i], array_values(array_filter($indexes('reject'), static fn (int $i): bool => isset($proposals[$i]))));
+
         try {
-            $done = $this->reviewApply->apply($report, $indexes('pick'), (array) ($fields['to'] ?? []), $indexes('reject'), $principal->username, $request);
+            $done = $this->reviewApply->apply($picks, $rejects, $principal->username, $request);
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . '/admin/tags?busy=1');
         } catch (InvalidArgumentException $e) {
@@ -207,24 +217,20 @@ final class AdminTagsController
         }
         $rejected = $this->dictionary->rejected();
         $rows = [];
-        foreach ($report->items() as $i => $item) {
-            $p = $item['data'];
-            if ($item['outcome'] !== 'proposal' || !\is_array($p['from'] ?? null)) {
-                continue;
-            }
+        foreach (TagReviewApply::proposals($report) as $i => $p) {
             $from = [];
             foreach ($p['from'] as $tag) {
-                $from[(string) $tag] = $counts[(string) $tag] ?? 0;
+                $from[$tag] = $counts[$tag] ?? 0;
             }
-            $op = (string) ($p['op'] ?? '');
-            $to = (string) ($p['to'] ?? '');
+            $op = $p['op'];
+            $to = $p['to'];
             $rows[] = [
                 'i' => $i,
                 'op' => $op,
                 'from' => $from,
                 'to' => $to,
-                'reason' => (string) ($p['reason'] ?? ''),
-                'source' => (string) ($p['source'] ?? ''),
+                'reason' => $p['reason'],
+                'source' => $p['source'],
                 'done' => array_sum($from) === 0,
                 'rejected' => \in_array(TagProposals::key(['op' => $op, 'from' => array_keys($from), 'to' => $to]), $rejected, true),
             ];
