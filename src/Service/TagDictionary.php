@@ -144,8 +144,9 @@ final class TagDictionary
 
     /**
      * After a merge ($from renamed to $into on every page): the merged
-     * tags' entries fold into $into's: blanks filled, synonyms joined, the
-     * old names kept as synonyms so a search for them still finds the pages.
+     * tags' entries fold into $into's: blanks filled, synonyms joined, and a
+     * merged tag that has an entry keeps its name as a synonym so a search for
+     * it still finds the pages (a tag with no entry leaves none).
      * With $keepNames, every merged name becomes a synonym, entry or not
      * (tags:review's near-duplicates: the next `tags` answer that spells it
      * so is mapped onto $into by TagList).

@@ -29,13 +29,13 @@ use Reporion\Support\TagProposals;
  * { tag, group, icd10, synonyms }. Admin → Tags, owner-only (decided
  * 2026-09-26). Every tag with its page count, group, ICD-10 code and
  * synonyms (Service\TagDictionary, phase 20) and the suggested merges;
- * renaming or merging goes through Service\Tags (new revisions, signed
- * reports left alone). ?edit={tag} opens a tag's dictionary entry;
+ * renaming or merging goes through Service\TagCuration (the pages as new
+ * revisions with signed reports left alone, then the dictionary). ?edit={tag} opens a tag's dictionary entry;
  * ?into=&from=a,b prefills the merge form (a suggestion, never applied).
  *
  * POST /admin/tags/review/{id} { pick[], to[i], reject[] } (2026-10-15):
  * the proposals of a tags:review run the owner ticked, applied one by one
- * as system:admin on the owner's behalf (D41): a merge or rename keeps the
+ * (Service\TagCuration::apply()) as system:admin on the owner's behalf (D41): a merge or rename keeps the
  * old names as synonyms, a generalisation does not (the detail stays in
  * the text), a drop takes the tag off; signed reports are left alone. The
  * ones marked "never suggest" go to data/tags.yaml's `_rejected`.
