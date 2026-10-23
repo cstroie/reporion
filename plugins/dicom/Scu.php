@@ -575,7 +575,8 @@ final class Scu
         if (!is_file($argv[0]) || !is_executable($argv[0])) {
             return null;
         }
-        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
+        // fd 2 is declared before fd 1: a redirect to a descriptor not yet declared reaches the parent's, not the pipe
+        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 2 => ['pipe', 'w'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w']], $pipes, null, $env);
         if (!\is_resource($process)) {
             return null;
         }
