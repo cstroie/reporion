@@ -408,11 +408,11 @@ final class Kernel
         $index->onMiss($storage->adopt(...));
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
-        // by class only: an exception message may carry a page path (invariant 8).
+        // by class, file and line only: an exception message may carry a page path (invariant 8).
         try {
             $storage->replayCrashedWrites(self::REPLAY_MIN_AGE_SECONDS);
         } catch (Throwable $e) {
-            error_log('reporion: journal replay failed: ' . $e::class);
+            error_log(\sprintf('reporion: journal replay failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
         }
         $groups = new FlatFileGroupStore((string) $config['paths']['data']);
         $users = new FlatFileUserStore((string) $config['paths']['data'], $groups);

@@ -120,6 +120,22 @@ final class TrashTest extends HttpTestCase
         self::assertSame([$recent->pid], $this->pidsInTrash());
     }
 
+    public function testAnEntryWithAnUnreadableDeletionDateIsReportedNotSkippedUnseen(): void
+    {
+        $storage = $this->storage();
+        $storage->create('docs:odd', ['title' => 'Odd', 'visibility' => 'private'], 'body', 'owner');
+        $storage->delete('docs:odd', 'owner');
+        (new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->exec("UPDATE page SET trashed_at = 'not a date' WHERE trashed_at IS NOT NULL");
+
+        $audit = new AuditLog($this->dataRoot . '/audit');
+        $task = new TrashPurgeTask($storage, $audit, 0);
+        $report = $task->run(TrashPurgeTask::APPLY, 'owner', $task->options([]))->finish();
+
+        self::assertSame(1, $report->summary()['date_unreadable']);
+        self::assertSame(['date_unreadable'], array_column($report->items(), 'outcome'));
+        self::assertCount(1, $storage->trash(), 'still in the trash: nothing purged on a date it cannot read');
+    }
+
     private function backdateDeletions(int $days): void
     {
         $then = (new \DateTimeImmutable('-' . $days . ' days'))->format('Y-m-d\TH:i:sP');

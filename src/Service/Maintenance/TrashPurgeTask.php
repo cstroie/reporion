@@ -63,7 +63,13 @@ final class TrashPurgeTask implements MaintenanceTask
             } catch (Exception) {
                 $deletedAt = null;
             }
-            if ($deletedAt === null || $deletedAt > $cutoff) {
+            if ($deletedAt === null) {
+                // Never purged by age: said in the report so it is not left in the trash unseen
+                $report->count('date_unreadable');
+                $report->item($entry['pid'], null, 'date_unreadable', trim($entry['title']), ['deleted_at' => $entry['deletedAt'], 'signed' => $entry['signed']]);
+                continue;
+            }
+            if ($deletedAt > $cutoff) {
                 continue;
             }
             $data = ['deleted_at' => $entry['deletedAt'], 'signed' => $entry['signed']];

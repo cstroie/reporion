@@ -923,6 +923,7 @@ return [
     'rev.signed_by'       => 'Revision %d signed by %s on %s',
     'rev.parafa'          => 'parafa %s',
     'rev.digest_matches'  => 'The digest recomputed from the stored revision matches the one recorded at signing.',
+    'rev.digest_unreadable' => 'The stored revision could not be read, so its digest could not be checked. Run integrity:verify.',
     'rev.digest_differs'  => 'The digest recomputed from the stored revision differs from the one recorded at signing (the stored bytes or the schema field order changed since).',
     'page.copied'         => 'Copied',
     'page.delete_menu'    => 'Delete…',
