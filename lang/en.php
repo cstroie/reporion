@@ -718,7 +718,7 @@ return [
     'admin.tags.merge'    => 'Merge',
     'admin.tags.done'     => '%d page(s) rewritten.',
     'admin.tags.signed_left' => '%d signed report(s) kept the old tag: correct and re-sign them to change it.',
-    'admin.tags.conflicts_left' => '%d page(s) were saved by someone else meanwhile and kept the old tag: run it again for them.',
+    'admin.tags.conflicts_left' => '%d page(s) were saved by someone else meanwhile and kept the old tag: run it again for them. The dictionary entries are merged once every page has followed.',
     'admin.tags.err_name' => 'A tag is 1–64 characters, without commas, brackets or braces.',
     'admin.tags.err_none' => 'Select at least one tag to merge.',
     'admin.tags.unused'   => '%d unused',

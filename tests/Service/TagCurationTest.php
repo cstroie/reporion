@@ -7,13 +7,15 @@ declare(strict_types=1);
 namespace Reporion\Tests\Service;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
-use Reporion\Service\TagDictionary;
 use Reporion\Service\TagCuration;
+use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Storage\FileTree;
+use Reporion\Storage\StorageInterface;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -163,5 +165,24 @@ final class TagCurationTest extends StorageTestCase
         $this->curation->merge(['alpha'], 'beta', 'owner');
 
         self::assertSame([], $this->dictionary->get('beta')['synonyms'] ?? []);
+    }
+
+    public function testAConflictedMergeLeavesTheDictionaryForTheRerun(): void
+    {
+        file_put_contents($this->dataRoot . '/tags.yaml', "alpha:\n  group: g\n");
+        $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+        $storage = $this->createMock(StorageInterface::class);
+        $storage->method('read')->willReturnCallback(fn (string $path) => $this->storage->read($path));
+        $storage->method('save')->willReturnCallback(fn (string $path) => throw new RevisionConflictException($this->storage->read($path), 1));
+        $audit = new AuditLog($this->dataRoot . '/audit');
+        $dictionary = new TagDictionary($this->dataRoot, \dirname(__DIR__, 2) . '/resources/synonyms.txt');
+        $curation = new TagCuration($index, new Tags($storage, $index, $audit), $dictionary, $audit, new MaintenanceRunner([], $this->dataRoot, $audit));
+
+        $done = $curation->merge(['alpha'], 'beta', 'owner', keepNames: true);
+
+        self::assertSame(1, $done['conflicts']);
+        self::assertSame(0, $done['changed']);
+        self::assertSame('g', $dictionary->get('alpha')['group'], 'alpha is still in use: its entry stays');
+        self::assertSame([], $dictionary->get('beta')['synonyms'] ?? []);
     }
 }

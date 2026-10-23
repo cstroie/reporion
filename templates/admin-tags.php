@@ -64,7 +64,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($error !== null): ?>
 <?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php elseif ($changed !== null): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
+<?php $noticeKind = $conflicts > 0 ? 'warn' : 'ok'; $noticeText = t('admin.tags.done', [$changed]) . ($skippedSigned > 0 ? ' ' . t('admin.tags.signed_left', [$skippedSigned]) : '') . ($conflicts > 0 ? ' ' . t('admin.tags.conflicts_left', [$conflicts]) : ''); include __DIR__ . '/partials/notice.php'; ?>
 <?php elseif ($saved): ?>
 <?php $noticeKind = 'ok'; $noticeText = t('admin.tags.saved'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>

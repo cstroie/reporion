@@ -40,8 +40,9 @@ final class TagCuration
     }
 
     /**
-     * Renames or merges tags on every page, then in the dictionary. The caller
-     * checks TagDictionary::writable() first: the pages are renamed before the
+     * Renames or merges tags on every page, then in the dictionary: left for a
+     * rerun when a page conflicted (kept the old tag). The caller checks
+     * TagDictionary::writable() first: the pages are renamed before the
      * dictionary is touched
      *
      * @param list<string> $from
@@ -53,8 +54,11 @@ final class TagCuration
     public function merge(array $from, string $into, string $actor, ?Request $request = null, ?string $onBehalfOf = null, string $reason = 'tag-rename', bool $keepNames = false): array
     {
         $result = $this->tags->merge($from, $into, $actor, $request, $onBehalfOf, $reason);
-        // The merged names stay findable: they become $into's synonyms
-        $this->dictionary->merge($from, $into, $keepNames);
+        // The merged names stay findable: they become $into's synonyms. Not while a page kept the old tag
+        // (saved by someone else meanwhile): its entry would be gone from a tag still in use. A rerun finishes both
+        if ($result['conflicts'] === 0) {
+            $this->dictionary->merge($from, $into, $keepNames);
+        }
 
         return $result;
     }
