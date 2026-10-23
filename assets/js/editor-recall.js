@@ -108,6 +108,8 @@
     var controller = null;
     // The line the panel answers for: where Insert and Expand act
     var asked = null;
+    // A shortcut's AI action, run once the passages for the cursor's line are in
+    var pendingAi = null;
 
     function say(text) { if (status) status.textContent = text; }
 
@@ -124,6 +126,7 @@
       if (!area) return;
       var line = lineAt(area.value, area.selectionStart);
       if (!askable(line.text)) {
+        pendingAi = null;
         if (force) say(s.tooShort || '');
         return;
       }
@@ -207,6 +210,12 @@
         if (aiOut) { aiOut.hidden = true; aiOut.textContent = ''; }
         if (aiRow) aiRow.innerHTML = '';
       }
+      if (pendingAi) {
+        var wanted = pendingAi;
+        pendingAi = null;
+        var button = aiBox && !aiBox.hidden ? aiBox.querySelector('[data-recall-ai="' + wanted + '"]') : null;
+        if (button && button.getAttribute('aria-busy') !== 'true') run(wanted, button);
+      }
     }
 
     /** The line asked about, where it is now: null when it is gone */
@@ -268,6 +277,16 @@
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === ' ' || event.code === 'Space')) {
         event.preventDefault();
         clearTimeout(timer);
+        recall(true);
+        return;
+      }
+      // Alt+Shift+E / Alt+Shift+M: Expand / What is missing? for the cursor's line, once its passages are fetched
+      if (event.altKey && event.shiftKey && !event.ctrlKey && !event.metaKey && (event.code === 'KeyE' || event.code === 'KeyM')) {
+        var action = event.code === 'KeyE' ? 'recall-expand' : 'recall-missing';
+        if (!aiBox || !aiBox.querySelector('[data-recall-ai="' + action + '"]')) return;
+        event.preventDefault();
+        clearTimeout(timer);
+        pendingAi = action;
         recall(true);
       }
     });
