@@ -20,8 +20,7 @@ use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\ReportView;
 use Reporion\Service\TagDictionary;
-use Reporion\Service\TagReviewApply;
-use Reporion\Service\Tags;
+use Reporion\Service\TagCuration;
 use Reporion\Support\TagProposals;
 
 /**
@@ -45,11 +44,10 @@ final class AdminTagsController
 {
     public function __construct(
         private readonly IndexInterface $index,
-        private readonly Tags $tags,
+        private readonly TagCuration $curation,
         private readonly TagDictionary $dictionary,
         private readonly AuditLog $audit,
         private readonly ?MaintenanceRunner $maintenance = null,
-        private readonly ?TagReviewApply $reviewApply = null,
     ) {
     }
 
@@ -131,7 +129,7 @@ final class AdminTagsController
     public function review(Request $request, string $id, ?User $principal): Response
     {
         $report = $principal?->isOwner === true ? $this->maintenance?->load($id) : null;
-        if ($report === null || $this->reviewApply === null || $report->task !== 'tags:review' || $report->finishedAt() === '') {
+        if ($report === null || $report->task !== 'tags:review' || $report->finishedAt() === '') {
             throw new PageNotFoundException();
         }
         if (!$this->dictionary->writable()) {
@@ -140,7 +138,7 @@ final class AdminTagsController
         parse_str($request->body, $fields);
         $indexes = static fn (string $key): array => array_values(array_unique(array_map('intval', array_filter((array) ($fields[$key] ?? []), 'is_numeric'))));
 
-        $proposals = TagReviewApply::proposals($report);
+        $proposals = TagCuration::proposals($report);
         $targets = (array) ($fields['to'] ?? []);
         $picks = [];
         foreach ($indexes('pick') as $i) {
@@ -151,7 +149,7 @@ final class AdminTagsController
         $rejects = array_map(static fn (int $i): array => $proposals[$i], array_values(array_filter($indexes('reject'), static fn (int $i): bool => isset($proposals[$i]))));
 
         try {
-            $done = $this->reviewApply->apply($picks, $rejects, $principal->username, $request);
+            $done = $this->curation->apply($picks, $rejects, $principal->username, $request);
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . '/admin/tags?busy=1');
         } catch (InvalidArgumentException $e) {
@@ -191,9 +189,7 @@ final class AdminTagsController
             return $this->show($request, $principal, t('admin.tags.err_unreadable'));
         }
         try {
-            $result = $this->tags->merge($from, $into, $principal->username, $request);
-            // The merged names stay findable: they become $into's synonyms
-            $this->dictionary->merge($from, trim($into));
+            $result = $this->curation->merge($from, trim($into), $principal->username, $request);
         } catch (InvalidArgumentException $e) {
             return $this->show($request, $principal, $e->getMessage());
         }
@@ -217,7 +213,7 @@ final class AdminTagsController
         }
         $rejected = $this->dictionary->rejected();
         $rows = [];
-        foreach (TagReviewApply::proposals($report) as $i => $p) {
+        foreach (TagCuration::proposals($report) as $i => $p) {
             $from = [];
             foreach ($p['from'] as $tag) {
                 $from[$tag] = $counts[$tag] ?? 0;

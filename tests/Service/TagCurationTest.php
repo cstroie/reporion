@@ -11,7 +11,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\TagDictionary;
-use Reporion\Service\TagReviewApply;
+use Reporion\Service\TagCuration;
 use Reporion\Service\Tags;
 use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
@@ -21,10 +21,11 @@ use Reporion\Tests\Storage\StorageTestCase;
  * the other way round, a proposal whose tags are no longer in use. Fixture
  * data is fictitious (invariant 10).
  */
-final class TagReviewApplyTest extends StorageTestCase
+final class TagCurationTest extends StorageTestCase
 {
     private FileTree $storage;
-    private TagReviewApply $apply;
+    private TagCuration $curation;
+    private TagDictionary $dictionary;
 
     protected function setUp(): void
     {
@@ -33,8 +34,8 @@ final class TagReviewApplyTest extends StorageTestCase
         $this->storage = new FileTree($this->dataRoot, $index);
         file_put_contents($this->dataRoot . '/tags.yaml', "keep:\n  synonyms: []\n");
         $audit = new AuditLog($this->dataRoot . '/audit');
-        $dictionary = new TagDictionary($this->dataRoot, \dirname(__DIR__, 2) . '/resources/synonyms.txt');
-        $this->apply = new TagReviewApply($index, new Tags($this->storage, $index, $audit), $dictionary, $audit, new MaintenanceRunner([], $this->dataRoot, $audit));
+        $this->dictionary = $dictionary = new TagDictionary($this->dataRoot, \dirname(__DIR__, 2) . '/resources/synonyms.txt');
+        $this->curation = new TagCuration($index, new Tags($this->storage, $index, $audit), $dictionary, $audit, new MaintenanceRunner([], $this->dataRoot, $audit));
         $this->page('uno', ['alpha', 'beta', 'noise']);
         $this->page('doi', ['beta']);
     }
@@ -74,9 +75,9 @@ final class TagReviewApplyTest extends StorageTestCase
      */
     private function applyTicked(array $proposals, array $pick, array $typed = [], array $reject = []): array
     {
-        $all = TagReviewApply::proposals($this->report($proposals));
+        $all = TagCuration::proposals($this->report($proposals));
 
-        return $this->apply->apply(
+        return $this->curation->apply(
             array_map(static fn (int $i): array => ['proposal' => $all[$i], 'to' => $typed[$i] ?? null], $pick),
             array_map(static fn (int $i): array => $all[$i], $reject),
             'owner',
@@ -133,7 +134,7 @@ final class TagReviewApplyTest extends StorageTestCase
         $report->item(null, null, 'proposal', '', ['op' => 'bogus', 'from' => ['x']]);
         $report->item(null, null, 'proposal', '', ['op' => 'drop', 'from' => ['noise'], 'reason' => 'r']);
 
-        self::assertSame([2 => ['op' => 'drop', 'from' => ['noise'], 'to' => '', 'reason' => 'r', 'source' => '']], TagReviewApply::proposals($report->finish()));
+        self::assertSame([2 => ['op' => 'drop', 'from' => ['noise'], 'to' => '', 'reason' => 'r', 'source' => '']], TagCuration::proposals($report->finish()));
     }
 
     public function testTheWriteLockIsReleasedWhenTheWorkThrows(): void
@@ -146,5 +147,21 @@ final class TagReviewApplyTest extends StorageTestCase
         }
 
         self::assertFalse($runner->isLocked());
+    }
+
+    public function testMergeRenamesOnPagesThenFoldsTheDictionary(): void
+    {
+        $done = $this->curation->merge(['alpha'], 'beta', 'owner', keepNames: true);
+
+        self::assertSame(1, $done['changed']);
+        self::assertSame(['beta', 'noise'], $this->tags('uno'));
+        self::assertSame(['alpha'], $this->dictionary->get('beta')['synonyms'] ?? []);
+    }
+
+    public function testMergeWithoutKeepNamesLeavesNoSynonymForAnUnlistedTag(): void
+    {
+        $this->curation->merge(['alpha'], 'beta', 'owner');
+
+        self::assertSame([], $this->dictionary->get('beta')['synonyms'] ?? []);
     }
 }

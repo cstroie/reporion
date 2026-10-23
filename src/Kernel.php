@@ -109,7 +109,7 @@ use Reporion\Service\SiteDevices;
 use Reporion\Service\Snippets;
 use Reporion\Service\Stats;
 use Reporion\Service\TagDictionary;
-use Reporion\Service\TagReviewApply;
+use Reporion\Service\TagCuration;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
 use Reporion\Service\TempUploads;
@@ -496,7 +496,7 @@ final class Kernel
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
-        $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit, $maintenanceRunner, new TagReviewApply($index, $tags, $tagDictionary, $audit, $maintenanceRunner));
+        $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();

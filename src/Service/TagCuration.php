@@ -17,16 +17,18 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Support\TagProposals;
 
 /**
- * Applies the proposals of a finished tags:review run that the owner ticked
- * (Admin → Tags, 2026-10-15), one by one as system:admin on the owner's behalf
- * (D41): a merge or rename keeps the old names as synonyms, a generalisation
- * does not, a drop takes the tag off; signed reports are left alone. The ones
- * turned down for good go to the dictionary's `_rejected`. Runs under the
- * maintenance lock, so no run writes the same pages meanwhile.
+ * What the owner decides about tags in Admin → Tags. A merge or rename: the
+ * pages first (Service\Tags), then the dictionary, which folds the merged
+ * names in as synonyms. And the proposals of a finished tags:review run the
+ * owner ticked (2026-10-15), applied one by one as system:admin on the owner's
+ * behalf (D41): a merge or rename keeps the old names as synonyms, a
+ * generalisation does not, a drop takes the tag off; signed reports are left
+ * alone. The ones turned down for good go to the dictionary's `_rejected`.
+ * Runs under the maintenance lock, so no run writes the same pages meanwhile.
  *
  * @phpstan-import-type Proposal from \Reporion\Support\TagNormalize
  */
-final class TagReviewApply
+final class TagCuration
 {
     public function __construct(
         private readonly IndexInterface $index,
@@ -35,6 +37,26 @@ final class TagReviewApply
         private readonly AuditLog $audit,
         private readonly MaintenanceRunner $maintenance,
     ) {
+    }
+
+    /**
+     * Renames or merges tags on every page, then in the dictionary. The caller
+     * checks TagDictionary::writable() first: the pages are renamed before the
+     * dictionary is touched
+     *
+     * @param list<string> $from
+     *
+     * @return array{changed: int, skippedSigned: int, conflicts: int}
+     *
+     * @throws InvalidArgumentException for an empty or malformed target name
+     */
+    public function merge(array $from, string $into, string $actor, ?Request $request = null, ?string $onBehalfOf = null, string $reason = 'tag-rename', bool $keepNames = false): array
+    {
+        $result = $this->tags->merge($from, $into, $actor, $request, $onBehalfOf, $reason);
+        // The merged names stay findable: they become $into's synonyms
+        $this->dictionary->merge($from, $into, $keepNames);
+
+        return $result;
     }
 
     /**
@@ -103,8 +125,7 @@ final class TagReviewApply
                     if ($from === []) {
                         continue;
                     }
-                    $result = $this->tags->merge($from, $to, SystemActor::ADMIN, $request, $username, 'tags-review');
-                    $this->dictionary->merge($from, $to, keepNames: $proposal['op'] !== 'generalise');
+                    $result = $this->merge($from, $to, SystemActor::ADMIN, $request, $username, 'tags-review', keepNames: $proposal['op'] !== 'generalise');
                 }
                 foreach ($total as $key => $n) {
                     $total[$key] = $n + $result[$key];
