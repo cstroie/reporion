@@ -207,7 +207,9 @@ final class Sqlite implements IndexInterface
             $this->adopting = true;
             try {
                 $adopted = (bool) ($this->onMiss)($path);
-            } catch (Throwable) {
+            } catch (Throwable $e) {
+                // A lookup must not turn into an error page, but the cause of a "not found" is logged (no message: it may hold a path)
+                error_log(\sprintf('reporion: adopting an unindexed page file failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
                 $adopted = false;
             } finally {
                 $this->adopting = false;

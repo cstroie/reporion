@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Index;
 
+use Reporion\Auth\User;
 use Reporion\Support\PatientKey;
 
 final class SqliteTest extends IndexTestCase
@@ -522,5 +523,24 @@ final class SqliteTest extends IndexTestCase
             }
         }
         unset($first, $second);
+    }
+
+    public function testAFailedAdoptionIsALookupMissThatIsLogged(): void
+    {
+        [$index] = $this->newIndex();
+        $index->onMiss(static fn (string $path): bool => throw new \RuntimeException('disk full at /secret/path'));
+        $log = tempnam(sys_get_temp_dir(), 'reporion-log');
+        $previous = ini_set('error_log', $log);
+        try {
+            $found = $index->findByPath('reports:x:260101-test', new User('u', 'x', true, [], true, 'now', 'now'));
+        } finally {
+            ini_set('error_log', (string) $previous);
+        }
+        $logged = (string) file_get_contents($log);
+        unlink($log);
+
+        self::assertNull($found);
+        self::assertStringContainsString('adopting an unindexed page file failed: RuntimeException', $logged);
+        self::assertStringNotContainsString('/secret/path', $logged, 'the message may hold a path');
     }
 }
