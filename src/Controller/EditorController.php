@@ -35,7 +35,6 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
-use Reporion\Support\Exams;
 use Reporion\Support\ExamTemplates;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;

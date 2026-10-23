@@ -101,10 +101,4 @@ final class EditorPage
 
         return [$frontmatter, $body];
     }
-
-    /** A record of a page not written yet */
-    public static function isUnsaved(PageRecord $page): bool
-    {
-        return $page->pid === '';
-    }
 }

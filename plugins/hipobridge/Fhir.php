@@ -58,12 +58,6 @@ final class Fhir
         'limbs' => 'msk', 'lower limb' => 'msk', 'upper limb' => 'msk',
     ];
 
-    /** @param array<string, mixed> $data */
-    public static function isOutcome(array $data): bool
-    {
-        return ($data['resourceType'] ?? null) === 'OperationOutcome';
-    }
-
     /**
      * @param array<string, mixed> $bundle
      *

@@ -11,7 +11,6 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\PageKind;
-use Reporion\Support\Templates;
 use RuntimeException;
 
 /**
