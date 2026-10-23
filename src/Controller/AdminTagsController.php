@@ -8,7 +8,6 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
-use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Exception\PageNotFoundException;
@@ -21,6 +20,7 @@ use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\ReportView;
 use Reporion\Service\TagDictionary;
+use Reporion\Service\TagReviewApply;
 use Reporion\Service\Tags;
 use Reporion\Support\TagProposals;
 
@@ -49,6 +49,7 @@ final class AdminTagsController
         private readonly TagDictionary $dictionary,
         private readonly AuditLog $audit,
         private readonly ?MaintenanceRunner $maintenance = null,
+        private readonly ?TagReviewApply $reviewApply = null,
     ) {
     }
 
@@ -130,7 +131,7 @@ final class AdminTagsController
     public function review(Request $request, string $id, ?User $principal): Response
     {
         $report = $principal?->isOwner === true ? $this->maintenance?->load($id) : null;
-        if ($report === null || $report->task !== 'tags:review' || $report->finishedAt() === '') {
+        if ($report === null || $this->reviewApply === null || $report->task !== 'tags:review' || $report->finishedAt() === '') {
             throw new PageNotFoundException();
         }
         if (!$this->dictionary->writable()) {
@@ -138,72 +139,16 @@ final class AdminTagsController
         }
         parse_str($request->body, $fields);
         $indexes = static fn (string $key): array => array_values(array_unique(array_map('intval', array_filter((array) ($fields[$key] ?? []), 'is_numeric'))));
-        $items = $report->items();
-        $inUse = [];
-        foreach ($this->index->tagCounts() as $row) {
-            $inUse[$row['tag']] = true;
-        }
 
         try {
-            $lock = $this->maintenance->lockWrites();
+            $done = $this->reviewApply->apply($report, $indexes('pick'), (array) ($fields['to'] ?? []), $indexes('reject'), $principal->username, $request);
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . '/admin/tags?busy=1');
-        }
-        $total = ['changed' => 0, 'skippedSigned' => 0, 'conflicts' => 0];
-        $applied = 0;
-        $rejected = 0;
-        try {
-            foreach ($indexes('pick') as $i) {
-                $proposal = $items[$i]['data'] ?? null;
-                if (!\is_array($proposal) || !\in_array($proposal['op'] ?? '', TagProposals::OPS, true)) {
-                    continue;
-                }
-                $from = array_values(array_filter(array_map('strval', (array) ($proposal['from'] ?? [])), static fn (string $t): bool => isset($inUse[$t])));
-                if ($from === []) {
-                    continue;
-                }
-                if ($proposal['op'] === 'drop') {
-                    $result = $this->tags->removeMany($from, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
-                } else {
-                    // The owner may have changed the target in the row
-                    $to = TagProposals::tag(\is_string($fields['to'][$i] ?? null) ? $fields['to'][$i] : (string) ($proposal['to'] ?? ''));
-                    if ($to === '') {
-                        continue;
-                    }
-                    // A merge turned the other way round (the target one of its own tags): the proposed target is merged in
-                    // too. Any other new target takes the proposal's tags only
-                    $proposed = (string) ($proposal['to'] ?? '');
-                    if ($proposed !== $to && \in_array($to, $from, true) && isset($inUse[$proposed])) {
-                        $from[] = $proposed;
-                    }
-                    $from = array_values(array_diff($from, [$to]));
-                    if ($from === []) {
-                        continue;
-                    }
-                    $result = $this->tags->merge($from, $to, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
-                    $this->dictionary->merge($from, $to, keepNames: $proposal['op'] !== 'generalise');
-                }
-                foreach ($total as $key => $n) {
-                    $total[$key] = $n + $result[$key];
-                }
-                ++$applied;
-            }
-            foreach ($indexes('reject') as $i) {
-                $proposal = $items[$i]['data'] ?? null;
-                if (\is_array($proposal) && \is_array($proposal['from'] ?? null)) {
-                    $this->dictionary->reject(TagProposals::key(['op' => (string) ($proposal['op'] ?? ''), 'from' => array_map('strval', $proposal['from']), 'to' => (string) ($proposal['to'] ?? '')]));
-                    ++$rejected;
-                }
-            }
         } catch (InvalidArgumentException $e) {
             return $this->show($request, $principal, $e->getMessage());
-        } finally {
-            flock($lock, LOCK_UN);
-            fclose($lock);
         }
-        $this->audit->record('tags.review', $principal->username, $request, extra: ['applied' => $applied, 'rejected' => $rejected, 'pages' => $total['changed']]);
 
-        return Response::redirect($request->basePath . '/admin/tags?run=' . rawurlencode($id) . '&changed=' . $total['changed'] . '&signed=' . $total['skippedSigned'] . '&conflicts=' . $total['conflicts'] . '#review');
+        return Response::redirect($request->basePath . '/admin/tags?run=' . rawurlencode($id) . '&changed=' . $done['changed'] . '&signed=' . $done['skippedSigned'] . '&conflicts=' . $done['conflicts'] . '#review');
     }
 
     public function saveEntry(Request $request, ?User $principal): Response
