@@ -628,6 +628,7 @@ Decided 2026-10-24 (D55, owner's request: a much simpler notes PWA inside Repori
 - **The editor** (as in Google Keep): *Notes* (back) at the left; *Preview* and *Delete* at the right; a **title** field (larger, semibold; placeholder *Title*; focused on a new note, Enter goes on to the text) above one monospace **text** area (placeholder *Take a note…*), both saved on the device as typed. The list shows the title, else the text's first line. Preview is the server's renderer, online only (offline: the text as typed, with an info notice).
 - **A conflict** is a `warn` notice card above the text explaining the markers, with a small *Resolved* button; the text holds both versions between git-style markers.
 - Messages are notice cards (merged, conflict, deleted elsewhere): they fade after a few seconds, except the conflict card in the editor.
+- **Version**: a quiet mono line at the foot, *Notes {version} · build {build}*. **An update** is an `info` notice card that stays, *A new version of Notes is ready: {version} ({build}).*, with a small primary **Reload**; nothing reloads by itself.
 
 ## Typography and utilities
 

@@ -3,22 +3,35 @@
  *
  * The notes app's service worker (D55), served as /notes/sw.js by
  * NotesController::serviceWorker(), which puts PRECACHE (the shell and the
- * versioned assets it loads), CACHE (a name that changes with them) and
- * BASE (the base path) before this text. The shell and the assets come from
- * the cache, so the app opens offline; the API is never cached: notes live
- * in the page's IndexedDB, and nothing the API answers is kept here.
+ * versioned assets it loads), VERSION and BUILD (the app's), CACHE (a name
+ * made of both) and BASE (the base path) before this text. The shell and
+ * the assets come from the cache, so the app opens offline; the API is
+ * never cached: notes live in the page's IndexedDB, and nothing the API
+ * answers is kept here.
+ *
+ * Updates: a new worker installs beside the running one and waits (no
+ * skipWaiting on install), so an open page keeps the version it started
+ * with; the page offers a reload and then sends `skip-waiting`. The first
+ * install has nothing to wait for and takes over at once. `version` answers
+ * the page with VERSION and BUILD on the port it sends.
  */
-/* global PRECACHE, CACHE, BASE */
+/* global PRECACHE, VERSION, BUILD, CACHE, BASE */
 'use strict';
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(caches.open(CACHE).then(function (cache) { return cache.addAll(PRECACHE); }).then(function () { return self.skipWaiting(); }));
+  event.waitUntil(caches.open(CACHE).then(function (cache) { return cache.addAll(PRECACHE); }));
 });
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(caches.keys().then(function (names) {
     return Promise.all(names.filter(function (name) { return name.indexOf('notes-') === 0 && name !== CACHE; }).map(function (name) { return caches['delete'](name); }));
   }).then(function () { return self.clients.claim(); }));
+});
+
+self.addEventListener('message', function (event) {
+  var type = event.data && event.data.type;
+  if (type === 'skip-waiting') self.skipWaiting();
+  if (type === 'version' && event.ports && event.ports[0]) event.ports[0].postMessage({ version: VERSION, build: BUILD });
 });
 
 self.addEventListener('fetch', function (event) {

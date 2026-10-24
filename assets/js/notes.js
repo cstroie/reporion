@@ -24,6 +24,11 @@
  * A note holding an unresolved conflict is not pushed until its writer says
  * it is resolved. The preview is the server's renderer (POST /api/v1/render,
  * invariant 4), online only. Text is shown with textContent.
+ *
+ * The app has a version and a build (NotesController::VERSION, build()),
+ * shown at the foot. A new service worker waits beside the running one; the
+ * page asks it what it is and offers a reload (a notice), checking for one
+ * when it becomes visible, comes back online and every hour.
  */
 (function () {
   'use strict';
@@ -518,17 +523,17 @@
   }
 
   function flushSave() {
-    if (!timers.save) return;
+    if (!timers.save) return Promise.resolve();
     clearTimeout(timers.save);
     timers.save = 0;
-    saveLocal();
+    return saveLocal();
   }
 
   function saveLocal() {
     timers.save = 0;
     var note = state.notes[state.current];
-    if (!note || (note.body === el.text.value && (note.title || '') === el.title.value)) return;
-    keep(Object.assign({}, note, { title: el.title.value, body: el.text.value, dirty: true, updated: Date.now() })).then(function () {
+    if (!note || (note.body === el.text.value && (note.title || '') === el.title.value)) return Promise.resolve();
+    return keep(Object.assign({}, note, { title: el.title.value, body: el.text.value, dirty: true, updated: Date.now() })).then(function () {
       showStatus();
       scheduleSync();
     });
@@ -667,8 +672,66 @@
   });
   setInterval(function () { if (document.visibilityState === 'visible') sync(); }, SYNC_EVERY);
 
+  // ---- updates: a new worker waits until the writer reloads into it ----
+
+  var UPDATE_EVERY = 3600000;
+  var update = { offered: false, reloading: false };
+
+  /** What a worker says it is: {version, build}, or null when it does not answer */
+  function workerVersion(worker) {
+    return new Promise(function (resolve) {
+      var channel = new MessageChannel();
+      var timer = setTimeout(function () { resolve(null); }, 3000);
+      channel.port1.onmessage = function (event) { clearTimeout(timer); resolve(event.data || null); };
+      worker.postMessage({ type: 'version' }, [channel.port2]);
+    });
+  }
+
+  function offerUpdate(worker) {
+    if (update.offered) return;
+    workerVersion(worker).then(function (info) {
+      // Online, the shell is fetched fresh, so this page may already be the new build: switch quietly
+      if (info && info.build === cfg.build) { worker.postMessage({ type: 'skip-waiting' }); return; }
+      if (update.offered) return;
+      update.offered = true;
+      var name = info ? info.version + ' (' + info.build + ')' : '';
+      var card = notice('info', t('notes.update_ready').replace('%s', name), true);
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-sm btn-primary';
+      button.textContent = t('notes.update_reload');
+      button.addEventListener('click', function () {
+        button.disabled = true;
+        // What is typed is kept first; the reload follows the new worker taking over
+        flushSave().then(function () {
+          update.reloading = true;
+          worker.postMessage({ type: 'skip-waiting' });
+        });
+      });
+      card.querySelector('div').appendChild(document.createTextNode(' '));
+      card.querySelector('div').appendChild(button);
+    });
+  }
+
   if ('serviceWorker' in navigator && cfg.sw) {
-    navigator.serviceWorker.register(cfg.sw, { scope: cfg.scope }).catch(function () { /* online only, then */ });
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      // Only a takeover the writer asked for reloads (the first install's claim does not)
+      if (update.reloading) location.reload();
+    });
+    navigator.serviceWorker.register(cfg.sw, { scope: cfg.scope }).then(function (registration) {
+      if (registration.waiting && navigator.serviceWorker.controller) offerUpdate(registration.waiting);
+      registration.addEventListener('updatefound', function () {
+        var worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', function () {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(worker);
+        });
+      });
+      function check() { if (navigator.onLine !== false) registration.update().catch(function () { /* next time */ }); }
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
+      window.addEventListener('online', check);
+      setInterval(check, UPDATE_EVERY);
+    }).catch(function () { /* online only, then */ });
   }
 
   // ---- boot: the last account straight away (offline too), then the server's word ----

@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Tests\Http;
 
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Controller\NotesController;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
@@ -207,8 +208,32 @@ final class NotesTest extends HttpTestCase
         self::assertStringStartsWith('text/javascript', $response->headers['Content-Type']);
         self::assertSame('/notes', $response->headers['Service-Worker-Allowed'], 'its scope takes in the app at /notes');
         self::assertMatchesRegularExpression('/^const PRECACHE = \[.*"\/notes".*"\/assets\/js\/notes\.js\?v=[0-9a-f]+".*\];/m', $response->body);
-        self::assertStringContainsString('const CACHE = "notes-', $response->body);
+        self::assertStringContainsString('const VERSION = "' . NotesController::VERSION . '";', $response->body);
+        self::assertStringContainsString('const CACHE = "notes-' . NotesController::VERSION . '-' . NotesController::build('') . '";', $response->body);
         self::assertStringContainsString("addEventListener('fetch'", $response->body);
+    }
+
+    public function testTheShellAndTheWorkerNameTheSameVersionAndBuild(): void
+    {
+        $shell = $this->request('GET', '/notes')->body;
+        $worker = $this->request('GET', '/notes/sw.js')->body;
+        $build = NotesController::build('');
+
+        self::assertMatchesRegularExpression('/^[0-9]+\.[0-9]+\.[0-9]+$/', NotesController::VERSION);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{12}$/', $build);
+        self::assertStringContainsString('"version":"' . NotesController::VERSION . '","build":"' . $build . '"', $shell, 'the page knows what it runs');
+        self::assertStringContainsString('Notes ' . NotesController::VERSION . ' · build ' . $build, $shell, 'and shows it');
+        self::assertStringContainsString('const BUILD = "' . $build . '";', $worker);
+    }
+
+    public function testANewWorkerWaitsUntilThePageAsksItToTakeOver(): void
+    {
+        $worker = $this->request('GET', '/notes/sw.js')->body;
+        $install = substr($worker, (int) strpos($worker, "addEventListener('install'"), 200);
+
+        self::assertStringNotContainsString('skipWaiting', $install, 'an open page keeps its version until it reloads');
+        self::assertStringContainsString("type === 'skip-waiting'", $worker);
+        self::assertStringContainsString("type === 'version'", $worker);
     }
 
     public function testTheManifestStartsAndScopesTheAppAtNotes(): void

@@ -19,9 +19,22 @@ use Reporion\Support\Asset;
  * the same HTML for everyone (no account, no page in it, so the service
  * worker may cache it for offline use), the worker itself (served from
  * /notes/ so that its scope covers the app) and the web manifest.
+ *
+ * The app carries a version (VERSION, by hand) and a build (build(): a
+ * hash of the shell, the worker and the asset URLs, by itself). Both name
+ * the worker's cache, so any change is a new worker; the page tells the
+ * writer a new one is ready and reloads into it when asked.
  */
 final class NotesController
 {
+    /**
+     * The notes app's version (semver): raised with a change to what the
+     * writer sees or does (templates/notes.php, assets/js/notes.js,
+     * notes-sw.js, notes.css, the API calls they make). The build hash
+     * changes with any byte anyway, so a forgotten bump still updates.
+     */
+    public const VERSION = '1.1.0';
+
     /** The strings the app shows, from lang/en.php (D26) */
     private const STRINGS = [
         'notes.title', 'notes.new', 'notes.search', 'notes.empty', 'notes.untitled', 'notes.back',
@@ -31,6 +44,7 @@ final class NotesController
         'notes.unsynced', 'notes.sync_failed', 'notes.sync_now', 'notes.conflict',
         'notes.conflict_resolved', 'notes.conflict_markers', 'notes.preview_offline',
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
+        'notes.update_ready', 'notes.update_reload',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',
     ];
 
@@ -42,13 +56,15 @@ final class NotesController
             $strings[$key] = t($key);
         }
 
-        return Response::html(View::render(\dirname(__DIR__, 2) . '/templates/notes.php', [
+        return Response::html(View::render(self::root() . '/templates/notes.php', [
             'basePath' => $b,
             'config' => [
                 'base' => $b,
                 'api' => $b . '/api/v1',
                 'sw' => $b . '/notes/sw.js',
                 'scope' => $b . '/notes',
+                'version' => self::VERSION,
+                'build' => self::build($b),
                 'strings' => $strings,
             ],
         ]))->withHeader('Cache-Control', 'no-cache');
@@ -56,20 +72,20 @@ final class NotesController
 
     /**
      * GET /notes/sw.js: assets/js/notes-sw.js, preceded by what it
-     * precaches (the shell and the versioned assets it loads) and a cache
-     * name made of their URLs, so a changed asset is a new cache.
+     * precaches (the shell and the versioned assets it loads), the version
+     * and build, and a cache name made of both, so a changed app is a new
+     * worker and a new cache.
      */
     public function serviceWorker(Request $request): Response
     {
         $b = $request->basePath;
-        $precache = [$b . '/notes'];
-        foreach (self::assets() as $file) {
-            $precache[] = Asset::url($b, $file);
-        }
-        $source = (string) file_get_contents(\dirname(__DIR__, 2) . '/assets/js/notes-sw.js');
-        $head = 'const PRECACHE = ' . json_encode($precache, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . ";\n"
-            . 'const CACHE = ' . json_encode('notes-' . substr(hash('sha256', implode("\n", $precache) . $source), 0, 12), JSON_THROW_ON_ERROR) . ";\n"
+        $build = self::build($b);
+        $head = 'const PRECACHE = ' . json_encode(self::precache($b), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . ";\n"
+            . 'const VERSION = ' . json_encode(self::VERSION, JSON_THROW_ON_ERROR) . ";\n"
+            . 'const BUILD = ' . json_encode($build, JSON_THROW_ON_ERROR) . ";\n"
+            . 'const CACHE = ' . json_encode('notes-' . self::VERSION . '-' . $build, JSON_THROW_ON_ERROR) . ";\n"
             . 'const BASE = ' . json_encode($b, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . ";\n";
+        $source = (string) file_get_contents(self::root() . '/assets/js/notes-sw.js');
 
         return new Response(200, $head . $source, [
             'Content-Type' => 'text/javascript; charset=utf-8',
@@ -102,6 +118,41 @@ final class NotesController
             'Content-Type' => 'application/manifest+json; charset=utf-8',
             'Cache-Control' => 'no-cache',
         ]);
+    }
+
+    /**
+     * The build: 12 hex characters of a hash of the version, the shell
+     * template, the worker and the versioned URLs of the assets (whose
+     * `?v=` follows each file's mtime)
+     */
+    public static function build(string $basePath): string
+    {
+        $parts = [self::VERSION, ...self::precache($basePath)];
+        foreach (['templates/notes.php', 'assets/js/notes-sw.js'] as $file) {
+            $parts[] = (string) file_get_contents(self::root() . '/' . $file);
+        }
+
+        return substr(hash('sha256', implode("\n", $parts)), 0, 12);
+    }
+
+    /**
+     * The shell and the versioned assets it loads
+     *
+     * @return list<string>
+     */
+    private static function precache(string $basePath): array
+    {
+        $urls = [$basePath . '/notes'];
+        foreach (self::assets() as $file) {
+            $urls[] = Asset::url($basePath, $file);
+        }
+
+        return $urls;
+    }
+
+    private static function root(): string
+    {
+        return \dirname(__DIR__, 2);
     }
 
     /**

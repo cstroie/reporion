@@ -82,6 +82,7 @@ $e = static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES);
 <textarea class="input nt-text" data-text spellcheck="true" placeholder="<?= $e(t('notes.text_hint')) ?>" aria-label="<?= $e(t('notes.field_text')) ?>"></textarea>
 <div class="nt-preview wk-prose" data-preview-pane hidden></div>
 </section>
+<footer class="nt-foot" data-version><?= $e(t('notes.version', [(string) $config['version'], (string) $config['build']])) ?></footer>
 <script type="application/json"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 </div>
 <script src="<?= $e(Asset::url($basePath, 'js/notes.js')) ?>" defer></script>
