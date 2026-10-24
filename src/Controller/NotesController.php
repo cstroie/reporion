@@ -33,7 +33,7 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '2.3.0';
+    public const VERSION = '2.4.0';
 
     /**
      * The app's stylesheets: Reporion's colour tokens and fonts, the icons,
@@ -50,7 +50,7 @@ final class NotesController
         'notes.unsynced', 'notes.sync_failed', 'notes.sync_now', 'notes.conflict',
         'notes.conflict_resolved', 'notes.conflict_markers', 'notes.preview_offline',
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
-        'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready',
+        'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready', 'notes.install_desktop', 'notes.install_mac',
         'notes.install_ios', 'notes.install_later', 'notes.installed', 'notes.saved', 'notes.edited_at',
         'notes.not_synced_one', 'notes.signed_in_as', 'notes.tags', 'notes.tag_remove', 'notes.all',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',

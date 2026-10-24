@@ -36,11 +36,15 @@
  * page asks it what it is and offers a reload (a notice), checking for one
  * when it becomes visible, comes back online and every hour.
  *
- * Install: once signed in, a notice offers to install the app, with the
- * browser's own prompt (beforeinstallprompt: Chrome, Edge, Android) or, in
- * iOS Safari, the Share → Add to Home Screen hint; never when it already
- * runs installed. "Not now" waits 30 days; the menu's Install item
- * stays while the browser offers installing.
+ * Install: once signed in, a banner offers to install the app, with the
+ * browser's own prompt (beforeinstallprompt: Chrome, Edge, Android) or, where
+ * the browser gives none, how to do it by hand: iOS Safari (Share → Add to
+ * Home Screen), Safari on macOS (File → Add to Dock), and Chromium when its
+ * event has not come within a few seconds (desktop Chrome may hold it back):
+ * the address bar's install icon or the browser menu; the banner gains its
+ * Install button if the event comes later. Never when it already runs
+ * installed. "Not now" waits 30 days; the menu's Install item stays on any
+ * browser that can install it.
  */
 (function () {
   'use strict';
@@ -940,27 +944,44 @@
   });
   setInterval(function () { if (document.visibilityState === 'visible') sync(); }, SYNC_EVERY);
 
-  // ---- install: the browser's own prompt (Chrome, Edge, Android), a hint on iOS ----
+  // ---- install: the browser's own prompt where there is one, else how to do it by hand ----
 
   var INSTALL_KEY = 'reporion.notes.install';
   var INSTALL_AGAIN = 30 * 24 * 3600000;
-  var install = { prompt: null, card: null };
+  // Desktop Chromium may hold its install event back (until the page has been used for a while):
+  // past this wait the banner says how to install from the address bar or the menu instead
+  var INSTALL_WAIT = 8000;
+  var install = { prompt: null, card: null, timer: 0 };
 
   function installed() {
     return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   }
 
-  /** iOS Safari: no install event, Share → Add to Home Screen instead (other iOS browsers cannot install) */
-  function iosSafari() {
+  /**
+   * How this browser installs a web app without an event of ours: 'ios' (Safari: Share → Add to
+   * Home Screen; other iOS browsers cannot), 'mac' (Safari on macOS: File → Add to Dock), 'menu'
+   * (Chromium: the address bar's install icon or its menu), or null (Firefox and others: no install)
+   */
+  function installWay() {
     var ua = navigator.userAgent;
     var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+    if (ios) return /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua) ? 'ios' : null;
+    if ('onbeforeinstallprompt' in window) return 'menu';
+    if (/Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Firefox/.test(ua)) return 'mac';
+    return null;
   }
+
+  var INSTALL_HINT = { ios: 'notes.install_ios', mac: 'notes.install_mac', menu: 'notes.install_desktop' };
 
   function installPostponed() {
     var at = 0;
     try { at = Number(localStorage.getItem(INSTALL_KEY) || 0); } catch (e) { at = 0; }
     return at > 0 && Date.now() - at < INSTALL_AGAIN;
+  }
+
+  /** The menu's Install item: wherever this browser can install the app and it is not installed yet */
+  function showInstallItem() {
+    el.install.hidden = installed() || (!install.prompt && installWay() === null);
   }
 
   function closeInstall() {
@@ -972,43 +993,70 @@
     if (!install.prompt) return;
     var prompt = install.prompt;
     install.prompt = null;
-    el.install.hidden = true;
     closeInstall();
     prompt.prompt();
-    prompt.userChoice.then(function (choice) {
-      if (choice && choice.outcome !== 'accepted') {
-        try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) { /* asked again next visit */ }
-      }
-    }).catch(function () { /* the browser keeps its own count */ });
+    // A dismissed dialog postpones nothing of ours: the browser counts its own refusals
+    prompt.userChoice.catch(function () { /* nothing to undo */ }).then(showInstallItem);
   }
 
-  /** The notice, once signed in, unless installed, already showing or postponed by "Not now" */
-  function offerInstall() {
-    if (!state.user || install.card || installed() || installPostponed()) return;
-    var ios = !install.prompt && iosSafari();
-    if (!install.prompt && !ios) return;
-    install.card = notice('info', t(ios ? 'notes.install_ios' : 'notes.install_ready'), true);
+  /** The banner's Install button, once the browser has handed over its prompt */
+  function withInstallButton(card) {
+    if (card.querySelector('[data-install-now]')) return;
+    card.querySelector('.nt-banner-body').firstChild.textContent = t('notes.install_ready');
+    action(card, t('notes.install'), true, runInstall).setAttribute('data-install-now', '');
+  }
+
+  function installBanner(text) {
+    install.card = notice('info', text, true);
     action(install.card, t('notes.install_later'), false, function () {
       try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) { /* this visit only */ }
       closeInstall();
     });
-    if (!ios) action(install.card, t('notes.install'), true, runInstall);
+    return install.card;
+  }
+
+  /**
+   * The banner, once signed in, unless installed or postponed by "Not now": with the browser's
+   * prompt an Install button; without one, how to install by hand (Chromium only after
+   * INSTALL_WAIT, in case its event is merely late); one banner, gaining the button if the event comes
+   */
+  function offerInstall() {
+    showInstallItem();
+    if (!state.user || installed() || installPostponed()) return;
+    if (install.prompt) {
+      withInstallButton(install.card || installBanner(t('notes.install_ready')));
+      return;
+    }
+    var way = installWay();
+    if (install.card || way === null) return;
+    if (way !== 'menu') { installBanner(t(INSTALL_HINT[way])); return; }
+    if (!install.timer) {
+      install.timer = setTimeout(function () {
+        if (!install.card && !install.prompt && !installed() && !installPostponed()) installBanner(t(INSTALL_HINT.menu));
+      }, INSTALL_WAIT);
+    }
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
-    // Kept for our own notice and the header button instead of the browser's mini bar
+    // Kept for our own banner and the menu instead of the browser's mini bar
     event.preventDefault();
     install.prompt = event;
-    el.install.hidden = false;
     offerInstall();
   });
   window.addEventListener('appinstalled', function () {
     install.prompt = null;
-    el.install.hidden = true;
+    clearTimeout(install.timer);
     closeInstall();
+    showInstallItem();
     notice('ok', t('notes.installed'), false);
   });
-  el.install.addEventListener('click', function () { closeMenu(); runInstall(); });
+  el.install.addEventListener('click', function () {
+    closeMenu();
+    if (install.prompt) { runInstall(); return; }
+    var way = installWay();
+    if (way) notice('info', t(INSTALL_HINT[way]), false);
+  });
+  showInstallItem();
 
   // ---- updates: a new worker waits until the writer reloads into it ----
 

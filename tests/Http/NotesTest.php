@@ -326,6 +326,8 @@ final class NotesTest extends HttpTestCase
 
         self::assertMatchesRegularExpression('/<button[^>]*data-install[^>]*hidden>/', $shell);
         self::assertStringContainsString('"notes.install_ios":', $shell);
+        self::assertStringContainsString('"notes.install_desktop":', $shell, 'how to install by hand on a desktop browser');
+        self::assertStringContainsString('"notes.install_mac":', $shell);
     }
 
     public function testTheManifestStartsAndScopesTheAppAtNotes(): void
