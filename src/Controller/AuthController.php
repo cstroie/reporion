@@ -15,6 +15,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Http\View;
+use Reporion\Support\Notes;
 
 /**
  * GET/POST /login, POST /logout (docs/architecture-api.md §2). D35:
@@ -33,9 +34,6 @@ final class AuthController
      * oracle. The hash itself is meaningless; only its cost parameters
      * matter.
      */
-    /** The notes app's namespace under an account's own, users:{username}:notes (D55) */
-    public const NOTES_SEGMENT = 'notes';
-
     private const DUMMY_HASH = '$argon2id$v=19$m=65536,t=4,p=1$c29tZXNhbHRzb21lc2FsdA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
     public function __construct(
@@ -140,13 +138,11 @@ final class AuthController
      */
     private static function account(User $user): array
     {
-        $personal = $user->personalNamespace();
-
         return [
             'username' => $user->username,
             'display_name' => $user->signatureName(),
             'owner' => $user->isOwner,
-            'notes' => $personal !== null ? $personal . ':' . self::NOTES_SEGMENT : null,
+            'notes' => $user->personalNamespace() !== null ? Notes::namespaceFor($user->username) : null,
         ];
     }
 

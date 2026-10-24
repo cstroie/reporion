@@ -435,7 +435,7 @@ In markdown a single line break inside a paragraph is a space: `milk⏎eggs` rea
 with `breaks: true` keeps each such line (`<br>`), the way a note is typed. Only how a line ends
 changes; the dialect is the same (`Service\Render::toHtml(…, breaks: true)`, `Support\BodyFormat::hardBreaks()`),
 and it applies wherever `Render::body()` renders the page: page view, print, PDF, ODT. The notes app
-sets it on every note it saves and asks `POST /api/v1/render` for it in its preview. A text page
+sets it on every note it saves and asks `POST /api/v1/render` for it in its preview; a note started in Reporion gets it from `FrontmatterGuess::forNewPage()` (`Support\Notes::isNote()`: a direct child of `users:{u}:notes`). A text page
 (§3j) is unaffected. Signed with the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
 
 ## 3k. A page's title is its first heading (2026-10-13; was "`title` from the first heading", 2026-10-10)

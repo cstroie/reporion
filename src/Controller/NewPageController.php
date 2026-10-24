@@ -26,6 +26,7 @@ use Reporion\Service\NewReport;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\Notes;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Templates;
 use RuntimeException;
@@ -90,7 +91,8 @@ final class NewPageController
                 $request,
                 $principal,
                 error: null,
-                path: $ns . ':',
+                // A copy of a note is a note: its slug made here, as for a new one (D55)
+                path: Notes::isNotesNamespace($ns) ? Notes::newPath($ns) : $ns . ':',
                 document: DocumentFormat::encode($frontmatter, $body),
                 segments: self::segmentsFromNamespace($ns),
                 duplicateOf: $from,
@@ -143,6 +145,16 @@ final class NewPageController
         }
 
         $ns = trim($ns ?? '', ': ');
+        // A new page in a notes namespace is a note (D55): no path to ask for, the editor opens
+        // on a fresh ULID slug and its first Save writes it (FrontmatterGuess gives `breaks: true`)
+        if (Notes::isNotesNamespace($ns)) {
+            $path = Notes::newPath($ns);
+            if (!$principal->canWrite($path)) {
+                throw new PageNotFoundException();
+            }
+
+            return Response::redirect($request->basePath . '/' . $path . '/edit');
+        }
         if ($this->guided($principal, $ns, $request)) {
             return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true, ns: $ns === '' ? 'reports' : $ns);
         }

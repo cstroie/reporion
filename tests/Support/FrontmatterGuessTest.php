@@ -24,6 +24,13 @@ final class FrontmatterGuessTest extends TestCase
         );
     }
 
+    public function testANoteKeepsItsLinesAnOrdinaryPageDoesNotSayAnything(): void
+    {
+        self::assertSame(['visibility' => 'private', 'breaks' => true], FrontmatterGuess::forNewPage('users:alice:notes:01jabcdefghjkmnpqrstvwxyz0', ''));
+        self::assertSame(['visibility' => 'private'], FrontmatterGuess::forNewPage('users:alice:diary', ''));
+        self::assertSame(['visibility' => 'private'], FrontmatterGuess::forNewPage('users:alice:notes', ''), 'the namespace page itself is no note');
+    }
+
     public function testWithoutAHeadingThePageGuessesNoTitleEither(): void
     {
         self::assertSame(['visibility' => 'private'], FrontmatterGuess::forNewPage('docs:remote-desktop', "Just text.\n"));

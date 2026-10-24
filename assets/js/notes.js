@@ -462,7 +462,8 @@
         if (r.status !== 200 || !r.data) throw new Error('list ' + r.status);
         var chain = Promise.resolve();
         r.data.data.forEach(function (row) {
-          if (row.path.indexOf(prefix) !== 0) return;
+          // Notes are the namespace's direct children (Support\Notes::isNote), whatever their slug
+          if (row.path.indexOf(prefix) !== 0 || row.path.indexOf(':', prefix.length) !== -1) return;
           seen[row.path] = true;
           var local = state.notes[row.path];
           if (local && (local.dirty || local.rev >= row.rev)) return;
@@ -553,7 +554,7 @@
       var li = document.createElement('li');
       var a = document.createElement('a');
       a.className = 'nt-card';
-      a.href = '#/n/' + note.path.slice(state.user.notes.length + 1);
+      a.href = '#/n/' + encodeURIComponent(note.path.slice(state.user.notes.length + 1));
       if (note.path === state.current) a.setAttribute('aria-current', 'true');
       var title = String(note.title || '').trim();
       var text = String(note.body || '').trim();
@@ -827,7 +828,7 @@
   el.add.addEventListener('click', function () {
     var path = state.user.notes + ':' + ulid();
     keep({ path: path, title: '', baseTitle: '', tags: state.tag ? [state.tag] : [], baseTags: [], body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
-      location.hash = '#/n/' + path.slice(state.user.notes.length + 1);
+      location.hash = '#/n/' + encodeURIComponent(path.slice(state.user.notes.length + 1));
     });
   });
 
@@ -860,8 +861,11 @@
 
   function route() {
     if (!state.user) { show('signin'); return; }
-    var m = /^#\/n\/([0-9a-z]+)$/.exec(location.hash);
-    var target = m ? state.user.notes + ':' + m[1] : null;
+    // Any slug: the app makes ULIDs, a note written in Reporion by hand may have another
+    var m = /^#\/n\/([^\/]+)$/.exec(location.hash);
+    var slug = null;
+    try { slug = m ? decodeURIComponent(m[1]) : null; } catch (e) { slug = null; }
+    var target = slug && slug.indexOf(':') === -1 ? state.user.notes + ':' + slug : null;
     if (state.current && state.current !== target) {
       // Leaving a note never typed into: nothing to keep. What was typed is saved first:
       // keep() updates the note in memory at once, so the check below sees it

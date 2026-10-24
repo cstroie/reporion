@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
+use Reporion\Support\BodyFormat;
+use Reporion\Support\Notes;
 use Reporion\Support\ReportPath;
 
 /**
@@ -43,6 +45,10 @@ final class FrontmatterGuess
             'exam_title' => null,
             'visibility' => 'private',
         ];
+        // A note keeps its typed lines, as the notes app writes it (D55, FORMATS §3j-b)
+        if (Notes::isNote($path)) {
+            $fm[BodyFormat::BREAKS] = true;
+        }
         if (!ReportPath::isReport($path)) {
             return array_filter($fm, static fn (mixed $v): bool => $v !== null);
         }

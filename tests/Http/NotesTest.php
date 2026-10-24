@@ -84,6 +84,38 @@ final class NotesTest extends HttpTestCase
         self::assertSame([], $this->decode($this->as(null, 'GET', '/api/v1/pages?ns=users:alice:notes'))['data']);
     }
 
+    public function testNewPageInANotesNamespaceOpensTheEditorOnAFreshNoteWithNoPathToAsk(): void
+    {
+        $response = $this->as('alice', 'GET', '/users:alice:notes/new');
+
+        self::assertSame(302, $response->status);
+        self::assertMatchesRegularExpression('#^/users:alice:notes:[0-9a-hjkmnp-tv-z]{26}/edit$#', $response->headers['Location']);
+        self::assertNotSame($response->headers['Location'], $this->as('alice', 'GET', '/users:alice:notes/new')->headers['Location'], 'a new slug each time');
+
+        self::assertSame(404, $this->as('bob', 'GET', '/users:alice:notes/new')->status, "not in someone else's");
+        self::assertSame(404, $this->as(null, 'GET', '/users:alice:notes/new')->status);
+        self::assertSame(200, $this->as('alice', 'GET', '/users:alice:diary/new')->status, 'any other namespace keeps the path form');
+    }
+
+    public function testANoteStartedInReporionIsSavedWithItsLinesKept(): void
+    {
+        $edit = (string) $this->as('alice', 'GET', '/users:alice:notes/new')->headers['Location'];
+        $path = substr($edit, 1, -\strlen('/edit'));
+
+        $raw = $this->as('alice', 'GET', $edit . '?raw=1');
+        self::assertSame(200, $raw->status);
+        self::assertStringContainsString('breaks: true', html_entity_decode($raw->body), 'the starting frontmatter says so');
+
+        // The editor's first Save (the curated form, base revision 0): its frontmatter starts from the path's guess
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('alice');
+        $saved = Kernel::boot($this->config)->handle(new Request('POST', $edit, cookies: ['reporion' => $cookie], body: http_build_query(['body' => "milk\neggs\n", 'base_rev' => '0'])));
+        self::assertSame(302, $saved->status, $saved->body);
+
+        $page = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . $path));
+        self::assertTrue($page['meta']['breaks']);
+        self::assertStringContainsString('milk<br />', $page['html']);
+    }
+
     public function testAStaleSaveWithMergeKeepsBothDevicesEdits(): void
     {
         $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'body' => "one\ntwo\nthree\n"]);
