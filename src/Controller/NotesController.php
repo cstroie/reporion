@@ -33,7 +33,13 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '1.3.0';
+    public const VERSION = '2.0.0';
+
+    /**
+     * The app's stylesheets: Reporion's colour tokens and fonts, the icons,
+     * and its own look (notes.css); none of Reporion's page components
+     */
+    public const STYLES = ['css/tokens.css', 'css/phosphor.css', 'css/notes.css'];
 
     /** The strings the app shows, from lang/en.php (D26) */
     private const STRINGS = [
@@ -45,7 +51,8 @@ final class NotesController
         'notes.conflict_resolved', 'notes.conflict_markers', 'notes.preview_offline',
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
         'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready',
-        'notes.install_ios', 'notes.install_later', 'notes.installed',
+        'notes.install_ios', 'notes.install_later', 'notes.installed', 'notes.saved', 'notes.edited_at',
+        'notes.not_synced_one', 'notes.signed_in_as',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',
     ];
 
@@ -166,6 +173,6 @@ final class NotesController
      */
     public static function assets(): array
     {
-        return ['css/tokens.css', 'css/wiki.css', 'css/phosphor.css', 'css/cyberpunk.css', 'css/themes.css', 'css/notes.css', 'js/notes.js', 'notes/icon.svg', 'notes/apple-touch-icon.png'];
+        return [...self::STYLES, 'js/notes.js', 'notes/icon.svg', 'notes/apple-touch-icon.png'];
     }
 }

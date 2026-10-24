@@ -25,15 +25,21 @@
  * it is resolved. The preview is the server's renderer (POST /api/v1/render,
  * invariant 4), online only. Text is shown with textContent.
  *
+ * The look is an app's (templates/notes.php, notes.css): `data-screen` on the
+ * frame puts sign-in, the list (cards) or the editor in front; a wide window
+ * shows the list beside the open note. Lasting messages are banners with
+ * their buttons, passing ones toasts; the menu holds sync, theme, install,
+ * sign out and the version.
+ *
  * The app has a version and a build (NotesController::VERSION, build()),
- * shown at the foot. A new service worker waits beside the running one; the
+ * shown in the menu. A new service worker waits beside the running one; the
  * page asks it what it is and offers a reload (a notice), checking for one
  * when it becomes visible, comes back online and every hour.
  *
  * Install: once signed in, a notice offers to install the app, with the
  * browser's own prompt (beforeinstallprompt: Chrome, Edge, Android) or, in
  * iOS Safari, the Share → Add to Home Screen hint; never when it already
- * runs installed. "Not now" waits 30 days; the header's download button
+ * runs installed. "Not now" waits 30 days; the menu's Install item
  * stays while the browser offers installing.
  */
 (function () {
@@ -56,24 +62,31 @@
 
   var el = {
     status: root.querySelector('[data-status]'),
+    statusIcon: root.querySelector('[data-status-icon]'),
     sync: root.querySelector('[data-sync]'),
+    syncNow: root.querySelector('[data-sync-now]'),
     install: root.querySelector('[data-install]'),
-    theme: root.querySelector('[data-theme-toggle]'),
+    themes: root.querySelectorAll('[data-theme-set]'),
     signOut: root.querySelector('[data-sign-out]'),
-    notices: root.querySelector('[data-notices]'),
+    menu: root.querySelector('[data-menu]'),
+    menuButton: root.querySelector('[data-menu-button]'),
+    menuUser: root.querySelector('[data-menu-user]'),
+    banners: root.querySelector('[data-banners]'),
+    toasts: root.querySelector('[data-toasts]'),
     signin: root.querySelector('[data-signin]'),
     search: root.querySelector('[data-search]'),
     add: root.querySelector('[data-new]'),
     items: root.querySelector('[data-items]'),
     empty: root.querySelector('[data-empty]'),
+    editorNone: root.querySelector('[data-editor-none]'),
+    editorNote: root.querySelector('[data-editor-note]'),
+    noteStatus: root.querySelector('[data-note-status]'),
     title: root.querySelector('[data-title]'),
     text: root.querySelector('[data-text]'),
     preview: root.querySelector('[data-preview]'),
-    previewLabel: root.querySelector('[data-preview-label]'),
     previewPane: root.querySelector('[data-preview-pane]'),
     del: root.querySelector('[data-delete]'),
-    conflict: root.querySelector('[data-conflict]'),
-    views: root.querySelectorAll('[data-view]')
+    conflict: root.querySelector('[data-conflict]')
   };
 
   var state = {
@@ -98,42 +111,63 @@
     var setting = themeSetting();
     var light = setting === 'light' || (setting === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
     document.body.classList.toggle('theme-light', !!light);
-    var palette = /(?:^|;\s*)reporion_palette=([a-z-]+)/.exec(document.cookie);
-    if (palette && palette[1] !== 'royal-blue') document.body.classList.add('palette-' + palette[1]);
-    var label = t('notes.theme') + ': ' + t('notes.theme_' + setting);
-    el.theme.title = label;
-    el.theme.setAttribute('aria-label', label);
-    var icon = el.theme.querySelector('i');
-    icon.className = 'ph ' + ({ system: 'ph-circle-half', light: 'ph-sun', dark: 'ph-moon' })[setting];
+    Array.prototype.forEach.call(el.themes, function (button) {
+      button.setAttribute('aria-pressed', button.getAttribute('data-theme-set') === setting ? 'true' : 'false');
+    });
+    // The system bar takes the app's own background
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(root).backgroundColor);
   }
 
-  el.theme.addEventListener('click', function () {
-    var next = ({ system: 'light', light: 'dark', dark: 'system' })[themeSetting()] || 'system';
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* this visit only */ }
-    applyTheme();
+  Array.prototype.forEach.call(el.themes, function (button) {
+    button.addEventListener('click', function () {
+      try { localStorage.setItem(THEME_KEY, button.getAttribute('data-theme-set')); } catch (e) { /* this visit only */ }
+      applyTheme();
+    });
   });
   if (window.matchMedia) {
     var scheme = window.matchMedia('(prefers-color-scheme: light)');
     if (scheme.addEventListener) scheme.addEventListener('change', applyTheme);
   }
 
-  // ---- notices (the notice card's markup, templates/partials/notice.php) ----
+  // ---- messages: a banner stays until answered, a toast goes after a few seconds ----
 
-  function notice(kind, text, keep) {
-    var icon = ({ info: 'info', ok: 'check-circle', warn: 'warning', error: 'warning-octagon' })[kind] || 'info';
+  var ICONS = { info: 'info', ok: 'check-circle', warn: 'warning', error: 'warning-octagon' };
+
+  /** A banner (keep) in `parent` (the list's banners by default), else a toast; returns it */
+  function notice(kind, text, keep, parent) {
     var card = document.createElement('div');
-    card.className = 'wk-notice wk-notice-' + kind;
+    card.className = keep ? 'nt-banner nt-banner-' + kind : 'nt-toast nt-toast-' + kind;
     card.setAttribute('role', kind === 'warn' || kind === 'error' ? 'alert' : 'status');
     var i = document.createElement('i');
-    i.className = 'ph ph-' + icon;
+    i.className = 'ph ph-' + (ICONS[kind] || 'info');
     i.setAttribute('aria-hidden', 'true');
     var body = document.createElement('div');
+    body.className = 'nt-banner-body';
     body.textContent = text;
     card.appendChild(i);
     card.appendChild(body);
-    el.notices.appendChild(card);
-    if (!keep) setTimeout(function () { card.remove(); }, 5000);
+    if (keep) {
+      var actions = document.createElement('div');
+      actions.className = 'nt-banner-actions';
+      body.appendChild(actions);
+      (parent || el.banners).appendChild(card);
+    } else {
+      el.toasts.appendChild(card);
+      setTimeout(function () { card.remove(); }, 4000);
+    }
     return card;
+  }
+
+  /** A button in a banner's action row */
+  function action(card, label, primary, onClick) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'nt-btn ' + (primary ? 'nt-btn-primary' : 'nt-btn-quiet');
+    button.textContent = label;
+    button.addEventListener('click', onClick);
+    card.querySelector('.nt-banner-actions').appendChild(button);
+    return button;
   }
 
   // ---- IndexedDB ----
@@ -434,39 +468,80 @@
     else { text = t('notes.synced'); kind = 'ok'; }
     el.status.textContent = text;
     el.status.dataset.kind = kind;
-    el.sync.hidden = !state.user;
+    el.sync.dataset.kind = kind;
+    el.sync.title = text;
+    el.sync.setAttribute('aria-label', text);
+    el.statusIcon.className = 'ph ' + ({ off: 'ph-cloud-slash', busy: 'ph-arrows-clockwise', warn: 'ph-cloud-warning', ok: 'ph-cloud-check' }[kind] || 'ph-cloud-check');
+    el.menuUser.textContent = state.user ? t('notes.signed_in_as').replace('%s', state.user.display_name || state.user.username) : '';
+    showNoteStatus();
+  }
+
+  /** The editor bar's line: this note's state */
+  function showNoteStatus(text) {
+    var note = state.current && state.notes[state.current];
+    if (!note) { el.noteStatus.textContent = ''; return; }
+    if (text) { el.noteStatus.textContent = text; return; }
+    if (note.conflict) el.noteStatus.textContent = t('notes.conflict');
+    else if (note.dirty) el.noteStatus.textContent = t('notes.not_synced_one');
+    else el.noteStatus.textContent = t('notes.edited_at').replace('%s', when(note.updated));
+  }
+
+  /** A time today, else a date */
+  function when(ms) {
+    var d = new Date(ms || Date.now());
+    var today = new Date();
+    return d.toDateString() === today.toDateString()
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { day: 'numeric', month: 'short', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
   }
 
   // ---- views ----
 
+  /** The screen in front: signin | list | editor (a wide window shows the list beside the editor) */
   function show(name) {
-    Array.prototype.forEach.call(el.views, function (view) { view.hidden = view.getAttribute('data-view') !== name; });
-    el.signOut.hidden = !state.user;
+    root.setAttribute('data-screen', name);
+    if (name !== 'editor') {
+      el.editorNote.hidden = true;
+      el.editorNone.hidden = false;
+    }
+    closeMenu();
   }
 
+  /** A card: the title (else nothing), the text's opening lines, when, and a flag when not synced */
   function renderList() {
-    if (!state.user || state.current) return;
+    if (!state.user) return;
     var notes = visibleNotes();
     el.items.textContent = '';
     notes.forEach(function (note) {
       var li = document.createElement('li');
       var a = document.createElement('a');
-      a.className = 'nt-item';
+      a.className = 'nt-card';
       a.href = '#/n/' + note.path.slice(state.user.notes.length + 1);
-      var title = document.createElement('span');
-      title.className = 'nt-item-title';
-      title.textContent = labelOf(note.title, note.body);
-      var meta = document.createElement('span');
-      meta.className = 'nt-item-meta';
-      meta.textContent = new Date(note.updated || Date.now()).toLocaleString();
-      a.appendChild(title);
-      a.appendChild(meta);
+      if (note.path === state.current) a.setAttribute('aria-current', 'true');
+      var title = String(note.title || '').trim();
+      var text = String(note.body || '').trim();
+      if (title || !text) {
+        var head = document.createElement('span');
+        head.className = 'nt-card-title';
+        head.textContent = title || t('notes.untitled');
+        a.appendChild(head);
+      }
+      if (text) {
+        var body = document.createElement('span');
+        body.className = 'nt-card-text';
+        body.textContent = text.slice(0, 600);
+        a.appendChild(body);
+      }
+      var foot = document.createElement('span');
+      foot.className = 'nt-card-foot';
+      foot.textContent = when(note.updated);
       if (note.dirty) {
         var mark = document.createElement('i');
-        mark.className = 'ph ' + (note.conflict ? 'ph-warning' : 'ph-cloud-slash') + ' nt-item-flag';
-        mark.title = note.conflict ? t('notes.conflict') : t('notes.unsynced').replace('%d', '1');
-        a.appendChild(mark);
+        mark.className = 'ph ' + (note.conflict ? 'ph-warning' : 'ph-cloud-arrow-up');
+        mark.title = note.conflict ? t('notes.conflict') : t('notes.not_synced_one');
+        foot.appendChild(mark);
       }
+      a.appendChild(foot);
       li.appendChild(a);
       el.items.appendChild(li);
     });
@@ -482,10 +557,14 @@
     }
     state.current = path;
     show('editor');
+    el.editorNone.hidden = true;
+    el.editorNote.hidden = false;
     setPreview(false);
     el.title.value = note.title || '';
     el.text.value = note.body;
     showConflict(note);
+    showNoteStatus();
+    renderList();
     if (!note.body && !note.title) el.title.focus();
   }
 
@@ -497,6 +576,7 @@
     if (document.activeElement !== el.text && el.text.value !== note.body) el.text.value = note.body;
     if (document.activeElement !== el.title && el.title.value !== (note.title || '')) el.title.value = note.title || '';
     showConflict(note);
+    showNoteStatus();
   }
 
   function closeEditor() {
@@ -510,23 +590,18 @@
     el.conflict.textContent = '';
     el.conflict.hidden = !note.conflict;
     if (!note.conflict) return;
-    var card = notice('warn', t('notes.conflict_markers'), true);
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'btn btn-sm';
-    button.textContent = t('notes.conflict_resolved');
-    button.addEventListener('click', function () {
-      flushSave();
-      var current = state.notes[state.current];
-      if (MARKER.test(current.body) && !window.confirm(t('notes.conflict_markers'))) return;
-      keep(Object.assign({}, current, { conflict: false })).then(function () {
-        showConflict(state.notes[state.current]);
-        scheduleSync(0);
+    var card = notice('warn', t('notes.conflict_markers'), true, el.conflict);
+    action(card, t('notes.conflict_resolved'), true, function () {
+      flushSave().then(function () {
+        var current = state.notes[state.current];
+        if (MARKER.test(current.body) && !window.confirm(t('notes.conflict_markers'))) return;
+        keep(Object.assign({}, current, { conflict: false })).then(function () {
+          showConflict(state.notes[state.current]);
+          showNoteStatus();
+          scheduleSync(0);
+        });
       });
     });
-    card.querySelector('div').appendChild(document.createTextNode(' '));
-    card.querySelector('div').appendChild(button);
-    el.conflict.appendChild(card);
   }
 
   function flushSave() {
@@ -542,6 +617,8 @@
     if (!note || (note.body === el.text.value && (note.title || '') === el.title.value)) return Promise.resolve();
     return keep(Object.assign({}, note, { title: el.title.value, body: el.text.value, dirty: true, updated: Date.now() })).then(function () {
       showStatus();
+      showNoteStatus(t('notes.saved'));
+      renderList();
       scheduleSync();
     });
   }
@@ -560,9 +637,13 @@
   });
 
   function setPreview(on) {
+    var label = on ? t('notes.edit') : t('notes.preview');
     el.preview.setAttribute('aria-pressed', on ? 'true' : 'false');
-    el.previewLabel.textContent = on ? t('notes.edit') : t('notes.preview');
+    el.preview.title = label;
+    el.preview.setAttribute('aria-label', label);
+    el.preview.querySelector('i').className = 'ph ' + (on ? 'ph-pencil-simple' : 'ph-eye');
     el.text.hidden = on;
+    el.title.readOnly = on;
     el.previewPane.hidden = !on;
   }
 
@@ -590,7 +671,7 @@
     timers.save = 0;
     keep(Object.assign({}, note, { deleted: true, dirty: true })).then(function () {
       state.current = null;
-      location.hash = '#/';
+      if (location.hash === '#/') route(); else location.hash = '#/';
       scheduleSync(0);
     });
   });
@@ -604,17 +685,43 @@
 
   el.search.addEventListener('input', renderList);
   el.sync.addEventListener('click', function () { scheduleSync(0); });
+  el.syncNow.addEventListener('click', function () { closeMenu(); scheduleSync(0); });
+
+  // ---- the menu ----
+
+  function closeMenu() {
+    el.menu.hidden = true;
+    el.menuButton.setAttribute('aria-expanded', 'false');
+  }
+
+  el.menuButton.addEventListener('click', function (event) {
+    event.stopPropagation();
+    var open = el.menu.hidden;
+    el.menu.hidden = !open;
+    el.menuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function (event) {
+    if (!el.menu.hidden && !el.menu.contains(event.target)) closeMenu();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (!el.menu.hidden) { closeMenu(); return; }
+    // Escape leaves a note, as Back does
+    if (state.current && location.hash !== '#/') location.hash = '#/';
+  });
 
   function route() {
     if (!state.user) { show('signin'); return; }
     var m = /^#\/n\/([0-9a-z]+)$/.exec(location.hash);
-    if (m) { openEditor(state.user.notes + ':' + m[1]); return; }
-    if (state.current) {
-      // Leaving a note never typed into: nothing to keep
-      var left = state.notes[state.current];
+    var target = m ? state.user.notes + ':' + m[1] : null;
+    if (state.current && state.current !== target) {
+      // Leaving a note never typed into: nothing to keep. What was typed is saved first:
+      // keep() updates the note in memory at once, so the check below sees it
       flushSave();
+      var left = state.notes[state.current];
       if (left && !left.rev && !left.dirty && left.body === '' && !left.title) forget(left.path);
     }
+    if (target) { openEditor(target); return; }
     closeEditor();
   }
 
@@ -728,26 +835,11 @@
     var ios = !install.prompt && iosSafari();
     if (!install.prompt && !ios) return;
     install.card = notice('info', t(ios ? 'notes.install_ios' : 'notes.install_ready'), true);
-    var body = install.card.querySelector('div');
-    body.appendChild(document.createTextNode(' '));
-    if (!ios) {
-      var yes = document.createElement('button');
-      yes.type = 'button';
-      yes.className = 'btn btn-sm btn-primary';
-      yes.textContent = t('notes.install');
-      yes.addEventListener('click', runInstall);
-      body.appendChild(yes);
-      body.appendChild(document.createTextNode(' '));
-    }
-    var later = document.createElement('button');
-    later.type = 'button';
-    later.className = 'btn btn-sm btn-ghost';
-    later.textContent = t('notes.install_later');
-    later.addEventListener('click', function () {
+    action(install.card, t('notes.install_later'), false, function () {
       try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) { /* this visit only */ }
       closeInstall();
     });
-    body.appendChild(later);
+    if (!ios) action(install.card, t('notes.install'), true, runInstall);
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
@@ -763,7 +855,7 @@
     closeInstall();
     notice('ok', t('notes.installed'), false);
   });
-  el.install.addEventListener('click', runInstall);
+  el.install.addEventListener('click', function () { closeMenu(); runInstall(); });
 
   // ---- updates: a new worker waits until the writer reloads into it ----
 
@@ -789,11 +881,7 @@
       update.offered = true;
       var name = info ? info.version + ' (' + info.build + ')' : '';
       var card = notice('info', t('notes.update_ready').replace('%s', name), true);
-      var button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-sm btn-primary';
-      button.textContent = t('notes.update_reload');
-      button.addEventListener('click', function () {
+      var button = action(card, t('notes.update_reload'), true, function () {
         button.disabled = true;
         // What is typed is kept first; the reload follows the new worker taking over
         flushSave().then(function () {
@@ -801,8 +889,6 @@
           worker.postMessage({ type: 'skip-waiting' });
         });
       });
-      card.querySelector('div').appendChild(document.createTextNode(' '));
-      card.querySelector('div').appendChild(button);
     });
   }
 

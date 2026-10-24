@@ -250,6 +250,20 @@ final class NotesTest extends HttpTestCase
         self::assertStringNotContainsString('href="/notes"', $anonymous);
     }
 
+    public function testTheShellIsAnAppWithItsOwnLookNotAReporionPage(): void
+    {
+        $shell = $this->request('GET', '/notes')->body;
+
+        foreach (NotesController::STYLES as $css) {
+            self::assertStringContainsString('/assets/' . $css . '?v=', $shell);
+        }
+        self::assertStringNotContainsString('wiki.css', $shell, "none of Reporion's page components");
+        self::assertStringContainsString('data-screen="boot"', $shell, 'the script puts a screen in front');
+        foreach (['signin', 'list', 'editor'] as $screen) {
+            self::assertStringContainsString('data-view="' . $screen . '"', $shell);
+        }
+    }
+
     public function testTheShellHasTheInstallButtonHiddenUntilTheBrowserOffersIt(): void
     {
         $shell = $this->request('GET', '/notes')->body;
