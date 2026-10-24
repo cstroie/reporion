@@ -75,6 +75,7 @@ $icon = $e(Asset::url($basePath, 'notes/icon.svg'));
 <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
 <input type="search" data-search placeholder="<?= $e(t('notes.search')) ?>" aria-label="<?= $e(t('notes.search')) ?>" autocomplete="off">
 </div>
+<div class="nt-filter" data-filter hidden role="group" aria-label="<?= $e(t('notes.tags')) ?>"></div>
 <div class="nt-scroll" data-list-scroll>
 <div class="nt-banners" data-banners></div>
 <ul class="nt-grid" data-items></ul>
@@ -92,7 +93,7 @@ $icon = $e(Asset::url($basePath, 'notes/icon.svg'));
 <i class="ph ph-note-pencil" aria-hidden="true"></i>
 <p><?= $e(t('notes.pick')) ?></p>
 </div>
-<div class="nt-editor-note" data-editor-note hidden>
+<div class="nt-editor-note" data-editor-note data-mode="edit" hidden>
 <header class="nt-bar">
 <a class="nt-icon-btn nt-back" href="#/" data-nav-list title="<?= $e(t('notes.back')) ?>" aria-label="<?= $e(t('notes.back')) ?>"><i class="ph ph-caret-left" aria-hidden="true"></i></a>
 <span class="nt-bar-status" data-note-status aria-live="polite"></span>
@@ -103,9 +104,16 @@ $icon = $e(Asset::url($basePath, 'notes/icon.svg'));
 </header>
 <div class="nt-scroll nt-sheet">
 <div class="nt-conflict" data-conflict hidden></div>
+<?php /* The paper: tinted while editing, gone in the preview (data-mode on .nt-editor-note) */ ?>
+<div class="nt-paper">
 <input class="nt-title" type="text" data-title maxlength="200" autocomplete="off" placeholder="<?= $e(t('notes.title_hint')) ?>" aria-label="<?= $e(t('notes.field_title')) ?>">
+<div class="nt-tags" data-tags>
+<input class="nt-tag-input" type="text" data-tag-input list="nt-tag-list" maxlength="40" autocomplete="off" autocapitalize="none" enterkeyhint="done" placeholder="<?= $e(t('notes.tag_hint')) ?>" aria-label="<?= $e(t('notes.tag_add')) ?>">
+</div>
+<datalist id="nt-tag-list" data-tag-list></datalist>
 <textarea class="nt-text" data-text spellcheck="true" placeholder="<?= $e(t('notes.text_hint')) ?>" aria-label="<?= $e(t('notes.field_text')) ?>"></textarea>
 <div class="nt-prose" data-preview-pane hidden></div>
+</div>
 </div>
 </div>
 </section>
