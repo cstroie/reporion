@@ -175,8 +175,8 @@ covered and rerunnable.
 **After coding, run only the tests of the modules the change touched**: the classes or folders
 named by the code you edited (`vendor/bin/phpunit tests/Support/PageTitleTest.php`, `--filter`,
 one folder at most), so development is not held up. Never run a whole directory tree such as
-`tests/Http tests/Service …` as a check. **Never run the full suite yourself** (~3 min+, past
-`composer`'s 300 s limit): say when it is due: before a merge, after a change to storage, index,
+`tests/Http tests/Service …` as a check. **Never run the full suite yourself** (~1900 tests, more than
+20 minutes by 2026-10-24, far past `composer`'s 300 s limit): say when it is due: before a merge, after a change to storage, index,
 visibility, rendering or a shared `Support\*` helper, and let the owner run it.
 
 ## Commands
