@@ -34,6 +34,7 @@ use Reporion\Controller\JoinController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
+use Reporion\Controller\NotesController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\PatientMergeController;
@@ -500,6 +501,7 @@ final class Kernel
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
+        $notes = new NotesController();
         $signing = new Signing($storage, $schemas, $audit);
         $signPage = new SignController($storage, $index, $signing, $aiActions, $audit);
         $accessions = new Accessions(
@@ -604,11 +606,19 @@ final class Kernel
         $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
+        // The notes app (D55): its shell, worker and manifest; it talks to /api/v1 only
+        $router->get('/notes', static fn (Request $request, array $params): Response => $notes->shell($request));
+        $router->get('/notes/sw.js', static fn (Request $request, array $params): Response => $notes->serviceWorker($request));
+        $router->get('/notes/manifest.webmanifest', static fn (Request $request, array $params): Response => $notes->manifest($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3)
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).
+        $router->get('/api/v1/session', static fn (Request $request, array $params): Response
+            => $auth->apiShow($request, $session->principal($request)));
+        $router->post('/api/v1/session', static fn (Request $request, array $params): Response => $auth->apiLogin($request));
+        $router->delete('/api/v1/session', static fn (Request $request, array $params): Response => $auth->apiLogout($request));
         $router->get('/api/v1/search', static fn (Request $request, array $params): Response
             => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/ai/complete', static fn (Request $request, array $params): Response
