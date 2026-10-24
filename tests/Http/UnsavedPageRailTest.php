@@ -85,6 +85,25 @@ final class UnsavedPageRailTest extends HttpTestCase
         self::assertStringNotContainsString('"pid":""', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), 'no empty pid in the audit');
     }
 
+    /** An API caller tries a template on notes: a raw `document` makes the page, its exam's template is read, nothing written */
+    public function testADocumentGivesThePageItsTemplate(): void
+    {
+        $storage = $this->storage();
+        $storage->create('templates:mri:genunchi', ['visibility' => 'public'], "# Genunchi\n\n## IRM genunchi\n\n[Structura are aspect normal. / Structura prezintă [...].]\n", 'owner');
+        $table = $storage->read('ai:profiles:reports');
+        $storage->save('ai:profiles:reports', $table->frontmatter, $table->body . "| create | Create | Create report | file-plus | replace |\n", 1, 'owner');
+        $storage->create('ai:profiles:reports:create', ['visibility' => 'private'], "<sablon>{template}</sablon>\n<note>{text}</note>\n", 'owner');
+        $document = "---\nmodality: [MR]\nexams:\n  - title: IRM genunchi\n    template: templates:mri:genunchi\n---\n# TEST Ionescu\n\n## IRM genunchi\n";
+
+        $response = $this->call('POST', '/api/v1/ai/complete', 'mihai', ['path' => self::NEW, 'action' => 'create', 'text' => '- structura modificata', 'document' => $document]);
+
+        self::assertSame(200, $response->status, $response->body);
+        $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('Structura are aspect normal.', $sent, 'the template the document names');
+        self::assertStringContainsString('structura modificata', $sent);
+        self::assertFalse(is_dir($this->dataRoot . '/pages/reports/mri/mioveni/261019-test-ionescu'), 'nothing written');
+    }
+
     public function testThePriorAndTheChecksAnswerFromTheForm(): void
     {
         $form = http_build_query(['body' => "# TEST Ionescu\n\n## IRM cerebral\n\n### Descriere\n\nChist de [dimensiune].\n", 'carried' => json_encode(['modality' => ['MR'], 'study_date' => '2026-10-19', 'patient' => ['name' => 'TEST Ionescu', 'cnp' => self::CNP, 'sex' => 'M']])]);
