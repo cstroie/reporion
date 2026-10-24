@@ -53,6 +53,29 @@ final class PagesReadApiTest extends HttpTestCase
         self::assertNull($second['page']['next']);
     }
 
+    /** `fields=meta,body`: the listed pages' frontmatter and text, under the same listing predicate (invariant 6) */
+    public function testFieldsAddTheListedPagesMetaAndBody(): void
+    {
+        $plain = $this->json('owner', '/api/v1/pages', ['ns' => 'reports:mri'])['data'][0];
+        self::assertArrayNotHasKey('meta', $plain);
+        self::assertArrayNotHasKey('body', $plain);
+
+        $owner = $this->json('owner', '/api/v1/pages', ['ns' => 'reports', 'fields' => 'meta,body,html']);
+        $byPath = array_column($owner['data'], null, 'path');
+        self::assertSame('TEST PATIENT', $byPath['reports:mri:mioveni:a']['meta']['patient']['name']);
+        self::assertSame("a\n", $byPath['reports:mri:mioveni:a']['body']);
+        self::assertArrayNotHasKey('html', $byPath['reports:mri:mioveni:a'], 'only meta and body');
+
+        $anonymous = $this->json(null, '/api/v1/pages', ['fields' => 'meta,body']);
+        self::assertContains('reports:ct:mioveni:b', array_column($anonymous['data'], 'path'));
+        self::assertNotContains('reports:mri:mioveni:a', array_column($anonymous['data'], 'path'), 'a private page is not listed');
+        $public = array_column($anonymous['data'], null, 'path')['reports:ct:mioveni:b'];
+        self::assertArrayNotHasKey('patient', $public['meta'], 'no patient block for an anonymous caller');
+        self::assertSame("b\n", $public['body']);
+
+        self::assertSame(['body'], array_values(array_diff(array_keys($this->json('owner', '/api/v1/pages', ['ns' => 'docs', 'fields' => 'body'])['data'][0]), array_keys($plain))));
+    }
+
     public function testOnePageWithMetaBodyAndHtml(): void
     {
         $page = $this->json('owner', '/api/v1/pages/reports:mri:mioveni:a');

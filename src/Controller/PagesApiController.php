@@ -75,7 +75,8 @@ final class PagesApiController
      * can see (Index::listRecent(), the listing predicate: anonymous gets
      * public pages only), newest update first. Filters: ns, modality,
      * region, site, status, from / to (study date), updated_by. Paging:
-     * limit (≤ 200, default 50) and offset. -> { data: […], page: {limit, offset, next} }
+     * limit (≤ 200, default 50) and offset; `fields=meta,body` adds each page's frontmatter and
+     * text (withFields()). -> { data: […], page: {limit, offset, next} }
      */
     public function index(Request $request, ?User $principal): Response
     {
@@ -89,13 +90,16 @@ final class PagesApiController
         $limit = isset($q['limit']) && ctype_digit((string) $q['limit']) ? max(1, min(200, (int) $q['limit'])) : 50;
         $offset = isset($q['offset']) && ctype_digit((string) $q['offset']) ? (int) $q['offset'] : 0;
 
+        // `fields=meta,body` (2026-10-24): each page's frontmatter and text too, read as GET /pages/{path} reads them
+        $extra = array_values(array_intersect(['meta', 'body'], array_map('trim', explode(',', \is_string($q['fields'] ?? null) ? $q['fields'] : ''))));
+
         // One extra row tells whether there is a next page
         $rows = $this->index->listRecent($principal, $filters, $limit + 1, $offset);
         $next = \count($rows) > $limit ? $offset + $limit : null;
         $rows = \array_slice($rows, 0, $limit);
 
         return ApiResponse::json([
-            'data' => array_map(static fn (array $row): array => [
+            'data' => array_map(fn (array $row): array => $this->withFields([
                 'pid' => (string) $row['pid'],
                 'path' => (string) $row['path'],
                 'title' => (string) $row['title'],
@@ -108,9 +112,42 @@ final class PagesApiController
                 'summary' => $row['summary'],
                 'updated' => (string) $row['updated'],
                 'updated_by' => (string) $row['updated_by'],
-            ], $rows),
+            ], $extra, $principal), $rows),
             'page' => ['limit' => $limit, 'offset' => $offset, 'next' => $next],
         ]);
+    }
+
+    /**
+     * A listed page with the `fields` asked for: `meta` (no patient block for an anonymous caller, as
+     * show() and the public layout) and `body`. The row passed the listing predicate already
+     * (invariant 6); a page whose file cannot be read now is listed without them.
+     *
+     * @param array<string, mixed> $item
+     * @param list<string>         $fields
+     *
+     * @return array<string, mixed>
+     */
+    private function withFields(array $item, array $fields, ?User $principal): array
+    {
+        if ($fields === []) {
+            return $item;
+        }
+        try {
+            $record = $this->storage->read((string) $item['path']);
+        } catch (RuntimeException) {
+            return $item;
+        }
+        if (\in_array('meta', $fields, true)) {
+            $item['meta'] = $record->frontmatter;
+            if ($principal === null) {
+                unset($item['meta']['patient']);
+            }
+        }
+        if (\in_array('body', $fields, true)) {
+            $item['body'] = $record->body;
+        }
+
+        return $item;
     }
 
     /**
