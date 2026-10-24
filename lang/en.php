@@ -72,6 +72,8 @@ return [
     'notes.install'           => 'Install',
     'notes.install_ready'     => 'Install Notes on this device: it opens like an app, from the home screen or the dock, and works offline.',
     'notes.install_ios'       => 'Install Notes on this device: tap Share, then Add to Home Screen. It opens like an app and works offline.',
+    'notes.install_desktop'   => 'Install Notes on this device: click the install icon at the right of the address bar, or open the browser menu and choose Install. It opens in its own window and works offline.',
+    'notes.install_mac'       => 'Install Notes on this Mac: in Safari choose File, then Add to Dock. It opens in its own window and works offline.',
     'notes.install_later'     => 'Not now',
     'notes.installed'         => 'Notes is installed.',
     'notes.storage_failed'    => 'This browser does not keep notes offline (private window?): they are kept until the page closes.',
