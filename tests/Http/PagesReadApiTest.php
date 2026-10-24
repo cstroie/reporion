@@ -72,6 +72,25 @@ final class PagesReadApiTest extends HttpTestCase
         self::assertArrayNotHasKey('patient', $public['meta']);
     }
 
+    /** A report template's problems for the Create action (Support\TemplateLint): in the API for a signed-in caller, and as one notice in the page view */
+    public function testATemplateCarriesItsLintForASignedInCaller(): void
+    {
+        $s = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $s->create('templates:ct:cap', ['visibility' => 'public'], "# Cap\n\n## CT Cerebral\n\nSistem ventricular [normal / modificări] — simetric.\n", 'owner');
+        $s->create('templates:ct:clean', ['visibility' => 'public'], "# Cap\n\n## CT Cerebral\n\n[Sistem ventricular normal. / Sistem ventricular dilatat.]\n", 'owner');
+
+        $lint = $this->json('owner', '/api/v1/pages/templates:ct:cap', ['render' => '0'])['lint'];
+        self::assertSame(['dash', 'vague'], array_column($lint, 'code'));
+        self::assertSame(5, $lint[0]['line']);
+        self::assertStringContainsString('a dash', $lint[0]['message']);
+        self::assertSame([], $this->json('owner', '/api/v1/pages/templates:ct:clean', ['render' => '0'])['lint']);
+        self::assertArrayNotHasKey('lint', $this->json(null, '/api/v1/pages/templates:ct:cap', ['render' => '0']), 'not for an anonymous reader');
+        self::assertArrayNotHasKey('lint', $this->json('owner', '/api/v1/pages/docs:guide', ['render' => '0']), 'not for other pages');
+
+        self::assertStringContainsString('This template has 2 problem(s)', $this->request('owner', '/templates:ct:cap')->body);
+        self::assertStringNotContainsString('This template has', $this->request(null, '/templates:ct:cap')->body);
+    }
+
     /** @param array<string, string> $query */
     private function request(?string $username, string $path, array $query = []): Response
     {

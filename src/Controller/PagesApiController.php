@@ -15,6 +15,7 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\TemplateLintText;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
@@ -30,6 +31,7 @@ use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\Merge3;
 use Reporion\Support\ReportPath;
+use Reporion\Support\TemplateLint;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -141,6 +143,10 @@ final class PagesApiController
         // `report` what a reader wants without walking the exams. Read only: never written back
         if (ReportPath::isReport($record->path)) {
             $payload['report'] = self::reportView($record->frontmatter);
+        }
+        // A report template: what the Create action would read badly (Support\TemplateLint), for a signed-in caller
+        if ($principal !== null && TemplateLint::applies($record->path, $record->frontmatter)) {
+            $payload['lint'] = array_map(static fn (array $p): array => $p + ['message' => TemplateLintText::message($p)], TemplateLint::problems($record->frontmatter, $record->body));
         }
         if (($request->query['render'] ?? null) !== '0') {
             $payload['html'] = $this->render->body($record->body, $record->frontmatter, $request->basePath)->html;
