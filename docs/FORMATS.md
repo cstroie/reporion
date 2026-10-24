@@ -778,7 +778,10 @@ Every report body has one heading shape, whether it was imported or created in t
   (`Support\ReportName::forExport()`). The patient's name prints once, in the patient block
   (D1 as amended 2026-09-27). The signed-in page view drops the name heading as well: the
   page header already shows it.
-- **Getting there.** The new-report form writes `# {name}` and `## {exam}` from the start.
+- **Getting there.** The new-report form writes `# {name}` and `## {exam}` from the start, and
+  the form's indication between them as the shared text, `Indicație: {indication}` on one line
+  (2026-10-24; none when the field is empty). The assistant's `create` prompt then fills the
+  exam's part only.
 - **Blanks (2026-10-18, D51).** A part of the text still to be filled is written `[word]`
   (`[dimensiune]`) or a lone `xx`. `Support\WritingChecks` reports each as `blank`, a warning on the
   Sign screen and in the editor's *Checks*, never a block (D7). Not blanks: a link `[text](url)`,
