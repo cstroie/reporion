@@ -407,6 +407,16 @@ A page under `templates:` (not `templates:snippets:`) has this shape:
   `name.many`, `exam.missing`, `exam.many`, `order`, and `bin/reporion doctor` counts the templates
   that are off. A text template (§3j) has no headings to check. Old-shape templates still start
   reports; moving them to the shape is an edit of each template page.
+- **The bracket notation** (2026-10-24, what the assistant's `create` prompt reads): `[a / b]` pick
+  one; `[normal sentence. / pathological sentence …]` swap the sentence; `[...]` a blank filled from
+  the notes; `[sentence.]` with no choice, kept only when the notes describe it. `Support\TemplateLint`
+  warns, never blocks (D7), about what it cannot use well: `bracket` (a line's brackets do not
+  close), `slash` (a ` / ` choice outside brackets; the size form `[...] / [...] / [...] mm` is not
+  one), `dash` (— or –), `heading` (a bracket in a heading stays in the report), `vague` (a choice
+  `modificări`, `nu se aplică`, `descriere`, or a bare `[...]` beside a sentence), plus the shape's
+  codes as `shape.*`. Shown to a signed-in reader as one notice in the page view, as `lint` in
+  `GET /api/v1/pages/{path}`, and by `bin/reporion templates:lint`. Snippets, page templates
+  (`templates:pages`) and text templates are not checked.
 
 ## 3j. `format`: a page's body format (2026-10-10, D40)
 

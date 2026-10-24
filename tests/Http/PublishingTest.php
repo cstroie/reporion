@@ -57,6 +57,19 @@ final class PublishingTest extends HttpTestCase
         self::assertSame(['a', 'b'], $page->frontmatter['tags']);
     }
 
+    /** The API's `note` is the revision's note; with a visibility change it follows `visibility: …` (D16) */
+    public function testAMetaChangeCarriesTheCallersNote(): void
+    {
+        $this->api('owner', ['meta' => ['tags' => ['a']], 'base_rev' => 1, 'note' => '  Etichete   noi ']);
+        $this->api('owner', ['meta' => ['visibility' => 'unlisted'], 'base_rev' => 2, 'note' => 'pentru colegi']);
+        $this->api('owner', ['meta' => ['tags' => ['b']], 'base_rev' => 3]);
+
+        $revlog = $this->storage()->read(self::PATH)->revlog;
+        self::assertSame('Etichete noi', $revlog[1]['note']);
+        self::assertSame('visibility: unlisted · pentru colegi', $revlog[2]['note']);
+        self::assertSame('metadata', $revlog[3]['note']);
+    }
+
     public function testGoingPublicNeedsAcknowledgementAndIsAudited(): void
     {
         $first = $this->api('owner', ['meta' => ['visibility' => 'public'], 'base_rev' => 1]);

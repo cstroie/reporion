@@ -17,6 +17,7 @@ use Reporion\Support\Feeds;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
+use Reporion\Support\TemplateLint;
 
 /**
  * A4 (docs/architecture-api.md §6): the owner and public layouts render the
@@ -115,6 +116,11 @@ final class PageTemplateRenderer
         }
 
         $vars['frontmatter'] = $record->frontmatter;
+        // A report template the Create action reads badly: said to whoever is signed in (Support\TemplateLint, a warning, D7)
+        if (TemplateLint::applies($record->path, $record->frontmatter)
+            && ($lint = TemplateLintText::notice(TemplateLint::problems($record->frontmatter, $record->body))) !== null) {
+            $vars['warnings'][] = $lint;
+        }
         // Summarize: a writer, the current revision of an unsigned page, and the prompt there
         $vars['aiSummary'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
             && $this->aiActions?->special($record->path, 'summary') !== null;

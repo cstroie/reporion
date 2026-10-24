@@ -28,7 +28,8 @@ use Throwable;
 /**
  * The assistant over HTTP (roadmap phase 15c):
  *
- * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, with?, stream?}`
+ * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, with?, form? | document?, stream?}`
+ *   A `path` with no page yet (the caller may write there) is the page `form` or `document` makes, never written.
  *   `with`, a pid: {history} is that one study of the patient's (the compare screen's Delta)
  *   for a caller who may write the page (404 otherwise, invariant 9).
  *   With `stream: true` the answer comes as Server-Sent Events
@@ -61,9 +62,15 @@ final class AiController
         $fields = $request->json();
         $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
         // The page as stored, or before its first Save the page the editor is making (Service\EditorPage):
-        // `form`, the editor's form as its autosave sends it, gives such a page its frontmatter
+        // `form`, the editor's form as its autosave sends it, or `document`, a whole raw page (an API
+        // caller trying a template on notes, 2026-10-24), gives such a page its frontmatter; `form` wins
         $page = $principal !== null && $path !== '' && $principal->canWrite($path)
-            ? ($this->editorPage ?? new EditorPage($this->index, $this->storage))->resolve($path, $principal, \is_string($fields['form'] ?? null) ? mb_substr($fields['form'], 0, 2 * self::MAX_TEXT) : '')
+            ? ($this->editorPage ?? new EditorPage($this->index, $this->storage))->resolve(
+                $path,
+                $principal,
+                \is_string($fields['form'] ?? null) ? mb_substr($fields['form'], 0, 2 * self::MAX_TEXT) : '',
+                \is_string($fields['document'] ?? null) ? mb_substr($fields['document'], 0, 2 * self::MAX_TEXT) : '',
+            )
             : null;
         if ($page === null) {
             return ApiResponse::error(404, 'not_found', 'Not found.');

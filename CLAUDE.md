@@ -175,8 +175,8 @@ covered and rerunnable.
 **After coding, run only the tests of the modules the change touched**: the classes or folders
 named by the code you edited (`vendor/bin/phpunit tests/Support/PageTitleTest.php`, `--filter`,
 one folder at most), so development is not held up. Never run a whole directory tree such as
-`tests/Http tests/Service …` as a check. **Never run the full suite yourself** (~3 min+, past
-`composer`'s 300 s limit): say when it is due: before a merge, after a change to storage, index,
+`tests/Http tests/Service …` as a check. **Never run the full suite yourself** (~1900 tests, more than
+20 minutes by 2026-10-24, far past `composer`'s 300 s limit): say when it is due: before a merge, after a change to storage, index,
 visibility, rendering or a shared `Support\*` helper, and let the owner run it.
 
 ## Commands
@@ -211,6 +211,7 @@ bin/reporion pacs:link --site=<code> [--actor=<u>] [--dry-run] [--limit=<n>] [--
 bin/reporion ai:prompts-install --profile=<p> [--only=<id,id>] [--actor=<u>] [--list] [--dry-run] [--json]  make the shipped example prompts (resources/prompts, 16 pages) pages of an AI profile, never over a page that is there; also Admin → AI; sends nothing to a model
 bin/reporion ai:check [--json]          AI settings, egress verdict, the model each alias (lite/normal/expert) stands for, the server's models (sends no report text)
 bin/reporion dicom:header <file.dcm> [--values] [--json]  dicom plugin: which report fields one DICOM file's header could start (no pixel data, nothing kept, no index opened); values hidden unless --values
+bin/reporion templates:lint [--ns=<templates:…>] [--json]  what the report templates do that the `create` prompt reads badly (Support\TemplateLint: unclosed brackets, ` / ` outside brackets, dashes, brackets in headings, vague choices, the heading shape; FORMATS §3i-b); reads the page files, opens no database, writes nothing; exit 1 when one has a problem
 bin/reporion doctor                     config, permissions, sqlite, extensions; fails if `data/reporion.sqlite` is missing beside page files (it never creates one) or SQLite rejects it; fails if `data/settings.yaml` or `data/tags.yaml` does not parse (both read as empty then, and Admin refuses to save over them); warns if an account names a group that does not exist, or an unsigned report has an exam with no template (D48), or AI settings are not in the current shape (old flat `ai.*` keys / `ai.profiles` left in `conf/local.php` or `data/settings.yaml`)
 php tools/migrate-v2.php --from=<1.x data> --to=<new dir> [--dry-run] [--json]  the one-off 1.x → 2.0 conversion (D54, architecture-v2 §11): copy and verify, --from only read; then swap the directories by hand, index:rebuild, integrity:verify
 ```

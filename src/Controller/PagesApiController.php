@@ -15,6 +15,7 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\TemplateLintText;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
@@ -30,6 +31,7 @@ use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\Merge3;
 use Reporion\Support\ReportPath;
+use Reporion\Support\TemplateLint;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -53,6 +55,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
  */
 final class PagesApiController
 {
+    /** The longest revision note a write may carry (characters) */
+    private const NOTE_MAX = 500;
+
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly Signing $signing,
@@ -70,7 +75,8 @@ final class PagesApiController
      * can see (Index::listRecent(), the listing predicate: anonymous gets
      * public pages only), newest update first. Filters: ns, modality,
      * region, site, status, from / to (study date), updated_by. Paging:
-     * limit (≤ 200, default 50) and offset. -> { data: […], page: {limit, offset, next} }
+     * limit (≤ 200, default 50) and offset; `fields=meta,body` adds each page's frontmatter and
+     * text (withFields()). -> { data: […], page: {limit, offset, next} }
      */
     public function index(Request $request, ?User $principal): Response
     {
@@ -84,13 +90,16 @@ final class PagesApiController
         $limit = isset($q['limit']) && ctype_digit((string) $q['limit']) ? max(1, min(200, (int) $q['limit'])) : 50;
         $offset = isset($q['offset']) && ctype_digit((string) $q['offset']) ? (int) $q['offset'] : 0;
 
+        // `fields=meta,body` (2026-10-24): each page's frontmatter and text too, read as GET /pages/{path} reads them
+        $extra = array_values(array_intersect(['meta', 'body'], array_map('trim', explode(',', \is_string($q['fields'] ?? null) ? $q['fields'] : ''))));
+
         // One extra row tells whether there is a next page
         $rows = $this->index->listRecent($principal, $filters, $limit + 1, $offset);
         $next = \count($rows) > $limit ? $offset + $limit : null;
         $rows = \array_slice($rows, 0, $limit);
 
         return ApiResponse::json([
-            'data' => array_map(static fn (array $row): array => [
+            'data' => array_map(fn (array $row): array => $this->withFields([
                 'pid' => (string) $row['pid'],
                 'path' => (string) $row['path'],
                 'title' => (string) $row['title'],
@@ -103,9 +112,42 @@ final class PagesApiController
                 'summary' => $row['summary'],
                 'updated' => (string) $row['updated'],
                 'updated_by' => (string) $row['updated_by'],
-            ], $rows),
+            ], $extra, $principal), $rows),
             'page' => ['limit' => $limit, 'offset' => $offset, 'next' => $next],
         ]);
+    }
+
+    /**
+     * A listed page with the `fields` asked for: `meta` (no patient block for an anonymous caller, as
+     * show() and the public layout) and `body`. The row passed the listing predicate already
+     * (invariant 6); a page whose file cannot be read now is listed without them.
+     *
+     * @param array<string, mixed> $item
+     * @param list<string>         $fields
+     *
+     * @return array<string, mixed>
+     */
+    private function withFields(array $item, array $fields, ?User $principal): array
+    {
+        if ($fields === []) {
+            return $item;
+        }
+        try {
+            $record = $this->storage->read((string) $item['path']);
+        } catch (RuntimeException) {
+            return $item;
+        }
+        if (\in_array('meta', $fields, true)) {
+            $item['meta'] = $record->frontmatter;
+            if ($principal === null) {
+                unset($item['meta']['patient']);
+            }
+        }
+        if (\in_array('body', $fields, true)) {
+            $item['body'] = $record->body;
+        }
+
+        return $item;
     }
 
     /**
@@ -139,6 +181,10 @@ final class PagesApiController
         if (ReportPath::isReport($record->path)) {
             $payload['report'] = self::reportView($record->frontmatter);
         }
+        // A report template: what the Create action would read badly (Support\TemplateLint), for a signed-in caller
+        if ($principal !== null && TemplateLint::applies($record->path, $record->frontmatter)) {
+            $payload['lint'] = array_map(static fn (array $p): array => $p + ['message' => TemplateLintText::message($p)], TemplateLint::problems($record->frontmatter, $record->body));
+        }
         if (($request->query['render'] ?? null) !== '0') {
             $payload['html'] = $this->render->body($record->body, $record->frontmatter, $request->basePath)->html;
         }
@@ -147,7 +193,7 @@ final class PagesApiController
     }
 
     /**
-     * POST /pages { path, meta, body? } or { path, document } -> 201
+     * POST /pages { path, meta, body?, note? } or { path, document, note? } -> 201
      * { pid, path, rev }. Without frontmatter (no `meta`, or a document
      * with no block), Service\FrontmatterGuess fills it from the page.
      */
@@ -195,7 +241,7 @@ final class PagesApiController
         $meta = ConclusionSummary::fill($path, $meta, $body);
         try {
             // Exclusive: a page there is a 409, never a quiet `{path}-2` (a repeated create)
-            $record = $this->storage->create($path, $meta, $body, $principal->username, exclusive: true);
+            $record = $this->storage->create($path, $meta, $body, $principal->username, self::note($fields), exclusive: true);
         } catch (InvalidArgumentException) {
             return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
         } catch (PageExistsException) {
@@ -207,7 +253,7 @@ final class PagesApiController
     }
 
     /**
-     * PUT /pages/{path} { meta, body?, base_rev } or { document, base_rev }
+     * PUT /pages/{path} { meta, body?, base_rev, note? } or { document, base_rev, note? }
      * -> 200 { pid, path, rev }, or 409 { error: { code: 'conflict' },
      * current, submitted_base_rev } with both bodies for the editor's
      * three-way merge (A2). `document` is the whole raw page. YAML
@@ -256,12 +302,13 @@ final class PagesApiController
         }
         $meta = ConclusionSummary::fill($path, $meta, $body, $previousBody);
         try {
-            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
+            // A minor edit keeps its revision's note, as in the editor
+            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, $minor ? null : self::note($fields), minor: $minor);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {
             if (($fields['merge'] ?? false) === true) {
-                return $this->saveMerged($request, $path, $meta, $body, $e, $principal);
+                return $this->saveMerged($request, $path, $meta, $body, $e, $principal, self::note($fields));
             }
 
             return ApiResponse::json([
@@ -287,7 +334,7 @@ final class PagesApiController
     /**
      * @param array<string, mixed> $meta the frontmatter sent
      */
-    private function saveMerged(Request $request, string $path, array $meta, string $body, RevisionConflictException $e, User $principal): Response
+    private function saveMerged(Request $request, string $path, array $meta, string $body, RevisionConflictException $e, User $principal, ?string $note = null): Response
     {
         $current = $e->current;
         $conflict = [
@@ -311,7 +358,7 @@ final class PagesApiController
 
         $meta = ConclusionSummary::fill($path, self::mergeMeta($baseMeta, $current->frontmatter, $meta), $merge['text'], $current->body);
         try {
-            $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username);
+            $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username, $note);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $again) {
@@ -598,7 +645,7 @@ final class PagesApiController
         }
 
         try {
-            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request, ($fields['minor'] ?? false) === true);
+            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request, ($fields['minor'] ?? false) === true, self::note($fields));
         } catch (RevisionConflictException $e) {
             return ApiResponse::json([
                 'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
@@ -704,6 +751,19 @@ final class PagesApiController
         }
 
         return $merged;
+    }
+
+    /**
+     * The revision note a write carries: `note`, the editor's *What changed?* field, trimmed and
+     * capped; null when none is sent (the revision then has no note, or Publishing's own)
+     *
+     * @param array<string, mixed> $fields
+     */
+    private static function note(array $fields): ?string
+    {
+        $note = \is_string($fields['note'] ?? null) ? trim((string) preg_replace('/\s+/u', ' ', $fields['note'])) : '';
+
+        return $note !== '' ? mb_substr($note, 0, self::NOTE_MAX) : null;
     }
 
     private function recordResponse(PageRecord $record, int $status): Response

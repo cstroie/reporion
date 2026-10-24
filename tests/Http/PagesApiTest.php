@@ -144,6 +144,20 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame('mihai', $history['revlog'][0]['by']);
     }
 
+    /** `note`, the editor's *What changed?* field, is the revision's note on create and save; a minor save keeps its revision's */
+    public function testCreateAndSaveCarryTheRevisionNote(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'templates:mri:a', 'document' => "# A\n\n## IRM A\n\nText.\n", 'note' => 'Șablon nou']);
+        $this->ownerRequest('PUT', '/api/v1/pages/templates:mri:a', ['document' => "# A\n\n## IRM A\n\nText nou.\n", 'base_rev' => 1, 'note' => "Variante\npatologice"]);
+        $this->ownerRequest('PUT', '/api/v1/pages/templates:mri:a', ['document' => "# A\n\n## IRM A\n\nText nou!\n", 'base_rev' => 2, 'minor' => true, 'note' => 'ignored']);
+        $this->ownerRequest('PUT', '/api/v1/pages/templates:mri:a', ['document' => "# A\n\n## IRM A\n\nAlt text.\n", 'base_rev' => 2, 'note' => str_repeat('x', 600)]);
+
+        $history = (new \Reporion\Storage\Attic())->history($this->dataRoot . '/attic/templates/mri/a.zip');
+        self::assertSame('Șablon nou', $history['revlog'][0]['note']);
+        self::assertSame('Variante patologice', $history['revlog'][1]['note'], 'a minor save keeps it');
+        self::assertSame(500, mb_strlen((string) $history['revlog'][2]['note']));
+    }
+
     public function testEditorWithoutGrantOnThisNamespaceCannotCreateAPageThere(): void
     {
         $this->createEditor('mihai', 'reports:ct');

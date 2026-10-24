@@ -62,6 +62,7 @@ final class Application
 
         $app->register('doctor', DoctorCommand::class, static fn (): CommandInterface => new DoctorCommand($config));
         $app->register('serve', ServeCommand::class, static fn (): CommandInterface => new ServeCommand($rootDir));
+        $app->register('templates:lint', TemplatesLintCommand::class, static fn (): CommandInterface => new TemplatesLintCommand((string) $config['paths']['data']));
         // Commands the enabled plugins declare (plugin.json `commands`): they need no service, so no index is opened
         $plugins = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
         foreach ($plugins->commands(array_values(array_filter((array) ($config['plugins']['enabled'] ?? []), 'is_string'))) as $name => $class) {
