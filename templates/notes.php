@@ -27,15 +27,18 @@ $e = static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES);
 <meta name="color-scheme" content="dark light">
 <title><?= $e(t('notes.title')) ?>: <?= $e(t('app.name')) ?></title>
 <link rel="manifest" href="<?= $e($basePath) ?>/notes/manifest.webmanifest">
-<link rel="icon" href="<?= $e(Asset::url($basePath, 'icon.svg')) ?>" type="image/svg+xml" sizes="any">
-<link rel="apple-touch-icon" href="<?= $e(Asset::url($basePath, 'apple-touch-icon.png')) ?>">
+<meta name="theme-color" content="#161f3c">
+<link rel="icon" href="<?= $e(Asset::url($basePath, 'notes/icon.svg')) ?>" type="image/svg+xml" sizes="any">
+<link rel="icon" href="<?= $e(Asset::url($basePath, 'notes/icon-192.png')) ?>" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="<?= $e(Asset::url($basePath, 'notes/apple-touch-icon.png')) ?>">
+<meta name="apple-mobile-web-app-title" content="<?= $e(t('notes.title')) ?>">
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 <link rel="stylesheet" href="<?= $e(Asset::url($basePath, 'css/notes.css')) ?>">
 </head>
 <body class="wk wk-notes">
 <div class="nt-app" data-island="notes">
 <header class="nt-top">
-<a class="nt-brand" href="#/" data-nav-list><?php $markClass = 'wk-brand-icon'; include __DIR__ . '/partials/brand-mark.php'; ?><span><?= $e(t('notes.title')) ?></span></a>
+<a class="nt-brand" href="#/" data-nav-list><img class="nt-brand-icon" src="<?= $e(Asset::url($basePath, 'notes/icon.svg')) ?>" alt="" width="24" height="24"><span><?= $e(t('notes.title')) ?></span></a>
 <span class="nt-status" data-status aria-live="polite"></span>
 <span class="nt-top-actions">
 <button class="btn btn-ghost nt-icon" type="button" data-sync title="<?= $e(t('notes.sync_now')) ?>" aria-label="<?= $e(t('notes.sync_now')) ?>" hidden><i class="ph ph-arrows-clockwise" aria-hidden="true"></i></button>

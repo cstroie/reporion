@@ -622,7 +622,7 @@ Decided 2026-10-19 (owner: improve the screen, be creative within the rules): `/
 
 Decided 2026-10-24 (D55, owner's request: a much simpler notes PWA inside Reporion).
 
-- **One narrow column** (760 px, 16 px gutters), a sticky top bar: the brand mark and *Notes* (back to the list), a quiet status line (offline, syncing, *N not synced yet*, all synced; nothing when signed out), and three ghost icon buttons: sync now, theme, sign out.
+- **One narrow column** (760 px, 16 px gutters), a sticky top bar: the app's own icon (a note card on the accent-900 tile, `assets/notes/icon.svg`, not the Reporion mark) and *Notes* (back to the list), a quiet status line (offline, syncing, *N not synced yet*, all synced; nothing when signed out), and three ghost icon buttons: sync now, theme, sign out.
 - **Theme** is one button that cycles *as the system → light → dark* (icons `circle-half`, `sun`, `moon`), kept in the browser; colours are the tokens (`.theme-light`), never new ones. The palette chosen in Reporion's top nav applies.
 - **The list**: a search field and the one primary *New note* in a row; each note a card with its title (its first `#` heading, else its first line) and when it changed; a `cloud-slash` flag for unsynced, a `warning` flag for a conflict.
 - **The editor** (as in Google Keep): *Notes* (back) at the left; *Preview* and *Delete* at the right; a **title** field (larger, semibold; placeholder *Title*; focused on a new note, Enter goes on to the text) above one monospace **text** area (placeholder *Take a note…*), both saved on the device as typed. The list shows the title, else the text's first line. Preview is the server's renderer, online only (offline: the text as typed, with an info notice).

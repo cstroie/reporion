@@ -33,7 +33,7 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '1.1.0';
+    public const VERSION = '1.2.0';
 
     /** The strings the app shows, from lang/en.php (D26) */
     private const STRINGS = [
@@ -105,12 +105,15 @@ final class NotesController
             'start_url' => $b . '/notes',
             'scope' => $b . '/notes',
             'display' => 'standalone',
-            // tokens.css --color-bg (the dark default)
+            // tokens.css: --color-bg (the dark default) behind the splash, the icon's accent-900 tile as the bar
             'background_color' => '#0d1017',
-            'theme_color' => '#0d1017',
+            'theme_color' => '#161f3c',
+            // assets/notes/: the app's own icon, not Reporion's (a note card on the accent-900 tile)
             'icons' => [
-                ['src' => Asset::url($b, 'icon.svg'), 'sizes' => 'any', 'type' => 'image/svg+xml'],
-                ['src' => Asset::url($b, 'apple-touch-icon.png'), 'sizes' => '180x180', 'type' => 'image/png'],
+                ['src' => Asset::url($b, 'notes/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => Asset::url($b, 'notes/icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => Asset::url($b, 'notes/icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => Asset::url($b, 'notes/icon.svg'), 'sizes' => 'any', 'type' => 'image/svg+xml', 'purpose' => 'any'],
             ],
         ];
 
@@ -162,6 +165,6 @@ final class NotesController
      */
     public static function assets(): array
     {
-        return ['css/tokens.css', 'css/wiki.css', 'css/phosphor.css', 'css/cyberpunk.css', 'css/themes.css', 'css/notes.css', 'js/notes.js', 'icon.svg'];
+        return ['css/tokens.css', 'css/wiki.css', 'css/phosphor.css', 'css/cyberpunk.css', 'css/themes.css', 'css/notes.css', 'js/notes.js', 'notes/icon.svg', 'notes/apple-touch-icon.png'];
     }
 }

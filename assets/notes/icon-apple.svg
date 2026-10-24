@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Notes">
+<!-- The notes app icon (D55) for iOS, which rounds the corners itself: full bleed. Colours are tokens.css (dark): accent-900 tile, accent-300 card, accent fold. -->
+<rect width="512" height="512" fill="#161f3c"/>
+<g transform="translate(256 256) scale(1.12) translate(-256 -256)">
+<path d="M164 126h146l56 56v186a18 18 0 0 1-18 18H164a18 18 0 0 1-18-18V144a18 18 0 0 1 18-18z" fill="#a8c4ff"/>
+<path d="M310 126v38a18 18 0 0 0 18 18h38z" fill="#6f9dff"/>
+<g stroke="#161f3c" stroke-linecap="round" fill="none">
+<path d="M184 200h96" stroke-width="20"/>
+<path d="M184 252h144M184 296h144M184 340h92" stroke-width="13" opacity=".55"/>
+</g>
+</g>
+</svg>

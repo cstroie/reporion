@@ -247,6 +247,28 @@ final class NotesTest extends HttpTestCase
         self::assertSame('standalone', $manifest['display']);
     }
 
+    public function testTheManifestNamesTheAppsOwnIconsAndEachExists(): void
+    {
+        $icons = $this->decode($this->request('GET', '/notes/manifest.webmanifest'))['icons'];
+        $found = [];
+        foreach ($icons as $icon) {
+            $file = \dirname(__DIR__, 2) . strtok($icon['src'], '?');
+            self::assertFileExists($file);
+            $found[] = $icon['sizes'] . ' ' . $icon['purpose'];
+            if ($icon['type'] === 'image/png') {
+                $size = getimagesize($file);
+                self::assertIsArray($size);
+                self::assertSame($icon['sizes'], $size[0] . 'x' . $size[1], $icon['src']);
+            }
+        }
+
+        // What Chrome asks of an installable app: 192 and 512 px, and a maskable one for Android
+        self::assertContains('192x192 any', $found);
+        self::assertContains('512x512 any', $found);
+        self::assertContains('512x512 maskable', $found);
+        self::assertStringContainsString('/assets/notes/apple-touch-icon.png', $this->request('GET', '/notes')->body);
+    }
+
     /**
      * @param array<string, mixed>|null $json
      */
