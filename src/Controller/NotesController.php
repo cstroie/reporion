@@ -33,7 +33,7 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '2.1.0';
+    public const VERSION = '2.2.0';
 
     /**
      * The app's stylesheets: Reporion's colour tokens and fonts, the icons,

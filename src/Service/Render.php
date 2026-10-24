@@ -23,6 +23,7 @@ use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\ListItem;
 use League\CommonMark\Node\Block\AbstractBlock;
 use League\CommonMark\Node\Block\Document;
+use League\CommonMark\Node\Inline\Newline;
 use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Node\Node as CommonMarkNode;
 use League\CommonMark\Node\StringContainerInterface;
@@ -87,10 +88,13 @@ final class Render
      *                              list item carries `data-line` (its first source line,
      *                              1-based, in $markdown), so the preview and the text
      *                              scroll together and a click finds its line
+     * @param bool $breaks          a single line break is a line (`<br>`), not a space:
+     *                              a page with `breaks: true` (Support\BodyFormat), as
+     *                              the notes app writes them (D55)
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false, bool $breaks = false): RenderResult
     {
-        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines);
+        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines, $breaks);
     }
 
     /**
@@ -107,7 +111,24 @@ final class Render
             return new RenderResult(self::textBody($body), [], []);
         }
 
-        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false);
+        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false, BodyFormat::hardBreaks($frontmatter));
+    }
+
+    /**
+     * Every soft line break (a single newline inside a paragraph) made a hard
+     * one: the same parse, so the dialect is unchanged; only how a line ends
+     */
+    private static function hardBreaks(Document $document): void
+    {
+        $soft = [];
+        foreach ($document->iterator() as $node) {
+            if ($node instanceof Newline && $node->getType() === Newline::SOFTBREAK) {
+                $soft[] = $node;
+            }
+        }
+        foreach ($soft as $node) {
+            $node->replaceWith(new Newline(Newline::HARDBREAK));
+        }
     }
 
     /** A text body as HTML: every character escaped, every space and line kept */
@@ -119,9 +140,12 @@ final class Render
     }
 
     /** @param ?Closure(string $sha256, string $ext): ?string $mediaSrc */
-    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines): RenderResult
+    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines, bool $breaks = false): RenderResult
     {
         $document = $this->parser->parse($markdown);
+        if ($breaks) {
+            self::hardBreaks($document);
+        }
         if ($lines) {
             $this->markLines($document);
         }

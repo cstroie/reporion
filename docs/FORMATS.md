@@ -425,6 +425,19 @@ whole text (`Support\Rads`). A report's name heading is still dropped wherever i
 Metadata view sets it (*Format*: Markdown / Text); Markdown leaves the key out. It is signed with
 the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
 
+## 3j-b. `breaks`: keep single line breaks (2026-10-24, D55)
+
+```yaml
+breaks: true        # absent (or anything but true): CommonMark's own rule
+```
+
+In markdown a single line break inside a paragraph is a space: `milk⏎eggs` reads *milk eggs*. A page
+with `breaks: true` keeps each such line (`<br>`), the way a note is typed. Only how a line ends
+changes; the dialect is the same (`Service\Render::toHtml(…, breaks: true)`, `Support\BodyFormat::hardBreaks()`),
+and it applies wherever `Render::body()` renders the page: page view, print, PDF, ODT. The notes app
+sets it on every note it saves and asks `POST /api/v1/render` for it in its preview. A text page
+(§3j) is unaffected. Signed with the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
+
 ## 3k. A page's title is its first heading (2026-10-13; was "`title` from the first heading", 2026-10-10)
 
 ```yaml

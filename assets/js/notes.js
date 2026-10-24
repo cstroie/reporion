@@ -304,6 +304,8 @@
     var title = String(note.title || '').trim();
     if (title) meta.title = title; else delete meta.title;
     if (note.tags && note.tags.length) meta.tags = note.tags.slice(); else delete meta.tags;
+    // A note keeps its lines as typed, in the preview and in Reporion alike (Support\BodyFormat)
+    meta.breaks = true;
     return meta;
   }
 
@@ -798,7 +800,7 @@
     flushSave();
     setPreview(true);
     el.previewPane.textContent = '';
-    api('POST', '/render', { markdown: el.text.value }).then(function (r) {
+    api('POST', '/render', { markdown: el.text.value, breaks: true }).then(function (r) {
       if (r.status === 200 && r.data) el.previewPane.innerHTML = r.data.html; // the server's renderer, escaped there
       else throw new Error('render ' + r.status);
     }).catch(function () {

@@ -161,6 +161,16 @@ final class NotesTest extends HttpTestCase
         self::assertSame("zero\none\ntwo\n", $merged['body']);
     }
 
+    public function testANoteKeepsItsLinesInThePreviewAndOnItsPage(): void
+    {
+        $preview = $this->decode($this->as('alice', 'POST', '/api/v1/render', ['markdown' => "milk\neggs\n", 'breaks' => true]));
+        self::assertStringContainsString('milk<br />', $preview['html']);
+
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'breaks' => true], 'body' => "milk\neggs\n"]);
+        $page = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE));
+        self::assertStringContainsString('milk<br />', $page['html'], 'Reporion renders the note with its lines too');
+    }
+
     public function testOverlappingEditsAre409WithMarkersAndNothingSaved(): void
     {
         $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'body' => "one\ntwo\n"]);

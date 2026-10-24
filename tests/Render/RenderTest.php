@@ -31,6 +31,28 @@ final class RenderTest extends TestCase
         self::assertStringContainsString('<dt>Other</dt>', $result->html);
     }
 
+    public function testASingleLineBreakJoinsUnlessBreaksAreAskedFor(): void
+    {
+        $markdown = "milk\neggs\nbread\n\n- a\n- b\n";
+
+        $joined = (new Render())->toHtml($markdown)->html;
+        $broken = (new Render())->toHtml($markdown, breaks: true)->html;
+
+        self::assertStringContainsString("<p>milk\neggs\nbread</p>", $joined, 'CommonMark: one paragraph, the lines run on');
+        self::assertStringContainsString("<p>milk<br />\neggs<br />\nbread</p>", $broken, 'each line kept');
+        self::assertStringContainsString("<li>a</li>", $broken, 'the rest of the dialect unchanged');
+    }
+
+    public function testAPageWithBreaksTrueKeepsItsLinesEverywhereBodyRendersIt(): void
+    {
+        $render = new Render();
+
+        self::assertStringContainsString('one<br />', $render->body("one\ntwo\n", ['breaks' => true])->html);
+        self::assertStringNotContainsString('<br', $render->body("one\ntwo\n", [])->html);
+        self::assertStringNotContainsString('<br', $render->body("one\ntwo\n", ['breaks' => 'yes'])->html, 'only true turns it on');
+        self::assertStringContainsString('wk-plaintext', $render->body("one\ntwo\n", ['format' => 'text', 'breaks' => true])->html, 'a text page stays text');
+    }
+
     public function testLinesAreMarkedOnlyWhenAsked(): void
     {
         $markdown = "# T\n\nPara\ncontinues.\n\n- a\n- b\n\nTerm\n: def\n\n| x |\n|---|\n| 1 |\n\n## Exam\n";
