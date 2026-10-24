@@ -49,7 +49,7 @@ final class RenderController
         }
 
         // A multi-exam report (Support\Exams): each top-level `##` is an exam, anchored exam-N
-        $result = $this->render->toHtml($markdown, $request->basePath, examIds: ($body['exams'] ?? false) === true, lines: ($body['lines'] ?? false) === true);
+        $result = $this->render->toHtml($markdown, $request->basePath, examIds: ($body['exams'] ?? false) === true, lines: ($body['lines'] ?? false) === true, breaks: ($body['breaks'] ?? false) === true);
 
         return ApiResponse::json([
             'html' => $result->html,

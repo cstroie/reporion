@@ -121,6 +121,20 @@ final class NotesTest extends HttpTestCase
         self::assertSame("ONE\ntwo\nTHREE\n", $merged['body']);
     }
 
+    public function testTagsAreFrontmatterAndAMergedSaveTakesThemWhenOnlyTheDeviceChangedThem(): void
+    {
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'tags' => ['home']], 'body' => "one\ntwo\nthree\n"]);
+        $meta = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE . '?render=0'))['meta'];
+        self::assertSame(['home'], $meta['tags']);
+        $this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => $meta, 'body' => "ONE\ntwo\nthree\n", 'base_rev' => 1]);
+
+        $merged = $this->decode($this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => ['tags' => ['home', 'shopping']] + $meta, 'body' => "one\ntwo\nTHREE\n", 'base_rev' => 1, 'merge' => true]));
+
+        self::assertTrue($merged['merged']);
+        self::assertSame(['home', 'shopping'], $merged['meta']['tags']);
+        self::assertSame("ONE\ntwo\nTHREE\n", $merged['body']);
+    }
+
     public function testATitleBothSidesChangedStaysAsThePageHasIt(): void
     {
         $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'title' => 'Old'], 'body' => "one\n"]);
@@ -145,6 +159,16 @@ final class NotesTest extends HttpTestCase
 
         self::assertArrayNotHasKey('title', $merged['meta']);
         self::assertSame("zero\none\ntwo\n", $merged['body']);
+    }
+
+    public function testANoteKeepsItsLinesInThePreviewAndOnItsPage(): void
+    {
+        $preview = $this->decode($this->as('alice', 'POST', '/api/v1/render', ['markdown' => "milk\neggs\n", 'breaks' => true]));
+        self::assertStringContainsString('milk<br />', $preview['html']);
+
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'breaks' => true], 'body' => "milk\neggs\n"]);
+        $page = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE));
+        self::assertStringContainsString('milk<br />', $page['html'], 'Reporion renders the note with its lines too');
     }
 
     public function testOverlappingEditsAre409WithMarkersAndNothingSaved(): void

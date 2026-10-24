@@ -49,7 +49,9 @@ html:has(> .nt) { height: 100%; }
 /* The resets weigh nothing (:where), so every component below wins over them */
 :where(.nt) :where(button, input, textarea) { font: inherit; color: inherit; }
 :where(.nt) :where(button) { cursor: pointer; }
-.nt :focus-visible { outline: 2px solid var(--nt-accent); outline-offset: 2px; }
+/* A keyboard ring on buttons and links only; a text field shows focus by its own soft tint, never a hard frame */
+.nt :is(button, a):focus-visible { outline: 2px solid var(--nt-accent); outline-offset: 2px; }
+.nt :is(input, textarea):focus, .nt :is(input, textarea):focus-visible { outline: none; }
 
 /* ---- the frame and its screens ---- */
 
@@ -109,7 +111,7 @@ html:has(> .nt) { height: 100%; }
 
 .nt-field { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: 13px; font-weight: 600; color: var(--nt-muted); }
 .nt-field input { height: 48px; padding: 0 16px; border: 1px solid var(--nt-line); border-radius: 12px; background: var(--nt-bg); font-size: 16px; font-weight: 400; }
-.nt-field input:focus { outline: none; border-color: var(--nt-accent); box-shadow: 0 0 0 3px var(--nt-accent-soft); }
+.nt-field input:focus { border-color: color-mix(in srgb, var(--nt-accent) 50%, var(--nt-line)); background: var(--nt-card); }
 
 /* ---- sign-in ---- */
 
@@ -124,7 +126,7 @@ html:has(> .nt) { height: 100%; }
 .nt-search { flex: none; display: flex; align-items: center; gap: 10px; margin: 0 16px 8px; padding: 0 16px; height: 46px; border-radius: 999px; background: var(--nt-card); box-shadow: 0 0 0 1px var(--nt-line); color: var(--nt-muted); font-size: 18px; }
 .nt-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; font-size: 15px; outline: none; }
 .nt-search input::-webkit-search-cancel-button { filter: grayscale(1); }
-.nt-search:focus-within { box-shadow: 0 0 0 2px var(--nt-accent); }
+.nt-search:focus-within { box-shadow: 0 0 0 1px color-mix(in srgb, var(--nt-accent) 45%, var(--nt-line)); color: var(--nt-accent); }
 
 .nt-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .nt-list .nt-scroll { padding: 8px 16px calc(96px + env(safe-area-inset-bottom)); }
@@ -152,18 +154,21 @@ html:has(> .nt) { height: 100%; }
 /* ---- the editor: a sheet with a borderless title and text ---- */
 
 .nt-editor { background: var(--nt-bg); }
-.nt.theme-light .nt-editor { background: var(--nt-card); }
+.nt.theme-light .nt-editor { background: var(--nt-pane); }
 .nt-editor-none { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--nt-faint); }
 .nt-editor-none i { font-size: 64px; }
 .nt-editor-none p { margin: 0; font-size: 15px; }
 .nt-editor-note { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.nt-sheet { display: flex; flex-direction: column; width: 100%; max-width: 760px; margin: 0 auto; padding: 4px 24px calc(24px + env(safe-area-inset-bottom)); }
-.nt-title { flex: none; width: 100%; padding: 8px 0; border: 0; background: none; font: 700 26px/1.25 var(--font-heading); letter-spacing: -.015em; outline: none; }
-.nt-text { flex: 1; width: 100%; min-height: 50vh; padding: 8px 0; border: 0; background: none; font-size: 17px; line-height: 1.65; resize: none; outline: none; }
+.nt-sheet { display: flex; flex-direction: column; width: 100%; max-width: 760px; margin: 0 auto; padding: 4px 14px calc(16px + env(safe-area-inset-bottom)); }
+/* The paper: while editing, a tinted surface says "you are writing here"; the preview reads on the plain page */
+.nt-paper { flex: 1; display: flex; flex-direction: column; min-height: 60vh; padding: 14px 18px 18px; border-radius: 20px; background: var(--nt-card); box-shadow: 0 0 0 1px var(--nt-line); transition: background .2s, box-shadow .2s; }
+.nt-editor-note[data-mode="preview"] .nt-paper { background: none; box-shadow: none; }
+.nt-title { flex: none; width: 100%; padding: 4px 0 6px; border: 0; background: none; font: 700 26px/1.25 var(--font-heading); letter-spacing: -.015em; }
+.nt-text { flex: 1; width: 100%; min-height: 40vh; padding: 8px 0 0; border: 0; background: none; font-size: 17px; line-height: 1.65; resize: none; }
 .nt-title::placeholder, .nt-text::placeholder { color: var(--nt-faint); }
 
 /* The preview: the server's HTML (POST /api/v1/render), in the app's own type */
-.nt-prose { padding: 8px 0; font-size: 17px; line-height: 1.65; overflow-wrap: anywhere; }
+.nt-prose { padding: 8px 0 0; font-size: 17px; line-height: 1.65; overflow-wrap: anywhere; }
 .nt-prose > :first-child { margin-top: 0; }
 .nt-prose h1, .nt-prose h2, .nt-prose h3 { margin: 1.2em 0 .4em; font-family: var(--font-heading); line-height: 1.25; }
 .nt-prose h1 { font-size: 1.5em; } .nt-prose h2 { font-size: 1.25em; } .nt-prose h3 { font-size: 1.08em; }
@@ -226,3 +231,22 @@ html:has(> .nt) { height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .nt *, .nt *::before, .nt *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- tags: chips on a note, on its card, and the list's filter bar ---- */
+
+.nt-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 0 6px; }
+.nt-chip { display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--nt-accent-soft); color: var(--nt-accent); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.nt-chip-x { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: -6px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 13px; opacity: .7; }
+.nt-chip-x:hover { opacity: 1; background: var(--nt-accent-soft); }
+.nt-tag-input { flex: 1 1 90px; min-width: 90px; height: 28px; padding: 0 4px; border: 0; background: none; font-size: 14px; color: var(--nt-text); }
+.nt-tag-input::placeholder { color: var(--nt-faint); }
+.nt-editor-note[data-mode="preview"] .nt-tag-input, .nt-editor-note[data-mode="preview"] .nt-chip-x { display: none; }
+.nt-editor-note[data-mode="preview"] .nt-tags:not(:has(.nt-chip)) { display: none; }
+
+.nt-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.nt-card-tags .nt-chip { height: 22px; padding: 0 8px; font-size: 12px; }
+
+.nt-filter { flex: none; display: flex; gap: 6px; padding: 0 16px 8px; overflow-x: auto; scrollbar-width: none; }
+.nt-filter::-webkit-scrollbar { display: none; }
+.nt-filter button { flex: none; height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--nt-press); color: var(--nt-muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.nt-filter button[aria-pressed="true"] { background: var(--nt-accent); color: var(--nt-on-accent); }

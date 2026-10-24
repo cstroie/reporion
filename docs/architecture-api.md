@@ -173,7 +173,7 @@ GET  /pages/{path}/diff?from=6&to=7          unified | side-by-side | rendered
 #### Render: one parser, one dialect
 
 ```
-POST /render     { markdown, path?, exams?, lines? }  → { html, toc, warnings }
+POST /render     { markdown, path?, exams?, lines?, breaks? }  → { html, toc, warnings }   (breaks: true keeps single line breaks, FORMATS §3j-b)
 ```
 
 `exams` (optional boolean, 2026-10-15): the text is a multi-exam report, so each top-level `##` is an exam and is anchored `exam-N`.

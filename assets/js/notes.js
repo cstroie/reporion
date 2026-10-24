@@ -86,7 +86,11 @@
     preview: root.querySelector('[data-preview]'),
     previewPane: root.querySelector('[data-preview-pane]'),
     del: root.querySelector('[data-delete]'),
-    conflict: root.querySelector('[data-conflict]')
+    conflict: root.querySelector('[data-conflict]'),
+    tags: root.querySelector('[data-tags]'),
+    tagInput: root.querySelector('[data-tag-input]'),
+    tagList: root.querySelector('[data-tag-list]'),
+    filter: root.querySelector('[data-filter]')
   };
 
   var state = {
@@ -94,6 +98,7 @@
     db: null,        // IndexedDB, or null when the browser refuses one (notes then live in memory)
     notes: {},       // path -> note
     current: null,   // the path in the editor
+    tag: null,       // the list's tag filter
     syncing: false,
     again: false,
     failed: false,
@@ -272,11 +277,35 @@
     return page && page.meta && typeof page.meta.title === 'string' ? page.meta.title : '';
   }
 
-  /** The frontmatter a save sends: the note's, its title set or (empty) removed */
+  /** A tag as typed, made one: lower case, no leading #, single spaces, at most 40 characters */
+  function normalTag(text) {
+    return String(text || '').replace(/^#+/, '').replace(/[,\s]+/g, ' ').trim().toLowerCase().slice(0, 40);
+  }
+
+  /** The page's `tags` (frontmatter), as a clean list without repeats */
+  function tagsOf(page) {
+    var raw = page && page.meta ? page.meta.tags : null;
+    var list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? raw.split(',') : []);
+    var out = [];
+    list.forEach(function (tag) {
+      var clean = normalTag(tag);
+      if (clean && out.indexOf(clean) === -1) out.push(clean);
+    });
+    return out;
+  }
+
+  function sameTags(a, b) {
+    return (a || []).join('\n') === (b || []).join('\n');
+  }
+
+  /** The frontmatter a save sends: the note's, its title and tags set or (empty) removed */
   function metaFor(note) {
     var meta = Object.assign({ visibility: 'private' }, note.meta || {});
     var title = String(note.title || '').trim();
     if (title) meta.title = title; else delete meta.title;
+    if (note.tags && note.tags.length) meta.tags = note.tags.slice(); else delete meta.tags;
+    // A note keeps its lines as typed, in the preview and in Reporion alike (Support\BodyFormat)
+    meta.breaks = true;
     return meta;
   }
 
@@ -285,6 +314,8 @@
       path: page.path,
       title: pageTitle(page),
       baseTitle: pageTitle(page),
+      tags: tagsOf(page),
+      baseTags: tagsOf(page),
       body: page.body,
       base: page.body,
       rev: page.rev,
@@ -299,7 +330,10 @@
   function visibleNotes() {
     var q = (el.search.value || '').trim().toLowerCase();
     return Object.keys(state.notes).map(function (path) { return state.notes[path]; })
-      .filter(function (note) { return !note.deleted && (q === '' || ((note.title || '') + '\n' + note.body).toLowerCase().indexOf(q) !== -1); })
+      .filter(function (note) {
+        if (note.deleted || (state.tag && (note.tags || []).indexOf(state.tag) === -1)) return false;
+        return q === '' || ((note.title || '') + '\n' + (note.tags || []).join(' ') + '\n' + note.body).toLowerCase().indexOf(q) !== -1;
+      })
       .sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
   }
 
@@ -345,6 +379,7 @@
   function push(note) {
     var sent = note.body;
     var sentTitle = note.title || '';
+    var sentTags = (note.tags || []).slice();
     if (note.deleted) {
       if (!note.rev) return forget(note.path);
       return api('DELETE', '/pages/' + note.path).then(check401).then(function (r) {
@@ -354,7 +389,7 @@
     }
     if (!note.rev) {
       return api('POST', '/pages', { path: note.path, meta: metaFor(note), body: sent }).then(check401).then(function (r) {
-        if (r.status === 201) return settled(note.path, r.data, sent, sentTitle);
+        if (r.status === 201) return settled(note.path, r.data, sent, sentTitle, sentTags);
         if (r.status === 409) {
           // Already made (a create whose answer was lost): the first revision is ours
           var again = Object.assign({}, note, { rev: 1, base: '' });
@@ -371,7 +406,7 @@
     return api('PUT', '/pages/' + note.path, { meta: metaFor(note), body: sent, base_rev: note.rev, merge: true }).then(check401).then(function (r) {
       if (r.status === 200) {
         if (r.data && r.data.merged) notice('info', t('notes.edited') + ': ' + labelOf(pageTitle(r.data), r.data.body), false);
-        return settled(note.path, r.data, sent, sentTitle);
+        return settled(note.path, r.data, sent, sentTitle, sentTags);
       }
       if (r.status === 409 && r.data && r.data.current) return conflicted(note.path, r.data, sent);
       if (r.status === 404) {
@@ -384,13 +419,14 @@
   }
 
   /** The server took the note: its revision is the new base; text typed meanwhile stays dirty */
-  function settled(path, page, sent, sentTitle) {
+  function settled(path, page, sent, sentTitle, sentTags) {
     var local = state.notes[path];
     if (!local) return Promise.resolve();
     var next = fromServer(page, local);
-    if (local.body !== sent || (local.title || '') !== sentTitle) {
+    if (local.body !== sent || (local.title || '') !== sentTitle || !sameTags(local.tags, sentTags)) {
       next.body = local.body;
       next.title = local.title;
+      next.tags = local.tags;
       next.dirty = true;
       next.updated = local.updated;
     } else {
@@ -410,6 +446,7 @@
     next.body = local && local.body !== sent ? local.body : text;
     // The title the device changed is kept, else the server's (it is sent again on Resolved)
     if (local && (local.title || '') !== (local.baseTitle || '')) next.title = local.title;
+    if (local && !sameTags(local.tags, local.baseTags)) next.tags = local.tags;
     next.dirty = true;
     next.conflict = true;
     next.updated = Date.now();
@@ -532,6 +569,17 @@
         body.textContent = text.slice(0, 600);
         a.appendChild(body);
       }
+      if (note.tags && note.tags.length) {
+        var chips = document.createElement('span');
+        chips.className = 'nt-card-tags';
+        note.tags.slice(0, 4).forEach(function (tag) {
+          var chip = document.createElement('span');
+          chip.className = 'nt-chip';
+          chip.textContent = tag;
+          chips.appendChild(chip);
+        });
+        a.appendChild(chips);
+      }
       var foot = document.createElement('span');
       foot.className = 'nt-card-foot';
       foot.textContent = when(note.updated);
@@ -546,7 +594,102 @@
       el.items.appendChild(li);
     });
     el.empty.hidden = notes.length > 0;
+    renderFilter();
   }
+
+  /** Every tag in use, the most used first: the list's filter bar and the editor's suggestions */
+  function tagsInUse() {
+    var count = {};
+    Object.keys(state.notes).forEach(function (path) {
+      var note = state.notes[path];
+      if (!note.deleted) (note.tags || []).forEach(function (tag) { count[tag] = (count[tag] || 0) + 1; });
+    });
+    return Object.keys(count).sort(function (a, b) { return count[b] - count[a] || a.localeCompare(b); });
+  }
+
+  function renderFilter() {
+    var tags = tagsInUse();
+    if (state.tag && tags.indexOf(state.tag) === -1) state.tag = null;
+    el.filter.textContent = '';
+    el.filter.hidden = tags.length === 0;
+    [null].concat(tags).forEach(function (tag) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = tag === null ? t('notes.all') : tag;
+      button.setAttribute('aria-pressed', state.tag === tag ? 'true' : 'false');
+      button.addEventListener('click', function () {
+        state.tag = state.tag === tag ? null : tag;
+        renderList();
+      });
+      el.filter.appendChild(button);
+    });
+    el.tagList.textContent = '';
+    tags.forEach(function (tag) {
+      var option = document.createElement('option');
+      option.value = tag;
+      el.tagList.appendChild(option);
+    });
+  }
+
+  // ---- a note's tags ----
+
+  function renderTags(note) {
+    Array.prototype.forEach.call(el.tags.querySelectorAll('.nt-chip'), function (chip) { chip.remove(); });
+    (note.tags || []).forEach(function (tag) {
+      var chip = document.createElement('span');
+      chip.className = 'nt-chip';
+      chip.appendChild(document.createTextNode(tag));
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'nt-chip-x';
+      x.setAttribute('aria-label', t('notes.tag_remove').replace('%s', tag));
+      x.innerHTML = '<i class="ph ph-x" aria-hidden="true"></i>';
+      x.addEventListener('click', function () {
+        setTags((state.notes[state.current].tags || []).filter(function (other) { return other !== tag; }));
+      });
+      chip.appendChild(x);
+      el.tags.insertBefore(chip, el.tagInput);
+    });
+  }
+
+  /** The open note's tags changed: kept on the device at once, then synced like any edit */
+  function setTags(tags) {
+    var note = state.notes[state.current];
+    if (!note || sameTags(note.tags, tags)) return Promise.resolve();
+    flushSave();
+    note = state.notes[state.current];
+    return keep(Object.assign({}, note, { tags: tags, dirty: true, updated: Date.now() })).then(function () {
+      renderTags(state.notes[state.current]);
+      showStatus();
+      showNoteStatus(t('notes.saved'));
+      renderList();
+      scheduleSync();
+    });
+  }
+
+  function addTypedTag() {
+    var note = state.notes[state.current];
+    var tag = normalTag(el.tagInput.value);
+    el.tagInput.value = '';
+    if (!note || !tag || (note.tags || []).indexOf(tag) !== -1) return;
+    setTags((note.tags || []).concat([tag]).slice(0, 20));
+  }
+
+  el.tagInput.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addTypedTag();
+    } else if (event.key === 'Backspace' && el.tagInput.value === '') {
+      var note = state.notes[state.current];
+      if (note && note.tags && note.tags.length) setTags(note.tags.slice(0, -1));
+    }
+  });
+  // A phone keyboard may send the comma as text, and a datalist pick arrives as input
+  el.tagInput.addEventListener('input', function (event) {
+    // A suggestion picked from the list replaces the text at once (no inputType, or insertReplacementText)
+    if (/,/.test(el.tagInput.value) || !event.inputType || event.inputType === 'insertReplacementText') addTypedTag();
+  });
+  el.tagInput.addEventListener('blur', addTypedTag);
 
   function openEditor(path) {
     var note = state.notes[path];
@@ -562,6 +705,8 @@
     setPreview(false);
     el.title.value = note.title || '';
     el.text.value = note.body;
+    el.tagInput.value = '';
+    renderTags(note);
     showConflict(note);
     showNoteStatus();
     renderList();
@@ -575,6 +720,7 @@
     // Only text the writer has not touched since is replaced
     if (document.activeElement !== el.text && el.text.value !== note.body) el.text.value = note.body;
     if (document.activeElement !== el.title && el.title.value !== (note.title || '')) el.title.value = note.title || '';
+    renderTags(note);
     showConflict(note);
     showNoteStatus();
   }
@@ -642,8 +788,10 @@
     el.preview.title = label;
     el.preview.setAttribute('aria-label', label);
     el.preview.querySelector('i').className = 'ph ' + (on ? 'ph-pencil-simple' : 'ph-eye');
+    el.editorNote.setAttribute('data-mode', on ? 'preview' : 'edit');
     el.text.hidden = on;
     el.title.readOnly = on;
+    el.tagInput.readOnly = on;
     el.previewPane.hidden = !on;
   }
 
@@ -652,7 +800,7 @@
     flushSave();
     setPreview(true);
     el.previewPane.textContent = '';
-    api('POST', '/render', { markdown: el.text.value }).then(function (r) {
+    api('POST', '/render', { markdown: el.text.value, breaks: true }).then(function (r) {
       if (r.status === 200 && r.data) el.previewPane.innerHTML = r.data.html; // the server's renderer, escaped there
       else throw new Error('render ' + r.status);
     }).catch(function () {
@@ -678,7 +826,7 @@
 
   el.add.addEventListener('click', function () {
     var path = state.user.notes + ':' + ulid();
-    keep({ path: path, title: '', baseTitle: '', body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
+    keep({ path: path, title: '', baseTitle: '', tags: state.tag ? [state.tag] : [], baseTags: [], body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
       location.hash = '#/n/' + path.slice(state.user.notes.length + 1);
     });
   });
@@ -719,6 +867,7 @@
       // keep() updates the note in memory at once, so the check below sees it
       flushSave();
       var left = state.notes[state.current];
+      // (a tag the list's filter gave it is no typing: a tag added by hand makes the note dirty)
       if (left && !left.rev && !left.dirty && left.body === '' && !left.title) forget(left.path);
     }
     if (target) { openEditor(target); return; }
