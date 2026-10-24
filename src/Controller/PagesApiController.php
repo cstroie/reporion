@@ -53,6 +53,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
  */
 final class PagesApiController
 {
+    /** The longest revision note a write may carry (characters) */
+    private const NOTE_MAX = 500;
+
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly Signing $signing,
@@ -147,7 +150,7 @@ final class PagesApiController
     }
 
     /**
-     * POST /pages { path, meta, body? } or { path, document } -> 201
+     * POST /pages { path, meta, body?, note? } or { path, document, note? } -> 201
      * { pid, path, rev }. Without frontmatter (no `meta`, or a document
      * with no block), Service\FrontmatterGuess fills it from the page.
      */
@@ -195,7 +198,7 @@ final class PagesApiController
         $meta = ConclusionSummary::fill($path, $meta, $body);
         try {
             // Exclusive: a page there is a 409, never a quiet `{path}-2` (a repeated create)
-            $record = $this->storage->create($path, $meta, $body, $principal->username, exclusive: true);
+            $record = $this->storage->create($path, $meta, $body, $principal->username, self::note($fields), exclusive: true);
         } catch (InvalidArgumentException) {
             return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
         } catch (PageExistsException) {
@@ -207,7 +210,7 @@ final class PagesApiController
     }
 
     /**
-     * PUT /pages/{path} { meta, body?, base_rev } or { document, base_rev }
+     * PUT /pages/{path} { meta, body?, base_rev, note? } or { document, base_rev, note? }
      * -> 200 { pid, path, rev }, or 409 { error: { code: 'conflict' },
      * current, submitted_base_rev } with both bodies for the editor's
      * three-way merge (A2). `document` is the whole raw page. YAML
@@ -256,12 +259,13 @@ final class PagesApiController
         }
         $meta = ConclusionSummary::fill($path, $meta, $body, $previousBody);
         try {
-            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
+            // A minor edit keeps its revision's note, as in the editor
+            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, $minor ? null : self::note($fields), minor: $minor);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {
             if (($fields['merge'] ?? false) === true) {
-                return $this->saveMerged($request, $path, $meta, $body, $e, $principal);
+                return $this->saveMerged($request, $path, $meta, $body, $e, $principal, self::note($fields));
             }
 
             return ApiResponse::json([
@@ -287,7 +291,7 @@ final class PagesApiController
     /**
      * @param array<string, mixed> $meta the frontmatter sent
      */
-    private function saveMerged(Request $request, string $path, array $meta, string $body, RevisionConflictException $e, User $principal): Response
+    private function saveMerged(Request $request, string $path, array $meta, string $body, RevisionConflictException $e, User $principal, ?string $note = null): Response
     {
         $current = $e->current;
         $conflict = [
@@ -311,7 +315,7 @@ final class PagesApiController
 
         $meta = ConclusionSummary::fill($path, self::mergeMeta($baseMeta, $current->frontmatter, $meta), $merge['text'], $current->body);
         try {
-            $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username);
+            $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username, $note);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $again) {
@@ -598,7 +602,7 @@ final class PagesApiController
         }
 
         try {
-            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request, ($fields['minor'] ?? false) === true);
+            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request, ($fields['minor'] ?? false) === true, self::note($fields));
         } catch (RevisionConflictException $e) {
             return ApiResponse::json([
                 'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
@@ -704,6 +708,19 @@ final class PagesApiController
         }
 
         return $merged;
+    }
+
+    /**
+     * The revision note a write carries: `note`, the editor's *What changed?* field, trimmed and
+     * capped; null when none is sent (the revision then has no note, or Publishing's own)
+     *
+     * @param array<string, mixed> $fields
+     */
+    private static function note(array $fields): ?string
+    {
+        $note = \is_string($fields['note'] ?? null) ? trim((string) preg_replace('/\s+/u', ' ', $fields['note'])) : '';
+
+        return $note !== '' ? mb_substr($note, 0, self::NOTE_MAX) : null;
     }
 
     private function recordResponse(PageRecord $record, int $status): Response

@@ -125,12 +125,14 @@ final class Publishing
      * $minor: overwrite the unsigned revision $baseRev in place (Storage save()'s minor edit)
      * instead of adding one; the sign screen's summary and tags use it.
      *
+     * $note: the revision note (the API's `note`); none: `metadata`, or `visibility: …`
+     *
      * @param array<string, mixed> $changes
      *
      * @throws InvalidArgumentException for an unknown visibility or a signed page
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is stale
      */
-    public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null, bool $minor = false): PageRecord
+    public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null, bool $minor = false, ?string $note = null): PageRecord
     {
         if (isset($changes['visibility']) && !\in_array($changes['visibility'], self::VISIBILITIES, true)) {
             throw new InvalidArgumentException('visibility must be private, unlisted or public');
@@ -140,7 +142,9 @@ final class Publishing
         }
 
         $frontmatter = self::merge($page->frontmatter, $changes);
-        $note = isset($changes['visibility']) ? 'visibility: ' . $changes['visibility'] : 'metadata';
+        // The caller's own note, after `visibility: …` when that changes: publishing stays visible in the history (D16)
+        $own = $note;
+        $note = isset($changes['visibility']) ? 'visibility: ' . $changes['visibility'] . ($own !== null ? ' · ' . $own : '') : ($own ?? 'metadata');
         // A minor change keeps the revision's own note (the revision is overwritten, not added)
         $saved = $this->storage->save($page->path, $frontmatter, $page->body, $baseRev, $actor, $minor ? null : $note, minor: $minor);
 
