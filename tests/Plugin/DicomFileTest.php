@@ -99,7 +99,7 @@ final class DicomFileTest extends HttpTestCase
         $form = $this->send('owner', 'GET', $url);
 
         self::assertSame(200, $form->status);
-        foreach (['value="IONESCU Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-28"', 'value="10:15"', 'value="Irm Cerebral Nativ"',
+        foreach (['value="Ionescu Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-28"', 'value="10:15"', 'value="Irm Cerebral Nativ"',
             'name="study_uid" value="' . self::UID . '"', 'name="pacs_accession" value="MV26777"'] as $needle) {
             self::assertStringContainsString($needle, $form->body);
         }
@@ -160,7 +160,7 @@ final class DicomFileTest extends HttpTestCase
     {
         $form = $this->formFor($this->dicom(station: 'UNKNOWN9'));
 
-        self::assertStringContainsString('value="IONESCU Maria"', $form);
+        self::assertStringContainsString('value="Ionescu Maria"', $form);
         self::assertStringNotContainsString('<option value="scuc" selected>', $form);
         self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
         self::assertDoesNotMatchRegularExpression('#value="[A-Z]{2}-MR-01" data-site="[a-z]+"[^>]* selected#', $form);

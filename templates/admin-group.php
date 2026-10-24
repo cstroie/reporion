@@ -63,7 +63,7 @@ include __DIR__ . '/partials/group-access.php';
 <table class="table">
 <tbody>
 <?php foreach ($members as $m): ?>
-<tr<?= $m->active ? '' : ' class="wk-dim"' ?>><td><a href="<?= $b ?>/admin/users/<?= $e(rawurlencode($m->username)) ?>"><?= $e($m->displayName !== '' ? $m->displayName : $m->username) ?></a> <span class="wk-mono wk-dim"><?= $e($m->username) ?></span></td><td class="wk-right"><?php if (!$m->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?></td></tr>
+<tr<?= $m->active ? '' : ' class="wk-dim"' ?>><td><a href="<?= $b ?>/admin/users/<?= $e(rawurlencode($m->username)) ?>"><?= $e($m->shortName()) ?></a> <span class="wk-mono wk-dim"><?= $e($m->username) ?></span></td><td class="wk-right"><?php if (!$m->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?></td></tr>
 <?php endforeach; ?>
 </tbody>
 </table>

@@ -83,9 +83,11 @@ final class Revisions
      * bytes equals the recorded one: computed the way Storage\FileTree::sign()
      * computed it, reordered by the schema field order stored on the
      * signature itself (falling back to today's schema for a signature
-     * from before that was recorded).
+     * from before that was recorded). `unreadable`: the stored revision could
+     * not be read or parsed, so nothing was compared (`matches` is false, but
+     * that is not a mismatch).
      *
-     * @return array{by: string, ts: string, alg: string, digest: string, parafa: ?string, matches: bool}|null
+     * @return array{by: string, ts: string, alg: string, digest: string, parafa: ?string, matches: bool, unreadable: bool}|null
      */
     public function signature(PageRecord $current, int $rev): ?array
     {
@@ -100,6 +102,7 @@ final class Revisions
         }
 
         $matches = false;
+        $unreadable = false;
         try {
             [$frontmatter, $body] = DocumentFormat::parse($this->storage->readRevision($current->path, $rev));
             // The order the digest was reordered by when it was signed
@@ -114,8 +117,9 @@ final class Revisions
             }
             $digest = hash('sha256', Canonical::bytes($frontmatter, $body, $fieldOrder));
             $matches = hash_equals((string) ($found['digest'] ?? ''), $digest);
-        } catch (RuntimeException | ParseException | PageNotFoundException) {
-            $matches = false;
+        } catch (RuntimeException | ParseException | PageNotFoundException $e) {
+            $unreadable = true;
+            error_log(\sprintf('reporion: a signed revision could not be read to check its signature: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
         }
 
         return [
@@ -125,6 +129,7 @@ final class Revisions
             'digest' => (string) ($found['digest'] ?? ''),
             'parafa' => isset($found['parafa']) && \is_string($found['parafa']) ? $found['parafa'] : null,
             'matches' => $matches,
+            'unreadable' => $unreadable,
         ];
     }
 }

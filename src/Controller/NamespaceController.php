@@ -20,6 +20,7 @@ use Reporion\Service\PageMoves;
 use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\NamespaceSort;
 use Reporion\Support\ReportPath;
 use RuntimeException;
 
@@ -285,6 +286,11 @@ final class NamespaceController
             $descriptionPath = $indexPath;
             $descriptionRow = $nsIndex;
         }
+        // The description's `sort` key (title, name or updated) orders the table and the cards; unset keeps the default
+        $sortMode = NamespaceSort::modeOf($descriptionRow['meta_json'] ?? null);
+        if ($sortMode !== null) {
+            $pages = NamespaceSort::sort($pages, $sortMode);
+        }
         $descriptionRecord = $descriptionPath !== null ? $this->storage->read($descriptionPath) : null;
         $nsDescriptionHtml = $descriptionRecord !== null
             ? $this->render->body($descriptionRecord->body, $descriptionRecord->frontmatter, $request->basePath)->html
@@ -316,6 +322,13 @@ final class NamespaceController
             $meta = $subRow !== null ? json_decode((string) ($subRow['meta_json'] ?? ''), true) : null;
             $priority = \is_array($meta) && \is_string($meta['priority'] ?? null) ? trim($meta['priority']) : null;
             $subnamespaces[$i]['priority'] = \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : null;
+        }
+
+        if ($sortMode === 'title' || $sortMode === 'name') {
+            $subnamespaces = array_map(
+                static fn (array $row): array => $row['sub'],
+                NamespaceSort::sort(array_map(static fn (array $sub): array => ['path' => (string) $sub['name'], 'title' => (string) ($sub['title'] ?? ''), 'sub' => $sub], $subnamespaces), $sortMode)
+            );
         }
 
         // What a bulk action just did (bulk()'s redirect): counts only

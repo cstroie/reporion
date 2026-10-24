@@ -313,6 +313,27 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertSame('legacy', $legacy?->signatureName());
     }
 
+    public function testFullNameSignsAndShortNameIsWhatTheAppUses(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $account = $store->create('ana', 'x', false, [], 'Ana');
+        self::assertSame('Ana', $account->signatureName(), 'no full name: the short name signs');
+
+        $store->save($account->with(fullName: '  Dr. Ana Maria Popescu '));
+        $reloaded = $store->find('ana');
+        self::assertSame('Dr. Ana Maria Popescu', $reloaded?->fullName, 'trimmed and stored as full_name');
+        self::assertSame('Dr. Ana Maria Popescu', $reloaded?->signatureName());
+        self::assertSame('Ana', $reloaded?->shortName());
+        self::assertSame('Ana', $reloaded?->displayName, 'the short name is untouched');
+
+        // Another change keeps the full name; a bare account falls back to the username
+        $store->save($reloaded->with(title: 'Medic primar'));
+        self::assertSame('Dr. Ana Maria Popescu', $store->find('ana')?->fullName);
+        $bare = $store->create('bare', 'x', false);
+        self::assertSame('bare', $bare->shortName());
+        self::assertSame('bare', $bare->signatureName());
+    }
+
     public function testPinsRoundTripSurviveOtherChangesAndAreCleanedOnRead(): void
     {
         $store = new FlatFileUserStore($this->dataRoot);

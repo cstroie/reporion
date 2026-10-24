@@ -130,6 +130,12 @@ final class Scu
     }
 
     /** The keys that may travel in the query file: keyword → [tag group, tag element, VR] */
+    /** A host or IP, as plugin.json saves it: no leading `-` or `@` */
+    private const HOST = '#^(?![-@])[A-Za-z0-9.:-]{1,253}$#D';
+
+    /** An AE title: 1–16 printable ASCII characters, no backslash, no leading `-` or `@`, no edge spaces */
+    private const AE_TITLE = '#^(?![-@])[!-\[\]-~](?:[ -\[\]-~]{0,14}[!-\[\]-~])?$#D';
+
     private const PRIVATE_KEYS = ['PatientName' => [0x0010, 0x0010, 'PN'], 'PatientID' => [0x0010, 0x0020, 'LO']];
 
     /**
@@ -505,11 +511,15 @@ final class Scu
      */
     private static function assertServer(array $server): void
     {
-        foreach (['host', 'aet', 'calling'] as $key) {
-            $value = (string) ($server[$key] ?? '');
-            if ($value === '' || str_starts_with($value, '-')) {
-                throw new DicomException('failed');
-            }
+        // The same shapes plugin.json lets an owner save (a hand-edited settings file is no way round them);
+        // neither may start with `-` (an option) or `@` (DCMTK reads more arguments from the file it names)
+        $port = $server['port'] ?? null;
+        $valid = preg_match(self::HOST, (string) ($server['host'] ?? '')) === 1
+            && preg_match(self::AE_TITLE, (string) ($server['aet'] ?? '')) === 1
+            && preg_match(self::AE_TITLE, (string) ($server['calling'] ?? '')) === 1
+            && (\is_int($port) || (\is_string($port) && ctype_digit($port))) && (int) $port >= 1 && (int) $port <= 65535;
+        if (!$valid) {
+            throw new DicomException('failed');
         }
     }
 
@@ -565,7 +575,8 @@ final class Scu
         if (!is_file($argv[0]) || !is_executable($argv[0])) {
             return null;
         }
-        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
+        // fd 2 is declared before fd 1: a redirect to a descriptor not yet declared reaches the parent's, not the pipe
+        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 2 => ['pipe', 'w'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w']], $pipes, null, $env);
         if (!\is_resource($process)) {
             return null;
         }

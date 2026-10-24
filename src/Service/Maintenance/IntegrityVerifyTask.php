@@ -151,7 +151,9 @@ final class IntegrityVerifyTask implements MaintenanceTask
             $report->count('signatures');
             // A revision already reported missing or corrupt cannot be checked, nor be valid
             $check = isset($broken[$rev]) ? null : $this->revisions->signature($page, $rev);
-            if ($check === null || !$check['matches']) {
+            if ($check !== null && $check['unreadable']) {
+                $this->problem($report, $page->pid, $rev, 'signature_unreadable', 'The signed revision could not be read to check its signature');
+            } elseif ($check === null || !$check['matches']) {
                 $this->problem($report, $page->pid, $rev, 'signature_mismatch', 'The signed revision no longer gives the recorded digest');
             }
         }

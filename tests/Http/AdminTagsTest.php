@@ -67,9 +67,11 @@ final class AdminTagsTest extends HttpTestCase
         self::assertStringContainsString('2 page(s) rewritten.', $screen->body);
         self::assertStringContainsString('1 signed report(s) kept the old tag', $screen->body);
         self::assertStringNotContainsString('saved by someone else meanwhile', $screen->body);
+        self::assertStringContainsString('wk-notice-ok', $screen->body);
 
         $raced = $this->request('GET', '/admin/tags?changed=1&signed=0&conflicts=2', 'owner');
         self::assertStringContainsString('2 page(s) were saved by someone else meanwhile and kept the old tag', $raced->body);
+        self::assertStringContainsString('wk-notice-warn', $raced->body, 'a partial result is not drawn as a success');
     }
 
     public function testMergingFoldsSeveralTagsIntoOneWithoutDuplicates(): void

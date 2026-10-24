@@ -6,7 +6,6 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
-use PDO;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Storage\FileTree;

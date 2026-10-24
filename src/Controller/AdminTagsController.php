@@ -8,7 +8,6 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
-use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Exception\PageNotFoundException;
@@ -21,7 +20,7 @@ use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\ReportView;
 use Reporion\Service\TagDictionary;
-use Reporion\Service\Tags;
+use Reporion\Service\TagCuration;
 use Reporion\Support\TagProposals;
 
 /**
@@ -30,13 +29,13 @@ use Reporion\Support\TagProposals;
  * { tag, group, icd10, synonyms }. Admin → Tags, owner-only (decided
  * 2026-09-26). Every tag with its page count, group, ICD-10 code and
  * synonyms (Service\TagDictionary, phase 20) and the suggested merges;
- * renaming or merging goes through Service\Tags (new revisions, signed
- * reports left alone). ?edit={tag} opens a tag's dictionary entry;
+ * renaming or merging goes through Service\TagCuration (the pages as new
+ * revisions with signed reports left alone, then the dictionary). ?edit={tag} opens a tag's dictionary entry;
  * ?into=&from=a,b prefills the merge form (a suggestion, never applied).
  *
  * POST /admin/tags/review/{id} { pick[], to[i], reject[] } (2026-10-15):
  * the proposals of a tags:review run the owner ticked, applied one by one
- * as system:admin on the owner's behalf (D41): a merge or rename keeps the
+ * (Service\TagCuration::apply()) as system:admin on the owner's behalf (D41): a merge or rename keeps the
  * old names as synonyms, a generalisation does not (the detail stays in
  * the text), a drop takes the tag off; signed reports are left alone. The
  * ones marked "never suggest" go to data/tags.yaml's `_rejected`.
@@ -45,7 +44,7 @@ final class AdminTagsController
 {
     public function __construct(
         private readonly IndexInterface $index,
-        private readonly Tags $tags,
+        private readonly TagCuration $curation,
         private readonly TagDictionary $dictionary,
         private readonly AuditLog $audit,
         private readonly ?MaintenanceRunner $maintenance = null,
@@ -138,72 +137,26 @@ final class AdminTagsController
         }
         parse_str($request->body, $fields);
         $indexes = static fn (string $key): array => array_values(array_unique(array_map('intval', array_filter((array) ($fields[$key] ?? []), 'is_numeric'))));
-        $items = $report->items();
-        $inUse = [];
-        foreach ($this->index->tagCounts() as $row) {
-            $inUse[$row['tag']] = true;
+
+        $proposals = TagCuration::proposals($report);
+        $targets = (array) ($fields['to'] ?? []);
+        $picks = [];
+        foreach ($indexes('pick') as $i) {
+            if (isset($proposals[$i])) {
+                $picks[] = ['proposal' => $proposals[$i], 'to' => \is_string($targets[$i] ?? null) ? $targets[$i] : null];
+            }
         }
+        $rejects = array_map(static fn (int $i): array => $proposals[$i], array_values(array_filter($indexes('reject'), static fn (int $i): bool => isset($proposals[$i]))));
 
         try {
-            $lock = $this->maintenance->lockWrites();
+            $done = $this->curation->apply($picks, $rejects, $principal->username, $request);
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . '/admin/tags?busy=1');
-        }
-        $total = ['changed' => 0, 'skippedSigned' => 0, 'conflicts' => 0];
-        $applied = 0;
-        $rejected = 0;
-        try {
-            foreach ($indexes('pick') as $i) {
-                $proposal = $items[$i]['data'] ?? null;
-                if (!\is_array($proposal) || !\in_array($proposal['op'] ?? '', TagProposals::OPS, true)) {
-                    continue;
-                }
-                $from = array_values(array_filter(array_map('strval', (array) ($proposal['from'] ?? [])), static fn (string $t): bool => isset($inUse[$t])));
-                if ($from === []) {
-                    continue;
-                }
-                if ($proposal['op'] === 'drop') {
-                    $result = $this->tags->removeMany($from, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
-                } else {
-                    // The owner may have changed the target in the row
-                    $to = TagProposals::tag(\is_string($fields['to'][$i] ?? null) ? $fields['to'][$i] : (string) ($proposal['to'] ?? ''));
-                    if ($to === '') {
-                        continue;
-                    }
-                    // A merge turned the other way round (the target one of its own tags): the proposed target is merged in
-                    // too. Any other new target takes the proposal's tags only
-                    $proposed = (string) ($proposal['to'] ?? '');
-                    if ($proposed !== $to && \in_array($to, $from, true) && isset($inUse[$proposed])) {
-                        $from[] = $proposed;
-                    }
-                    $from = array_values(array_diff($from, [$to]));
-                    if ($from === []) {
-                        continue;
-                    }
-                    $result = $this->tags->merge($from, $to, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
-                    $this->dictionary->merge($from, $to, keepNames: $proposal['op'] !== 'generalise');
-                }
-                foreach ($total as $key => $n) {
-                    $total[$key] = $n + $result[$key];
-                }
-                ++$applied;
-            }
-            foreach ($indexes('reject') as $i) {
-                $proposal = $items[$i]['data'] ?? null;
-                if (\is_array($proposal) && \is_array($proposal['from'] ?? null)) {
-                    $this->dictionary->reject(TagProposals::key(['op' => (string) ($proposal['op'] ?? ''), 'from' => array_map('strval', $proposal['from']), 'to' => (string) ($proposal['to'] ?? '')]));
-                    ++$rejected;
-                }
-            }
         } catch (InvalidArgumentException $e) {
             return $this->show($request, $principal, $e->getMessage());
-        } finally {
-            flock($lock, LOCK_UN);
-            fclose($lock);
         }
-        $this->audit->record('tags.review', $principal->username, $request, extra: ['applied' => $applied, 'rejected' => $rejected, 'pages' => $total['changed']]);
 
-        return Response::redirect($request->basePath . '/admin/tags?run=' . rawurlencode($id) . '&changed=' . $total['changed'] . '&signed=' . $total['skippedSigned'] . '&conflicts=' . $total['conflicts'] . '#review');
+        return Response::redirect($request->basePath . '/admin/tags?run=' . rawurlencode($id) . '&changed=' . $done['changed'] . '&signed=' . $done['skippedSigned'] . '&conflicts=' . $done['conflicts'] . '#review');
     }
 
     public function saveEntry(Request $request, ?User $principal): Response
@@ -236,9 +189,7 @@ final class AdminTagsController
             return $this->show($request, $principal, t('admin.tags.err_unreadable'));
         }
         try {
-            $result = $this->tags->merge($from, $into, $principal->username, $request);
-            // The merged names stay findable: they become $into's synonyms
-            $this->dictionary->merge($from, trim($into));
+            $result = $this->curation->merge($from, trim($into), $principal->username, $request);
         } catch (InvalidArgumentException $e) {
             return $this->show($request, $principal, $e->getMessage());
         }
@@ -262,24 +213,20 @@ final class AdminTagsController
         }
         $rejected = $this->dictionary->rejected();
         $rows = [];
-        foreach ($report->items() as $i => $item) {
-            $p = $item['data'];
-            if ($item['outcome'] !== 'proposal' || !\is_array($p['from'] ?? null)) {
-                continue;
-            }
+        foreach (TagCuration::proposals($report) as $i => $p) {
             $from = [];
             foreach ($p['from'] as $tag) {
-                $from[(string) $tag] = $counts[(string) $tag] ?? 0;
+                $from[$tag] = $counts[$tag] ?? 0;
             }
-            $op = (string) ($p['op'] ?? '');
-            $to = (string) ($p['to'] ?? '');
+            $op = $p['op'];
+            $to = $p['to'];
             $rows[] = [
                 'i' => $i,
                 'op' => $op,
                 'from' => $from,
                 'to' => $to,
-                'reason' => (string) ($p['reason'] ?? ''),
-                'source' => (string) ($p['source'] ?? ''),
+                'reason' => $p['reason'],
+                'source' => $p['source'],
                 'done' => array_sum($from) === 0,
                 'rejected' => \in_array(TagProposals::key(['op' => $op, 'from' => array_keys($from), 'to' => $to]), $rejected, true),
             ];

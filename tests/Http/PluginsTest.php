@@ -80,7 +80,7 @@ final class PluginsTest extends HttpTestCase
 
         $form = $this->get('owner', '/new?prefill=demo&ref=77');
         self::assertSame(200, $form->status);
-        self::assertStringContainsString('value="IONESCU Maria"', $form->body);
+        self::assertStringContainsString('value="Ionescu Maria"', $form->body);
         self::assertStringContainsString('name="order_ref" value="demo:Order/77"', $form->body);
         self::assertStringContainsString('From demo', $form->body, 'the new_report slot');
 

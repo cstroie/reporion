@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Maintenance;
 
+use Closure;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Exception\MaintenanceBusyException;
@@ -192,16 +193,26 @@ final class MaintenanceRunner
     }
 
     /**
-     * This instance's maintenance lock, for a write outside a run (Admin →
-     * Tags applying tags:review's proposals)
+     * Runs a write outside a run (Admin → Tags applying tags:review's
+     * proposals) under the maintenance lock, released however it ends
      *
-     * @return resource
+     * @template T
      *
-     * @throws MaintenanceBusyException
+     * @param Closure(): T $work
+     *
+     * @return T
+     *
+     * @throws MaintenanceBusyException when a writing run holds the lock
      */
-    public function lockWrites()
+    public function withWriteLock(Closure $work): mixed
     {
-        return self::lock($this->dataRoot);
+        $lock = self::lock($this->dataRoot);
+        try {
+            return $work();
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
 
     /** Whether a writing run holds the maintenance lock right now (taking and dropping it to find out) */

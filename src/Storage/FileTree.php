@@ -1007,7 +1007,12 @@ final class FileTree implements StorageInterface
             }
 
             return $state === self::PATH_OK || $state === self::PATH_REPAIRED;
-        } catch (PageNotFoundException | InvalidArgumentException | RuntimeException) {
+        } catch (PageNotFoundException | InvalidArgumentException) {
+            return false;
+        } catch (RuntimeException $e) {
+            // A failed write or database: the lookup is a miss, but the cause is logged (no message: it may hold a path)
+            error_log(\sprintf('reporion: adopting an unindexed page file failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+
             return false;
         }
     }

@@ -51,7 +51,7 @@ $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$
 </span></td>
 <td data-label="<?= $e(t('admin.groups.col_members')) ?>"><span class="wk-badges">
 <?php if ($in === []): ?><span class="wk-dim">n/a</span><?php endif; ?>
-<?php foreach ($in as $m): ?><a class="tag tag-outline" href="<?= $b ?>/admin/users/<?= $e(rawurlencode($m->username)) ?>"><?= $e($m->displayName !== '' ? $m->displayName : $m->username) ?></a><?php endforeach; ?>
+<?php foreach ($in as $m): ?><a class="tag tag-outline" href="<?= $b ?>/admin/users/<?= $e(rawurlencode($m->username)) ?>"><?= $e($m->shortName()) ?></a><?php endforeach; ?>
 </span></td>
 <td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $href ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.users.open')) ?></a></td>
 </tr>

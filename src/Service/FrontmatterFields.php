@@ -13,6 +13,7 @@ use Reporion\Support\BodyFormat;
 use Reporion\Support\Checklist;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\NamespaceSort;
 use Reporion\Support\PageKind;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Templates;
@@ -64,7 +65,7 @@ final class FrontmatterFields
     /** Curated in addition, only on a non-report page: the mirror of
      *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
      *  Controller\NamespaceController) means nothing on a report */
-    private const NAMESPACE = ['priority' => 'select'];
+    private const NAMESPACE = ['priority' => 'select', 'sort' => 'select'];
 
     /** Curated in addition, only on a template (phase 25): the reference
      *  page every report made from it can open */
@@ -235,9 +236,10 @@ final class FrontmatterFields
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
-            $key === 'template' => [['value' => '', 'label' => t('details.no_template')], ...array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal))],
+            $key === 'template' => [['value' => '', 'label' => t('details.no_template')], ...array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title'], 'region' => $tpl['region']], $this->templatesFor($path, $principal))],
             // D40: Markdown is the key left out
             $key === 'format' => [['value' => '', 'label' => t('details.format_markdown')], ['value' => BodyFormat::TEXT, 'label' => t('details.format_text')]],
+            $key === 'sort' => [['value' => '', 'label' => t('details.sort_unset')], ['value' => 'title', 'label' => t('details.sort_title')], ['value' => 'name', 'label' => t('details.sort_name')], ['value' => 'updated', 'label' => t('details.sort_updated')]],
             $key === 'priority' => [['value' => '', 'label' => t('details.priority_unset')], ['value' => 'low', 'label' => t('details.priority_low')], ['value' => 'medium', 'label' => t('details.priority_medium')], ['value' => 'high', 'label' => t('details.priority_high')]],
             \is_array($def['values'] ?? null) => array_map(static fn (string $v): array => ['value' => $v, 'label' => $v], array_map('strval', $def['values'])),
             default => [],
@@ -522,15 +524,19 @@ final class FrontmatterFields
             return $this->templatesCache[$cacheKey];
         }
 
+        // The namespace's own `sort` (its description page) when it has one
+        $mode = NamespaceSort::modeFor($this->index, $ns, $principal);
         $templates = array_map(
             static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
-            array_values(array_filter(
+            NamespaceSort::sort(array_values(array_filter(
                 $this->index->listRecent($principal, ['ns' => $ns], 200),
                 static fn (array $row): bool => !Snippets::isSnippetPath((string) $row['path'])
-            ))
+            )), $mode)
         );
-        // Grouped by region, then by title
-        usort($templates, static fn (array $a, array $b): int => [$a['region'], $a['title']] <=> [$b['region'], $b['title']]);
+        if ($mode === null) {
+            // Grouped by region, then by title
+            usort($templates, static fn (array $a, array $b): int => [$a['region'], $a['title']] <=> [$b['region'], $b['title']]);
+        }
 
         return $this->templatesCache[$cacheKey] = $templates;
     }

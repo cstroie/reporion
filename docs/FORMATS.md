@@ -589,6 +589,14 @@ editor opens and never written into the new page by anything but Save: `public` 
 acknowledgement (D16), and creators without a picker (API, CLI, `/new`, copies, joins,
 duplicates) always start `private`. Existing pages never change with it.
 
+The same page's `sort` (2026-10-22; `Support\NamespaceSort`) says how the namespace lists its own
+pages: `title` (the page title, else the page name), `name` (the last path segment) or `updated`
+(newest first); unset or any other value keeps the listing's default (path in the namespace table, region
+then title in the template pickers). It orders the namespace page's table (and its sub-namespace cards by
+`title`/`name`), the New-report template picker and the editor's template picker. Text compares as
+Romanian (`ș` after `s`), numbers by value, without regard to case. Not inherited: each namespace
+names its own. Edited in the Metadata view of the description page, beside `priority`.
+
 ## 6. Audit lines:`data/audit/YYYY-MM.ndjson`
 
 ```json
@@ -659,17 +667,19 @@ slug normalisation.
 {"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
  "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
  "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
- "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","stamp":"A12345","radiologist":true,
+ "full_name":"Dr. Mihai Ion Popa","display_name":"Mihai","title":"Medic primar radiologie","stamp":"A12345","radiologist":true,
  "groups":["mri-team"]}
 ```
 
 Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `radiologist` (bool, default
 `false`, absent in older records) marks the accounts that may sign (D37, amended 2026-10-13); only an
 owner sets it (Admin → Users). `grants` holds only what an owner granted: the account's own namespace
-`users:{username}` (D46) is implied by the username and never written here. `groups` (D47, absent = none) lists group names (§10b); `FlatFileUserStore` resolves them on read and never writes the result back, so `grants` stays only what was granted to this account. A name with no `data/groups/` file resolves to nothing (`doctor` warns). `radiologist` is true when the account's own flag or any group's is; an account that is not a radiologist has its grants on `reports`/`reports:*` dropped when read. `display_name` and
-`title` are optional (empty string when unset, absent in records written before they existed):
-they are the signer block a printed report shows for the account that signed it: a report
-falls back to the username when `display_name` is empty. Since phase 13 the account edits them
+`users:{username}` (D46) is implied by the username and never written here. `groups` (D47, absent = none) lists group names (§10b); `FlatFileUserStore` resolves them on read and never writes the result back, so `grants` stays only what was granted to this account. A name with no `data/groups/` file resolves to nothing (`doctor` warns). `radiologist` is true when the account's own flag or any group's is; an account that is not a radiologist has its grants on `reports`/`reports:*` dropped when read. `full_name`,
+`display_name` and `title` are optional (empty string when unset, absent in records written before they existed).
+`display_name` is the *short name* the app calls the account by (bylines, the greeting, comments, lists; the
+username when empty, `User::shortName()`); `full_name` (2026-10-22) is the name a report is signed with and the
+signer block prints, with `title` (`User::signatureName()`: `full_name`, else `display_name`, else the username).
+Since phase 13 the account edits them
 itself on `/profile`, and an owner still can in Admin → Users. `title` may hold `|`, where the printed signature block breaks the line (`Support\SignatureTitle`; one line, joined by ` · `, elsewhere).
 `stamp` (optional, at most 40
 characters, absent before) is the doctor's stamp code (*parafă*), edited on `/profile` only; it is stored, not yet printed.

@@ -217,7 +217,7 @@ final class DicomTest extends HttpTestCase
 
         self::assertSame(200, $form->status);
         self::assertContains('StudyInstanceUID=' . self::UID1, $this->calls[0], 'the one study, by UID');
-        foreach (['value="IONESCU Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-28"', 'value="10:15"', 'value="Ct Torace Nativ"', 'POPESCU Ion',
+        foreach (['value="Ionescu Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-28"', 'value="10:15"', 'value="Ct Torace Nativ"', 'POPESCU Ion',
             'name="study_uid" value="' . self::UID1 . '"', 'name="pacs_accession" value="MV26001"'] as $needle) {
             self::assertStringContainsString($needle, $form->body);
         }
@@ -235,7 +235,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame('10:15', $fm['exams'][0]['time'], 'the study\'s time is the exam\'s; the day the report\'s');
 
         $noCnp = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
-        self::assertStringContainsString('value="POPÉSCU Ana"', $noCnp->body);
+        self::assertStringContainsString('value="Popéscu Ana"', $noCnp->body);
         self::assertStringNotContainsString('name="cnp" value="PACS00042"', $noCnp->body, 'not a CNP: never put in the CNP field');
         // The owner's debug panel (collapsed) shows the raw findscu exchange; nobody else gets it
         self::assertMatchesRegularExpression('#<details class="wk-debug">(?!.*\bopen\b).*findscu#s', $noCnp->body);

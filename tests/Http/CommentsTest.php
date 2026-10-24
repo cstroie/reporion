@@ -60,7 +60,7 @@ final class CommentsTest extends HttpTestCase
         self::assertStringNotContainsString('suprarenala', $page, 'loaded by the island, not in the page');
         self::assertStringNotContainsString('suprarenala', $this->call('dan', 'GET', '/export/' . self::PATH . '.html')->body, 'never exported');
         self::assertStringNotContainsString('suprarenala', $this->call('dan', 'GET', '/api/v1/pages/' . self::PATH)->body, 'never in the API meta');
-        self::assertStringNotContainsString('suprarenala', (string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/261019-test-ionescu/current.md'));
+        self::assertStringNotContainsString('suprarenala', (string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/261019-test-ionescu.md'));
     }
 
     public function testResolveReopenAndWhoMayDelete(): void

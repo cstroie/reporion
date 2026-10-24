@@ -56,7 +56,7 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 <?php foreach ($accounts as $account): $href = $b . '/admin/users/' . $e(rawurlencode($account->username)); ?>
 <tr<?= $account->active ? '' : ' class="wk-dim"' ?>>
 <td class="wk-card-head">
-<a href="<?= $href ?>"><b><?= $e($account->displayName !== '' ? $account->displayName : $account->username) ?></b></a>
+<a href="<?= $href ?>"><b><?= $e($account->shortName()) ?></b></a>
 <div class="wk-mono wk-dim wk-text-sm"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></div>
 </td>
 <td data-label="<?= $e(t('admin.users.col_kind')) ?>"><span class="wk-badges">

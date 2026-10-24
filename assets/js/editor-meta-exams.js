@@ -26,6 +26,31 @@
 
   var fresh = 0;
 
+  // Picking a template: its regions are ticked in the card (D45: the template's region is the exam's default),
+  // and the card's link to the template follows the select (a template is a page: base/path)
+  box.addEventListener('change', function (event) {
+    var select = event.target;
+    if (!select.matches || !select.matches('select[name$="[template]"]')) return;
+    var card = select.closest('.wk-examcard');
+    var option = select.options[select.selectedIndex];
+    var wanted = option ? (option.getAttribute('data-region') || '').split(', ').filter(Boolean) : [];
+    // A template with no region (or none picked) leaves the ticked ones as they are
+    if (wanted.length) {
+      Array.prototype.forEach.call(card.querySelectorAll('input[type="checkbox"][name$="[region][]"]'), function (tick) {
+        var on = wanted.indexOf(tick.value) !== -1;
+        if (tick.checked === on) return;
+        tick.checked = on;
+        // The form's draft, autosave and Save button listen for change
+        tick.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
+    var link = card.querySelector('[data-exam-template-link]');
+    if (!link) return;
+    var root = link.getAttribute('data-root');
+    link.hidden = select.value === '';
+    link.setAttribute('href', root + '/' + select.value);
+  });
+
   function cards() {
     return Array.prototype.slice.call(box.querySelectorAll('.wk-examcard'));
   }

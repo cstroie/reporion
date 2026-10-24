@@ -58,6 +58,9 @@ final class User
         // Saved views (2026-10-19): named searches in the quick-navigation menu; Auth\SavedViews says what may be one.
         /** @var list<array{name: string, query: string}> */
         public readonly array $views = [],
+        // The name a printed report is signed with (2026-10-22): optional; displayName is the short
+        // name the app calls the account by. signatureName() falls back through both.
+        public readonly string $fullName = '',
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check: a bare string or anything non-Grant slipping in here
@@ -80,7 +83,7 @@ final class User
      * @param ?list<string> $groups
      * @param ?list<array{name: string, query: string}> $views
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null, ?array $views = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null, ?array $views = null, ?string $fullName = null): self
     {
         return new self(
             $this->username,
@@ -100,6 +103,7 @@ final class User
             $this->groupRadiologist,
             $stamp ?? $this->stamp,
             $views ?? $this->views,
+            $fullName ?? $this->fullName,
         );
     }
 
@@ -124,7 +128,7 @@ final class User
         return new self(
             $this->username, $this->passwordHash, $this->isOwner, $this->grants, $this->active,
             $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
-            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views,
+            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views, $this->fullName,
         );
     }
 
@@ -137,8 +141,14 @@ final class User
         return $this->radiologist || $this->groupRadiologist;
     }
 
-    /** The name a printed report shows for this account: display name, else username. */
+    /** The name a report is signed with and prints: full name, else display name, else username. */
     public function signatureName(): string
+    {
+        return $this->fullName !== '' ? $this->fullName : $this->shortName();
+    }
+
+    /** The name the app calls this account by (byline, greeting, lists): display name, else username. */
+    public function shortName(): string
     {
         return $this->displayName !== '' ? $this->displayName : $this->username;
     }

@@ -29,8 +29,9 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         // TODO 13: 'template' means nothing on a non-report page, so it is
         // a report-only field now, not curated here; 'priority' is the
         // mirror image: curated only on a non-report page (the
-        // sub-namespace card tint), meaningless on a report
-        self::assertSame(['title', 'tags', 'summary', 'format', 'priority'], array_column($result['fields'], 'key'));
+        // sub-namespace card tint), meaningless on a report; 'sort' is
+        // curated beside it: how a namespace lists its pages
+        self::assertSame(['title', 'tags', 'summary', 'format', 'priority', 'sort'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['exams'], 'no exam cards on a page that is not a report');
         self::assertSame('public', $result['visibility']);

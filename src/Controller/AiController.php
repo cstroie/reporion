@@ -176,7 +176,7 @@ final class AiController
     {
         $status = match ($e->reason) {
             'busy', 'rate_limited' => 429,
-            'identifier_leak' => 422,
+            'identifier_leak', 'no_template' => 422,
             'not_configured', 'egress_denied', 'bad_endpoint' => 503,
             default => 502,
         };

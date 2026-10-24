@@ -110,6 +110,7 @@ use Reporion\Service\SiteDevices;
 use Reporion\Service\Snippets;
 use Reporion\Service\Stats;
 use Reporion\Service\TagDictionary;
+use Reporion\Service\TagCuration;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
 use Reporion\Service\TempUploads;
@@ -408,11 +409,11 @@ final class Kernel
         $index->onMiss($storage->adopt(...));
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
-        // by class only: an exception message may carry a page path (invariant 8).
+        // by class, file and line only: an exception message may carry a page path (invariant 8).
         try {
             $storage->replayCrashedWrites(self::REPLAY_MIN_AGE_SECONDS);
         } catch (Throwable $e) {
-            error_log('reporion: journal replay failed: ' . $e::class);
+            error_log(\sprintf('reporion: journal replay failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
         }
         $groups = new FlatFileGroupStore((string) $config['paths']['data']);
         $users = new FlatFileUserStore((string) $config['paths']['data'], $groups);
@@ -422,7 +423,7 @@ final class Kernel
         reporion_directory(static function () use ($users): array {
             $directory = [];
             foreach ($users->all() as $account) {
-                $directory[$account->username] = $account->signatureName();
+                $directory[$account->username] = $account->shortName();
             }
 
             return $directory;
@@ -496,7 +497,7 @@ final class Kernel
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
-        $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit, $maintenanceRunner);
+        $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();

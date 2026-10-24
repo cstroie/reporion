@@ -12,7 +12,9 @@ use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
+use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Storage\FileTree;
 
 /**
  * GET /{ns}: end to end through the real Kernel (Controller\NamespaceController).
@@ -42,6 +44,31 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('All MRI reports.', $with);
         // No card/panel around the description body (TODO 13)
         self::assertStringNotContainsString('Namespace description', $with);
+    }
+
+    public function testTheDescriptionsSortKeyOrdersTheTable(): void
+    {
+        // By path: alpha, mid, zulu; by title: Apple (zulu), Banana (alpha), Șold (mid)
+        $this->createPage('docs:tpl:alpha', 'private', 'Banana', 'a');
+        $this->createPage('docs:tpl:mid', 'private', 'Șold', 'b');
+        $this->createPage('docs:tpl:zulu', 'private', 'Apple', 'c');
+        // The three titles in the order they first appear in the page
+        $titles = static function (string $html): array {
+            $at = [];
+            foreach (['Banana', 'Șold', 'Apple'] as $title) {
+                $at[$title] = strpos($html, '>' . $title . '<');
+            }
+            asort($at);
+
+            return array_keys($at);
+        };
+
+        self::assertSame(['Banana', 'Șold', 'Apple'], $titles($this->ownerRequest('/docs:tpl:')->body), 'by path without the key');
+
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FileTree($this->dataRoot, $index))->create('docs:tpl', ['title' => 'Tpl', 'visibility' => 'private', 'sort' => 'title'], 'Templates.', 'owner');
+
+        self::assertSame(['Apple', 'Banana', 'Șold'], $titles($this->ownerRequest('/docs:tpl:')->body), 'by title with sort: title');
     }
 
     public function testANamespaceWithADescriptionIsCalledByItsTitle(): void

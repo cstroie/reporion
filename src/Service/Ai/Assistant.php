@@ -163,7 +163,7 @@ final class Assistant
             try {
                 return $this->attempt($provider, $action, $build, $page, $user, $request, $emitOnce, $attempt);
             } catch (AiException $e) {
-                if ($attempt > \count($this->delays) || $emitted || $e->reason === 'identifier_leak') {
+                if ($attempt > \count($this->delays) || $emitted || \in_array($e->reason, ['identifier_leak', 'no_template'], true)) {
                     throw $e;
                 }
                 if ($this->delays[$attempt - 1] > 0) {

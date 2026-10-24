@@ -17,6 +17,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
+use Reporion\Support\NamespaceSort;
 use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
 use Reporion\Support\PersonName;
@@ -141,12 +142,18 @@ final class NewReport
                 continue;
             }
             $modalities[$code] = $ns;
+            $templateNs = Templates::NS . ':' . $ns;
+            $rows = $this->index->listRecent($principal, ['ns' => $templateNs], 200);
+            // The namespace's own `sort` (its description page) when it has one
+            $mode = NamespaceSort::modeFor($this->index, $templateNs, $principal);
             $templates[$code] = array_map(
                 static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
-                $this->index->listRecent($principal, ['ns' => Templates::NS . ':' . $ns], 200)
+                NamespaceSort::sort($rows, $mode)
             );
-            // Grouped by region, then by title, each without regard to case
-            usort($templates[$code], static fn (array $a, array $b): int => strcasecmp($a['region'], $b['region']) ?: strcasecmp($a['title'], $b['title']));
+            if ($mode === null) {
+                // Grouped by region, then by title, each without regard to case
+                usort($templates[$code], static fn (array $a, array $b): int => strcasecmp($a['region'], $b['region']) ?: strcasecmp($a['title'], $b['title']));
+            }
         }
         $sites = [];
         foreach ($this->sites as $code => $site) {

@@ -41,7 +41,7 @@ final class PageTitleTest extends HttpTestCase
         self::assertSame('TEST Titlu: ' . t('tabs.revisions') . ': ' . $app, $this->title(self::NEW . '/revisions'));
         self::assertSame('TEST Titlu: ' . t('tabs.timeline') . ': ' . $app, $this->title(self::NEW . '/timeline'));
         self::assertSame('TEST Titlu: ' . t('compare.title') . ': ' . $app, $this->title(self::NEW . '/compare'));
-        self::assertSame('TEST Titlu: ' . t('newr.title') . ': ' . $app, $this->title(self::NEW . '/new'), 'a follow-up names its patient');
+        self::assertSame('Test Titlu: ' . t('newr.title') . ': ' . $app, $this->title(self::NEW . '/new'), 'a follow-up names its patient');
         self::assertSame(t('admin.users.title') . ': ' . $app, $this->title('admin/users'), 'no subject: as before');
     }
 

@@ -61,7 +61,7 @@ final class ProfileController
         });
     }
 
-    /** POST /profile/signature: the name, title and stamp code a printed report shows for this account */
+    /** POST /profile/signature: the names, title and stamp code a printed report shows for this account */
     public function saveSignature(Request $request, ?User $principal): Response
     {
         if ($principal === null) {
@@ -69,13 +69,14 @@ final class ProfileController
         }
         parse_str($request->body, $fields);
         $name = trim(\is_string($fields['display_name'] ?? null) ? $fields['display_name'] : '');
+        $fullName = trim(\is_string($fields['full_name'] ?? null) ? $fields['full_name'] : '');
         $title = trim(\is_string($fields['title'] ?? null) ? $fields['title'] : '');
         $stamp = trim(\is_string($fields['stamp'] ?? null) ? $fields['stamp'] : '');
-        if (mb_strlen($name) > 120 || mb_strlen($title) > 120 || mb_strlen($stamp) > 40) {
+        if (mb_strlen($name) > 120 || mb_strlen($fullName) > 120 || mb_strlen($title) > 120 || mb_strlen($stamp) > 40) {
             return $this->render($request, $principal, error: null, saved: false, signatureError: t('profile.err_signature'));
         }
-        $this->users->save($principal->with(displayName: $name, title: $title, stamp: $stamp));
-        $this->audit->record('profile.change', $principal->username, $request, extra: ['fields' => ['display_name', 'title', 'stamp']]);
+        $this->users->save($principal->with(displayName: $name, fullName: $fullName, title: $title, stamp: $stamp));
+        $this->audit->record('profile.change', $principal->username, $request, extra: ['fields' => ['display_name', 'full_name', 'title', 'stamp']]);
 
         return Response::redirect($request->basePath . '/profile?done=signature#signature');
     }

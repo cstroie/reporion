@@ -137,7 +137,7 @@ final class HipobridgeTest extends HttpTestCase
         $form = $this->get('owner', '/new?prefill=hipobridge&ref=ct.1001');
 
         self::assertSame(200, $form->status);
-        foreach (['value="IONESCU Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-20"', 'value="10:15"', 'value="Ct Torace"', 'Dr. Test', 'Tuse persistenta.', 'name="order_ref" value="hipobridge:ServiceRequest/1001"'] as $needle) {
+        foreach (['value="Ionescu Maria"', 'value="' . $this->cnp . '"', 'value="2026-09-20"', 'value="10:15"', 'value="Ct Torace"', 'Dr. Test', 'Tuse persistenta.', 'name="order_ref" value="hipobridge:ServiceRequest/1001"'] as $needle) {
             self::assertStringContainsString($needle, $form->body);
         }
         self::assertMatchesRegularExpression('/value="chest"[^>]*checked/', $form->body, 'Chest → the chest region');
