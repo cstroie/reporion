@@ -2078,6 +2078,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
  * panels that stack on a phone, and a compact row with tags and actions on
  * the right. Existing tokens only. */
 .wk-start-hello { flex: 1; min-width: min(334.5px, 100%); }
+/* The notes app's card (D55, assets/js/notes-promo.js): the text grows, Hide sits at the end */
+[data-notes-promo] .wk-notice { margin: var(--space-5) 0 0; }
+[data-notes-promo] .wk-notice > div { flex: 1; min-width: 0; }
+.wk-notes-promo-x { flex: none; align-self: center; }
 .wk-start-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0; }
 .wk-start-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
 .wk-start-stat:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); }

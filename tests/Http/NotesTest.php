@@ -236,6 +236,42 @@ final class NotesTest extends HttpTestCase
         self::assertStringContainsString("type === 'version'", $worker);
     }
 
+    public function testTheStartPageAdvertisesTheAppToASignedInAccountOnly(): void
+    {
+        $start = $this->as('alice', 'GET', '/')->body;
+
+        self::assertStringContainsString('<div data-notes-promo hidden>', $start, 'hidden until notes-promo.js shows it');
+        self::assertStringContainsString('href="/notes"', $start, 'the card and the quick links lead to it');
+        self::assertStringContainsString(t('quick.notes'), $start);
+        self::assertMatchesRegularExpression('#/assets/js/notes-promo\.js\?v=[0-9a-f]+#', $start);
+
+        $anonymous = $this->request('GET', '/')->body;
+        self::assertStringNotContainsString('data-notes-promo', $anonymous);
+        self::assertStringNotContainsString('href="/notes"', $anonymous);
+    }
+
+    public function testTheShellIsAnAppWithItsOwnLookNotAReporionPage(): void
+    {
+        $shell = $this->request('GET', '/notes')->body;
+
+        foreach (NotesController::STYLES as $css) {
+            self::assertStringContainsString('/assets/' . $css . '?v=', $shell);
+        }
+        self::assertStringNotContainsString('wiki.css', $shell, "none of Reporion's page components");
+        self::assertStringContainsString('data-screen="boot"', $shell, 'the script puts a screen in front');
+        foreach (['signin', 'list', 'editor'] as $screen) {
+            self::assertStringContainsString('data-view="' . $screen . '"', $shell);
+        }
+    }
+
+    public function testTheShellHasTheInstallButtonHiddenUntilTheBrowserOffersIt(): void
+    {
+        $shell = $this->request('GET', '/notes')->body;
+
+        self::assertMatchesRegularExpression('/<button[^>]*data-install[^>]*hidden>/', $shell);
+        self::assertStringContainsString('"notes.install_ios":', $shell);
+    }
+
     public function testTheManifestStartsAndScopesTheAppAtNotes(): void
     {
         $response = $this->request('GET', '/notes/manifest.webmanifest');

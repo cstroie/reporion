@@ -94,6 +94,15 @@ $quickLinks = [
 </div>
 </header>
 
+<?php /* The notes app (D55), advertised until dismissed or used on this device (assets/js/notes-promo.js): hidden without JavaScript */ ?>
+<div data-notes-promo hidden>
+<?php $noticeKind = 'info';
+$noticeIcon = 'note-pencil';
+$noticeText = t('start.notes_promo');
+$noticeLink = [$basePath . '/notes', t('start.notes_open')];
+include __DIR__ . '/partials/notice.php'; ?>
+</div>
+
 <?php $month ??= null; ?>
 <div class="wk-start-stats<?= $month !== null ? ' wk-start-stats-5' : '' ?>">
 <a class="wk-start-stat<?= $stats['drafts'] > 0 ? ' wk-start-stat-hl' : '' ?>" href="#drafts"><b><?= $count($stats['drafts']) ?></b><span><?= $e(t('start.stat_drafts')) ?></span></a>
@@ -190,3 +199,4 @@ $quickLinks = [
 <div><span class="wk-eyebrow"><?= $e(t('start.foot_about')) ?></span><p class="wk-dim"><?= $e(t('start.foot_note', [$staleDays])) ?></p></div>
 </div>
 </div>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/notes-promo.js')) ?>" data-dismiss="<?= $e(t('start.notes_dismiss')) ?>" defer></script>
