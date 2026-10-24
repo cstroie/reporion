@@ -261,7 +261,7 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {
             if (($fields['merge'] ?? false) === true) {
-                return $this->saveMerged($request, $path, $body, $e, $principal);
+                return $this->saveMerged($request, $path, $meta, $body, $e, $principal);
             }
 
             return ApiResponse::json([
@@ -278,13 +278,16 @@ final class PagesApiController
     /**
      * A stale PUT with `merge: true` (the notes app, D55): the body merged
      * line by line (Support\Merge3) from the revision it started from
-     * (base_rev), what the page holds now and what was sent. The page's
-     * current frontmatter is kept. Clean -> saved as a new revision, 200
+     * (base_rev), what the page holds now and what was sent; the
+     * frontmatter key by key (mergeMeta(): the notes app's `title`). Clean -> saved as a new revision, 200
      * with `merged: true`; overlapping edits -> 409 with the text and its
      * conflict markers in `merged`, nothing saved. A signed page, or a
      * base_rev the attic does not hold, is the plain 409.
      */
-    private function saveMerged(Request $request, string $path, string $body, RevisionConflictException $e, User $principal): Response
+    /**
+     * @param array<string, mixed> $meta the frontmatter sent
+     */
+    private function saveMerged(Request $request, string $path, array $meta, string $body, RevisionConflictException $e, User $principal): Response
     {
         $current = $e->current;
         $conflict = [
@@ -296,7 +299,7 @@ final class PagesApiController
             return ApiResponse::json($conflict, 409);
         }
         try {
-            [, $base] = DocumentFormat::parse($this->storage->readRevision($path, $e->submittedBaseRev));
+            [$baseMeta, $base] = DocumentFormat::parse($this->storage->readRevision($path, $e->submittedBaseRev));
         } catch (PageNotFoundException | RuntimeException | ParseException) {
             return ApiResponse::json($conflict, 409);
         }
@@ -306,7 +309,7 @@ final class PagesApiController
             return ApiResponse::json($conflict + ['merged' => $merge['text'], 'conflicts' => $merge['conflicts']], 409);
         }
 
-        $meta = ConclusionSummary::fill($path, $current->frontmatter, $merge['text'], $current->body);
+        $meta = ConclusionSummary::fill($path, self::mergeMeta($baseMeta, $current->frontmatter, $meta), $merge['text'], $current->body);
         try {
             $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username);
         } catch (PageNotFoundException) {
@@ -666,6 +669,41 @@ final class PagesApiController
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['duplicated_from' => $source->pid]);
 
         return $this->recordResponse($record, 201);
+    }
+
+    /**
+     * The frontmatter of a merged save, key by key: a top-level key the
+     * sender changed (set, altered or removed) since the base and the page
+     * did not is the sender's; any other key stays as the page has it (the
+     * page wins a key both changed). `pid` and the system keys are never
+     * the sender's to change here.
+     *
+     * @param array<string, mixed> $base
+     * @param array<string, mixed> $current
+     * @param array<string, mixed> $sent
+     *
+     * @return array<string, mixed>
+     */
+    private static function mergeMeta(array $base, array $current, array $sent): array
+    {
+        $merged = $current;
+        foreach (array_unique([...array_keys($base), ...array_keys($sent)]) as $key) {
+            if (\in_array($key, ['pid', 'status', 'signatures'], true)) {
+                continue;
+            }
+            $was = $base[$key] ?? null;
+            $now = $sent[$key] ?? null;
+            if ($now === $was || ($current[$key] ?? null) !== $was) {
+                continue;
+            }
+            if ($now === null) {
+                unset($merged[$key]);
+            } else {
+                $merged[$key] = $now;
+            }
+        }
+
+        return $merged;
     }
 
     private function recordResponse(PageRecord $record, int $status): Response

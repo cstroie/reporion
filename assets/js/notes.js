@@ -4,7 +4,10 @@
  * The notes app (D55): an offline-first client of the JSON API, mounted on
  * /notes. A note is an ordinary page under the account's own namespace,
  * users:{username}:notes:{ulid}, made with a ULID on the device so that a
- * note created offline has its path before the server has seen it.
+ * note created offline has its path before the server has seen it. As in
+ * Keep, a note has a title and a text: the title is the page's frontmatter
+ * `title` (empty: none, and the list shows the text's first line), the
+ * text its body.
  *
  * The browser keeps every note in IndexedDB (one database per account): its
  * text, the revision it was last synced at (`rev`) and that revision's text
@@ -51,6 +54,7 @@
     add: root.querySelector('[data-new]'),
     items: root.querySelector('[data-items]'),
     empty: root.querySelector('[data-empty]'),
+    title: root.querySelector('[data-title]'),
     text: root.querySelector('[data-text]'),
     preview: root.querySelector('[data-preview]'),
     previewLabel: root.querySelector('[data-preview-label]'),
@@ -213,9 +217,28 @@
     return t('notes.untitled');
   }
 
+  /** What a note is called: its title (frontmatter `title`), else its text's first line */
+  function labelOf(title, body) {
+    return String(title || '').trim() || titleOf(body);
+  }
+
+  function pageTitle(page) {
+    return page && page.meta && typeof page.meta.title === 'string' ? page.meta.title : '';
+  }
+
+  /** The frontmatter a save sends: the note's, its title set or (empty) removed */
+  function metaFor(note) {
+    var meta = Object.assign({ visibility: 'private' }, note.meta || {});
+    var title = String(note.title || '').trim();
+    if (title) meta.title = title; else delete meta.title;
+    return meta;
+  }
+
   function fromServer(page, previous) {
     return {
       path: page.path,
+      title: pageTitle(page),
+      baseTitle: pageTitle(page),
       body: page.body,
       base: page.body,
       rev: page.rev,
@@ -230,7 +253,7 @@
   function visibleNotes() {
     var q = (el.search.value || '').trim().toLowerCase();
     return Object.keys(state.notes).map(function (path) { return state.notes[path]; })
-      .filter(function (note) { return !note.deleted && (q === '' || note.body.toLowerCase().indexOf(q) !== -1); })
+      .filter(function (note) { return !note.deleted && (q === '' || ((note.title || '') + '\n' + note.body).toLowerCase().indexOf(q) !== -1); })
       .sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
   }
 
@@ -275,6 +298,7 @@
 
   function push(note) {
     var sent = note.body;
+    var sentTitle = note.title || '';
     if (note.deleted) {
       if (!note.rev) return forget(note.path);
       return api('DELETE', '/pages/' + note.path).then(check401).then(function (r) {
@@ -283,8 +307,8 @@
       });
     }
     if (!note.rev) {
-      return api('POST', '/pages', { path: note.path, body: sent }).then(check401).then(function (r) {
-        if (r.status === 201) return settled(note.path, r.data, sent);
+      return api('POST', '/pages', { path: note.path, meta: metaFor(note), body: sent }).then(check401).then(function (r) {
+        if (r.status === 201) return settled(note.path, r.data, sent, sentTitle);
         if (r.status === 409) {
           // Already made (a create whose answer was lost): the first revision is ours
           var again = Object.assign({}, note, { rev: 1, base: '' });
@@ -298,15 +322,15 @@
         throw new Error('create ' + r.status);
       });
     }
-    return api('PUT', '/pages/' + note.path, { meta: note.meta || {}, body: sent, base_rev: note.rev, merge: true }).then(check401).then(function (r) {
+    return api('PUT', '/pages/' + note.path, { meta: metaFor(note), body: sent, base_rev: note.rev, merge: true }).then(check401).then(function (r) {
       if (r.status === 200) {
-        if (r.data && r.data.merged) notice('info', t('notes.edited') + ': ' + titleOf(r.data.body), false);
-        return settled(note.path, r.data, sent);
+        if (r.data && r.data.merged) notice('info', t('notes.edited') + ': ' + labelOf(pageTitle(r.data), r.data.body), false);
+        return settled(note.path, r.data, sent, sentTitle);
       }
       if (r.status === 409 && r.data && r.data.current) return conflicted(note.path, r.data, sent);
       if (r.status === 404) {
         // Deleted on the server (or another device), changed here: made again, the text kept
-        notice('warn', t('notes.recreated') + ': ' + titleOf(sent), false);
+        notice('warn', t('notes.recreated') + ': ' + labelOf(sentTitle, sent), false);
         return keep(Object.assign({}, state.notes[note.path], { rev: 0, base: '' })).then(function () { return push(state.notes[note.path]); });
       }
       throw new Error('save ' + r.status);
@@ -314,12 +338,13 @@
   }
 
   /** The server took the note: its revision is the new base; text typed meanwhile stays dirty */
-  function settled(path, page, sent) {
+  function settled(path, page, sent, sentTitle) {
     var local = state.notes[path];
     if (!local) return Promise.resolve();
     var next = fromServer(page, local);
-    if (local.body !== sent) {
+    if (local.body !== sent || (local.title || '') !== sentTitle) {
       next.body = local.body;
+      next.title = local.title;
       next.dirty = true;
       next.updated = local.updated;
     } else {
@@ -337,10 +362,12 @@
       : '<<<<<<< server\n' + current.body.replace(/\n$/, '') + '\n=======\n' + sent.replace(/\n$/, '') + '\n>>>>>>> this device\n';
     var next = fromServer(current, local);
     next.body = local && local.body !== sent ? local.body : text;
+    // The title the device changed is kept, else the server's (it is sent again on Resolved)
+    if (local && (local.title || '') !== (local.baseTitle || '')) next.title = local.title;
     next.dirty = true;
     next.conflict = true;
     next.updated = Date.now();
-    notice('warn', t('notes.conflict') + ': ' + titleOf(current.body), false);
+    notice('warn', t('notes.conflict') + ': ' + labelOf(pageTitle(current), current.body), false);
     return keep(next);
   }
 
@@ -416,7 +443,7 @@
       a.href = '#/n/' + note.path.slice(state.user.notes.length + 1);
       var title = document.createElement('span');
       title.className = 'nt-item-title';
-      title.textContent = titleOf(note.body);
+      title.textContent = labelOf(note.title, note.body);
       var meta = document.createElement('span');
       meta.className = 'nt-item-meta';
       meta.textContent = new Date(note.updated || Date.now()).toLocaleString();
@@ -444,9 +471,10 @@
     state.current = path;
     show('editor');
     setPreview(false);
+    el.title.value = note.title || '';
     el.text.value = note.body;
     showConflict(note);
-    if (!note.body) el.text.focus();
+    if (!note.body && !note.title) el.title.focus();
   }
 
   function refreshEditorFromStore() {
@@ -455,6 +483,7 @@
     if (!note) { closeEditor(); return; }
     // Only text the writer has not touched since is replaced
     if (document.activeElement !== el.text && el.text.value !== note.body) el.text.value = note.body;
+    if (document.activeElement !== el.title && el.title.value !== (note.title || '')) el.title.value = note.title || '';
     showConflict(note);
   }
 
@@ -498,18 +527,25 @@
   function saveLocal() {
     timers.save = 0;
     var note = state.notes[state.current];
-    if (!note || note.body === el.text.value) return;
-    keep(Object.assign({}, note, { body: el.text.value, dirty: true, updated: Date.now() })).then(function () {
+    if (!note || (note.body === el.text.value && (note.title || '') === el.title.value)) return;
+    keep(Object.assign({}, note, { title: el.title.value, body: el.text.value, dirty: true, updated: Date.now() })).then(function () {
       showStatus();
       scheduleSync();
     });
   }
 
-  el.text.addEventListener('input', function () {
+  function typed() {
     clearTimeout(timers.save);
     timers.save = setTimeout(saveLocal, SAVE_DELAY);
-  });
+  }
+  el.title.addEventListener('input', typed);
+  el.text.addEventListener('input', typed);
+  el.title.addEventListener('blur', flushSave);
   el.text.addEventListener('blur', flushSave);
+  // Enter in the title goes on to the text, as in Keep
+  el.title.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') { event.preventDefault(); el.text.focus(); }
+  });
 
   function setPreview(on) {
     el.preview.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -549,7 +585,7 @@
 
   el.add.addEventListener('click', function () {
     var path = state.user.notes + ':' + ulid();
-    keep({ path: path, body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
+    keep({ path: path, title: '', baseTitle: '', body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
       location.hash = '#/n/' + path.slice(state.user.notes.length + 1);
     });
   });
@@ -565,7 +601,7 @@
       // Leaving a note never typed into: nothing to keep
       var left = state.notes[state.current];
       flushSave();
-      if (left && !left.rev && !left.dirty && left.body === '') forget(left.path);
+      if (left && !left.rev && !left.dirty && left.body === '' && !left.title) forget(left.path);
     }
     closeEditor();
   }

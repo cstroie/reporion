@@ -98,6 +98,54 @@ final class NotesTest extends HttpTestCase
         self::assertSame("ONE\ntwo\nTHREE\n", $data['body']);
     }
 
+    public function testTheTitleIsFrontmatterAndTheListingShowsIt(): void
+    {
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'title' => 'Shopping'], 'body' => "milk\n"]);
+
+        $row = $this->decode($this->as('alice', 'GET', '/api/v1/pages?ns=users:alice:notes'))['data'][0];
+        self::assertSame('Shopping', $row['title']);
+        self::assertSame('Shopping', $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE . '?render=0'))['meta']['title']);
+    }
+
+    public function testAMergedSaveTakesATitleOnlyTheDeviceChanged(): void
+    {
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'title' => 'Old'], 'body' => "one\ntwo\nthree\n"]);
+        $meta = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE . '?render=0'))['meta'];
+        $this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => $meta, 'body' => "ONE\ntwo\nthree\n", 'base_rev' => 1]);
+
+        $merged = $this->decode($this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => ['title' => 'New'] + $meta, 'body' => "one\ntwo\nTHREE\n", 'base_rev' => 1, 'merge' => true]));
+
+        self::assertTrue($merged['merged']);
+        self::assertSame('New', $merged['meta']['title']);
+        self::assertSame("ONE\ntwo\nTHREE\n", $merged['body']);
+    }
+
+    public function testATitleBothSidesChangedStaysAsThePageHasIt(): void
+    {
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'title' => 'Old'], 'body' => "one\n"]);
+        $meta = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE . '?render=0'))['meta'];
+        $this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => ['title' => 'Server'] + $meta, 'body' => "one\n", 'base_rev' => 1]);
+
+        $merged = $this->decode($this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => ['title' => 'Device'] + $meta, 'body' => "one\ntwo\n", 'base_rev' => 1, 'merge' => true]));
+
+        self::assertSame('Server', $merged['meta']['title']);
+        self::assertSame("one\ntwo\n", $merged['body']);
+    }
+
+    public function testAMergedSaveRemovesATitleOnlyTheDeviceCleared(): void
+    {
+        $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'meta' => ['visibility' => 'private', 'title' => 'Old'], 'body' => "one\n"]);
+        $meta = $this->decode($this->as('alice', 'GET', '/api/v1/pages/' . self::NOTE . '?render=0'))['meta'];
+        $this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => $meta, 'body' => "one\ntwo\n", 'base_rev' => 1]);
+        $cleared = $meta;
+        unset($cleared['title']);
+
+        $merged = $this->decode($this->as('alice', 'PUT', '/api/v1/pages/' . self::NOTE, ['meta' => $cleared, 'body' => "zero\none\n", 'base_rev' => 1, 'merge' => true]));
+
+        self::assertArrayNotHasKey('title', $merged['meta']);
+        self::assertSame("zero\none\ntwo\n", $merged['body']);
+    }
+
     public function testOverlappingEditsAre409WithMarkersAndNothingSaved(): void
     {
         $this->as('alice', 'POST', '/api/v1/pages', ['path' => self::NOTE, 'body' => "one\ntwo\n"]);

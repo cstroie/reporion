@@ -78,7 +78,8 @@ $e = static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES);
 </span>
 </div>
 <div class="nt-conflict" data-conflict hidden></div>
-<textarea class="input nt-text" data-text spellcheck="true" aria-label="<?= $e(t('notes.title')) ?>"></textarea>
+<input class="input nt-title" type="text" data-title maxlength="200" autocomplete="off" placeholder="<?= $e(t('notes.title_hint')) ?>" aria-label="<?= $e(t('notes.field_title')) ?>">
+<textarea class="input nt-text" data-text spellcheck="true" placeholder="<?= $e(t('notes.text_hint')) ?>" aria-label="<?= $e(t('notes.field_text')) ?>"></textarea>
 <div class="nt-preview wk-prose" data-preview-pane hidden></div>
 </section>
 <script type="application/json"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
