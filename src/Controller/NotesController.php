@@ -33,7 +33,7 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '1.2.0';
+    public const VERSION = '1.3.0';
 
     /** The strings the app shows, from lang/en.php (D26) */
     private const STRINGS = [
@@ -44,7 +44,8 @@ final class NotesController
         'notes.unsynced', 'notes.sync_failed', 'notes.sync_now', 'notes.conflict',
         'notes.conflict_resolved', 'notes.conflict_markers', 'notes.preview_offline',
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
-        'notes.update_ready', 'notes.update_reload',
+        'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready',
+        'notes.install_ios', 'notes.install_later', 'notes.installed',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',
     ];
 

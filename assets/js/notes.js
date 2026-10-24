@@ -29,6 +29,12 @@
  * shown at the foot. A new service worker waits beside the running one; the
  * page asks it what it is and offers a reload (a notice), checking for one
  * when it becomes visible, comes back online and every hour.
+ *
+ * Install: once signed in, a notice offers to install the app, with the
+ * browser's own prompt (beforeinstallprompt: Chrome, Edge, Android) or, in
+ * iOS Safari, the Share → Add to Home Screen hint; never when it already
+ * runs installed. "Not now" waits 30 days; the header's download button
+ * stays while the browser offers installing.
  */
 (function () {
   'use strict';
@@ -51,6 +57,7 @@
   var el = {
     status: root.querySelector('[data-status]'),
     sync: root.querySelector('[data-sync]'),
+    install: root.querySelector('[data-install]'),
     theme: root.querySelector('[data-theme-toggle]'),
     signOut: root.querySelector('[data-sign-out]'),
     notices: root.querySelector('[data-notices]'),
@@ -627,6 +634,7 @@
     }).then(function () {
       route();
       showStatus();
+      offerInstall();
     });
   }
 
@@ -671,6 +679,91 @@
     else flushSave();
   });
   setInterval(function () { if (document.visibilityState === 'visible') sync(); }, SYNC_EVERY);
+
+  // ---- install: the browser's own prompt (Chrome, Edge, Android), a hint on iOS ----
+
+  var INSTALL_KEY = 'reporion.notes.install';
+  var INSTALL_AGAIN = 30 * 24 * 3600000;
+  var install = { prompt: null, card: null };
+
+  function installed() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  }
+
+  /** iOS Safari: no install event, Share → Add to Home Screen instead (other iOS browsers cannot install) */
+  function iosSafari() {
+    var ua = navigator.userAgent;
+    var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  }
+
+  function installPostponed() {
+    var at = 0;
+    try { at = Number(localStorage.getItem(INSTALL_KEY) || 0); } catch (e) { at = 0; }
+    return at > 0 && Date.now() - at < INSTALL_AGAIN;
+  }
+
+  function closeInstall() {
+    if (install.card) install.card.remove();
+    install.card = null;
+  }
+
+  function runInstall() {
+    if (!install.prompt) return;
+    var prompt = install.prompt;
+    install.prompt = null;
+    el.install.hidden = true;
+    closeInstall();
+    prompt.prompt();
+    prompt.userChoice.then(function (choice) {
+      if (choice && choice.outcome !== 'accepted') {
+        try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) { /* asked again next visit */ }
+      }
+    }).catch(function () { /* the browser keeps its own count */ });
+  }
+
+  /** The notice, once signed in, unless installed, already showing or postponed by "Not now" */
+  function offerInstall() {
+    if (!state.user || install.card || installed() || installPostponed()) return;
+    var ios = !install.prompt && iosSafari();
+    if (!install.prompt && !ios) return;
+    install.card = notice('info', t(ios ? 'notes.install_ios' : 'notes.install_ready'), true);
+    var body = install.card.querySelector('div');
+    body.appendChild(document.createTextNode(' '));
+    if (!ios) {
+      var yes = document.createElement('button');
+      yes.type = 'button';
+      yes.className = 'btn btn-sm btn-primary';
+      yes.textContent = t('notes.install');
+      yes.addEventListener('click', runInstall);
+      body.appendChild(yes);
+      body.appendChild(document.createTextNode(' '));
+    }
+    var later = document.createElement('button');
+    later.type = 'button';
+    later.className = 'btn btn-sm btn-ghost';
+    later.textContent = t('notes.install_later');
+    later.addEventListener('click', function () {
+      try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) { /* this visit only */ }
+      closeInstall();
+    });
+    body.appendChild(later);
+  }
+
+  window.addEventListener('beforeinstallprompt', function (event) {
+    // Kept for our own notice and the header button instead of the browser's mini bar
+    event.preventDefault();
+    install.prompt = event;
+    el.install.hidden = false;
+    offerInstall();
+  });
+  window.addEventListener('appinstalled', function () {
+    install.prompt = null;
+    el.install.hidden = true;
+    closeInstall();
+    notice('ok', t('notes.installed'), false);
+  });
+  el.install.addEventListener('click', runInstall);
 
   // ---- updates: a new worker waits until the writer reloads into it ----
 

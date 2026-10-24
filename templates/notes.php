@@ -41,6 +41,7 @@ $e = static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES);
 <a class="nt-brand" href="#/" data-nav-list><img class="nt-brand-icon" src="<?= $e(Asset::url($basePath, 'notes/icon.svg')) ?>" alt="" width="24" height="24"><span><?= $e(t('notes.title')) ?></span></a>
 <span class="nt-status" data-status aria-live="polite"></span>
 <span class="nt-top-actions">
+<button class="btn btn-ghost nt-icon" type="button" data-install title="<?= $e(t('notes.install')) ?>" aria-label="<?= $e(t('notes.install')) ?>" hidden><i class="ph ph-download-simple" aria-hidden="true"></i></button>
 <button class="btn btn-ghost nt-icon" type="button" data-sync title="<?= $e(t('notes.sync_now')) ?>" aria-label="<?= $e(t('notes.sync_now')) ?>" hidden><i class="ph ph-arrows-clockwise" aria-hidden="true"></i></button>
 <button class="btn btn-ghost nt-icon" type="button" data-theme-toggle title="<?= $e(t('notes.theme')) ?>" aria-label="<?= $e(t('notes.theme')) ?>"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
 <button class="btn btn-ghost nt-icon" type="button" data-sign-out title="<?= $e(t('notes.sign_out')) ?>" aria-label="<?= $e(t('notes.sign_out')) ?>" hidden><i class="ph ph-sign-out" aria-hidden="true"></i></button>
