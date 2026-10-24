@@ -618,6 +618,17 @@ Decided 2026-10-19 (owner: improve the screen, be creative within the rules): `/
 - **Conversation** (2026-10-19, owner's request: follow-ups): the page keeps the last 5 turns (question and answer) and sends them with the next question; nothing is stored on the server. The composer footer has a ghost **New conversation** button that clears them, and once there is a turn the textarea's placeholder becomes "Ask a follow-up…". The latest answer is shown in full; earlier turns fold under it, each in a `<details class="wk-ask-turn">`. Source ids are per turn (`ask-src-{turn}-{n}`), so a pill lights its own turn's source only.
 - **How it was searched**: when the question was rewritten, a quiet "Searched as …" line gives the standalone question. The searched words show as `.wk-chip`s, and a chip with the brain icon, "by meaning", says the report archive was also searched by meaning (embeddings).
 
+## Notes app (`/notes`)
+
+Decided 2026-10-24 (D55, owner's request: a much simpler notes PWA inside Reporion).
+
+- **One narrow column** (760 px, 16 px gutters), a sticky top bar: the brand mark and *Notes* (back to the list), a quiet status line (offline, syncing, *N not synced yet*, all synced; nothing when signed out), and three ghost icon buttons: sync now, theme, sign out.
+- **Theme** is one button that cycles *as the system → light → dark* (icons `circle-half`, `sun`, `moon`), kept in the browser; colours are the tokens (`.theme-light`), never new ones. The palette chosen in Reporion's top nav applies.
+- **The list**: a search field and the one primary *New note* in a row; each note a card with its title (its first `#` heading, else its first line) and when it changed; a `cloud-slash` flag for unsynced, a `warning` flag for a conflict.
+- **The editor**: *Notes* (back) at the left; *Preview* and *Delete* at the right; one monospace textarea, saved on the device as typed. Preview is the server's renderer, online only (offline: the text as typed, with an info notice).
+- **A conflict** is a `warn` notice card above the text explaining the markers, with a small *Resolved* button; the text holds both versions between git-style markers.
+- Messages are notice cards (merged, conflict, deleted elsewhere): they fade after a few seconds, except the conflict card in the editor.
+
 ## Typography and utilities
 
 - **Sizes** are the `--text-*` tokens: `2xs` 12 px (badges, help under an input), `xs` 13 px

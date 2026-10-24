@@ -28,6 +28,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
+use Reporion\Support\Merge3;
 use Reporion\Support\ReportPath;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -212,7 +213,8 @@ final class PagesApiController
      * three-way merge (A2). `document` is the whole raw page. YAML
      * frontmatter and body: parsed here exactly as the editor's plain form
      * save does (Support\DocumentFormat); a document that does not parse is
-     * 422 and nothing is saved.
+     * 422 and nothing is saved. `merge: true` merges a stale save instead of
+     * refusing it (saveMerged(), D55).
      */
     public function save(Request $request, string $path, ?User $principal): Response
     {
@@ -258,6 +260,10 @@ final class PagesApiController
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {
+            if (($fields['merge'] ?? false) === true) {
+                return $this->saveMerged($request, $path, $body, $e, $principal);
+            }
+
             return ApiResponse::json([
                 'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
                 'submitted_base_rev' => $e->submittedBaseRev,
@@ -267,6 +273,55 @@ final class PagesApiController
         $this->audit->record('page.save', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
         return $this->recordResponse($record, 200);
+    }
+
+    /**
+     * A stale PUT with `merge: true` (the notes app, D55): the body merged
+     * line by line (Support\Merge3) from the revision it started from
+     * (base_rev), what the page holds now and what was sent. The page's
+     * current frontmatter is kept. Clean -> saved as a new revision, 200
+     * with `merged: true`; overlapping edits -> 409 with the text and its
+     * conflict markers in `merged`, nothing saved. A signed page, or a
+     * base_rev the attic does not hold, is the plain 409.
+     */
+    private function saveMerged(Request $request, string $path, string $body, RevisionConflictException $e, User $principal): Response
+    {
+        $current = $e->current;
+        $conflict = [
+            'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
+            'submitted_base_rev' => $e->submittedBaseRev,
+            'current' => $this->recordPayload($current),
+        ];
+        if ($current->status === 'signed' || $e->submittedBaseRev < 1 || $e->submittedBaseRev > $current->rev) {
+            return ApiResponse::json($conflict, 409);
+        }
+        try {
+            [, $base] = DocumentFormat::parse($this->storage->readRevision($path, $e->submittedBaseRev));
+        } catch (PageNotFoundException | RuntimeException | ParseException) {
+            return ApiResponse::json($conflict, 409);
+        }
+
+        $merge = Merge3::merge($base, $current->body, $body);
+        if ($merge['conflicts'] > 0) {
+            return ApiResponse::json($conflict + ['merged' => $merge['text'], 'conflicts' => $merge['conflicts']], 409);
+        }
+
+        $meta = ConclusionSummary::fill($path, $current->frontmatter, $merge['text'], $current->body);
+        try {
+            $record = $this->storage->save($path, $meta, $merge['text'], $current->rev, $principal->username);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (RevisionConflictException $again) {
+            // Saved again in between: the client retries from the newer revision
+            return ApiResponse::json([
+                'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
+                'submitted_base_rev' => $e->submittedBaseRev,
+                'current' => $this->recordPayload($again->current),
+            ], 409);
+        }
+        $this->audit->record('page.save', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['merged_from' => $e->submittedBaseRev]);
+
+        return ApiResponse::json($this->recordPayload($record) + ['merged' => true], 200);
     }
 
     /**
