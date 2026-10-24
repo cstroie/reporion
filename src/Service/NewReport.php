@@ -380,8 +380,13 @@ final class NewReport
             }
             // The patient's name titles the report on screen and heads its text;
             // exports and public views use the exam title (Support\ReportName, D30).
-            // Each exam heads its own part at `##` (docs/FORMATS.md §11)
+            // Each exam heads its own part at `##` (docs/FORMATS.md §11); the form's
+            // indication is the shared text above the first (2026-10-24, owner's request)
             $body = '# ' . $v['name'] . "\n\n";
+            $indication = trim((string) preg_replace('/\s+/u', ' ', $v['indication']));
+            if ($indication !== '') {
+                $body .= 'Indicație: ' . $indication . "\n\n";
+            }
             if (\count($exams) === 1) {
                 $body .= ($exams[0]['title'] ?? '') !== '' ? '## ' . $exams[0]['title'] . "\n\n" : '';
             } else {

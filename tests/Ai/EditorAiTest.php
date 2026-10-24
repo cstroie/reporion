@@ -63,6 +63,12 @@ final class EditorAiTest extends TestCase
         self::assertSame(self::DOC . "Nou.\n\nUnu.\n", $framed['text'], 'below the frontmatter');
         [$pane] = $this->node([['fn' => 'apply', 'args' => ['insert', "## IRM\n\nUnu.\n", 0, 0, 'Nou.']]]);
         self::assertSame("## IRM\n\nNou.\n\nUnu.\n", $pane['text'], 'an exam pane keeps its heading first');
+        [$shared, $prose] = $this->node([
+            ['fn' => 'apply', 'args' => ['insert', "# N\n\nIndicație: lombalgie.\n\n## IRM\n\n- edem\n", 0, 0, 'Nou.']],
+            ['fn' => 'apply', 'args' => ['insert', "# Titlu\n\nIntroducere scurtă.\n\n## Parte\n\nText.\n", 0, 0, 'Nou.']],
+        ]);
+        self::assertSame("# N\n\nIndicație: lombalgie.\n\n## IRM\n\nNou.\n\n- edem\n", $shared['text'], "a report's indication line is stepped over to its exam");
+        self::assertSame("# Titlu\n\nNou.\n\nIntroducere scurtă.\n\n## Parte\n\nText.\n", $prose['text'], 'an ordinary lead paragraph is not');
         self::assertNull($show['result']);
     }
 

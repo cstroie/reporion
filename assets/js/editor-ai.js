@@ -104,12 +104,17 @@
     return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
-  /** The editable span below the headings that title the text: the name (#) and the exam (##) */
+  /**
+   * The editable span below the headings that title the text: the name (#) and the exam (##).
+   * A report's shared text between them, `Indicație: …` lines (`Label: value`, the new-report
+   * form writes it: 2026-10-24), is stepped over to the exam heading below it
+   */
   function contentStart(text) {
     var at = bodyStart(text);
     var re = /^(#{1,2})[ \t][^\n]*\n+/;
+    var shared = /^(?:[^\s#\n][^:\n]{0,40}:[ \t][^\n]*\n+)+(?=##[ \t])/;
     var m;
-    while ((m = re.exec(text.slice(at)))) {
+    while ((m = re.exec(text.slice(at)) || (at > bodyStart(text) && shared.exec(text.slice(at))))) {
       at += m[0].length;
     }
     return at;

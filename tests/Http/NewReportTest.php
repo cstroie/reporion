@@ -71,7 +71,7 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(['name' => 'Popescu Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
         self::assertSame('spine-lumbar-v2', $fm['exams'][0]['protocol'], 'on its exam (phase 27)');
         self::assertSame('templates:mri:lombar', $fm['exams'][0]['template']);
-        self::assertSame("# Popescu Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
+        self::assertSame("# Popescu Ana Maria\n\nIndicație: Lombalgie.\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the indication is the shared text, the exam its part (FORMATS.md §11); the template's text is not copied");
         self::assertSame('draft', $page->status);
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
@@ -265,6 +265,7 @@ final class NewReportTest extends HttpTestCase
         self::assertFalse($this->exists(self::PATH));
         self::assertStringNotContainsString('/edit?raw=1', $opened->body, 'no Raw edit: its GET would lose the carried fields');
         self::assertStringNotContainsString('MV-MR-26-0001', $opened->body, 'no number taken from the client');
+        self::assertStringContainsString("Indicație: Cefalee.\n\n## IRM cerebral", $opened->body, 'the indication above the exam heading');
         self::assertFileDoesNotExist($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson', 'nothing audited');
 
         $saved = $this->saveOpened($opened, $this->cookie('owner'), ['body' => "# Popescu Ana Maria\n\n## IRM cerebral\n\nText.\n"]);
