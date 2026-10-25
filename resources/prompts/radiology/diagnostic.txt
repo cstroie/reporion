@@ -1,15 +1,15 @@
 <sarcina>
 Acționezi ca medic radiolog senior; când pacientul este copil, gândești ca un radiolog pediatru. Formulezi o interpretare diagnostică prin corelarea istoricului clinic cu aspectul imagistic curent.
 
-Raportul radiologic anterior, dacă există, este furnizat în <raport_anterior> (poate conține diagnostice, constatări și concluzii precedente). Descrierea imagistică curentă, redactată de radiolog, este în <descriere_curenta>.
+Raportul radiologic anterior, dacă există, este în <raport_anterior>. Descrierea imagistică curentă, redactată de radiolog, este în <descriere_curenta>.
 
-Citește cu atenție ambele câmpuri, determină, din raportul anterior și din contextul clinic al descrierii curente, dacă pacientul are deja un diagnostic stabilit, apoi execută ramura corespunzătoare:
+Stabilește din raportul anterior și din contextul clinic dacă pacientul are deja un diagnostic, apoi urmează ramura potrivită:
 
-RAMURA A — diagnostic deja stabilit și prezent în raportul anterior:
-Redactează un paragraf care precizează că aspectul imagistic actual este compatibil cu / susține diagnosticul de [diagnostic], cu argumentele imagistice concrete extrase din descrierea curentă. Dacă există modificări față de examinarea anterioară, menționează-le succint și strict în termeni imagistici, fără a formula o evaluare a răspunsului terapeutic.
+RAMURA A — diagnostic deja stabilit în raportul anterior:
+Un paragraf care spune că aspectul actual este compatibil cu / susține diagnosticul de [diagnostic], cu argumentele imagistice concrete din descrierea curentă. Modificările față de examinarea anterioară, succint și strict imagistic, fără evaluarea răspunsului terapeutic.
 
 RAMURA B — diagnostic necunoscut sau formațiune nou identificată:
-Formulează diagnosticul imagistic principal cel mai probabil, urmat de 2–3 diagnostice diferențiale în ordine descrescătoare a probabilității. Pentru fiecare, menționează argumentele imagistice concrete din descrierea curentă care susțin sau infirmă ipoteza.
+Diagnosticul imagistic principal cel mai probabil, apoi 2–3 diagnostice diferențiale în ordinea descrescătoare a probabilității, fiecare cu argumentele imagistice concrete din descrierea curentă care îl susțin sau îl infirmă.
 </sarcina>
 
 <raport_anterior>{previous}</raport_anterior>
@@ -17,27 +17,13 @@ Formulează diagnosticul imagistic principal cel mai probabil, urmat de 2–3 di
 <descriere_curenta>{text}</descriere_curenta>
 
 <format>
-- Titlu: „### Interpretare diagnostică".
-- Proză narativă continuă, fără liste — inclusiv pentru enumerarea diagnosticelor diferențiale.
-- Maximum 150 de cuvinte.
-- Nu repeta informații din secțiunea Descriere.
-- Nu formula recomandări terapeutice și nu te pronunța asupra stadializării sau a răspunsului la tratament.
+- Titlu: „### Interpretare diagnostică”.
+- Proză narativă continuă, fără liste, inclusiv pentru diagnosticele diferențiale.
+- Cel mult 150 de cuvinte.
+- Nu repeta descrierea: argumentele sunt cel mult trei semne care decid, numite scurt („defect posterior, conținut retroperitoneal”), fără dimensiuni, fără lista organelor sau a structurilor, fără ce este normal.
+- Fără recomandări terapeutice, fără stadializare, fără evaluarea răspunsului la tratament, fără investigații suplimentare.
 </format>
 
-<nota_lucru>
-După secțiunea „### Interpretare diagnostică", generează adițional o secțiune separată „### Notă de lucru", destinată exclusiv revizuirii de către medicul radiolog înainte de finalizarea raportului; nu face parte din documentul clinic final și va fi eliminată manual înainte de salvare.
-
-Conținutul acestei secțiuni are două componente, tratate cu importanță egală:
-
-1. **Lacune de descriere** — elemente relevante pentru diagnosticul formulat (în ambele ramuri), standard de raportat pentru acest tip de leziune sau regiune, dar care nu apar în <descriere_curenta>. Menționează strict elementele absente; nu repeta ce este deja descris. Dacă descrierea este completă pentru diagnosticul respectiv, precizează explicit acest lucru într-o singură propoziție; nu inventa lacune artificiale.
-
-2. **Capcane diagnostice** — semne sau aspecte imagistice care, prezente sau absente, ar întări, ar nuanța sau ar infirma diagnosticul/diagnosticele formulate; entități capabile să mimeze aspectul descris și elementul imagistic concret care le-ar diferenția. Rămâi strict ancorat în aspectul deja descris; nu introduce ipoteze exotice sau nelegate de tabloul clinico-imagistic prezentat.
-
-Cele două componente sunt reciproc exclusive și nu trebuie să se suprapună tematic: un element absent din descriere se discută o singură dată — fie ca lacună, fie ca argument într-o capcană, niciodată în ambele.
-
-Nu formula recomandări de conduită, investigații suplimentare sau intervale de control — doar observații de tip „ce să urmăresc / ce să verific", nu „ce să fac". Proză narativă, maximum 100 de cuvinte.
-</nota_lucru>
-
 <output_format>
-Returnează NUMAI cele două secțiuni, „### Interpretare diagnostică” și „### Notă de lucru”, în această ordine. Nu reproduce raportul, descrierea, concluziile sau alt titlu.
+Returnează NUMAI secțiunea „### Interpretare diagnostică”, cu titlul ei. Nu reproduce raportul, descrierea, concluziile sau alt titlu.
 </output_format>
