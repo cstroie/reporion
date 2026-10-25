@@ -1,0 +1,53 @@
+<report>
+{text}
+</report>
+
+<sarcina>
+Scrie secțiunea de concluzii pentru raportul de mai sus: diagnosticul, nu un rezumat al descrierii. Medicul care o citește a sărit peste descriere și vrea să afle ce are pacientul.
+</sarcina>
+
+<instructiuni>
+- Folosește modalitatea și regiunea din raport (radiografie, CT, IRM, ecografie); nu presupune IRM.
+- Dacă există patologie:
+  - începe cu diagnosticul, numit ca entitate: „Hernie diafragmatică Bochdalek stângă”, „Infarct ischemic acut în teritoriul ACM drepte”, „Hernie discală L5-S1”;
+  - când imaginea nu este sigură, diagnosticul cel mai probabil („aspect sugestiv pentru…”, „compatibil cu…”) și cel mult două alternative care contează;
+  - apoi doar complicațiile și consecințele care schimbă conduita: volvulus, efect de masă cu deviere de linie mediană, conflict radicular, stenoză de canal, fractură instabilă;
+  - ordonează după gravitate; o constatare secundară fără importanță clinică nu intră, nici una descrisă ca „minim”, „discret” sau „mic” care nu schimbă conduita;
+  - evoluția față de o examinare anterioară, într-un cuvânt, când raportul o spune (nou apărut, în progresie, staționar, în regresie).
+- Nu repeta descrierea:
+  - fără semnal, densitate, ecogenitate, priză de contrast sau morfologie („hipersemnal T2”, „hipodens”, „contur neregulat”), decât dacă ea este diagnosticul;
+  - fără dimensiuni, decât una singură când decide conduita sau stadiul (o leziune de urmărit, o colecție de drenat, un anevrism);
+  - fără liste de structuri sau de segmente: grupează-le sau numește doar cea mai importantă („leziuni demielinizante multifocale”, nu fiecare leziune; „cu herniere intratoracică a splinei și pancreasului”, nu fiecare organ);
+  - fără aspecte normale; o negație doar când răspunde la întrebarea din indicație („fără leziuni posttraumatice endocraniene” la un traumatism).
+- Fără recomandări sau conduită clinică.
+- 1–3 propoziții scurte, de obicei sub 30 de cuvinte, niciodată peste 50.
+- Dacă totul este normal: o singură frază, „[Modalitate] [regiune] fără particularități patologice.” Nimic altceva.
+
+Titlul este „### Concluzii”; dacă raportul are deja o astfel de secțiune, răspunsul o înlocuiește complet.
+</instructiuni>
+
+<exemple>
+<exemplu tip="normal">
+### Concluzii
+IRM sinusuri paranazale fără particularități patologice.
+</exemplu>
+
+<exemplu tip="diagnostic evident; descrierea dă dimensiuni, semnal, conținutul herniei">
+### Concluzii
+Hernie diafragmatică Bochdalek stângă cu herniere intratoracică a splinei și pancreasului, complicată cu volvulus pancreatic.
+</exemplu>
+
+<exemplu tip="diagnostic probabil">
+### Concluzii
+Leziuni demielinizante multifocale active, sugestive pentru encefalomielită acută diseminată; diagnostic diferențial: prim episod de scleroză multiplă.
+</exemplu>
+
+<exemplu tip="fără diagnostic ferm">
+### Concluzii
+Leziuni focale hepatice multiple, nespecifice imagistic; cea mai mare, de 34 mm, în segmentul VII.
+</exemplu>
+</exemple>
+
+<output_format>
+Returnează NUMAI secțiunea de concluzii, inclusiv titlul „### Concluzii”. Nimic altceva.
+</output_format>

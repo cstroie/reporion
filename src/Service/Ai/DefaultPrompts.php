@@ -21,7 +21,9 @@ use Reporion\Storage\StorageInterface;
  * `ai:profiles:{profile}:{id}` (among them *Ask*, whose `{prompt}` gives the
  * rail its question box) and, when the profile has none, its own page with
  * the rail's table (actions/table.md): an existing table is never rewritten,
- * its rows are the owner's to add.
+ * its rows are the owner's to add. The radiology target also ships the
+ * profile's system prompt (`ai:profiles:{profile}:system`) and the rail's
+ * *Create* and *Conclusion* actions (2026-10-25).
  *
  * Run by the installer's Configure step and, since 2026-10-19, at any time
  * for any profile (Admin → AI, `ai:prompts-install`): a page that is there
@@ -35,6 +37,7 @@ final class DefaultPrompts
     public const SPECIAL = 'special';
     public const ACTION = 'action';
     public const TABLE = 'table';
+    public const SYSTEM = 'system';
 
     /** Prompts for reports of a radiology department, written in Romanian */
     public const RADIOLOGY = 'radiology';
@@ -70,7 +73,10 @@ final class DefaultPrompts
         'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
         'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
+        'create' => ['kind' => self::ACTION, 'title' => 'Create', 'file' => 'create.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'conclusion' => ['kind' => self::ACTION, 'title' => 'Conclusion', 'file' => 'conclusion.txt', 'targets' => self::RADIOLOGY_ONLY],
         'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
+        'system' => ['kind' => self::SYSTEM, 'title' => 'System prompt', 'file' => 'system.txt', 'targets' => self::RADIOLOGY_ONLY],
         'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::BOTH],
     ];
 
@@ -97,6 +103,7 @@ final class DefaultPrompts
         return match (self::CATALOGUE[$id]['kind']) {
             self::SPECIAL => $ns . ':' . Actions::SPECIAL_NS . ':' . $id,
             self::ACTION => $ns . ':' . $id,
+            self::SYSTEM => $ns . ':' . self::SYSTEM,
             default => $ns,
         };
     }

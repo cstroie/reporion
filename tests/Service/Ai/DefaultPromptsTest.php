@@ -54,6 +54,8 @@ final class DefaultPromptsTest extends StorageTestCase
         self::assertEqualsCanonicalizing(array_diff(array_keys(DefaultPrompts::CATALOGUE), ['grammar']), $of('radiology'));
         self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $of('generic'));
         self::assertNotContains('grammar', $of('radiology'), 'grammar is for ordinary pages');
+        self::assertSame('ai:profiles:reports:system', DefaultPrompts::pathOf('reports', 'system'));
+        self::assertSame('ai:profiles:reports:conclusion', DefaultPrompts::pathOf('reports', 'conclusion'));
         foreach (['shorten', 'patient', 'english'] as $gone) {
             self::assertArrayNotHasKey($gone, DefaultPrompts::CATALOGUE);
         }

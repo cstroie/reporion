@@ -1,0 +1,50 @@
+<context>
+<sablon>
+Pornește de la acest șablon:
+
+{template}
+</sablon>
+<exemple_stil>
+Exemple din rapoartele mele anterioare. Studiază stilul de redactare, terminologia și structura frazelor. Dacă nu există exemple, aplică terminologia radiologică standard română.
+
+{snippets}
+</exemple_stil>
+<anterior data="{previous_date}">
+Examinarea anterioară a pacientului (dacă există):
+
+{previous}
+</anterior>
+</context>
+
+<note_medic>
+{text}
+</note_medic>
+
+<sarcina>
+Scrie descrierea examinării, în limba română, pornind de la șablon și integrând constatările din <note_medic>. Vârsta, sexul, indicația și examinarea sunt în antetul mesajului (liniile „patient:", „indication:", „exam:").
+</sarcina>
+
+<despre_note>
+<note_medic> nu este raportul, ci notițele medicului: adesea o listă, uneori abreviate sau fără diacritice, de obicei numai constatările patologice și cele semnificative. O structură care nu apare în note este normală și se descrie cu varianta normală din șablon. Nu prelua din note forma de listă, abrevierile sau formulările telegrafice: redactează-le în stilul șablonului. Titlurile din note (# sau ##) nu sunt constatări.
+</despre_note>
+
+<instructiuni>
+1. Răspunsul conține numai descrierea. Fără titluri # și ##, fără linia „Indicație:", fără Concluzii și fără Recomandări: ele există deja în raport sau se adaugă separat. Dacă șablonul are titluri ### (segmentele examinării), păstrează-le exact, în ordinea lor; nu adăuga alte titluri. Începe direct cu prima frază sau primul titlu ### al șablonului.
+2. Parcurge șablonul în ordine, paragraf cu paragraf, și păstrează-i paragrafele și liniile.
+   - „[a / b / c]": alege varianta care corespunde datelor; dacă datele nu spun nimic despre ea, alege varianta normală.
+   - „[frază normală. / frază patologică …]": dacă datele descriu o modificare a acelei structuri, folosește varianta patologică, completată din date; altfel varianta normală.
+   - Două structuri înrudite sau pereche (ex. ligamentele colaterale, meniscurile, rinichii), normale amândouă: o singură frază scurtă, fără enumerarea elementelor („Ligamentele colaterale sunt normale.”). Dacă una este patologică, descrie-o și încheie cu „…celălalt/cealaltă este normal(ă)”; dacă ambele sunt patologice, câte o frază pentru fiecare.
+   - „[frază.]" fără variantă: păstreaz-o numai dacă notele o descriu, completată din ele; altfel elimin-o.
+   - „[...]", „L[...]": completează numai din date; dacă datele nu dau valoarea, elimină segmentul care o cere. Nicio paranteză dreaptă nu rămâne în răspuns.
+   - O constatare din date pentru care șablonul nu are variantă: o frază autonomă, prima în paragraful structurii corespunzătoare.
+3. Când o structură devine patologică:
+   a) scrie constatarea ca afirmație pozitivă, autonomă: „[Leziune] [grad] la nivelul [localizare], [caracteristici din date]." Dacă datele conțin o interpretare, ea urmează în aceeași frază sau imediat după;
+   b) păstrează normalitatea doar pentru ce a rămas neafectat, cu formulare restrictivă („Restul…", „Celelalte…", „la celelalte niveluri…"), fără să repeți structura afectată;
+   c) nu înglobezi constatarea într-o frază de normalitate și nu o semnala prin „cu excepția…", „exceptând…", „în afara…", „descrise mai jos/mai sus", „normal, dar…", „normal, însă…";
+   d) elimină din tot răspunsul orice negație contrazisă de date (ex. „fără edem osos" când datele conțin edem osos); verifică fiecare frază, nu doar cea modificată;
+   e) fiecare constatare apare o singură dată, în paragraful structurii ei;
+   f) păstrează exact terminologia, gradul, nivelul, lateralitatea și dimensiunile din date; frazele neafectate rămân neschimbate din șablon.
+   g) nu folosi liniuța de pauză (—, –): leagă părțile frazei prin virgulă, punct și virgulă sau o frază nouă.
+4. Dacă examinarea este nativă (fără substanță de contrast), omite descrierile legate de contrast din șablon (gadolinofilie, iodofilie, priză de contrast, opacifierea vaselor postcontrast, faze arteriale/venoase, secreție/excreție renală). Dacă datele nu spun nimic despre contrast, deduce din denumirea examinării (ex. „contrast”, „nativ”) și, la nevoie, păstrează descrierile de contrast ale șablonului.
+5. Dacă există o examinare anterioară în <anterior>, menționează în paragrafele corespunzătoare modificările față de ea (stabil, ameliorat, agravat, nou apărut), cu data ei. Nu prelua din ea nimic ce nu se regăsește în <note_medic>.
+</instructiuni>
