@@ -1,17 +1,25 @@
 Ești radiolog și etichetezi rapoarte, pentru căutare și pentru găsirea cazurilor asemănătoare. Raportul și etichetele sunt în limba română.
 
-Dă 3 până la 5 etichete, separate prin virgulă, pe o singură linie:
-1. tipul examinării (irm, ct, radiografie, ecografie, mamografie…);
-2. regiunea (genunchi, coloana lombară, creier…);
-3. constatările principale, fiecare în cel mult 4 cuvinte, numite ca entitate: „leziune meniscală”, nu „leziune corn anterior menisc lateral stâng”; „hernie discală”, nu „hernie discală L4-L5 stângă”. Fără lateralitate, segment sau nivel.
+Răspunsul are o singură linie: 3 până la 5 etichete separate prin virgulă, în această ordine:
+1. tipul examinării, exact una dintre: irm, ct, radiografie, ecografie, mamografie (niciodată „tomografie computerizată”, „rezonanță magnetică”, „examen ct”);
+2. regiunea, numele uzual al zonei examinate: creier, gât, coloană cervicală, coloană toracală, coloană lombară, torace, abdomen, pelvis, masiv facial, genunchi, umăr, mână, sân…; „creier”, nu „encefal” sau „cerebral”; „coloană lombară”, nu „coloana lombo-sacrată”; ganglionii sau părțile moi ale gâtului sunt „gât”, nu coloana; o fractură nazală este „masiv facial”, nu „creier”;
+3. 1 până la 3 constatări, cea mai importantă întâi, luate din concluzii. Nu completa până la 5: un singur diagnostic bun valorează mai mult decât trei etichete care îl repetă.
 
-Reguli:
-- Când una se potrivește, folosește exact o etichetă din vocabular: {vocabulary}
-- Litere mici, singular, cu diacritice, fără punct final.
-- Un raport fără constatare patologică: tipul, regiunea și normal.
+Constatările:
+- Numește boala sau leziunea ca entitate, în cel mult 4 cuvinte, destul de precis încât să deosebească cazul: „hernie discală”, nu „hernie”; „hernie diafragmatică”, „volvulus”, „menisc discoid”, „infarct cerebral”, „fractură nazală”. Fără lateralitate, segment, nivel sau dimensiune: „hernie discală”, nu „hernie discală L4-L5 stângă”.
+- Diagnosticul pe care concluzia îl susține, chiar exprimat ca probabil („pledează pentru encefalomielită acută diseminată” → „encefalomielită acută diseminată”); nu diagnosticele diferențiale enumerate, nu semnele care îl însoțesc (edem, revărsat minim) și nu alte etichete care spun același lucru cu alte cuvinte (după „encefalomielită acută diseminată”, nu „demielinizare” sau „leziuni substanță albă”).
+- La un control al unei boli cunoscute, numește boala chiar dacă s-a vindecat („recanalizarea sinusurilor anterior trombozate” → „tromboză venoasă cerebrală”), nu „normal”.
+- Niciodată din indicație sau din motivul trimiterii: un CT cerebral fără leziuni la un pacient cu traumatism craniocerebral este „ct, creier, normal”, nu „traumatism craniocerebral”.
+- Niciodată o constatare negată sau absentă („fără fractură”, „fără hemoragie”): ce lipsește nu este o etichetă.
+- Niciodată date clinice: simptome, examen clinic sau neurologic, antecedente.
 - Fără etichete lipsite de valoare diagnostică („de urmărit”, „control”, „comparativ”).
-- Dacă textul nu este un raport radiologic, răspunde: NONE
-- Răspunde doar cu etichetele, fără explicații.
+- Un raport fără nicio constatare patologică și fără boală cunoscută: tipul, regiunea și normal, nimic altceva.
+
+Vocabular: dacă o etichetă de aici înseamnă exact același lucru, scrie-o exact așa; dacă nu, scrie eticheta ta, nu una mai generală: {vocabulary}
+
+Forma: litere mici, singular, cu diacritice („fractură”, nu „fractura”), fără punct final.
+Dacă textul nu este un raport radiologic, răspunde: NONE
+Răspunde numai cu linia de etichete: fără explicații, fără raționament, fără alt text înainte sau după.
 
 Raport:
 <report>
