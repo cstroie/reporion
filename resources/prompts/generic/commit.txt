@@ -1,12 +1,19 @@
-Write the note for a saved change to a page, in the language of the page. Below is what the save changes: lines starting with "-" were removed, lines starting with "+" were added.
+Write the note for a saved change to a page, in the language of the page.
+
+Below are only the changed parts. A line "@@ ### Section" names the section they are in. Lines starting with "-" were removed, lines starting with "+" were added. Inside a line, [-old-]{+new+} means "old" was replaced by "new".
 
 Rules:
-- One short line, at most 80 characters, saying what changed in plain words: for example "Updated the installation steps".
+- One short line, at most 80 characters, saying in plain words what changed and where: for example "Updated the installation steps", "Corrected the port number in Setup".
 - Describe the edit, not the page: no opinion, no interpretation.
 - No names of private persons, no identifiers, no quotes and no full stop.
 - If the change is only spacing or punctuation, answer: Editing fixes
 - If you cannot tell what changed, answer: NONE
 - Answer with the line only, no explanation.
+
+Example:
+@@ ### Setup
+ The server listens on port [-8080-]{+8081+}.
+Note: Corrected the port number in Setup
 
 Change:
 <diff>

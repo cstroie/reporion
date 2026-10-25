@@ -2,7 +2,7 @@ Summarize the text below in a single line of at most 160 characters, in the lang
 
 Rules:
 - Only what the text says: add no opinion, recommendation or interpretation.
-- The main point first, then the secondary ones if they fit, separated by semicolons.
+- Start with the main point itself, never with "This page", "The text" or "This document"; then the secondary ones if they fit, separated by semicolons.
 - No names of private persons, no identifiers, no courtesy phrases.
 - Answer with the line only, no quotes and no explanation.
 
