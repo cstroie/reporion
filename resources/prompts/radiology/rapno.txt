@@ -1,0 +1,52 @@
+<report>
+{text}
+</report>
+
+<previous_report>
+{previous}
+</previous_report>
+
+<sarcina>
+Generează secțiunea de evaluare RAPNO pentru raportul curent, prin comparație cu cel anterior.
+</sarcina>
+
+<instructiuni>
+<referinta>
+RAPNO compară cu examinarea de referință postoperatorie, nu cu cea dinaintea operației.
+- Dacă examinarea anterioară este dinaintea operației (tumora intactă, fără rezecție sau craniotomie descrisă) și cea curentă este după operație: nu există răspuns de evaluat. Scrie: „Examinare postoperatorie de referință: nu se încadrează RAPNO.”, apoi restul tumoral măsurat (produsul diametrelor), care devine referința pentru controalele următoare.
+- Dacă nu există examinare anterioară: la fel, examinare de referință.
+- Micșorarea tumorii prin rezecție nu este răspuns terapeutic.
+- În primele 12 săptămâni după radioterapie, o creștere poate fi pseudoprogresie: spune-o la limitări.
+</referinta>
+
+<analiza>
+- Identifică leziunea țintă în raportul curent și în cel anterior.
+- Calculează produsul celor două diametre perpendiculare maxime din același plan ale componentei gadolinofile, pentru ambele examinări, și variația procentuală. Folosește numai dimensiunile scrise în rapoarte; dacă lipsesc sau nu se știe care două sunt în același plan, spune asta și nu inventa valori.
+- Evaluează modificările semnalului T2/FLAIR față de examinarea anterioară.
+- Identifică prezența sau absența leziunilor noi și a diseminării leptomeningiene.
+- Doza de corticosteroizi, statusul clinic neurologic și linia terapeutică se extrag din raportul CURENT (<report>), dacă sunt menționate — nu din cel anterior.
+</analiza>
+
+<criterii_rapno>
+  CR – dispariția completă a tumorii gadolinofile, stabilitate sau regresie T2/FLAIR, fără corticosteroizi, stabil clinic
+  PR – reducere ≥50% a produsului diametrelor, fără progresia T2/FLAIR, doză stabilă sau redusă de corticosteroizi
+  MR – reducere 25–49% a produsului diametrelor, celelalte criterii ca la PR
+  SD – nu îndeplinește criteriile de PR sau MR, dar nici de PD
+  PD – creștere ≥25% a produsului diametrelor SAU leziuni noi SAU progresia T2/FLAIR SAU deteriorare clinică
+</criterii_rapno>
+
+<continut>
+- Prima propoziție: încadrarea RAPNO explicită.
+- A doua propoziție: justificarea numerică — variația procentuală a produsului diametrelor componentei gadolinofile, modificările prizei de contrast și ale semnalului T2/FLAIR.
+- A treia propoziție, doar dacă este cazul: limitări ale evaluării (date clinice lipsă, posibilă pseudoprogresie, modificări post-terapeutice neconcludente).
+- Maximum 60 de cuvinte. Proză continuă, fără liste.
+- Dacă lipsesc din raportul curent doza de corticosteroizi sau statusul clinic neurologic: nu omite categoria RAPNO, dar adaugă la final „Evaluare incompletă — lipsesc date privind [doza de corticosteroizi / statusul clinic neurologic]."
+- Nu repeta descrierea imagistică din raport și nu formula recomandări terapeutice.
+</continut>
+
+<structura>
+- Titlu „### Evaluare RAPNO"; dacă secțiunea există deja în raport, înlocuiește-o complet; dacă nu, adaug-o la sfârșitul raportului.
+- Returnează NUMAI secțiunea RAPNO, inclusiv titlul. Nimic altceva.
+</structura>
+</instructiuni>
+

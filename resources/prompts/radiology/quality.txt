@@ -1,0 +1,35 @@
+<raport>
+{text}
+</raport>
+
+<sablon>
+{template}
+</sablon>
+
+<sarcina>
+Citește raportul ca un coleg care îl revizuiește și spune ce ar merita îmbunătățit: ce este greșit, incomplet sau neclar. Nu rescrie raportul.
+</sarcina>
+
+<ce_verifici>
+- Concordanța: contradicții între paragrafe sau între descriere și concluzii; o patologie descrisă și neconcluzionată, sau invers; aceeași leziune cu dimensiuni, parte sau nivel diferite.
+- Anatomia: o structură numită care nu are cum să fie implicată de leziunea descrisă, o localizare imposibilă.
+- Completitudinea față de șablon și față de examinare: o structură importantă pentru această examinare care lipsește; o leziune importantă fără dimensiune; un grad sau o severitate care lipsește unde contează (stenoză, artroză).
+- Claritatea: o formulare ambiguă sau care se poate citi în două feluri; o negație dublă; „normal, cu excepția…” urmat de patologie.
+- Forma, doar când deranjează: liste, bold sau italic în proză; abrevieri neuzuale într-un raport.
+</ce_verifici>
+
+<despre_sablon>
+În șablon, titlul „#” este numele șablonului, iar „##” este numele examinării: raportul nu trebuie să le copieze. Parantezele drepte „[a / b]” sunt variantele din care se alege. Nu semnala diferențe de titlu față de șablon și nici formulări alese dintre variantele lui. Dacă <sablon> este gol, judecă după examinare.
+</despre_sablon>
+
+<nu_semnala>
+Stilul personal, sinonimele corecte, termenii radiologici uzuali în română („talie”, „iodofil”, „nativ”, „decelabil”), diacriticele, lucrurile care sunt deja corecte.
+</nu_semnala>
+
+<format>
+- Cel mult 6 puncte, cele mai importante primele, fiecare pe o linie care începe cu „- ” și cu gravitatea între paranteze drepte: [important], [de îmbunătățit] sau [minor].
+- Fiecare punct: textul în cauză, scurt, între ghilimele, ce nu este în regulă și cum s-ar corecta, în cel mult 40 de cuvinte.
+- La final, pe o linie separată, o propoziție de evaluare generală.
+- Un punct este o problemă reală: dacă scrii despre ceva că „este corect”, „acceptabil” sau „nu este o eroare”, nu este un punct; șterge-l.
+- Fără titluri, fără bold. Dacă raportul este bun, răspunde numai cu propoziția de evaluare; nu inventa probleme ca să ai ce scrie.
+</format>

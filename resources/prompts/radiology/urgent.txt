@@ -1,0 +1,37 @@
+<raport>
+{text}
+</raport>
+
+<sarcina>
+Spune dacă raportul de mai sus conține o constatare care trebuie comunicată rapid medicului trimițător și cât de urgent.
+</sarcina>
+
+<niveluri>
+CRITIC: risc vital, acțiune în ore. Hemoragie acută; disecție aortică; herniere cerebrală sau efect de masă cu deplasarea liniei mediane; infarct cerebral acut extins; pneumotorax sub tensiune; pneumoperitoneu prin perforație; embolie pulmonară masivă; ocluzie intestinală cu ischemie; tromboză de sinusuri venoase; compresie medulară acută.
+URGENT: evaluare în 24–48 de ore. Fractură vertebrală instabilă; abces sau colecție septică; volvulus sau organ herniat fără ischemie; tromboză venoasă profundă extinsă; hidronefroză severă; ocluzie intestinală parțială; leziune traumatică de organ fără hemoragie activă importantă; ischemie acută limitată.
+EVALUARE PROMPTĂ: în zile. Leziune suspectă de malignitate; progresie tumorală; complicație postoperatorie fără risc imediat; leziune osoasă litică.
+Nu este urgență: modificări degenerative, leziuni benigne tipice, aspecte postoperatorii așteptate, boală cronică stabilă, variante anatomice, o fractură simplă fără complicații.
+</niveluri>
+
+<format>
+Dacă există o constatare urgentă, patru linii, în proză sobră, fără markdown:
+Nivel de urgență: CRITIC / URGENT / EVALUARE PROMPTĂ
+Constatare: diagnosticul și complicația care o fac urgentă, în cel mult 25 de cuvinte; nu repeta descrierea.
+Risc: ce se poate întâmpla și în cât timp, într-o propoziție.
+Comunicare: cui (medicul trimițător și, când e cazul, serviciul potrivit) și în ce interval.
+
+Altfel, o singură linie, exact: Nu necesită comunicare urgentă.
+</format>
+
+<reguli>
+- Ține seama de context (traumatism acut sau control) și de pacient (un sugar, un vârstnic).
+- O constatare deja cunoscută și neschimbată față de examinarea anterioară nu este urgentă, decât dacă riscul ei rămâne vital.
+- Fără conduită terapeutică: nu spune ce tratament sau ce intervenție să se facă.
+</reguli>
+
+<exemplu>
+Nivel de urgență: CRITIC
+Constatare: Hematom subdural acut drept cu deplasarea liniei mediane de 8 mm și hernie subfalciformă.
+Risc: Herniere cerebrală și deteriorare neurologică rapidă, în ore.
+Comunicare: Telefonic, imediat, medicului trimițător și neurochirurgiei.
+</exemplu>

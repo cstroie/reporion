@@ -999,7 +999,7 @@ visibility: private
 A row with no matching page (or an empty one) contributes nothing: same as it not being in the
 table at all.
 
-`resources/prompts/` holds the shipped texts (moved from `docs/prompts/` 2026-10-19; installable into any profile: Admin → AI, `ai:prompts-install`): in two targets (2026-10-20): `radiology/` (reports, written in Romanian: every reserved prompt, plus the rail's `create` and `conclusion` and the profile's system prompt `system.txt`, made `ai:profiles:{profile}:system`: 2026-10-25) and `generic/` (ordinary pages, in English: `summary`, `tags`, `tags-review`, `commit`), each with the rail's `ask` (the only shipped rail action: `grammar`, `shorten`, `patient` and `english` were dropped) and `table.md`, the rows for a
+`resources/prompts/` holds the shipped texts (moved from `docs/prompts/` 2026-10-19; installable into any profile: Admin → AI, `ai:prompts-install`): in two targets (2026-10-20): `radiology/` (reports, written in Romanian: every reserved prompt, plus the rail's `create`, `conclusion`, `diagnostic`, `urgent`, `quality` and `rapno` and the profile's system prompt `system.txt`, made `ai:profiles:{profile}:system`: 2026-10-25) and `generic/` (ordinary pages, in English: `summary`, `tags`, `tags-review`, `commit`), each with the rail's `ask` (the only shipped rail action: `grammar`, `shorten`, `patient` and `english` were dropped) and `table.md`, the rows for a
 profile's own page. `ask` uses the placeholder `{prompt}` (the doctor's question, the rail shows a
 question box) and answers from `{text}` and `{history}`; shown only. The installer's *Create the
 proposed prompts* makes them all, never over an existing page (the table page only if the profile

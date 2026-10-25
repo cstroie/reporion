@@ -23,7 +23,8 @@ use Reporion\Storage\StorageInterface;
  * the rail's table (actions/table.md): an existing table is never rewritten,
  * its rows are the owner's to add. The radiology target also ships the
  * profile's system prompt (`ai:profiles:{profile}:system`) and the rail's
- * *Create* and *Conclusion* actions (2026-10-25).
+ * *Create*, *Conclusion*, *Diagnostic*, *Urgent findings*, *Quality check*
+ * and *RAPNO* actions (2026-10-25).
  *
  * Run by the installer's Configure step and, since 2026-10-19, at any time
  * for any profile (Admin → AI, `ai:prompts-install`): a page that is there
@@ -75,6 +76,10 @@ final class DefaultPrompts
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
         'create' => ['kind' => self::ACTION, 'title' => 'Create', 'file' => 'create.txt', 'targets' => self::RADIOLOGY_ONLY],
         'conclusion' => ['kind' => self::ACTION, 'title' => 'Conclusion', 'file' => 'conclusion.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'diagnostic' => ['kind' => self::ACTION, 'title' => 'Diagnostic', 'file' => 'diagnostic.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'urgent' => ['kind' => self::ACTION, 'title' => 'Urgent findings', 'file' => 'urgent.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'quality' => ['kind' => self::ACTION, 'title' => 'Quality check', 'file' => 'quality.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
+        'rapno' => ['kind' => self::ACTION, 'title' => 'RAPNO', 'file' => 'rapno.txt', 'targets' => self::RADIOLOGY_ONLY],
         'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
         'system' => ['kind' => self::SYSTEM, 'title' => 'System prompt', 'file' => 'system.txt', 'targets' => self::RADIOLOGY_ONLY],
         'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::BOTH],
