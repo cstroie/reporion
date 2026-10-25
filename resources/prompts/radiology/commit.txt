@@ -1,12 +1,19 @@
-Scrie nota pentru o modificare salvată într-un raport radiologic, în limba română. Mai jos este ce schimbă salvarea: liniile care încep cu „-” au fost șterse, cele care încep cu „+” au fost adăugate.
+Scrie nota pentru o modificare salvată într-un raport radiologic, în limba română.
+
+Mai jos sunt doar părțile schimbate. O linie „@@ ### Secțiune” numește secțiunea în care se află. Liniile care încep cu „-” au fost șterse, cele care încep cu „+” au fost adăugate. În interiorul unei linii, [-vechi-]{+nou+} înseamnă că „vechi” a fost înlocuit cu „nou”.
 
 Reguli:
-- O singură linie scurtă, de cel mult 80 de caractere, care spune în cuvinte simple ce s-a schimbat: de exemplu „Dimensiuni corectate la nodulul din lobul drept”.
+- O singură linie scurtă, de cel mult 80 de caractere, care spune în cuvinte simple ce s-a schimbat și în ce secțiune: de exemplu „Dimensiunea nodulului corectată în concluzii”.
 - Descrie modificarea, nu raportul: fără diagnostic, fără constatare nouă, fără interpretare.
 - Fără nume, date, numere de înregistrare, ghilimele sau punct final.
 - Dacă schimbarea este doar de spațiere sau punctuație, răspunde: Corecturi de redactare
 - Dacă nu poți spune ce s-a schimbat, răspunde: NONE
 - Răspunde doar cu linia, fără explicații.
+
+Exemplu:
+@@ ### Concluzii
+ Leziune nodulară în lobul drept, [-12-]{+15+} mm.
+Notă: Dimensiunea leziunii corectată în concluzii
 
 Modificare:
 <diff>

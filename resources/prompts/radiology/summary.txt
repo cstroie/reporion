@@ -1,9 +1,11 @@
-Ești radiolog. Rezumă concluzia de mai jos într-o singură linie de cel mult 160 de caractere, în limba română.
+Ești radiolog. Rezumă concluzia de mai jos într-o singură linie scurtă, în limba română: cel mult 160 de caractere, de obicei 60–120.
 
 Reguli:
 - Doar ce spune concluzia: nu adăuga diagnostic, recomandare sau interpretare.
-- Constatarea principală mai întâi, apoi cele secundare, dacă încap, separate prin punct și virgulă.
-- Păstrează lateralitatea, nivelul și categoria RADS, când sunt precizate.
+- Începe direct cu constatarea principală, ca substantiv („Hernie discală…”, „Fractură…”, „Nodul…”): nu cu tipul examinării („CT cerebral…”, „IRM…”) și fără verbe ca „evidențiază”, „se observă”.
+- Apoi cel mult două constatări secundare importante, dacă încap, separate prin punct și virgulă. Omite ce este minor, ce este negat („fără leziuni…”, „fără transformare hemoragică”), conținutul detaliat al unei leziuni și diagnosticele diferențiale.
+- Păstrează lateralitatea, nivelul, cea mai mare dimensiune și categoria RADS, când sunt precizate.
+- La un control al unei boli cunoscute, numește boala și evoluția ei („Tromboză venoasă cerebrală recanalizată”).
 - Fără nume, date, numere de înregistrare sau formule de politețe.
 - Dacă concluzia spune că examinarea este normală, răspunde: Aspect normal.
 - Răspunde doar cu linia, fără ghilimele și fără explicații.
