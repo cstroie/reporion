@@ -44,7 +44,7 @@ final class PageMoveTest extends HttpTestCase
         self::assertSame('/reports:mri:pitesti:a', $move->headers['Location']);
 
         $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a');
-        self::assertSame(301, $old->status);
+        self::assertSame(302, $old->status);
         self::assertSame('/reports:mri:pitesti:a', $old->headers['Location']);
         self::assertSame(200, $this->as('owner', 'GET', '/reports:mri:pitesti:a')->status);
     }
@@ -63,7 +63,7 @@ final class PageMoveTest extends HttpTestCase
         self::assertSame('/reports:mri:mioveni:b', $move->headers['Location']);
 
         $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a');
-        self::assertSame(301, $old->status);
+        self::assertSame(302, $old->status);
         self::assertSame('/reports:mri:mioveni:b', $old->headers['Location']);
     }
 
