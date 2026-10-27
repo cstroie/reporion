@@ -285,19 +285,19 @@ revision exists byte for byte in a snapshot.
 `POST /mcp` is the MCP server; it takes a bearer token only. Admin → Settings → *MCP clients* turns it off, limits it to the local network (loopback and private addresses, so Claude Code over the VPN still works and claude.ai cannot connect), or opens it everywhere. Behind a reverse proxy PHP sees the proxy's address, not the client's: sign-in, bad-token and OAuth limits would then count all clients as one, and *local network only* could not tell them apart. List the proxy in `data/settings.yaml` (`site: {trusted_proxies: [10.0.0.5, 192.168.0.0/16]}`, addresses or CIDR ranges, IPv4 or IPv6) and the proxy must send `X-Forwarded-For`: it is then read from the right, skipping the listed proxies, and only when the connection itself comes from one; a header from any other connection is ignored. With no list (the default, lighttpd exposed directly) the connection's address is used as it is, and a proxy that does not send `X-Forwarded-For` makes every request look local. More than 20 invalid bearer tokens from one address in 15 minutes get 429 `too_many_attempts`; each is audited `auth.token_failed`. The default is *Local network only*. For claude.ai prefer *Everywhere, token only*: make a read token on `/profile` (namespaces, expiry) and put `Authorization: Bearer rpn_…` in the custom connector's request headers; nothing of OAuth is served then. *Everywhere, with OAuth sign-in* is for a client that cannot send headers.
 
 The token always travels as `Authorization: Bearer rpn_…`. To refuse scanners before PHP runs, give
-the web server a gate of its own: Admin → Settings → *MCP clients* → *X-Reporion
+the web server a gate of its own: Admin → Settings → *MCP clients* → *X-Access-Token
 header value* (any 16 to 128 letters, digits, `-` or `_`; the box suggests a new random one at every
 page load). Once saved, the page shows the rule for lighttpd, nginx and Apache. For lighttpd
 (`mod_access`, 1.4.46 or newer for `$REQUEST_HEADER`):
 
     $HTTP["url"] == "/reporion/mcp" {
-      $REQUEST_HEADER["X-Reporion"] != "the-value-you-chose" {
+      $REQUEST_HEADER["X-Access-Token"] != "the-value-you-chose" {
         url.access-deny = ( "" )
       }
     }
 
-Add `X-Reporion: the-value-you-chose` beside the bearer token in the connector's request headers
-(`--header "X-Reporion: …"` for Claude Code). **Reporion never checks this header**: it keeps the
+Add `X-Access-Token: the-value-you-chose` beside the bearer token in the connector's request headers
+(`--header "X-Access-Token: …"` for Claude Code). **Reporion never checks this header**: it keeps the
 value only to show the rule, so the gate is exactly as strong as the server rule you add, and a
 server without the rule is open to a request with or without the header (the token still decides who
 gets in). OAuth clients (claude.ai's sign-in connector) cannot send a custom header, so leave the

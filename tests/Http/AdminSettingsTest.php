@@ -177,7 +177,7 @@ final class AdminSettingsTest extends HttpTestCase
     {
         $page = $this->request('GET', '/admin/settings', 'owner')->body;
         self::assertStringContainsString('id="mcp"', $page);
-        self::assertStringNotContainsString('X-Reporion" !=', $page, 'no rule before a value is saved');
+        self::assertStringNotContainsString('X-Access-Token" !=', $page, 'no rule before a value is saved');
         preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $page, $first);
         preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $this->request('GET', '/admin/settings', 'owner')->body, $second);
         self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{32}$/', $first[1]);
@@ -191,12 +191,23 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(302, $ok->status);
         self::assertStringContainsString('gate: ' . $first[1], (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         $shown = $this->request('GET', '/admin/settings', 'owner')->body;
-        self::assertStringContainsString('$REQUEST_HEADER["X-Reporion"] != "' . $first[1] . '"', $shown);
+        self::assertStringContainsString('$REQUEST_HEADER["X-Access-Token"] != "' . $first[1] . '"', $shown);
         self::assertStringContainsString('value="' . $first[1] . '"', $shown);
 
         // PHP does not check the header: a request without it is judged by its token alone
         $none = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: '{}', remoteAddr: '127.0.0.1'));
         self::assertSame(401, $none->status);
+    }
+
+    public function testTheMcpSectionShowsTheAddressToGiveTheClient(): void
+    {
+        $session = ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner')];
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/settings', cookies: $session, secure: true, host: 'wiki.example.org', basePath: '/reporion'))->body;
+        self::assertStringContainsString('value="https://wiki.example.org/reporion/mcp" readonly', $page, 'the address this page came by');
+
+        $this->request('POST', '/admin/settings/site', 'owner', str_replace('reports.test.example%2F', 'reports.example.org%2Frep%2F', self::SITE));
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/settings', cookies: $session, host: 'other.example'))->body;
+        self::assertStringContainsString('value="https://reports.example.org/rep/mcp" readonly', $page, 'site.base_url wins, no doubled slash');
     }
 
     private function request(string $method, string $path, ?string $user, string $body = ''): Response

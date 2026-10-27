@@ -77,14 +77,26 @@ final class AdminSettingsController
             'fromFile' => $fromFile,
             'hasFile' => $stored !== [],
             'backupState' => RsyncBackup::state((string) ($this->config['paths']['data'] ?? '')),
-            // A fresh suggestion for the X-Reporion value at every load: long, random, URL-safe
+            // A fresh suggestion for the X-Access-Token value at every load: long, random, URL-safe
             'gateSuggestion' => rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '='),
             'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
             'errorSection' => $errorSection,
             'adminTab' => 'settings',
             'basePath' => $request->basePath,
+            'mcpUrl' => $this->mcpUrl($request),
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.settings.title')), $error === null ? 200 : 422);
+    }
+
+    /** The address a client is given for the MCP server: site.base_url when set, else the one this page came by */
+    private function mcpUrl(Request $request): string
+    {
+        $base = rtrim((string) (InstanceSettings::current($this->config)['site.base_url'] ?? ''), '/');
+        if ($base === '' && preg_match('/^[A-Za-z0-9.-]+(:[0-9]{1,5})?$|^\[[0-9A-Fa-f:]+\](:[0-9]{1,5})?$/', $request->host) === 1) {
+            $base = ($request->secure ? 'https' : 'http') . '://' . $request->host . $request->basePath;
+        }
+
+        return $base === '' ? '' : $base . '/mcp';
     }
 
     public function save(Request $request, string $section, ?User $principal): Response

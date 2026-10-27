@@ -7,7 +7,7 @@
  * data/settings.yaml, else from conf/local.php (marked as such).
  *
  * Variables in scope: array<string, mixed> $values; array<string, bool> $fromFile;
- * bool $hasFile; string $gateSuggestion; array $backupState (RsyncBackup::state()); string $saved; ?string $error, $errorSection; string $adminTab, $basePath
+ * bool $hasFile; string $gateSuggestion; array $backupState (RsyncBackup::state()); string $saved; ?string $error, $errorSection; string $adminTab, $basePath, $mcpUrl
  */
 
 declare(strict_types=1);
@@ -21,6 +21,7 @@ declare(strict_types=1);
 /** @var ?string $error */
 /** @var ?string $errorSection */
 /** @var string $basePath */
+/** @var string $mcpUrl */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -93,6 +94,9 @@ $icon = (string) ($values['site.icon'] ?? '');
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.mcp')) ?></h2></hgroup></header>
 <?= $notice('mcp') ?>
 <form action="<?= $b ?>/admin/settings/mcp" method="post">
+<?php if ($mcpUrl !== ''): ?>
+<label><?= $e(t('admin.settings.mcp_url')) ?><input class="input wk-mono" type="text" value="<?= $e($mcpUrl) ?>" readonly onfocus="this.select()"><small><?= $e(t('admin.settings.mcp_url_help')) ?></small></label>
+<?php endif; ?>
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.mcp_access')) ?><?= $source('mcp.access') ?><select class="input" name="<?= $field('mcp.access') ?>"><?php foreach (\Reporion\Controller\McpController::ACCESS as $option): ?><option value="<?= $e($option) ?>"<?= $option === (string) ($values['mcp.access'] ?? 'local') ? ' selected' : '' ?>><?= $e(t('admin.settings.mcp_access_' . $option)) ?></option><?php endforeach; ?></select><small><?= $e(t('admin.settings.mcp_access_help')) ?></small></label>
 <label><?= $e(t('admin.settings.mcp_gate')) ?><?= $source('mcp.gate') ?><input class="input wk-mono" type="text" name="<?= $field('mcp.gate') ?>" value="<?= $text('mcp.gate') ?>" placeholder="<?= $e($gateSuggestion) ?>" maxlength="128" autocomplete="off" spellcheck="false"><small><?= $e(t('admin.settings.mcp_gate_help')) ?></small></label>
@@ -105,20 +109,20 @@ $icon = (string) ($values['site.icon'] ?? '');
 <p class="wk-dim wk-text-xs"><?= $e(t('admin.settings.mcp_gate_rule')) ?></p>
 <pre class="wk-mono wk-text-xs wk-install-fix">lighttpd:
 $HTTP["url"] == "<?= $e($basePath) ?>/mcp" {
-  $REQUEST_HEADER["X-Reporion"] != "<?= $e($gate) ?>" {
+  $REQUEST_HEADER["X-Access-Token"] != "<?= $e($gate) ?>" {
     url.access-deny = ( "" )
   }
 }
 
 nginx:
 location = <?= $e($basePath) ?>/mcp {
-  if ($http_x_reporion != "<?= $e($gate) ?>") { return 403; }
+  if ($http_x_access_token != "<?= $e($gate) ?>") { return 403; }
   # ... as for the other locations
 }
 
 Apache:
 &lt;Location "<?= $e($basePath) ?>/mcp"&gt;
-  &lt;If "%{HTTP:X-Reporion} != '<?= $e($gate) ?>'"&gt;Require all denied&lt;/If&gt;
+  &lt;If "%{HTTP:X-Access-Token} != '<?= $e($gate) ?>'"&gt;Require all denied&lt;/If&gt;
 &lt;/Location&gt;</pre>
 <?php endif; ?>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>

@@ -49,7 +49,7 @@ final class InstanceSettings
         'mcp.reports' => 'bool',
         'mcp.access' => 'mcp_access',
         'mcp.write_anywhere' => 'bool',
-        // The value of the X-Reporion header the web server may require in front of /mcp: PHP never checks it, it only keeps it so Admin can show the rule
+        // The value of the X-Access-Token header the web server may require in front of /mcp: PHP never checks it, it only keeps it so Admin can show the rule
         'mcp.gate' => 'gate',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
