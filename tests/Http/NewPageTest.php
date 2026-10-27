@@ -335,6 +335,38 @@ final class NewPageTest extends HttpTestCase
         self::assertSame(422, $this->ownerSubmit(['path' => 'docs:it:', 'filename' => '....md', 'markdown' => "x\n"])->status);
     }
 
+    /** A .txt file is a plain-text page: nothing in it is read as frontmatter or Markdown */
+    public function testAnUploadedTextFileIsAPlainTextPage(): void
+    {
+        $created = $this->ownerSubmit(['path' => 'docs:it:', 'filename' => 'Notes.txt', 'markdown' => "---\r\n# not a heading\r\n"]);
+
+        self::assertSame(302, $created->status);
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:notes');
+        self::assertSame('text', $page->frontmatter['format']);
+        self::assertSame("---\n# not a heading\n", $page->body);
+        self::assertSame('private', $page->visibility);
+    }
+
+    /** A source file is a Markdown page with the code fenced (longer than any backtick run in it), named with its extension */
+    public function testADroppedSourceFileIsFencedCode(): void
+    {
+        $code = "import os\n# not a heading\nprint('```')\n";
+        $created = $this->ownerSubmit(['path' => 'docs:it:', 'filename' => 'Tool Run.py', 'markdown' => $code]);
+
+        self::assertSame(302, $created->status);
+        self::assertSame('/docs:it:tool-run-py/edit', $created->headers['Location']);
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:tool-run-py');
+        self::assertSame("# Tool Run.py\n\n````python\nimport os\n# not a heading\nprint('```')\n````\n", $page->body);
+        self::assertArrayNotHasKey('format', $page->frontmatter);
+    }
+
+    public function testAnUploadedFileOfAnotherKindIsRefused(): void
+    {
+        $refused = $this->ownerSubmit(['path' => 'docs:it:exe', 'upload_name' => 'tool.exe', 'markdown' => 'MZ']);
+        self::assertSame(422, $refused->status);
+        self::assertSame(404, $this->ownerRequest('GET', '/docs:it:exe')->status);
+    }
+
     public function testAnUploadedFileWithoutFrontmatterIsTheBody(): void
     {
         $created = $this->ownerSubmit(['path' => 'docs:it:bare', 'markdown' => "\xEF\xBB\xBF# Plain\n\nrule above\n"]);

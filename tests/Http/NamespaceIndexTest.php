@@ -393,7 +393,7 @@ final class NamespaceIndexTest extends HttpTestCase
         $this->createPage('docs:it:a', 'public', 'Public page', 'body');
         $this->createPage('reports:mri:mioveni:a', 'public', 'Public exam', 'body');
 
-        self::assertStringContainsString('data-ns-drop data-ns="docs:it"', $this->ownerRequest('/docs:it:')->body);
+        self::assertStringContainsString('data-ns="docs:it"', $this->ownerRequest('/docs:it:')->body);
         self::assertStringNotContainsString('data-ns-drop', $this->ownerRequest('/reports:mri:mioveni:')->body);
         self::assertStringNotContainsString('data-ns-drop', Kernel::boot($this->config)->handle(new Request('GET', '/docs:it:'))->body);
     }

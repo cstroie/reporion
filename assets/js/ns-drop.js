@@ -5,6 +5,7 @@
  * (the server lowercases it, Support\Slug). The file's text is read here and sent to
  * POST /new as `markdown` (NewPageController), so the page is made exactly as by the
  * new-page form's file field: private, its visibility never taken from the file.
+ * By its extension (Support\SourceFiles) the file is Markdown, plain text (D40) or source code in a fence.
  * Without JavaScript nothing changes.
  */
 (function () {
@@ -13,6 +14,7 @@
   var zone = document.querySelector('[data-ns-drop]');
   if (!zone || typeof FileReader === 'undefined') return;
 
+  var extensions = (zone.getAttribute('data-ext') || '').split(',');
   var max = parseInt(zone.getAttribute('data-max'), 10) || 1000000;
   var label = zone.querySelector('span');
   var hint = label.textContent;
@@ -77,7 +79,7 @@
     event.preventDefault();
     hide();
     var files = Array.prototype.slice.call(event.dataTransfer.files || []);
-    var file = files.filter(function (f) { return /\.(md|markdown|txt)$/i.test(f.name); })[0];
+    var file = files.filter(function (f) { return extensions.indexOf((f.name.split('.').pop() || '').toLowerCase()) !== -1; })[0];
     if (!file) return problem(zone.getAttribute('data-bad'));
     if (file.size > max) return problem(zone.getAttribute('data-size'));
     var reader = new FileReader();

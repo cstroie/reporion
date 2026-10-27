@@ -25,9 +25,11 @@ use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\BodyFormat;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Notes;
 use Reporion\Support\ReportPath;
+use Reporion\Support\SourceFiles;
 use Reporion\Support\Slug;
 use Reporion\Support\Templates;
 use RuntimeException;
@@ -207,11 +209,11 @@ final class NewPageController
         } else {
             $path = \is_string($fields['path'] ?? null) ? trim($fields['path']) : '';
             // A file dropped on a namespace view (assets/js/ns-drop.js): `path` is the namespace, the page is named
-            // by the file, lower case, as every slug (Support\Slug)
+            // by the file, lower case, as every slug (Support\Slug); a source file keeps its extension in the name
             $filename = \is_string($fields['filename'] ?? null) ? trim($fields['filename']) : '';
             if ($filename !== '') {
                 try {
-                    $path .= Slug::normalize(pathinfo($filename, PATHINFO_FILENAME));
+                    $path .= Slug::normalize(SourceFiles::kindOf($filename) === SourceFiles::CODE ? basename($filename) : pathinfo($filename, PATHINFO_FILENAME));
                 } catch (InvalidArgumentException) {
                     return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: null, onPath: true);
                 }
@@ -231,7 +233,8 @@ final class NewPageController
         $markdown = \is_string($fields['markdown'] ?? null) ? $fields['markdown'] : '';
         $uploaded = null;
         if ($markdown !== '') {
-            $uploaded = self::uploadedParts($markdown);
+            $uploadName = \is_string($fields['upload_name'] ?? null) ? trim($fields['upload_name']) : (\is_string($fields['filename'] ?? null) ? trim($fields['filename']) : '');
+            $uploaded = self::uploadedParts($markdown, $uploadName);
             if (\is_string($uploaded)) {
                 return $this->render($request, $principal, error: $uploaded, path: $path, document: $document, segments: $segments, onPath: $segments === null);
             }
@@ -283,13 +286,13 @@ final class NewPageController
     }
 
     /**
-     * An uploaded Markdown file as [frontmatter|null, body], or the error to show. The frontmatter is
+     * An uploaded Markdown (or, with `$text`, plain-text) file as [frontmatter|null, body], or the error to show. The frontmatter is
      * the file's own without `visibility`, `status` and `pid`; null when nothing is left (the page's own
      * guess is used then).
      *
      * @return array{0: array<string, mixed>|null, 1: string}|string
      */
-    private static function uploadedParts(string $markdown): array|string
+    private static function uploadedParts(string $markdown, string $name = ''): array|string
     {
         if (\strlen($markdown) > self::UPLOAD_MAX) {
             return t('new.err_upload_size', [(int) (self::UPLOAD_MAX / 1000)]);
@@ -297,6 +300,18 @@ final class NewPageController
         $markdown = preg_replace('/^\xEF\xBB\xBF/', '', $markdown) ?? $markdown;
         if (!mb_check_encoding($markdown, 'UTF-8')) {
             return t('new.err_upload_utf8');
+        }
+        // By the file's name (none: Markdown): a plain-text file (.txt, D40) is shown as typed, so no frontmatter
+        // is looked for in it; a source file is kept as a fenced code block; any other kind is refused
+        $kind = $name === '' ? SourceFiles::MARKDOWN : SourceFiles::kindOf($name);
+        if ($kind === null) {
+            return t('new.err_upload_type');
+        }
+        if ($kind === SourceFiles::TEXT) {
+            return [[BodyFormat::KEY => BodyFormat::TEXT], str_replace(["\r\n", "\r"], "\n", $markdown)];
+        }
+        if ($kind === SourceFiles::CODE) {
+            return [null, SourceFiles::codeBody($name, str_replace(["\r\n", "\r"], "\n", $markdown))];
         }
         try {
             [$frontmatter, $body] = DocumentFormat::parseOrBare($markdown);
