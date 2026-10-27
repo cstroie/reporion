@@ -246,12 +246,12 @@ final class NamespaceController
         // query like any other page: pulled out here so they render as
         // the mockup's dedicated cards instead of also showing up as rows
         // in the pages table.
-        // A sub-namespace's description (the page named like it) is that
-        // sub-namespace's row above, called by its title, not a page here too
+        // A sub-namespace's description (the page named like it) calls that
+        // sub-namespace's card by its title, and is still a page here too
         $described = array_map(static fn (array $sub): string => $ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'], $subnamespaces);
         $pages = array_values(array_filter(
             $pages,
-            static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath && !\in_array($page['path'], $described, true)
+            static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath
         ));
         // Under reports: newest study first: a worklist of patients, not an
         // alphabet; same day by path (its {yymmdd}-name), undated pages last.

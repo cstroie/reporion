@@ -137,6 +137,27 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
+     * A page named like a sub-namespace gives that card its title and is
+     * still a page of the parent namespace: it has a row in the pages table.
+     */
+    public function testPageNamedLikeASubnamespaceIsAlsoListedAsAPage(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->create(
+            'reports:mri:mioveni',
+            ['title' => 'Mioveni site', 'visibility' => 'private'],
+            'Spitalul din Mioveni.',
+            'owner'
+        );
+
+        $body = $this->ownerRequest('/reports:mri:')->body;
+
+        self::assertStringContainsString('data-priority=', $body, 'the sub-namespace card');
+        self::assertMatchesRegularExpression('#<td[^>]*>\s*<a [^>]*href="[^"]*/reports:mri:mioveni"[^>]*>Mioveni site</a>#s', $body, 'and a row in the table');
+    }
+
+    /**
      * A subnamespace card's background tint (TODO 13) follows its
      * description page's `priority`: decorative only, unset by default,
      * read from disk (not an indexed column, unlike title/summary).
