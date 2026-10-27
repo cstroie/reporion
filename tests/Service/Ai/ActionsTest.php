@@ -265,8 +265,8 @@ final class ActionsTest extends StorageTestCase
         (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts'))->install('reports', 'owner', target: DefaultPrompts::RADIOLOGY);
         $list = (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH);
 
-        self::assertSame(['ask'], array_map(static fn (Action $a): string => $a->id, $list));
-        self::assertSame(['show'], array_map(static fn (Action $a): string => $a->result, $list));
+        self::assertSame(['ask', 'create', 'conclusion', 'diagnostic', 'gaps-traps', 'urgent', 'quality', 'rapno'], array_map(static fn (Action $a): string => $a->id, $list));
+        self::assertSame(['show', 'replace', 'append', 'append', 'show', 'show', 'show', 'append'], array_map(static fn (Action $a): string => $a->result, $list));
         self::assertStringContainsString('{prompt}', $list[0]->prompt, 'Ask: the rail gives it a question box');
     }
 }

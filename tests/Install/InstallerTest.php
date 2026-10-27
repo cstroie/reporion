@@ -174,7 +174,7 @@ final class InstallerTest extends TestCase
         }
         self::assertStringContainsString('{prompt}', (string) file_get_contents($profile . '/ask.md'));
         $rows = \Reporion\Support\ProfileTable::parse((string) file_get_contents(\dirname($profile) . '/reports.md'));
-        self::assertSame(['ask'], array_column($rows, 'id'));
+        self::assertSame(['ask', 'create', 'conclusion', 'diagnostic', 'gaps-traps', 'urgent', 'quality', 'rapno'], array_column($rows, 'id'));
         self::assertStringContainsString('Ești radiolog', (string) file_get_contents($special . '/summary.md'), 'the radiology prompts are in Romanian');
 
         // A re-run leaves the pages as they are (edited ones included)
