@@ -166,7 +166,8 @@ final class Session
 
     /**
      * Set-Cookie header value for a successful login: HttpOnly + SameSite=Lax
-     * (D35), Max-Age matching the token's own expiry.
+     * (D35). No Max-Age or Expires: a browser session cookie, dropped when the
+     * browser closes; the token's signed `exp` still ends it after the lifetime.
      *
      * Secure when the request arrived over HTTPS (Request::$secure. HTTPS
      * or X-Forwarded-Proto from the TLS proxy), never from config: a wrong
@@ -176,7 +177,7 @@ final class Session
     {
         $value = rawurlencode($this->issue($username));
 
-        return "{$this->cookieName}={$value}; Max-Age={$this->lifetimeSeconds}; Path=/; HttpOnly; SameSite=Lax" . ($secure ? '; Secure' : '');
+        return "{$this->cookieName}={$value}; Path=/; HttpOnly; SameSite=Lax" . ($secure ? '; Secure' : '');
     }
 
     /**

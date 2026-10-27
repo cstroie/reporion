@@ -178,7 +178,7 @@ final class Kernel
      */
     private const DEFAULTS = [
         'site' => ['title' => 'Reporion', 'tagline' => 'Imaging reports', 'base_url' => '', 'home_page' => 'site:home'],
-        'auth' => ['session_name' => 'reporion', 'session_lifetime' => 2592000],
+        'auth' => ['session_name' => 'reporion', 'session_lifetime' => 86400],
         'pages' => ['trash_purge_days' => 30],
         'accession' => ['pattern' => '{SITE}-{MOD}-{yy}-{seq}', 'seq_pad' => 4],
         'media' => ['max_bytes' => 8388608],

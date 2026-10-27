@@ -148,7 +148,8 @@ final class SessionTest extends TestCase
         self::assertStringContainsString('reporion=', $header);
         self::assertStringContainsString('HttpOnly', $header);
         self::assertStringContainsString('SameSite=Lax', $header);
-        self::assertStringContainsString('Max-Age=3600', $header);
+        self::assertStringNotContainsString('Max-Age', $header);
+        self::assertStringNotContainsString('Expires', $header);
     }
 
     public function testLoginCookieHeaderValueIsRecognisedOnceParsedBack(): void
