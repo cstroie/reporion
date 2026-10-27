@@ -185,6 +185,14 @@ final class McpTest extends HttpTestCase
         $this->config['site']['base_url'] = 'https://wiki.example.org';
         self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/.well-known/oauth-authorization-server'))->status, 'no OAuth when local');
 
+        $this->config['mcp']['access'] = 'token';
+        self::assertSame(200, $call('203.0.113.9'), 'from anywhere with a token');
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/.well-known/oauth-authorization-server'))->status, 'no OAuth with token only');
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('POST', '/oauth/register', body: '{"redirect_uris":["https://claude.ai/api/mcp/auth_callback"]}'))->status);
+        $none = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: '203.0.113.9'));
+        self::assertSame(401, $none->status);
+        self::assertStringNotContainsString('resource_metadata', $none->headers['WWW-Authenticate']);
+
         $this->config['mcp']['access'] = 'off';
         self::assertSame(404, $call('127.0.0.1'));
     }

@@ -171,7 +171,7 @@ export:
   pseudonymise_public: true
   allow_draft_export: false
 mcp:
-  access: local               # D56: off | local (default: private addresses only, Claude Code over the VPN) | on (also claude.ai, Desktop: OAuth)
+  access: local               # D56: off | local (default: private addresses only, Claude Code over the VPN) | token (anywhere, a bearer token only, no OAuth: claude.ai's connector request headers) | on (also OAuth sign-in)
   write_anywhere: false       # create_page/update_page also from outside the local network
   redirect_uris: []           # OAuth return addresses allowed besides Claude's callbacks and http://localhost (settings.yaml only)
   reports: false              # D56 phase 2: /mcp serves reports de-identified (by pid), off by default

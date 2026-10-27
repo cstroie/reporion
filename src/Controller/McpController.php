@@ -32,8 +32,12 @@ final class McpController
 {
     public const PROTOCOL = '2025-06-18';
     public const VERSION = '0.2.0';
-    /** Admin → Settings `mcp.access`: off, local network only (Claude Code), everywhere (OAuth too) */
-    public const ACCESS = ['off', 'local', 'on'];
+    /**
+     * Admin → Settings `mcp.access`: off, local network only (Claude Code), everywhere with a token
+     * only (a client that sends its own Authorization header, as claude.ai's custom connector can:
+     * no OAuth endpoint answers), everywhere with OAuth sign-in too
+     */
+    public const ACCESS = ['off', 'local', 'token', 'on'];
     private const LIMIT = 20;
 
     public function __construct(
