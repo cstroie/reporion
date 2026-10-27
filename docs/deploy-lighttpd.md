@@ -286,13 +286,32 @@ revision exists byte for byte in a snapshot.
 nothing more: make a token on `/profile` (Namespaces to limit it) and
 `claude mcp add --transport http reporion https://<host>/mcp --header "Authorization: Bearer rpn_…"`.
 
-**claude.ai and Claude Desktop** connect from Anthropic's servers, so they need, from the internet:
-`/mcp`, `/oauth/register`, `/oauth/authorize`, `/oauth/token`, `/.well-known/oauth-protected-resource`
-(and `…/mcp`), `/.well-known/oauth-authorization-server`, plus `/login` and `/assets/` for the
-consent screen the user signs in to. Expose **only these paths** at the TLS proxy; everything else
-stays on the VPN. `site.base_url` (Admin → Settings) must be that public `https://` address and the
-instance must sit at the root of it (the `.well-known` documents are looked up at the host's root):
-with no base URL no OAuth is offered. In the client, add a custom connector with the URL
-`https://<host>/mcp`. Each connection made is an API token named `Claude: …` on the account's
-`/profile`, read only; revoking it disconnects the client. Reports reach the client only with
-Admin → Settings → Publishing *Let Claude … read reports, de-identified* on.
+**claude.ai and Claude Desktop** connect from Anthropic's servers, so `/mcp`, `/oauth/*`,
+`/.well-known/*`, `/login` and `/assets/` must be reachable from the internet (expose only these at
+a TLS proxy if the rest stays on a VPN; the proxy sends `X-Forwarded-Proto: https`).
+`site.base_url` (Admin → Settings) must be the public `https://` address, with the subfolder if
+there is one (`https://example.org/reporion`, no trailing slash): it is the OAuth issuer, and with
+no base URL no OAuth is offered. A 401 from `/mcp` names its metadata
+(`{base}/.well-known/oauth-protected-resource`), and the front controller answers every
+`{base}/.well-known/oauth-*` document.
+
+**In a subfolder**, clients also look the documents up at the host's root with the path appended
+(RFC 8414, RFC 9728), which the subfolder's rewrite does not reach. Rewrite those two into it
+(the example for `/reporion`; if another file already sets `url.rewrite-once` under the same
+condition, use `+=`):
+
+    $HTTP["url"] =~ "^/\.well-known/oauth-" {
+      url.rewrite-once = (
+        "^/\.well-known/oauth-authorization-server/reporion/?$" => "/reporion/index.php/.well-known/oauth-authorization-server",
+        "^/\.well-known/oauth-protected-resource/reporion/mcp/?$" => "/reporion/index.php/.well-known/oauth-protected-resource"
+      )
+    }
+
+Check: `curl https://<host>/.well-known/oauth-authorization-server/reporion` and
+`…/oauth-protected-resource/reporion/mcp` answer JSON naming `https://<host>/reporion`, and
+`curl -X POST https://<host>/reporion/mcp` is a 401 with `resource_metadata="…"`.
+
+In the client, add a custom connector with the URL `{base}/mcp`. Each connection made is an API
+token named `Claude: …` on the account's `/profile`, read only; revoking it disconnects the
+client. Reports reach the client only with Admin → Settings → Publishing *Let Claude … read
+reports, de-identified* on.
