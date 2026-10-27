@@ -19,7 +19,8 @@ use RuntimeException;
 /**
  * POST /mcp (D56, phase 1): a Model Context Protocol server over Streamable HTTP, answering
  * JSON-RPC with one JSON response (no event stream), so Claude Code, claude.ai and Desktop can
- * read the wiki as a bearer token's account sees it. Read only. Every lookup goes through the
+ * read the wiki as a bearer token's account sees it; a write token may also create and update
+ * ordinary pages (phase 4: write()). Every lookup goes through the
  * index under the caller (invariant 6); a token limited to namespaces is already narrowed
  * (User::narrowedTo()). A patient page (a report, or any page naming a patient) is left out of
  * every answer unless `mcp.reports` is on; then it is shown by pid only, de-identified
@@ -30,7 +31,9 @@ use RuntimeException;
 final class McpController
 {
     public const PROTOCOL = '2025-06-18';
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
+    /** Admin → Settings `mcp.access`: off, local network only (Claude Code), everywhere (OAuth too) */
+    public const ACCESS = ['off', 'local', 'on'];
     private const LIMIT = 20;
 
     public function __construct(
@@ -41,14 +44,23 @@ final class McpController
         private readonly bool $reports = false,
         // site.base_url: a 401 then names the OAuth metadata (RFC 9728), so a client can connect on its own
         private readonly string $baseUrl = '',
+        // Phase 4: the writes go through the pages API (journal, audit, conflicts, grants as there)
+        private readonly ?PagesApiController $pages = null,
+        /** @var ?\Closure(Request): bool whether the caller's token is a write token */
+        private readonly ?\Closure $writes = null,
+        private readonly string $access = 'on',
     ) {
     }
 
     public function handle(Request $request, ?User $principal): Response
     {
+        // Off, or local only and asked from outside: as if there were no MCP server (no hint, no OAuth pointer)
+        if ($this->access === 'off' || ($this->access === 'local' && !self::isLocal($request))) {
+            return new Response(404, '', ['Content-Type' => 'text/plain; charset=utf-8']);
+        }
         if ($principal === null) {
             return new Response(401, '', [
-                'WWW-Authenticate' => 'Bearer realm="reporion"' . ($this->baseUrl !== '' ? ', resource_metadata="' . $this->baseUrl . '/.well-known/oauth-protected-resource"' : ''),
+                'WWW-Authenticate' => 'Bearer realm="reporion"' . ($this->baseUrl !== '' && $this->access === 'on' ? ', resource_metadata="' . $this->baseUrl . '/.well-known/oauth-protected-resource"' : ''),
                 'Content-Type' => 'application/json; charset=utf-8',
             ]);
         }
@@ -89,13 +101,13 @@ final class McpController
             'initialize' => self::result($id, [
                 'protocolVersion' => \is_string($params['protocolVersion'] ?? null) ? $params['protocolVersion'] : self::PROTOCOL,
                 'capabilities' => ['tools' => ['listChanged' => false]],
-                'serverInfo' => ['name' => 'reporion', 'version' => self::VERSION],
+                'serverInfo' => $this->serverInfo(),
                 'instructions' => $this->reports
                     ? 'Reporion wiki pages as this account sees them. Address a page by its colon path (ns:sub:slug); a radiology report by its pid only. Reports are de-identified: [pacient], [CNP] and [nr] stand for what was taken out; never try to recover them.'
                     : 'Reporion wiki pages as this account sees them. Address a page by its colon path (ns:sub:slug). Reports and pages about a patient are not served.',
             ]),
             'ping' => self::result($id, []),
-            'tools/list' => self::result($id, ['tools' => self::tools($this->reports)]),
+            'tools/list' => self::result($id, ['tools' => [...self::tools($this->reports), ...($this->canWrite($request) ? self::writeTools() : [])]]),
             'tools/call' => $this->call($id, $params, $request, $principal),
             default => self::failure($id, -32601, 'Method not found'),
         };
@@ -138,10 +150,14 @@ final class McpController
             'search' => $this->search($arg('query'), trim($arg('namespace'), ':'), $principal),
             'get_page' => $this->page(trim($arg('path'), ':'), $arg('pid'), $principal, $request->basePath),
             'list_namespace' => $this->listing(trim($arg('namespace'), ':'), $principal),
-            default => [null, 0],
+            'create_page', 'update_page' => [null, 0],
+            default => [null, -1],
         };
-        if ($payload === null && $count === 0 && !\in_array($name, ['search', 'get_page', 'list_namespace'], true)) {
+        if ($count === -1) {
             return self::failure($id, -32602, 'Unknown tool');
+        }
+        if ($name === 'create_page' || $name === 'update_page') {
+            return $this->write($id, $name, $args, $request, $principal);
         }
         $this->audit->record('mcp.call', $principal->username, $request, \is_string($payload['pid'] ?? null) ? $payload['pid'] : null, extra: ['tool' => $name, 'results' => $count]);
         if ($payload === null) {
@@ -152,6 +168,162 @@ final class McpController
             'content' => [['type' => 'text', 'text' => (string) json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)]],
             'structuredContent' => $payload,
         ]);
+    }
+
+    /**
+     * The server as the client lists it (MCP `Implementation`): name, title, version, and, with
+     * site.base_url, the app's own icons and address, so the client shows Reporion's mark
+     *
+     * @return array<string, mixed>
+     */
+    private function serverInfo(): array
+    {
+        $info = ['name' => 'reporion', 'title' => 'Reporion', 'version' => self::VERSION];
+        if ($this->baseUrl !== '') {
+            $info['websiteUrl'] = $this->baseUrl . '/';
+            $info['icons'] = [
+                ['src' => $this->baseUrl . '/assets/icon.svg', 'mimeType' => 'image/svg+xml', 'sizes' => ['any']],
+                ['src' => $this->baseUrl . '/assets/apple-touch-icon.png', 'mimeType' => 'image/png', 'sizes' => ['180x180']],
+                ['src' => $this->baseUrl . '/assets/favicon.ico', 'mimeType' => 'image/x-icon', 'sizes' => ['48x48']],
+            ];
+        }
+
+        return $info;
+    }
+
+    /**
+     * From this machine or a private network (VPN, LAN): the address the request came from, and
+     * every address a proxy says it forwarded for. A proxy on the LAN in front of an internet
+     * client passes the client's public address on, which makes the request not local.
+     */
+    public static function isLocal(Request $request): bool
+    {
+        $addresses = [$request->remoteAddr, ...array_map('trim', $request->forwardedFor === '' ? [] : explode(',', $request->forwardedFor))];
+        foreach ($addresses as $ip) {
+            if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+                return false;
+            }
+            // Private or loopback/reserved: both filters refuse it as public
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function canWrite(Request $request): bool
+    {
+        return $this->pages !== null && $this->writes !== null && ($this->writes)($request);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function writeTools(): array
+    {
+        $string = static fn (string $d): array => ['type' => 'string', 'description' => $d];
+        $write = ['readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false];
+
+        return [
+            ['name' => 'create_page', 'description' => 'Create a new page at a path where none exists. The body is markdown; its first # heading is the title unless a title is given. Never a report or a page about a patient.',
+                'inputSchema' => ['type' => 'object', 'properties' => [
+                    'path' => $string('The new page path, e.g. docs:howto:restore'),
+                    'body' => $string('The page text, markdown'),
+                    'title' => $string('Optional title, when the text has no # heading'),
+                    'note' => $string('A short note for the revision history'),
+                ], 'required' => ['path', 'body']],
+                'annotations' => $write],
+            ['name' => 'update_page', 'description' => 'Replace the text of an existing page, as a new revision (history keeps the old one). Read it with get_page first and pass its rev as base_rev; if someone saved since, nothing is saved and the current text comes back. Frontmatter is kept. Not for signed pages, reports or pages about a patient.',
+                'inputSchema' => ['type' => 'object', 'properties' => [
+                    'path' => $string('The page path'),
+                    'body' => $string('The whole new text, markdown'),
+                    'base_rev' => ['type' => 'integer', 'description' => 'The rev get_page returned'],
+                    'note' => $string('A short note for the revision history: what changed'),
+                ], 'required' => ['path', 'body', 'base_rev']],
+                'annotations' => $write],
+        ];
+    }
+
+    /**
+     * create_page / update_page through the pages API, as the token's account (D56, phase 4).
+     * Never a patient page (a report path, or a page naming a patient), never a signed page:
+     * signing and correcting reports stay in the editor (D3, D8, D37). The revision note says
+     * it came through MCP.
+     *
+     * @param array<mixed> $args
+     *
+     * @return array<string, mixed>
+     */
+    private function write(mixed $id, string $tool, array $args, Request $request, User $principal): array
+    {
+        $refuse = function (string $why) use ($id, $tool, $request, $principal): array {
+            $this->audit->record('mcp.call', $principal->username, $request, outcome: 'refused', extra: ['tool' => $tool]);
+
+            return self::result($id, ['content' => [['type' => 'text', 'text' => $why]], 'isError' => true]);
+        };
+        if (!$this->canWrite($request)) {
+            return $refuse('This connection is read only.');
+        }
+        $path = \is_string($args['path'] ?? null) ? trim($args['path'], " :") : '';
+        $body = \is_string($args['body'] ?? null) ? $args['body'] : null;
+        if ($path === '' || $body === null) {
+            return $refuse('path and body are required.');
+        }
+        if (ReportPath::isReport($path) || ReportPath::isReportNamespace($path)) {
+            return $refuse('Reports are written in Reporion\'s editor, not here.');
+        }
+        $userNote = \is_string($args['note'] ?? null) ? trim($args['note']) : '';
+        $note = ($userNote !== '' ? $userNote . ' ' : '') . '(via MCP)';
+
+        if ($tool === 'create_page') {
+            $title = \is_string($args['title'] ?? null) ? trim($args['title']) : '';
+            $fields = ['path' => $path, 'note' => $note];
+            $fields += $title !== ''
+                ? ['document' => "---\ntitle: " . json_encode($title, JSON_UNESCAPED_UNICODE) . "\n---\n\n" . $body]
+                : ['body' => $body];
+            $response = $this->pages->create(self::inner($request, 'POST', '/api/v1/pages', $fields), $principal);
+        } else {
+            $baseRev = $args['base_rev'] ?? null;
+            if (!\is_int($baseRev)) {
+                return $refuse('base_rev (an integer, from get_page) is required.');
+            }
+            $row = $this->index->findByPath($path, $principal);
+            try {
+                $record = $row === null ? null : $this->storage->read($path);
+            } catch (RuntimeException) {
+                $record = null;
+            }
+            if ($record === null || !$principal->canWrite($path)) {
+                return $refuse('Not found, or not yours to change.');
+            }
+            if (self::isPatientPage($path, $row) || isset($record->frontmatter['patient'])) {
+                return $refuse('Pages about a patient are written in Reporion\'s editor, not here.');
+            }
+            if ($record->status === 'signed') {
+                return $refuse('This page is signed: a change is a correction, made and signed again in Reporion.');
+            }
+            $response = $this->pages->save(self::inner($request, 'PUT', '/api/v1/pages/' . $path, ['meta' => $record->frontmatter, 'body' => $body, 'base_rev' => $baseRev, 'note' => $note]), $path, $principal);
+        }
+
+        $answer = json_decode($response->body, true);
+        $answer = \is_array($answer) ? $answer : [];
+        $this->audit->record('mcp.call', $principal->username, $request, \is_string($answer['pid'] ?? null) ? $answer['pid'] : null, outcome: $response->status < 300 ? 'ok' : 'refused', extra: ['tool' => $tool, 'status' => $response->status]);
+        if ($response->status === 409 && \is_array($answer['current'] ?? null)) {
+            return self::result($id, ['content' => [['type' => 'text', 'text' => 'Not saved: the page changed since base_rev. Its current revision and text follow; merge your change into it and call update_page again with this rev.' . "\n\n" . json_encode(['rev' => $answer['current']['rev'] ?? null, 'body' => $answer['current']['body'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]], 'isError' => true]);
+        }
+        if ($response->status >= 300) {
+            $message = \is_string($answer['error']['message'] ?? null) ? $answer['error']['message'] : 'Not saved.';
+
+            return self::result($id, ['content' => [['type' => 'text', 'text' => $message]], 'isError' => true]);
+        }
+        $saved = ['path' => $answer['path'] ?? $path, 'rev' => $answer['rev'] ?? null, 'href' => $request->basePath . '/' . ($answer['path'] ?? $path)];
+
+        return self::result($id, ['content' => [['type' => 'text', 'text' => (string) json_encode($saved, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]], 'structuredContent' => $saved]);
+    }
+
+    /** @param array<string, mixed> $json a request to the pages API, carrying this one's caller details for the audit */
+    private static function inner(Request $request, string $method, string $path, array $json): Request
+    {
+        return new Request($method, $path, body: (string) json_encode($json, JSON_UNESCAPED_UNICODE), basePath: $request->basePath, remoteAddr: $request->remoteAddr, userAgent: $request->userAgent, secure: $request->secure);
     }
 
     /** @return array{0: ?array<string, mixed>, 1: int} */

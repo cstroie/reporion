@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /oauth/authorize (Controller\OAuthController, D56): an MCP client (Claude) asks to read
- * this wiki as the signed-in account. Approve gives it a read-only API token, limited to the
+ * this wiki as the signed-in account. Approve gives it an API token (read only unless Allow
+ * changes is ticked), limited to the
  * namespaces typed (none: everything the account reaches), revocable on /profile. Without
  * $params the request was not a valid one and only $error is shown.
  *
@@ -36,6 +37,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="field"><label for="oauth-namespaces"><?= $e(t('profile.token_namespaces')) ?>
 <input class="input wk-mono" type="text" id="oauth-namespaces" name="namespaces" maxlength="1000" placeholder="<?= $e(t('profile.token_namespaces_hint')) ?>">
 <small><?= $e($isOwner ? t('oauth.namespaces_help_owner') : t('oauth.namespaces_help', [implode(', ', $reach)])) ?></small></label></div>
+<p class="wk-opts"><label class="radio"><input type="checkbox" name="write" value="1"><span class="dot"></span><span><?= $e(t('oauth.write')) ?></span></label></p>
 <?php $noticeKind = 'info'; $noticeText = t('oauth.readonly'); include __DIR__ . '/partials/notice.php'; ?>
 <footer>
 <button class="btn btn-primary" type="submit" name="decision" value="approve"><i class="ph ph-check"></i><?= $e(t('oauth.approve')) ?></button>

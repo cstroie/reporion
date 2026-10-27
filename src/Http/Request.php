@@ -39,6 +39,8 @@ final class Request
         public readonly array $feedNamespaces = [],
         // Whether Ask the archive is there (D53), asked only when a menu is drawn: set by Kernel::handle
         public readonly ?\Closure $askable = null,
+        // X-Forwarded-For as received: a proxy's client, for /mcp's local-only check (D56); never trusted for more
+        public readonly string $forwardedFor = '',
     ) {
     }
 
@@ -63,6 +65,7 @@ final class Request
                 || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
             // Some FastCGI setups pass it only under the REDIRECT_ name
             authorization: (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
+            forwardedFor: (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''),
             // The timeline's ticked studies (`paths[]`) for /{path}/compare
             queryLists: array_map(
                 static fn (array $values): array => array_values(array_filter($values, 'is_string')),
@@ -99,6 +102,7 @@ final class Request
             queryLists: $this->queryLists,
             feedNamespaces: $feedNamespaces,
             askable: $askable,
+            forwardedFor: $this->forwardedFor,
         );
     }
 

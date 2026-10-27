@@ -171,6 +171,7 @@ export:
   pseudonymise_public: true
   allow_draft_export: false
 mcp:
+  access: on                  # D56: off | local (private addresses only: Claude Code over the VPN) | on (also claude.ai, Desktop: OAuth)
   reports: false              # D56 phase 2: /mcp serves reports de-identified (by pid), off by default
 pages:
   trash_purge_days: 30

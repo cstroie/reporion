@@ -22,7 +22,8 @@ use Reporion\Index\IndexInterface;
  * The OAuth 2.1 endpoints of the MCP server (D56, phase 3; Auth\OAuth): the two metadata
  * documents (RFC 9728, RFC 8414), dynamic client registration (RFC 7591), the consent screen,
  * and the token endpoint. The consent is a signed-in screen: the account ticks nothing it does
- * not already reach, it only narrows (namespaces), and the token is read only. Audited
+ * not already reach, it only narrows (namespaces), and the token is read only unless the user
+ * ticks Allow changes (phase 4: ordinary pages only, never a report or a signed page). Audited
  * `oauth.authorize` and `token.create`, with the client's name and the token's id.
  */
 final class OAuthController
@@ -54,7 +55,7 @@ final class OAuthController
             'resource' => $this->baseUrl . '/mcp',
             'authorization_servers' => [$this->baseUrl],
             'bearer_methods_supported' => ['header'],
-            'scopes_supported' => ['read'],
+            'scopes_supported' => ['read', 'write'],
         ]);
     }
 
@@ -74,7 +75,7 @@ final class OAuthController
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['none'],
-            'scopes_supported' => ['read'],
+            'scopes_supported' => ['read', 'write'],
         ]);
     }
 
@@ -141,9 +142,9 @@ final class OAuthController
         } catch (InvalidArgumentException) {
             return $this->consent($request, $principal, $params, t('oauth.err_namespaces'));
         }
-        $this->audit->record('oauth.authorize', $principal->username, $request, extra: ['client' => $params['client']['name'], 'namespaces' => \count($namespaces)]);
+        $this->audit->record('oauth.authorize', $principal->username, $request, extra: ['client' => $params['client']['name'], 'namespaces' => \count($namespaces), 'write' => ($fields['write'] ?? '') === '1']);
 
-        return $this->back($params, ['code' => $this->oauth->code($principal->username, $params['client_id'], $params['redirect_uri'], $params['code_challenge'], array_map(static fn (string $ns): string => trim($ns, ':'), $namespaces))]);
+        return $this->back($params, ['code' => $this->oauth->code($principal->username, $params['client_id'], $params['redirect_uri'], $params['code_challenge'], array_map(static fn (string $ns): string => trim($ns, ':'), $namespaces), ($fields['write'] ?? '') === '1')]);
     }
 
     /** POST /oauth/token: an authorization code and its verifier for a token */
@@ -163,10 +164,10 @@ final class OAuthController
         if ($client === null || $grant === null || $user === null || !$user->active) {
             return self::json(['error' => 'invalid_grant'], 400);
         }
-        [, $token, $id] = $this->tokens->create($user, mb_substr('Claude: ' . ($client['name'] !== '' ? $client['name'] : 'MCP client'), 0, 80), 'read', $grant['namespaces']);
+        [, $token, $id] = $this->tokens->create($user, mb_substr('Claude: ' . ($client['name'] !== '' ? $client['name'] : 'MCP client'), 0, 80), $grant['write'] ? 'write' : 'read', $grant['namespaces']);
         $this->audit->record('token.create', $user->username, $request, extra: ['token' => $id, 'via' => 'oauth']);
 
-        return self::json(['access_token' => $token, 'token_type' => 'Bearer', 'scope' => 'read']);
+        return self::json(['access_token' => $token, 'token_type' => 'Bearer', 'scope' => $grant['write'] ? 'write' : 'read']);
     }
 
     /**

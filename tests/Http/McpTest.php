@@ -135,6 +135,63 @@ final class McpTest extends HttpTestCase
         return (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read($path)->pid;
     }
 
+    public function testAWriteTokenCreatesAndUpdatesOrdinaryPagesOnly(): void
+    {
+        $read = $this->newToken('mihai', '');
+        self::assertNotContains('create_page', array_column($this->rpc($read, 'tools/list')['result']['tools'], 'name'), 'a read token has no write tools');
+        self::assertTrue($this->tool($read, 'create_page', ['path' => 'notes:new', 'body' => 'x'])['result']['isError']);
+
+        $write = $this->newToken('mihai', '', 'write');
+        self::assertContains('update_page', array_column($this->rpc($write, 'tools/list')['result']['tools'], 'name'));
+        $made = $this->tool($write, 'create_page', ['path' => 'notes:new', 'body' => "# New\n\nText.\n", 'note' => 'first'])['result'];
+        self::assertSame(1, $made['structuredContent']['rev']);
+        $page = $this->storage()->read('notes:new');
+        self::assertSame('mihai', $page->meta['revlog'][0]['by']);
+        self::assertStringContainsString('(via MCP)', (string) $page->meta['revlog'][0]['note']);
+
+        self::assertSame(2, $this->tool($write, 'update_page', ['path' => 'notes:new', 'body' => "# New\n\nMore.\n", 'base_rev' => 1])['result']['structuredContent']['rev']);
+        $stale = $this->tool($write, 'update_page', ['path' => 'notes:new', 'body' => 'Old.', 'base_rev' => 1])['result'];
+        self::assertTrue($stale['isError']);
+        self::assertStringContainsString('More.', $stale['content'][0]['text'], 'the current text comes back');
+        self::assertSame(2, $this->storage()->read('notes:new')->rev);
+
+        self::assertTrue($this->tool($write, 'update_page', ['path' => 'reports:mri:mioveni:a', 'body' => 'x', 'base_rev' => 1])['result']['isError'], 'never a report');
+        self::assertTrue($this->tool($write, 'create_page', ['path' => 'reports:mri:mioveni:b', 'body' => 'x'])['result']['isError']);
+        self::assertTrue($this->tool($write, 'update_page', ['path' => 'docs:howto', 'body' => 'x', 'base_rev' => 1])['result']['isError'], 'a viewer grant writes nothing');
+        self::assertSame(1, $this->storage()->read('docs:howto')->rev);
+    }
+
+    public function testAccessOffOrLocalOnly(): void
+    {
+        $token = $this->newToken('mihai', '');
+        $ping = (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'ping']);
+        $call = fn (string $addr, string $xff = ''): int => Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: $addr, authorization: 'Bearer ' . $token, forwardedFor: $xff))->status;
+
+        $this->config['mcp']['access'] = 'local';
+        self::assertSame(200, $call('127.0.0.1'));
+        self::assertSame(200, $call('10.8.0.6'));
+        self::assertSame(404, $call('203.0.113.9'));
+        self::assertSame(404, $call('127.0.0.1', '203.0.113.9'), 'a proxy forwarding for the internet');
+        $this->config['site']['base_url'] = 'https://wiki.example.org';
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/.well-known/oauth-authorization-server'))->status, 'no OAuth when local');
+
+        $this->config['mcp']['access'] = 'off';
+        self::assertSame(404, $call('127.0.0.1'));
+    }
+
+    public function testTheServerShowsReporionsIcon(): void
+    {
+        $this->config['site']['base_url'] = 'https://wiki.example.org/reporion';
+        $info = $this->rpc($this->newToken('mihai', ''), 'initialize')['result']['serverInfo'];
+        self::assertSame('Reporion', $info['title']);
+        self::assertSame('https://wiki.example.org/reporion/assets/icon.svg', $info['icons'][0]['src']);
+    }
+
+    private function storage(): FileTree
+    {
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+    }
+
     public function testAMalformedNamespaceIsRefused(): void
     {
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('mihai');
@@ -142,10 +199,10 @@ final class McpTest extends HttpTestCase
         self::assertSame(422, $r->status);
     }
 
-    private function newToken(string $username, string $namespaces): string
+    private function newToken(string $username, string $namespaces, string $scope = 'read'): string
     {
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($username);
-        $response = Kernel::boot($this->config)->handle(new Request('POST', '/profile/tokens', cookies: ['reporion' => $cookie], body: http_build_query(['name' => 'claude', 'scope' => 'read', 'namespaces' => $namespaces])));
+        $response = Kernel::boot($this->config)->handle(new Request('POST', '/profile/tokens', cookies: ['reporion' => $cookie], body: http_build_query(['name' => 'claude', 'scope' => $scope, 'namespaces' => $namespaces])));
         self::assertSame(200, $response->status);
         self::assertSame(1, preg_match('/id="new-token">([^<]+)</', $response->body, $m));
 

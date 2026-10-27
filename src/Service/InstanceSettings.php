@@ -47,6 +47,7 @@ final class InstanceSettings
         'export.allow_public_export' => 'bool',
         'export.pseudonymise_public' => 'bool',
         'mcp.reports' => 'bool',
+        'mcp.access' => 'mcp_access',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
@@ -424,6 +425,7 @@ final class InstanceSettings
             'kbps' => $text === '' ? 0 : (ctype_digit($text) && RsyncConfig::validBwlimit((int) $text) ? (int) $text : $fail()),
             'hours' => ctype_digit($text) && RsyncConfig::validHours((int) $text) ? (int) $text : $fail(),
             'keep' => isset(RsyncConfig::KEEP[$text]) ? $text : $fail(),
+            'mcp_access' => $text === '' ? 'on' : (\in_array($text, \Reporion\Controller\McpController::ACCESS, true) ? $text : $fail()),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),

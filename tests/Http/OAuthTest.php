@@ -80,6 +80,17 @@ final class OAuthTest extends HttpTestCase
         self::assertSame(['read', ['docs']], [$record['scope'], $record['namespaces']]);
     }
 
+    public function testAllowChangesGivesAWriteToken(): void
+    {
+        $client = $this->register();
+        $verifier = str_repeat('v', 50);
+        $query = ['response_type' => 'code', 'client_id' => $client, 'redirect_uri' => self::REDIRECT, 'code_challenge' => OAuth::challenge($verifier), 'code_challenge_method' => 'S256'];
+        $approved = $this->as('mihai', new Request('POST', '/oauth/authorize', body: http_build_query($query + ['decision' => 'approve', 'write' => '1'])));
+        parse_str((string) parse_url($approved->headers['Location'], PHP_URL_QUERY), $back);
+        $token = json_decode($this->send(new Request('POST', '/oauth/token', body: http_build_query(['grant_type' => 'authorization_code', 'code' => $back['code'], 'client_id' => $client, 'redirect_uri' => self::REDIRECT, 'code_verifier' => $verifier])))->body, true);
+        self::assertSame('write', $token['scope']);
+    }
+
     public function testDenyAndForeignRedirectsAndUnknownClients(): void
     {
         $client = $this->register();

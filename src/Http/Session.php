@@ -72,6 +72,24 @@ final class Session
         return null;
     }
 
+    /**
+     * Whether the bearer token of $request is a write token (D56, phase 4): /mcp lets a read token
+     * in, and offers its write tools only to a write one
+     */
+    public function tokenWrites(Request $request): bool
+    {
+        if ($this->tokens === null || preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) !== 1) {
+            return false;
+        }
+        try {
+            $this->tokens->authenticate($m[1], 'POST');
+
+            return true;
+        } catch (InvalidTokenException) {
+            return false;
+        }
+    }
+
     /** The routes a bearer token is good for: the JSON API, the exports and the MCP server (D56) */
     public static function tokenRoute(string $path): bool
     {

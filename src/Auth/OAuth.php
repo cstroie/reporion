@@ -13,7 +13,8 @@ use InvalidArgumentException;
  * on their own, authorization code + PKCE (S256 only) with dynamic client registration. Nothing is
  * stored for it: a client id is its registration (name and redirect URIs) signed with the session
  * secret, an authorization code the consent signed the same way and good for 60 seconds. The
- * token it ends in is an ordinary API token (ApiTokens, read, limited to the namespaces ticked),
+ * token it ends in is an ordinary API token (ApiTokens, read, or write when the user ticked Allow
+ * changes, limited to the namespaces typed),
  * listed and revoked on /profile like any other. Without a configured `site.base_url` there is no
  * issuer, so none of it is offered (a Host header is the caller's to choose).
  */
@@ -66,16 +67,16 @@ final class OAuth
      *
      * @param list<string> $namespaces
      */
-    public function code(string $username, string $clientId, string $redirectUri, string $challenge, array $namespaces): string
+    public function code(string $username, string $clientId, string $redirectUri, string $challenge, array $namespaces, bool $write = false): string
     {
-        return $this->sign('code', ['u' => $username, 'c' => $clientId, 'r' => $redirectUri, 'p' => $challenge, 'ns' => $namespaces, 'exp' => time() + self::CODE_TTL]);
+        return $this->sign('code', ['u' => $username, 'c' => $clientId, 'r' => $redirectUri, 'p' => $challenge, 'ns' => $namespaces, 'w' => $write, 'exp' => time() + self::CODE_TTL]);
     }
 
     /**
      * What an authorization code grants, when it is ours, unexpired, for this client and redirect,
      * and the verifier matches its challenge; else null
      *
-     * @return ?array{username: string, namespaces: list<string>}
+     * @return ?array{username: string, namespaces: list<string>, write: bool}
      */
     public function redeem(string $code, string $clientId, string $redirectUri, string $verifier): ?array
     {
@@ -87,7 +88,7 @@ final class OAuth
             return null;
         }
 
-        return ['username' => $c['u'], 'namespaces' => array_values(array_filter((array) ($c['ns'] ?? []), 'is_string'))];
+        return ['username' => $c['u'], 'namespaces' => array_values(array_filter((array) ($c['ns'] ?? []), 'is_string')), 'write' => ($c['w'] ?? false) === true];
     }
 
     /** The S256 challenge of a verifier (RFC 7636) */

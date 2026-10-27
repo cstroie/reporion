@@ -282,7 +282,7 @@ revision exists byte for byte in a snapshot.
 
 ## Claude and other MCP clients (D56)
 
-`POST /mcp` is the MCP server; it takes a bearer token only. **Claude Code** over the VPN needs
+`POST /mcp` is the MCP server; it takes a bearer token only. Admin → Settings → Publishing *Claude (MCP)* turns it off, limits it to the local network (loopback and private addresses, so Claude Code over the VPN still works and claude.ai cannot connect), or opens it everywhere. Behind a proxy on the same machine the proxy must send `X-Forwarded-For`, or every request looks local. **Claude Code** over the VPN needs
 nothing more: make a token on `/profile` (Namespaces to limit it) and
 `claude mcp add --transport http reporion https://<host>/mcp --header "Authorization: Bearer rpn_…"`.
 

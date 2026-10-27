@@ -518,9 +518,10 @@ final class Kernel
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
         $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
-        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl);
+        $mcpAccess = \in_array($config['mcp']['access'] ?? 'on', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'on') : 'off';
+        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r), $mcpAccess);
         // Its OAuth 2.1 (D56, phase 3), for claude.ai and Desktop: offered only with site.base_url set
-        $oauth = new OAuthController(new OAuth((string) $config['auth']['session_secret']), $apiTokens, $users, $audit, $index, (string) $config['auth']['session_secret'] !== '' ? $baseUrl : '');
+        $oauth = new OAuthController(new OAuth((string) $config['auth']['session_secret']), $apiTokens, $users, $audit, $index, (string) $config['auth']['session_secret'] !== '' && $mcpAccess === 'on' ? $baseUrl : '');
         $frontmatterFields = new FrontmatterFields(
             $schemas,
             $index,
