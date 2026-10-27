@@ -87,6 +87,10 @@ final class FlatFileUserStore implements UserStoreInterface
 
     public function save(User $user): User
     {
+        // A token-narrowed principal (D56) holds computed grants, never the account's own
+        if ($user->tokenNamespaces !== null) {
+            throw new \LogicException('A token-narrowed account is never saved');
+        }
         $this->assertValidUsername($user->username);
         if (!is_file($this->userPath($user->username))) {
             throw new UserNotFoundException();
@@ -262,6 +266,11 @@ final class FlatFileUserStore implements UserStoreInterface
                 'last_used' => \is_string($t['last_used'] ?? null) ? $t['last_used'] : null,
                 'hash' => $t['hash'],
             ];
+            // The namespaces a token is limited to (D56); absent: the whole account
+            $ns = \is_array($t['namespaces'] ?? null) ? array_values(array_filter($t['namespaces'], 'is_string')) : null;
+            if ($ns !== null && $ns !== []) {
+                $tokens[\array_key_last($tokens)]['namespaces'] = $ns;
+            }
         }
 
         return $tokens;

@@ -13,7 +13,7 @@ use Reporion\Exception\InvalidTokenException;
 /**
  * API tokens (roadmap phase 13): a secret a user creates on their own
  * profile page, sent as `Authorization: Bearer rpn_…` to /api/v1 and
- * /export. A token is its account: the same grants, read from the account
+ * /export (and /mcp, D56). A token is its account: the same grants, read from the account
  * on every request: narrowed by its scope: `read` (GET only) or `write`.
  *
  * The token is `rpn_{base64url(username)}.{id}.{secret}`: the username
@@ -36,8 +36,13 @@ final class ApiTokens
      *
      * @return array{0: User, 1: string, 2: string} the account, the token, its id
      */
-    public function create(User $user, string $name, string $scope): array
+    /** @param list<string> $namespaces what the token is limited to (D56); empty: the whole account */
+    public function create(User $user, string $name, string $scope, array $namespaces = []): array
     {
+        $namespaces = array_values(array_unique(array_filter(array_map('trim', $namespaces), static fn (string $ns): bool => $ns !== '')));
+        foreach ($namespaces as $ns) {
+            new Grant($ns, GrantRole::Viewer); // throws for a malformed namespace
+        }
         $name = trim($name);
         if ($name === '' || mb_strlen($name) > 80) {
             throw new InvalidArgumentException('A token needs a name of up to 80 characters');
@@ -47,14 +52,18 @@ final class ApiTokens
         }
         $id = self::id();
         $secret = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-        $saved = $this->users->save($user->with(tokens: [...$user->tokens, [
+        $record = [
             'id' => $id,
             'name' => $name,
             'scope' => $scope,
             'created' => (new DateTimeImmutable('now'))->format('Y-m-d\TH:i:sP'),
             'last_used' => null,
             'hash' => hash('sha256', $secret),
-        ]]));
+        ];
+        if ($namespaces !== []) {
+            $record['namespaces'] = $namespaces;
+        }
+        $saved = $this->users->save($user->with(tokens: [...$user->tokens, $record]));
 
         return [$saved, self::PREFIX . rtrim(strtr(base64_encode($user->username), '+/', '-_'), '=') . '.' . $id . '.' . $secret, $id];
     }
@@ -99,7 +108,10 @@ final class ApiTokens
                     throw new InvalidTokenException(scope: true);
                 }
 
-                return $this->touch($user, $t['id']);
+                $user = $this->touch($user, $t['id']);
+
+                // A token limited to namespaces (D56) is the account narrowed to them, after the touch is saved
+                return isset($t['namespaces']) ? $user->narrowedTo($t['namespaces']) : $user;
             }
         }
         throw new InvalidTokenException();

@@ -61,6 +61,10 @@ final class User
         // The name a printed report is signed with (2026-10-22): optional; displayName is the short
         // name the app calls the account by. signatureName() falls back through both.
         public readonly string $fullName = '',
+        // Set only on a principal narrowed to an API token's namespaces (narrowedTo(), D56): its
+        // grants are computed and it is never saved (FlatFileUserStore::save() refuses it).
+        /** @var ?list<string> */
+        public readonly ?array $tokenNamespaces = null,
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check: a bare string or anything non-Grant slipping in here
@@ -104,6 +108,7 @@ final class User
             $stamp ?? $this->stamp,
             $views ?? $this->views,
             $fullName ?? $this->fullName,
+            $this->tokenNamespaces,
         );
     }
 
@@ -128,7 +133,41 @@ final class User
         return new self(
             $this->username, $this->passwordHash, $this->isOwner, $this->grants, $this->active,
             $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
-            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views, $this->fullName,
+            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views, $this->fullName, $this->tokenNamespaces,
+        );
+    }
+
+    /**
+     * This account as a bearer token limited to $namespaces sees it (D56): never more than the
+     * account reaches, never the owner's instance-wide role. Each effective grant is kept where it
+     * lies under one of $namespaces, or cut down to that namespace where it covers it; an owner gets
+     * the role it holds on each namespace. The personal namespace is in only when one of $namespaces
+     * covers it. The result is a principal, never a record: it cannot be saved.
+     *
+     * @param list<string> $namespaces
+     */
+    public function narrowedTo(array $namespaces): self
+    {
+        $grants = [];
+        foreach ($namespaces as $ns) {
+            if ($this->isOwner) {
+                $grants[] = new Grant($ns, $this->roleOn($ns) ?? GrantRole::Viewer);
+                continue;
+            }
+            foreach ($this->effectiveGrants() as $g) {
+                if ($g->covers($ns)) {
+                    $grants[] = new Grant($ns, $g->role);
+                } elseif (str_starts_with($g->namespace, $ns . ':')) {
+                    $grants[] = $g;
+                }
+            }
+        }
+
+        return new self(
+            $this->username, $this->passwordHash, false, $grants, $this->active,
+            $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
+            $this->pins, $this->isRadiologist(), $this->groups, [], false, $this->stamp, $this->views, $this->fullName,
+            array_values($namespaces),
         );
     }
 
@@ -189,6 +228,9 @@ final class User
      */
     public function effectiveGrants(): array
     {
+        if ($this->tokenNamespaces !== null) {
+            return $this->grants;
+        }
         if ($this->isOwner) {
             return $this->grants;
         }

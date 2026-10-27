@@ -51,7 +51,8 @@ final class Session
      */
     public function principal(Request $request): ?User
     {
-        $user = $this->cookiePrincipal($request);
+        // /mcp (D56) is a bearer token's only: a cookie never drives it, so no page can post to it as you
+        $user = $request->path === '/mcp' ? null : $this->cookiePrincipal($request);
         if ($user !== null) {
             return $user;
         }
@@ -64,16 +65,17 @@ final class Session
                 throw new InvalidTokenException();
             }
 
-            return $this->tokens->authenticate($m[1], $request->method);
+            // /mcp is read only (D56, phase 1): its POST carries a question, so a read token may use it
+            return $this->tokens->authenticate($m[1], $request->path === '/mcp' ? 'GET' : $request->method);
         }
 
         return null;
     }
 
-    /** The routes a bearer token is good for: the JSON API and the exports */
+    /** The routes a bearer token is good for: the JSON API, the exports and the MCP server (D56) */
     public static function tokenRoute(string $path): bool
     {
-        return str_starts_with($path, '/api/v1/') || str_starts_with($path, '/export/');
+        return str_starts_with($path, '/api/v1/') || str_starts_with($path, '/export/') || $path === '/mcp';
     }
 
     private function cookiePrincipal(Request $request): ?User

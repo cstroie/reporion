@@ -709,7 +709,7 @@ characters, absent before) is the doctor's stamp code (*parafă*), edited on `/p
 
 `tokens` (phase 13, absent before): the account's API tokens, each
 `{"id":"k3m9x2qa","name":"dictation script","scope":"write","created":"2026-09-27T10:00:00+03:00",
-"last_used":"2026-09-27","hash":"<sha256 of the secret, hex>"}`. The token itself
+"last_used":"2026-09-27","hash":"<sha256 of the secret, hex>"}`. Optional `namespaces` (D56, 2026-10-27): a list of namespaces the token is limited to (the account narrowed to them, never widened; absent: the whole account). The token itself
 `rpn_{base64url(username)}.{id}.{secret}`, `id` 8 base32 characters, `secret` 32 random bytes
 base64url: is shown once and never stored. `last_used` is a date, written at most once a day.
 A malformed entry is dropped when the record is read (it can no longer authenticate).

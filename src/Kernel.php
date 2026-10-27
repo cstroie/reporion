@@ -31,6 +31,7 @@ use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\JoinController;
+use Reporion\Controller\McpController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
@@ -513,6 +514,8 @@ final class Kernel
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
+        // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
+        $mcp = new McpController($index, $storage, $audit);
         $frontmatterFields = new FrontmatterFields(
             $schemas,
             $index,
@@ -612,6 +615,8 @@ final class Kernel
         $router->get('/notes/manifest.webmanifest', static fn (Request $request, array $params): Response => $notes->manifest($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
+        $router->post('/mcp', static fn (Request $request, array $params): Response
+            => $mcp->handle($request, $session->principal($request)));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3)
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).

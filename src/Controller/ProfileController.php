@@ -155,6 +155,8 @@ final class ProfileController
                 $principal,
                 \is_string($fields['name'] ?? null) ? $fields['name'] : '',
                 \is_string($fields['scope'] ?? null) ? $fields['scope'] : '',
+                // Limited to namespaces (D56): one per line or comma; none, the whole account
+                preg_split('/[\s,]+/', \is_string($fields['namespaces'] ?? null) ? $fields['namespaces'] : '') ?: [],
             );
         } catch (InvalidArgumentException) {
             return $this->render($request, $principal, error: null, saved: false, tokenError: t('profile.err_token'));
