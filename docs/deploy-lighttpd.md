@@ -279,3 +279,20 @@ cost almost nothing and mean a mistaken purge is recoverable. Keep the backup ta
 encrypted volume. `index.sqlite*` is left out because it is rebuilt from disk
 (`bin/reporion index:rebuild`). `data/reporion.sqlite` (D54, 2.0) is **not** a cache and must be in every copy, but a live WAL database is never copied as files: `backup:rsync` and `backup:create` take a `VACUUM INTO` copy first (`data/snapshot/reporion.sqlite`) and leave the live `reporion.sqlite*` out, so a hand-written `rsync` like the one above must do the same (`bin/reporion backup:create` is the safe form); `integrity:verify --backup=<dir>` checks that every signed
 revision exists byte for byte in a snapshot.
+
+## Claude and other MCP clients (D56)
+
+`POST /mcp` is the MCP server; it takes a bearer token only. **Claude Code** over the VPN needs
+nothing more: make a token on `/profile` (Namespaces to limit it) and
+`claude mcp add --transport http reporion https://<host>/mcp --header "Authorization: Bearer rpn_…"`.
+
+**claude.ai and Claude Desktop** connect from Anthropic's servers, so they need, from the internet:
+`/mcp`, `/oauth/register`, `/oauth/authorize`, `/oauth/token`, `/.well-known/oauth-protected-resource`
+(and `…/mcp`), `/.well-known/oauth-authorization-server`, plus `/login` and `/assets/` for the
+consent screen the user signs in to. Expose **only these paths** at the TLS proxy; everything else
+stays on the VPN. `site.base_url` (Admin → Settings) must be that public `https://` address and the
+instance must sit at the root of it (the `.well-known` documents are looked up at the host's root):
+with no base URL no OAuth is offered. In the client, add a custom connector with the URL
+`https://<host>/mcp`. Each connection made is an API token named `Claude: …` on the account's
+`/profile`, read only; revoking it disconnects the client. Reports reach the client only with
+Admin → Settings → Publishing *Let Claude … read reports, de-identified* on.

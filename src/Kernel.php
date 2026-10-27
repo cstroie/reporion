@@ -8,6 +8,7 @@ namespace Reporion;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
+use Reporion\Auth\OAuth;
 use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminAiController;
@@ -32,6 +33,7 @@ use Reporion\Controller\FeedController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\JoinController;
 use Reporion\Controller\McpController;
+use Reporion\Controller\OAuthController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
@@ -515,7 +517,10 @@ final class Kernel
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
-        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false));
+        $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
+        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl);
+        // Its OAuth 2.1 (D56, phase 3), for claude.ai and Desktop: offered only with site.base_url set
+        $oauth = new OAuthController(new OAuth((string) $config['auth']['session_secret']), $apiTokens, $users, $audit, $index, (string) $config['auth']['session_secret'] !== '' ? $baseUrl : '');
         $frontmatterFields = new FrontmatterFields(
             $schemas,
             $index,
@@ -617,6 +622,15 @@ final class Kernel
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         $router->post('/mcp', static fn (Request $request, array $params): Response
             => $mcp->handle($request, $session->principal($request)));
+        $router->get('/.well-known/oauth-protected-resource', static fn (Request $request, array $params): Response => $oauth->resourceMetadata());
+        $router->get('/.well-known/oauth-protected-resource/mcp', static fn (Request $request, array $params): Response => $oauth->resourceMetadata());
+        $router->get('/.well-known/oauth-authorization-server', static fn (Request $request, array $params): Response => $oauth->serverMetadata());
+        $router->post('/oauth/register', static fn (Request $request, array $params): Response => $oauth->register($request));
+        $router->get('/oauth/authorize', static fn (Request $request, array $params): Response
+            => $oauth->authorize($request, $session->principal($request)));
+        $router->post('/oauth/authorize', static fn (Request $request, array $params): Response
+            => $oauth->decide($request, $session->principal($request)));
+        $router->post('/oauth/token', static fn (Request $request, array $params): Response => $oauth->token($request));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3)
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).

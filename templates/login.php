@@ -34,7 +34,8 @@ declare(strict_types=1);
 <p class="wk-auth-p"><?= htmlspecialchars(t('auth.tagline'), ENT_QUOTES) ?></p>
 </div>
 <div class="wk-auth-form">
-<form class="card elev-md wk-auth-card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login" method="post">
+<form class="card elev-md wk-auth-card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>
+<?php if (($next ?? '/') !== '/'): ?><input type="hidden" name="next" value="<?= htmlspecialchars($next, ENT_QUOTES) ?>"><?php endif; ?>/login" method="post">
 <span class="card-kicker"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></span>
 <div class="field">
 <label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?>

@@ -45,7 +45,16 @@ final class AuthController
 
     public function form(Request $request): Response
     {
-        return Response::html(View::render($this->templatePath(), ['error' => false, 'basePath' => $request->basePath]));
+        return Response::html(View::render($this->templatePath(), ['error' => false, 'basePath' => $request->basePath, 'next' => self::next($request->query['next'] ?? null)]));
+    }
+
+    /**
+     * Where to go after signing in: a path on this site only (`/oauth/authorize?…`, D56), never
+     * another host (`//x`, `/\x`, a scheme), else the start page
+     */
+    public static function next(mixed $next): string
+    {
+        return \is_string($next) && preg_match('~^/(?![/\\\\])[^\s]*$~', $next) === 1 && \strlen($next) <= 2000 ? $next : '/';
     }
 
     public function login(Request $request): Response
@@ -53,10 +62,10 @@ final class AuthController
         parse_str($request->body, $fields);
         $user = $this->authenticate($request, $fields['username'] ?? null, $fields['password'] ?? null);
         if ($user === null) {
-            return Response::html(View::render($this->templatePath(), ['error' => true, 'basePath' => $request->basePath]), 401);
+            return Response::html(View::render($this->templatePath(), ['error' => true, 'basePath' => $request->basePath, 'next' => self::next($fields['next'] ?? null)]), 401);
         }
 
-        return Response::redirect($request->basePath . '/')->withHeader('Set-Cookie', $this->session->loginCookieHeader($user->username, $request->secure));
+        return Response::redirect($request->basePath . self::next($fields['next'] ?? null))->withHeader('Set-Cookie', $this->session->loginCookieHeader($user->username, $request->secure));
     }
 
     /**

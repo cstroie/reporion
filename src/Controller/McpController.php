@@ -39,6 +39,8 @@ final class McpController
         private readonly AuditLog $audit,
         // Admin → Settings `mcp.reports` (phase 2): patient pages served de-identified, by pid
         private readonly bool $reports = false,
+        // site.base_url: a 401 then names the OAuth metadata (RFC 9728), so a client can connect on its own
+        private readonly string $baseUrl = '',
     ) {
     }
 
@@ -46,7 +48,7 @@ final class McpController
     {
         if ($principal === null) {
             return new Response(401, '', [
-                'WWW-Authenticate' => 'Bearer realm="reporion"',
+                'WWW-Authenticate' => 'Bearer realm="reporion"' . ($this->baseUrl !== '' ? ', resource_metadata="' . $this->baseUrl . '/.well-known/oauth-protected-resource"' : ''),
                 'Content-Type' => 'application/json; charset=utf-8',
             ]);
         }
