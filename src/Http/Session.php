@@ -49,6 +49,20 @@ final class Session
      * deactivated (User::$active), so disabling an account takes effect
      * immediately rather than only once its cookie expires.
      */
+    /**
+     * The bearer token a request carries: `Authorization: Bearer …`, or on /mcp also
+     * `X-Access-Token: …` (D56), so lighttpd can refuse an /mcp request without one before PHP.
+     * '' when there is none; null when the Authorization header is there but not a bearer token.
+     */
+    private static function bearer(Request $request): ?string
+    {
+        if ($request->authorization !== '') {
+            return preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) === 1 ? $m[1] : null;
+        }
+
+        return $request->path === '/mcp' ? trim($request->accessToken) : '';
+    }
+
     public function principal(Request $request): ?User
     {
         // /mcp (D56) is a bearer token's only: a cookie never drives it, so no page can post to it as you
@@ -60,13 +74,14 @@ final class Session
         // An API bearer token (roadmap phase 13), on the API and exports only
         // never on a screen, so a token cannot drive a form. A token that
         // cannot be used throws: it is never quietly an anonymous caller.
-        if ($this->tokens !== null && $request->authorization !== '' && self::tokenRoute($request->path)) {
-            if (preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) !== 1) {
+        $bearer = self::bearer($request);
+        if ($this->tokens !== null && $bearer !== '' && self::tokenRoute($request->path)) {
+            if ($bearer === null) {
                 throw new InvalidTokenException();
             }
 
             // /mcp is read only (D56, phase 1): its POST carries a question, so a read token may use it
-            return $this->tokens->authenticate($m[1], $request->path === '/mcp' ? 'GET' : $request->method, $request->remoteAddr);
+            return $this->tokens->authenticate($bearer, $request->path === '/mcp' ? 'GET' : $request->method, $request->remoteAddr);
         }
 
         return null;
@@ -78,11 +93,12 @@ final class Session
      */
     public function tokenWrites(Request $request): bool
     {
-        if ($this->tokens === null || preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) !== 1) {
+        $bearer = self::bearer($request);
+        if ($this->tokens === null || $bearer === null || $bearer === '') {
             return false;
         }
         try {
-            $this->tokens->authenticate($m[1], 'POST', $request->remoteAddr);
+            $this->tokens->authenticate($bearer, 'POST', $request->remoteAddr);
 
             return true;
         } catch (InvalidTokenException) {

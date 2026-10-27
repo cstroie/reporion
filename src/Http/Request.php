@@ -41,6 +41,8 @@ final class Request
         public readonly ?\Closure $askable = null,
         // X-Forwarded-For as received: a proxy's client, for /mcp's local-only check (D56); never trusted for more
         public readonly string $forwardedFor = '',
+        // X-Access-Token: an API token for /mcp only (D56), for a client whose header the server can require
+        public readonly string $accessToken = '',
     ) {
     }
 
@@ -66,6 +68,7 @@ final class Request
             // Some FastCGI setups pass it only under the REDIRECT_ name
             authorization: (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
             forwardedFor: (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''),
+            accessToken: (string) ($_SERVER['HTTP_X_ACCESS_TOKEN'] ?? ''),
             // The timeline's ticked studies (`paths[]`) for /{path}/compare
             queryLists: array_map(
                 static fn (array $values): array => array_values(array_filter($values, 'is_string')),
@@ -103,6 +106,7 @@ final class Request
             feedNamespaces: $feedNamespaces,
             askable: $askable,
             forwardedFor: $this->forwardedFor,
+            accessToken: $this->accessToken,
         );
     }
 
