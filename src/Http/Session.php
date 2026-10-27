@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
@@ -35,8 +36,15 @@ final class Session
         private readonly int $lifetimeSeconds,
         private readonly UserStoreInterface $users,
         private readonly ?ApiTokens $tokens = null,
+        // Bad bearer tokens are counted per address and audited (D56 hardening)
+        private readonly ?Throttle $throttle = null,
+        private readonly ?AuditLog $audit = null,
     ) {
     }
+
+    private const TOKEN_FAILURES = 20;
+    private const TOKEN_WINDOW = 900;
+    private ?Request $failedRequest = null;
 
     public function cookieName(): string
     {
@@ -56,6 +64,12 @@ final class Session
      */
     private static function bearer(Request $request): ?string
     {
+    /**
+     * Resolves the signed-in account, or null for anonymous: including
+     * for a validly-signed cookie whose account was since deleted or
+     * deactivated (User::$active), so disabling an account takes effect
+     * immediately rather than only once its cookie expires.
+     */
         if ($request->authorization !== '') {
             return preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) === 1 ? $m[1] : null;
         }
@@ -80,8 +94,24 @@ final class Session
                 throw new InvalidTokenException();
             }
 
-            // /mcp is read only (D56, phase 1): its POST carries a question, so a read token may use it
-            return $this->tokens->authenticate($bearer, $request->path === '/mcp' ? 'GET' : $request->method, $request->remoteAddr);
+            $key = 'bearer:' . $request->remoteAddr;
+            if ($this->throttle !== null && $this->throttle->count($key, self::TOKEN_WINDOW) >= self::TOKEN_FAILURES) {
+                throw new InvalidTokenException(throttled: true);
+            }
+            try {
+                // /mcp is read only (D56, phase 1): its POST carries a question, so a read token may use it
+                return $this->tokens->authenticate($bearer, $request->path === '/mcp' ? 'GET' : $request->method, $request->remoteAddr);
+            } catch (InvalidTokenException $e) {
+                // A read token writing is the right token used wrongly, not a guess; and a request
+                // asked again (the error page resolves the caller once more) is counted once
+                if (!$e->scope && $this->failedRequest !== $request) {
+                    $this->failedRequest = $request;
+                    $this->throttle?->hit($key, self::TOKEN_WINDOW);
+                    $this->audit?->record('auth.token_failed', 'anonymous', $request, outcome: 'refused');
+                }
+
+                throw $e;
+            }
         }
 
         return null;

@@ -41,6 +41,9 @@ final class ErrorMapper
         // An API token that cannot be used (roadmap phase 13): said plainly,
         // never logged (it is the caller's mistake, not the app's)
         if ($e instanceof InvalidTokenException) {
+            if ($e->throttled) {
+                return ApiResponse::error(429, 'too_many_attempts', 'Too many invalid tokens; try again later.')->withHeader('Retry-After', '900');
+            }
             $response = ApiResponse::error($e->scope ? 403 : 401, $e->scope ? 'insufficient_scope' : 'invalid_token', $e->scope ? 'This token may only read.' : 'The token is not valid.');
 
             return new Response($response->status, $response->body, $response->headers + ['WWW-Authenticate' => 'Bearer error="' . ($e->scope ? 'insufficient_scope' : 'invalid_token') . '"']);

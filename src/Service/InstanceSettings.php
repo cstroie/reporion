@@ -167,6 +167,10 @@ final class InstanceSettings
         }
         $config['ai'] = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
         $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
+        // Reverse proxies whose X-Forwarded-For is believed (Support\ClientAddress): settings.yaml only
+        if (\is_array($settings['site']['trusted_proxies'] ?? null)) {
+            $config['site']['trusted_proxies'] = $settings['site']['trusted_proxies'];
+        }
         if (\is_array($stored['servers'] ?? null)) {
             $config['ai']['servers'] = $stored['servers'];
         }

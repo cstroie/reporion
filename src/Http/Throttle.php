@@ -51,6 +51,29 @@ final class Throttle
         return $count;
     }
 
+    /**
+     * Records $key as taken, once: true for the first caller within $window seconds, false for
+     * any later one. Fails closed: when the note cannot be written nothing is recorded, so
+     * nothing may be claimed (a single-use code is then refused, never accepted twice).
+     */
+    public function claim(string $key, int $window): bool
+    {
+        $id = hash('sha256', $key);
+        $now = time();
+        $claimed = false;
+        $this->update(static function (array $all) use ($id, $now, $window, &$claimed): array {
+            $recent = array_filter($all[$id] ?? [], static fn (int $t): bool => $t > $now - $window);
+            if ($recent === []) {
+                $all[$id] = [$now];
+                $claimed = true;
+            }
+
+            return $all;
+        });
+
+        return $claimed;
+    }
+
     /** Forgets $key (a successful sign-in clears its address's failures) */
     public function clear(string $key): void
     {

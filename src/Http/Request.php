@@ -89,7 +89,13 @@ final class Request
         return $this->with($this->feedNamespaces, $askable);
     }
 
-    private function with(array $feedNamespaces, ?\Closure $askable): self
+    /** This request, with the client's address worked out behind a trusted proxy (Support\ClientAddress) */
+    public function withRemoteAddr(string $remoteAddr): self
+    {
+        return $this->with($this->feedNamespaces, $this->askable, $remoteAddr);
+    }
+
+    private function with(array $feedNamespaces, ?\Closure $askable, ?string $remoteAddr = null): self
     {
         return new self(
             method: $this->method,
@@ -98,7 +104,7 @@ final class Request
             cookies: $this->cookies,
             body: $this->body,
             basePath: $this->basePath,
-            remoteAddr: $this->remoteAddr,
+            remoteAddr: $remoteAddr ?? $this->remoteAddr,
             userAgent: $this->userAgent,
             secure: $this->secure,
             authorization: $this->authorization,

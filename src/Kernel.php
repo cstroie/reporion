@@ -60,6 +60,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Router;
 use Reporion\Http\Session;
 use Reporion\Http\Throttle;
+use Reporion\Support\ClientAddress;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\Sqlite;
 use Reporion\Plugin\Hooks;
@@ -143,6 +144,8 @@ final class Kernel
         private readonly array $feedNamespaces,
         /** Whether Ask the archive is there (D53), for the quick-navigation list */
         private readonly ?\Closure $askable = null,
+        /** @var list<string> `site.trusted_proxies`: proxies whose X-Forwarded-For is believed (Support\ClientAddress) */
+        private readonly array $trustedProxies = [],
     ) {
     }
 
@@ -433,6 +436,8 @@ final class Kernel
             return $directory;
         });
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
+        // Failed sign-ins, bearer tokens, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
+        $throttle = new Throttle((string) $config['paths']['data'] . '/tmp/throttle.json');
         $render = new Render();
         $session = new Session(
             (string) $config['auth']['session_secret'],
@@ -440,6 +445,8 @@ final class Kernel
             (int) $config['auth']['session_lifetime'],
             $users,
             $apiTokens = new ApiTokens($users),
+            $throttle,
+            $audit,
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
@@ -504,7 +511,6 @@ final class Kernel
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
-        $throttle = new Throttle((string) $config['paths']['data'] . '/tmp/throttle.json');
         $auth = new AuthController($users, $session, $audit, $throttle);
         $theme = new ThemeController();
         $notes = new NotesController();
@@ -630,7 +636,7 @@ final class Kernel
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         $router->post('/mcp', static fn (Request $request, array $params): Response
-            => $mcp->handle($request, $session->principal($request)));
+            => $mcp->handle($request, $mcp->available($request) ? $session->principal($request) : null));
         $router->get('/.well-known/oauth-protected-resource', static fn (Request $request, array $params): Response => $oauth->resourceMetadata());
         $router->get('/.well-known/oauth-protected-resource/mcp', static fn (Request $request, array $params): Response => $oauth->resourceMetadata());
         $router->get('/.well-known/oauth-authorization-server', static fn (Request $request, array $params): Response => $oauth->serverMetadata());
@@ -906,12 +912,15 @@ final class Kernel
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 
-        return new self($router, new ErrorMapper($index, $session), Feeds::clean((array) ($config['feeds']['namespaces'] ?? [])), static fn (): bool => $ask->available());
+        return new self($router, new ErrorMapper($index, $session), Feeds::clean((array) ($config['feeds']['namespaces'] ?? [])), static fn (): bool => $ask->available(), ClientAddress::clean((array) ($config['site']['trusted_proxies'] ?? [])));
     }
 
     public function handle(Request $request): Response
     {
         $request = $request->withFeedNamespaces($this->feedNamespaces)->withAskable($this->askable);
+        if ($this->trustedProxies !== []) {
+            $request = $request->withRemoteAddr(ClientAddress::resolve($request->remoteAddr, $request->forwardedFor, $this->trustedProxies));
+        }
         try {
             return $this->router->dispatch($request);
         } catch (Throwable $e) {

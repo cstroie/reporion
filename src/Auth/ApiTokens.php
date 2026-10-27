@@ -135,24 +135,35 @@ final class ApiTokens
 
     /**
      * When a token was last used, to the day, and from which address (hardening, shown on
-     * /profile): at most one write a day per token, or when the address changes
+     * /profile): at most one write a day per token, or when the address changes. The account is
+     * read again right before it is saved and only this token's two fields changed, so what
+     * another request saved since this one began (a password, a grant, a revoked token) is not
+     * written over; the returned account is the one the request began with.
      */
     private function touch(User $user, string $id, string $address): User
     {
         $today = (new DateTimeImmutable('now'))->format('Y-m-d');
-        $tokens = $user->tokens;
+        $stale = static fn (array $t): bool => $t['id'] === $id && ($t['last_used'] !== $today || ($address !== '' && ($t['last_addr'] ?? '') !== $address));
+        if (array_filter($user->tokens, $stale) === []) {
+            return $user;
+        }
+        $fresh = $this->users->find($user->username);
+        if ($fresh === null || !$fresh->active) {
+            return $user;
+        }
+        $tokens = $fresh->tokens;
         foreach ($tokens as $i => $t) {
-            if ($t['id'] === $id && ($t['last_used'] !== $today || ($address !== '' && ($t['last_addr'] ?? '') !== $address))) {
+            if ($stale($t)) {
                 $tokens[$i]['last_used'] = $today;
                 if ($address !== '') {
                     $tokens[$i]['last_addr'] = mb_substr($address, 0, 45);
                 }
 
-                return $this->users->save($user->with(tokens: $tokens));
+                return $this->users->save($fresh->with(tokens: $tokens));
             }
         }
 
-        return $user;
+        return $user; // revoked meanwhile, or already touched
     }
 
     private static function id(): string

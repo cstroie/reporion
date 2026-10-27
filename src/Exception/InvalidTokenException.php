@@ -14,8 +14,9 @@ namespace Reporion\Exception;
  */
 final class InvalidTokenException extends AuthException
 {
-    public function __construct(public readonly bool $scope = false)
+    /** $throttled: too many bad tokens from this address lately (429), not asked about this one */
+    public function __construct(public readonly bool $scope = false, public readonly bool $throttled = false)
     {
-        parent::__construct($scope ? 'insufficient_scope' : 'invalid_token');
+        parent::__construct($scope ? 'insufficient_scope' : ($throttled ? 'too_many_attempts' : 'invalid_token'));
     }
 }

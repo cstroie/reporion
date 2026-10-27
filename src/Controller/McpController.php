@@ -56,10 +56,20 @@ final class McpController
     ) {
     }
 
+    /**
+     * Whether /mcp answers this request at all (Admin → Settings `mcp.access`). Asked before the
+     * token is looked at: a disabled server must not tell a bad token from a good one (404 for
+     * both) nor touch the account behind it.
+     */
+    public function available(Request $request): bool
+    {
+        return !($this->access === 'off' || ($this->access === 'local' && !self::isLocal($request)));
+    }
+
     public function handle(Request $request, ?User $principal): Response
     {
         // Off, or local only and asked from outside: as if there were no MCP server (no hint, no OAuth pointer)
-        if ($this->access === 'off' || ($this->access === 'local' && !self::isLocal($request))) {
+        if (!$this->available($request)) {
             return new Response(404, '', ['Content-Type' => 'text/plain; charset=utf-8']);
         }
         if ($principal === null) {

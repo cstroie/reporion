@@ -206,6 +206,61 @@ final class McpTest extends HttpTestCase
         self::assertSame(404, $call('127.0.0.1'));
     }
 
+    public function testBadTokensAreCountedAuditedAndHeld(): void
+    {
+        $bad = 'rpn_' . str_repeat('A', 8) . '.abcdefgh.' . str_repeat('B', 43);
+        $ping = (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'ping']);
+        $call = fn (string $token, string $addr): int => Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: $addr, authorization: 'Bearer ' . $token))->status;
+
+        for ($i = 0; $i < 20; ++$i) {
+            self::assertSame(401, $call($bad, '203.0.113.9'));
+        }
+        $held = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: '203.0.113.9', authorization: 'Bearer ' . $bad));
+        self::assertSame(429, $held->status);
+        self::assertSame('900', $held->headers['Retry-After']);
+        $good = $this->newToken('mihai', '');
+        self::assertSame(429, $call($good, '203.0.113.9'), 'held, even for a good token');
+        self::assertSame(200, $call($good, '203.0.113.10'), 'another address is not');
+
+        $lines = array_merge(...array_map(static fn (string $f): array => file($f, FILE_IGNORE_NEW_LINES) ?: [], glob($this->dataRoot . '/audit/*') ?: []));
+        self::assertCount(20, array_filter($lines, static fn (string $l): bool => str_contains($l, '"auth.token_failed"')), 'one audit line per bad token, once');
+    }
+
+    public function testBehindATrustedProxyEachClientIsCountedOnItsOwn(): void
+    {
+        $bad = 'rpn_' . str_repeat('A', 8) . '.abcdefgh.' . str_repeat('B', 43);
+        $ping = (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'ping']);
+        $viaProxy = fn (string $client): int => Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: '10.0.0.5', authorization: 'Bearer ' . $bad, forwardedFor: $client))->status;
+
+        // Not listed: the proxy's address is the client, so one bad client holds everybody
+        for ($i = 0; $i < 20; ++$i) {
+            $viaProxy('203.0.113.9');
+        }
+        self::assertSame(429, $viaProxy('203.0.113.77'));
+
+        @unlink($this->dataRoot . '/tmp/throttle.json');
+        $this->config['site']['trusted_proxies'] = ['10.0.0.0/8'];
+        for ($i = 0; $i < 20; ++$i) {
+            $viaProxy('203.0.113.9');
+        }
+        self::assertSame(429, $viaProxy('203.0.113.9'));
+        self::assertSame(401, $viaProxy('203.0.113.77'), 'another client behind the same proxy');
+        self::assertSame(401, $viaProxy('203.0.113.77, 10.0.0.9'), 'a forged front of the chain changes nothing');
+    }
+
+    public function testADisabledServerDoesNotLookAtTheToken(): void
+    {
+        $ping = (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'ping']);
+        $bad = 'rpn_' . str_repeat('A', 8) . '.abcdefgh.' . str_repeat('B', 43);
+        foreach ([['off', '127.0.0.1'], ['local', '203.0.113.9']] as [$access, $addr]) {
+            $this->config['mcp']['access'] = $access;
+            $status = fn (string $token): int => Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: $ping, remoteAddr: $addr, authorization: 'Bearer ' . $token))->status;
+            self::assertSame(404, $status($bad), "$access: a bad token is no 401");
+            self::assertSame(404, $status($this->newToken('mihai', '')), "$access: a good token is no different");
+        }
+        self::assertNull((new FlatFileUserStore($this->dataRoot))->find('mihai')->tokens[0]['last_used'], 'the account behind a token is not touched');
+    }
+
     public function testTheServerShowsReporionsIcon(): void
     {
         $this->config['site']['base_url'] = 'https://wiki.example.org/reporion';

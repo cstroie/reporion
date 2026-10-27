@@ -183,7 +183,8 @@ final class OAuthController
         $grant = $client === null ? null : $this->oauth->redeem($str('code'), $str('client_id'), $str('redirect_uri'), $str('code_verifier'));
         $user = $grant === null ? null : $this->users->find($grant['username']);
         // A code is good once (RFC 6749 §4.1.2): a second use within its life is refused
-        $reused = $grant !== null && $this->throttle !== null && $this->throttle->hit('code:' . $str('code'), 300) > 1;
+        // Fail closed: with no throttle, or its note unwritable, the code is not claimed and is refused
+        $reused = $grant !== null && !($this->throttle?->claim('code:' . $str('code'), 300) ?? false);
         if ($client === null || $grant === null || $reused || $user === null || !$user->active) {
             $this->throttle?->hit('token:' . $request->remoteAddr, self::WINDOW);
 

@@ -151,6 +151,7 @@ site:
   home_page: 'site:home'
   timezone: Europe/Bucharest
   icon: 'icon.png?v=82d3d022c3'      # data/site/icon.{png|ico|gif|webp}, set by the upload
+  trusted_proxies: []                # reverse proxies (addresses or CIDR) whose X-Forwarded-For is believed for the client's address; settings.yaml only
 sites:                               # printed letterhead + devices, per site code
   mioveni:
     name: 'Spital Orasenesc Mioveni'
