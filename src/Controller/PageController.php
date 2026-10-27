@@ -62,6 +62,11 @@ final class PageController
             if ($target !== null && $this->index->findByPath($target, $principal) !== null) {
                 return Response::redirect($request->basePath . '/' . $target);
             }
+            // No page, but a namespace of that name with something this caller may see (the
+            // same two queries as the namespace view, so the predicate decides, invariant 6)
+            if ($this->index->listSubnamespaces($path, $principal) !== [] || $this->index->listNamespace($path, $principal) !== []) {
+                return Response::redirect($request->basePath . '/' . $path . ':');
+            }
             throw new PageNotFoundException();
         }
 

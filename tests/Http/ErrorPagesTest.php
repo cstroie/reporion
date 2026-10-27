@@ -47,6 +47,20 @@ final class ErrorPagesTest extends HttpTestCase
         self::assertStringNotContainsString('/new?path=', $viewer->body);
     }
 
+    public function testCreateButtonOpensTheParentsFormWithTheLastSegmentFilled(): void
+    {
+        $this->createOwner();
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+        $cookie = ['reporion' => $session->issue('owner')];
+
+        $nested = Kernel::boot($this->config)->handle(new Request('GET', '/docs:research:upu:checklist', cookies: $cookie));
+        self::assertStringContainsString('href="/docs:research:upu/new?name=checklist"', $nested->body);
+
+        $form = Kernel::boot($this->config)->handle(new Request('GET', '/docs:research:upu/new', query: ['name' => 'checklist'], cookies: $cookie));
+        self::assertSame(200, $form->status);
+        self::assertStringContainsString('value="docs:research:upu:checklist"', $form->body);
+    }
+
     public function testApiRoutesGetJsonErrors(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/nope'));

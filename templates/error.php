@@ -35,7 +35,15 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 <a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-arrow-u-up-left" aria-hidden="true"></i><?= htmlspecialchars(t('err.403.back'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <?php if ($canCreate): ?>
-<a class="btn btn-primary btn-sm" href="<?= $b ?>/new?path=<?= htmlspecialchars(rawurlencode((string) $path), ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>
+<?php
+// In the parent's own form with the last segment filled; under reports the form is the guided one, so the exact path
+$parent = \Reporion\Http\ChromeVars::namespaceOf((string) $path);
+$leaf = $parent === '' ? (string) $path : substr((string) $path, \strlen($parent) + 1);
+$createHref = \Reporion\Support\ReportPath::isReportNamespace($parent)
+    ? $b . '/new?path=' . rawurlencode((string) $path)
+    : $b . ($parent === '' ? '' : '/' . $parent) . '/new?name=' . rawurlencode($leaf);
+?>
+<a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($createHref, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </footer>
 </div>

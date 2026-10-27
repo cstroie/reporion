@@ -306,6 +306,42 @@ final class NewPageTest extends HttpTestCase
         self::assertSame('private', $page->frontmatter['visibility']);
     }
 
+    /** An uploaded Markdown file is the page; its frontmatter stays, but never its visibility, status or pid */
+    public function testAnUploadedMarkdownFileBecomesThePageAndStaysPrivate(): void
+    {
+        $file = "---\ntitle: Imported\ntags: [a, b]\nvisibility: public\nstatus: signed\npid: 01AAAAAAAAAAAAAAAAAAAAAAAA\n---\n\n# Imported\n\nBody.\n";
+        $created = $this->ownerSubmit(['path' => 'docs:it:uploaded', 'document' => "---\ntitle: \nvisibility: private\n---\n\n", 'markdown' => $file]);
+
+        self::assertSame(302, $created->status);
+        self::assertSame('/docs:it:uploaded/edit', $created->headers['Location']);
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:uploaded');
+        self::assertSame("# Imported\n\nBody.\n", $page->body);
+        self::assertSame('Imported', $page->frontmatter['title']);
+        self::assertSame(['a', 'b'], $page->frontmatter['tags']);
+        self::assertSame('private', $page->visibility);
+        self::assertNotSame('01AAAAAAAAAAAAAAAAAAAAAAAA', $page->pid);
+        self::assertSame('draft', $page->status);
+    }
+
+    public function testAnUploadedFileWithoutFrontmatterIsTheBody(): void
+    {
+        $created = $this->ownerSubmit(['path' => 'docs:it:bare', 'markdown' => "\xEF\xBB\xBF# Plain\n\nrule above\n"]);
+
+        self::assertSame(302, $created->status);
+        $page = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:bare');
+        self::assertSame(1, $page->rev);
+        self::assertStringContainsString('rule above', $page->body);
+    }
+
+    public function testAnUploadedFileThatIsNotUtf8OrTooBigIsRefused(): void
+    {
+        $bad = $this->ownerSubmit(['path' => 'docs:it:latin', 'markdown' => "caf\xE9"]);
+        self::assertSame(422, $bad->status);
+        $big = $this->ownerSubmit(['path' => 'docs:it:big', 'markdown' => str_repeat('a', \Reporion\Controller\NewPageController::UPLOAD_MAX + 1)]);
+        self::assertSame(422, $big->status);
+        self::assertSame(404, $this->ownerRequest('GET', '/docs:it:latin')->status);
+    }
+
     public function testCreateAndOpenEditorWritesNothingAndTheFirstSaveIsRevisionOne(): void
     {
         $scaffold = "---\ntitle: \nvisibility: private\n---\n\n";

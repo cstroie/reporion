@@ -50,6 +50,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
  */
 final class NewPageController
 {
+    /** The biggest Markdown file the form takes (the island checks it too) */
+    public const UPLOAD_MAX = 1000000;
+
     private const SCAFFOLD = "---\ntitle: \nvisibility: private\n---\n\n";
 
     /** The builder's inputs, in path order. */
@@ -145,6 +148,8 @@ final class NewPageController
         }
 
         $ns = trim($ns ?? '', ': ');
+        // ?name= is the last segment, prefilled (the 404 page's "Create this page" on /{parent}/new)
+        $name = \is_string($request->query['name'] ?? null) ? trim($request->query['name'], ': ') : '';
         // A new page in a notes namespace is a note (D55): no path to ask for, the editor opens
         // on a fresh ULID slug and its first Save writes it (FrontmatterGuess gives `breaks: true`)
         if (Notes::isNotesNamespace($ns)) {
@@ -160,6 +165,10 @@ final class NewPageController
         }
         $segments = ($request->query['mode'] ?? null) === 'path' ? null : self::segmentsFromNamespace($ns);
         $path = $ns === '' ? '' : $ns . ':';
+        if ($name !== '' && !str_contains($name, ':')) {
+            $path .= $name;
+            $segments = null;
+        }
         // An account that can write only in its own namespace (D46) starts there
         if ($ns === '' && $principal->writesOnlyInOwnNamespace()) {
             $path = $principal->personalNamespace() . ':';
@@ -205,6 +214,19 @@ final class NewPageController
             throw new PageNotFoundException();
         }
 
+        // A Markdown file picked on the form (assets/js/new-page.js reads it into `markdown`): the page's
+        // content, over a template or a copy. Its frontmatter is kept except what only the app decides:
+        // visibility (D16: public needs the acknowledgement of the editor's Metadata view), status, pid
+        $markdown = \is_string($fields['markdown'] ?? null) ? $fields['markdown'] : '';
+        $uploaded = null;
+        if ($markdown !== '') {
+            $uploaded = self::uploadedParts($markdown);
+            if (\is_string($uploaded)) {
+                return $this->render($request, $principal, error: $uploaded, path: $path, document: $document, segments: $segments, onPath: $segments === null);
+            }
+            unset($fields['from'], $fields['template']);
+        }
+
         // The form's own prefill: the empty scaffold, or a ?from= copy the
         // user has not seen yet: is not what they wrote: the editor opens on
         // the new path and their first Save is revision 1 (decided 2026-09-27)
@@ -213,7 +235,7 @@ final class NewPageController
         if ($from === '' && \is_string($fields['template'] ?? null) && trim($fields['template']) !== '') {
             $from = trim($fields['template']);
         }
-        if ($document === self::SCAFFOLD || $from !== '') {
+        if ($uploaded === null && ($document === self::SCAFFOLD || $from !== '')) {
             if (!FileTree::isValidPath($path)) {
                 return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
             }
@@ -225,7 +247,7 @@ final class NewPageController
         }
 
         try {
-            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
+            [$frontmatter, $body] = $uploaded ?? DocumentFormat::parseOrBare($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $principal, error: t('editor.err_parse', [$e->getMessage()]), path: $path, document: $document, segments: $segments);
         }
@@ -247,6 +269,34 @@ final class NewPageController
         // (docs/FORMATS.md §1) and returns the real path: redirecting to
         // $path here would silently 404 the moment a collision happened.
         return Response::redirect($request->basePath . '/' . $record->path . '/edit');
+    }
+
+    /**
+     * An uploaded Markdown file as [frontmatter|null, body], or the error to show. The frontmatter is
+     * the file's own without `visibility`, `status` and `pid`; null when nothing is left (the page's own
+     * guess is used then).
+     *
+     * @return array{0: array<string, mixed>|null, 1: string}|string
+     */
+    private static function uploadedParts(string $markdown): array|string
+    {
+        if (\strlen($markdown) > self::UPLOAD_MAX) {
+            return t('new.err_upload_size', [(int) (self::UPLOAD_MAX / 1000)]);
+        }
+        $markdown = preg_replace('/^\xEF\xBB\xBF/', '', $markdown) ?? $markdown;
+        if (!mb_check_encoding($markdown, 'UTF-8')) {
+            return t('new.err_upload_utf8');
+        }
+        try {
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($markdown);
+        } catch (RuntimeException | ParseException $e) {
+            return t('editor.err_parse', [$e->getMessage()]);
+        }
+        if ($frontmatter !== null) {
+            unset($frontmatter['visibility'], $frontmatter['status'], $frontmatter['pid']);
+        }
+
+        return [$frontmatter === [] ? null : $frontmatter, $body];
     }
 
     /**

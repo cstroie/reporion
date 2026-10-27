@@ -72,6 +72,13 @@ declare(strict_types=1);
 <small id="new-page-template-help"><?= htmlspecialchars(t('new.template_help'), ENT_QUOTES) ?></small></label>
 </div>
 <?php endif; ?>
+<div class="field wk-mt-4" data-new-upload data-max="<?= (int) \Reporion\Controller\NewPageController::UPLOAD_MAX ?>" hidden>
+<label for="new-page-file"><?= htmlspecialchars(t('new.upload'), ENT_QUOTES) ?>
+<input class="input" type="file" id="new-page-file" accept=".md,.markdown,.txt,text/markdown,text/plain" aria-describedby="new-page-file-help">
+<small id="new-page-file-help"><?= htmlspecialchars(t('new.upload_help'), ENT_QUOTES) ?></small></label>
+<textarea name="markdown" hidden></textarea>
+<small class="wk-field-error" data-new-upload-error hidden data-size="<?= htmlspecialchars(t('new.err_upload_size', [(int) (\Reporion\Controller\NewPageController::UPLOAD_MAX / 1000)]), ENT_QUOTES) ?>" data-read="<?= htmlspecialchars(t('new.err_upload_read'), ENT_QUOTES) ?>"></small>
+</div>
 <footer>
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit"><i class="ph ph-arrow-right"></i><?= htmlspecialchars(t('new.create_open'), ENT_QUOTES) ?></button>
@@ -79,3 +86,4 @@ declare(strict_types=1);
 </div>
 </form>
 </div>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/new-page.js'), ENT_QUOTES) ?>" defer></script>

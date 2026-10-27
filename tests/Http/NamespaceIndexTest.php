@@ -409,6 +409,25 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
+     * No page at a path but a namespace of that name: the path goes to the
+     * namespace, only when the caller may see something in it (invariant 9).
+     */
+    public function testAPathWithNoPageGoesToTheNamespaceItNames(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'Public exam', 'body');
+        $this->createPage('reports:ct:scuc:b', 'private', 'Private exam', 'body');
+
+        $owner = $this->ownerRequest('/reports:mri');
+        self::assertSame(302, $owner->status);
+        self::assertSame('/reports:mri:', $owner->headers['Location']);
+
+        $anonymous = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri'));
+        self::assertSame(302, $anonymous->status, 'something public is in it');
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct'))->status, 'nothing public: as if it did not exist');
+        self::assertSame(404, $this->ownerRequest('/reports:nothing')->status);
+    }
+
+    /**
      * The leak-prevention requirement carried over from
      * Index\Sqlite::listSubnamespaces() itself: an editor granted only on
      * reports:mri must never see reports:ct mentioned anywhere on this page,
