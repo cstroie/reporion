@@ -176,6 +176,7 @@ mcp:
   write_anywhere: false       # create_page/update_page also from outside the local network
   redirect_uris: []           # OAuth return addresses allowed besides Claude's callbacks and http://localhost (settings.yaml only)
   reports: false              # D56 phase 2: /mcp serves reports de-identified (by pid), off by default
+  gate: ''                    # the value of the X-Reporion header the web server requires on /mcp (16-128 of A-Za-z0-9_-); PHP never checks it, Admin → Settings shows the server rule
 pages:
   trash_purge_days: 30
 media:

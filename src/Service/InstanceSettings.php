@@ -49,6 +49,8 @@ final class InstanceSettings
         'mcp.reports' => 'bool',
         'mcp.access' => 'mcp_access',
         'mcp.write_anywhere' => 'bool',
+        // The value of the X-Reporion header the web server may require in front of /mcp: PHP never checks it, it only keeps it so Admin can show the rule
+        'mcp.gate' => 'gate',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
@@ -165,12 +167,12 @@ final class InstanceSettings
         if (\is_array($settings['mcp']['redirect_uris'] ?? null)) {
             $config['mcp']['redirect_uris'] = $settings['mcp']['redirect_uris'];
         }
-        $config['ai'] = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
-        $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
         // Reverse proxies whose X-Forwarded-For is believed (Support\ClientAddress): settings.yaml only
         if (\is_array($settings['site']['trusted_proxies'] ?? null)) {
             $config['site']['trusted_proxies'] = $settings['site']['trusted_proxies'];
         }
+        $config['ai'] = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
+        $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
         if (\is_array($stored['servers'] ?? null)) {
             $config['ai']['servers'] = $stored['servers'];
         }
@@ -434,6 +436,7 @@ final class InstanceSettings
             'kbps' => $text === '' ? 0 : (ctype_digit($text) && RsyncConfig::validBwlimit((int) $text) ? (int) $text : $fail()),
             'hours' => ctype_digit($text) && RsyncConfig::validHours((int) $text) ? (int) $text : $fail(),
             'keep' => isset(RsyncConfig::KEEP[$text]) ? $text : $fail(),
+            'gate' => $text === '' || preg_match('/^[A-Za-z0-9_-]{16,128}$/', $text) === 1 ? $text : $fail(),
             'mcp_access' => $text === '' ? 'local' : (\in_array($text, \Reporion\Controller\McpController::ACCESS, true) ? $text : $fail()),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),

@@ -171,15 +171,6 @@ final class McpTest extends HttpTestCase
         self::assertSame(1, json_decode($made->body, true)['result']['structuredContent']['rev']);
     }
 
-    public function testTheTokenMayComeAsXAccessToken(): void
-    {
-        $token = $this->newToken('mihai', 'docs');
-        $call = fn (string $t): Response => Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call', 'params' => ['name' => 'search', 'arguments' => ['query' => 'gonartroza']]]), accessToken: $t));
-        self::assertSame(['docs:howto'], array_column(json_decode($call($token)->body, true)['result']['structuredContent']['results'], 'path'));
-        self::assertSame(401, $call('rpn_nonsense')->status);
-        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/pages/docs:howto', accessToken: $token))->status, '/mcp only, never the API');
-    }
-
     public function testAccessOffOrLocalOnly(): void
     {
         $token = $this->newToken('mihai', '');

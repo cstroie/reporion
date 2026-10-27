@@ -52,31 +52,24 @@ final class Session
     }
 
     /**
-     * Resolves the signed-in account, or null for anonymous: including
-     * for a validly-signed cookie whose account was since deleted or
-     * deactivated (User::$active), so disabling an account takes effect
-     * immediately rather than only once its cookie expires.
-     */
-    /**
-     * The bearer token a request carries: `Authorization: Bearer …`, or on /mcp also
-     * `X-Access-Token: …` (D56), so lighttpd can refuse an /mcp request without one before PHP.
-     * '' when there is none; null when the Authorization header is there but not a bearer token.
+     * The bearer token a request carries (`Authorization: Bearer …`): '' when there is no
+     * Authorization header; null when it is there but not a bearer token.
      */
     private static function bearer(Request $request): ?string
     {
-    /**
-     * Resolves the signed-in account, or null for anonymous: including
-     * for a validly-signed cookie whose account was since deleted or
-     * deactivated (User::$active), so disabling an account takes effect
-     * immediately rather than only once its cookie expires.
-     */
         if ($request->authorization !== '') {
             return preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) === 1 ? $m[1] : null;
         }
 
-        return $request->path === '/mcp' ? trim($request->accessToken) : '';
+        return '';
     }
 
+    /**
+     * Resolves the signed-in account, or null for anonymous: including
+     * for a validly-signed cookie whose account was since deleted or
+     * deactivated (User::$active), so disabling an account takes effect
+     * immediately rather than only once its cookie expires.
+     */
     public function principal(Request $request): ?User
     {
         // /mcp (D56) is a bearer token's only: a cookie never drives it, so no page can post to it as you

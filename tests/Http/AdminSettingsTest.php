@@ -173,6 +173,32 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame($broken, file_get_contents($file), 'every setting it holds is still there to fix by hand');
     }
 
+    public function testTheMcpSectionKeepsTheGateValueAndShowsTheRule(): void
+    {
+        $page = $this->request('GET', '/admin/settings', 'owner')->body;
+        self::assertStringContainsString('id="mcp"', $page);
+        self::assertStringNotContainsString('X-Reporion" !=', $page, 'no rule before a value is saved');
+        preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $page, $first);
+        preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $this->request('GET', '/admin/settings', 'owner')->body, $second);
+        self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{32}$/', $first[1]);
+        self::assertNotSame($first[1], $second[1], 'a new suggestion at every load');
+
+        $bad = $this->request('POST', '/admin/settings/mcp', 'owner', 'mcp_access=token&mcp_gate=short');
+        self::assertSame(422, $bad->status);
+        self::assertFileDoesNotExist($this->dataRoot . '/settings.yaml');
+
+        $ok = $this->request('POST', '/admin/settings/mcp', 'owner', 'mcp_access=token&mcp_gate=' . $first[1]);
+        self::assertSame(302, $ok->status);
+        self::assertStringContainsString('gate: ' . $first[1], (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        $shown = $this->request('GET', '/admin/settings', 'owner')->body;
+        self::assertStringContainsString('$REQUEST_HEADER["X-Reporion"] != "' . $first[1] . '"', $shown);
+        self::assertStringContainsString('value="' . $first[1] . '"', $shown);
+
+        // PHP does not check the header: a request without it is judged by its token alone
+        $none = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: '{}', remoteAddr: '127.0.0.1'));
+        self::assertSame(401, $none->status);
+    }
+
     private function request(string $method, string $path, ?string $user, string $body = ''): Response
     {
         return Kernel::boot($this->config)->handle(new Request(
