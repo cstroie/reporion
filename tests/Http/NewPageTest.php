@@ -323,6 +323,18 @@ final class NewPageTest extends HttpTestCase
         self::assertSame('draft', $page->status);
     }
 
+    /** A file dropped on a namespace view: the namespace is the path, the file's name (lower case) the page */
+    public function testADroppedFileIsNamedByItsFileNameInTheNamespace(): void
+    {
+        $created = $this->ownerSubmit(['path' => 'docs:it:', 'filename' => 'Raport Între Săptămâni.MD', 'markdown' => "# Dropped\n"]);
+
+        self::assertSame(302, $created->status);
+        self::assertSame('/docs:it:raport-intre-saptamani/edit', $created->headers['Location']);
+        $again = $this->ownerSubmit(['path' => 'docs:it:', 'filename' => 'Raport Între Săptămâni.md', 'markdown' => "# Again\n"]);
+        self::assertSame(422, $again->status, 'a page is there: said, never overwritten');
+        self::assertSame(422, $this->ownerSubmit(['path' => 'docs:it:', 'filename' => '....md', 'markdown' => "x\n"])->status);
+    }
+
     public function testAnUploadedFileWithoutFrontmatterIsTheBody(): void
     {
         $created = $this->ownerSubmit(['path' => 'docs:it:bare', 'markdown' => "\xEF\xBB\xBF# Plain\n\nrule above\n"]);

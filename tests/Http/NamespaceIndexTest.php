@@ -387,6 +387,17 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    /** The drop zone is there for a writer of a plain namespace: not for a reader, nor under reports */
+    public function testTheDropZoneIsOnlyForAWriterOutsideReports(): void
+    {
+        $this->createPage('docs:it:a', 'public', 'Public page', 'body');
+        $this->createPage('reports:mri:mioveni:a', 'public', 'Public exam', 'body');
+
+        self::assertStringContainsString('data-ns-drop data-ns="docs:it"', $this->ownerRequest('/docs:it:')->body);
+        self::assertStringNotContainsString('data-ns-drop', $this->ownerRequest('/reports:mri:mioveni:')->body);
+        self::assertStringNotContainsString('data-ns-drop', Kernel::boot($this->config)->handle(new Request('GET', '/docs:it:'))->body);
+    }
+
     public function testAnonymousOnlySeesPublicPages(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'public', 'Public exam', 'body');

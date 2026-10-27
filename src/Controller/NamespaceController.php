@@ -356,6 +356,8 @@ final class NamespaceController
                 'bulkDone' => $bulkDone,
                 'recent' => $this->index->listWorklist($ns, $principal, 8),
                 'canCreateHere' => $principal?->canWrite($ns) ?? false,
+                // A Markdown file dropped on the view makes a page here: not under reports, whose paths are built
+                'canDropFile' => !$isReports && ($principal?->canWrite($ns) ?? false),
                 // "New report" when /{ns}/new opens the guided form (NewPageController::guided())
                 'newIsReport' => $isReports && $principal !== null && NewReport::canCreateReports($principal),
                 'basePath' => $request->basePath,

@@ -1528,6 +1528,8 @@ return [
     'new.template'        => 'Start from',
     'new.template_blank'  => 'A blank page',
     'new.template_help'   => 'A template is copied into the new page; nothing links them afterwards.',
+    'ns.drop_hint'        => 'Drop a Markdown file to make a page of it here',
+    'ns.drop_bad'         => 'Only a Markdown file (.md, .markdown or .txt) makes a page.',
     'new.upload'          => 'Markdown file',
     'new.upload_help'     => 'Optional. Its text becomes the page, in place of a template; its visibility is not taken, a page starts private.',
     'new.err_upload_size' => 'That file is too large: at most %d KB.',

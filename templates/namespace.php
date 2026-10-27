@@ -7,7 +7,7 @@
  * design/mockup/WikiNsIndex.dc.html.
  *
  * Variables in scope (Controller\NamespaceController::index()):
- * string $ns, $basePath; bool $canCreateHere
+ * string $ns, $basePath; bool $canCreateHere, $canDropFile
  * $ns === '' is the root namespace (GET /:): every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
  * list<array{name: string, count: int, title: ?string, summary: ?string, priority: ?string}> $subnamespaces; ?string $nsLabel
@@ -292,4 +292,8 @@ include __DIR__ . '/partials/page-actions.php';
   sync();
 })();
 </script>
+<?php endif; ?>
+<?php if ($canDropFile ?? false): ?>
+<div class="wk-drop" data-ns-drop data-ns="<?= htmlspecialchars($ns, ENT_QUOTES) ?>" data-action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" data-max="<?= (int) \Reporion\Controller\NewPageController::UPLOAD_MAX ?>" data-size="<?= htmlspecialchars(t('new.err_upload_size', [(int) (\Reporion\Controller\NewPageController::UPLOAD_MAX / 1000)]), ENT_QUOTES) ?>" data-read="<?= htmlspecialchars(t('new.err_upload_read'), ENT_QUOTES) ?>" data-bad="<?= htmlspecialchars(t('ns.drop_bad'), ENT_QUOTES) ?>" hidden><i class="ph ph-file-arrow-down" aria-hidden="true"></i><span><?= htmlspecialchars(t('ns.drop_hint'), ENT_QUOTES) ?></span></div>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ns-drop.js'), ENT_QUOTES) ?>" defer></script>
 <?php endif; ?>

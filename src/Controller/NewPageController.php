@@ -28,6 +28,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Notes;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Slug;
 use Reporion\Support\Templates;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -205,6 +206,16 @@ final class NewPageController
             $path = ReportPath::pathFor($segments['modality'], $segments['site'], $segments['date'], $segments['name']);
         } else {
             $path = \is_string($fields['path'] ?? null) ? trim($fields['path']) : '';
+            // A file dropped on a namespace view (assets/js/ns-drop.js): `path` is the namespace, the page is named
+            // by the file, lower case, as every slug (Support\Slug)
+            $filename = \is_string($fields['filename'] ?? null) ? trim($fields['filename']) : '';
+            if ($filename !== '') {
+                try {
+                    $path .= Slug::normalize(pathinfo($filename, PATHINFO_FILENAME));
+                } catch (InvalidArgumentException) {
+                    return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: null, onPath: true);
+                }
+            }
         }
 
         if ($path === '') {
