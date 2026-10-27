@@ -92,6 +92,49 @@ final class McpTest extends HttpTestCase
         self::assertTrue((new FlatFileUserStore($this->dataRoot))->find('owner')->isOwner, 'the account itself unchanged');
     }
 
+    public function testWithReportsOnAReportIsServedDeidentifiedByPidOnly(): void
+    {
+        $this->config['mcp']['reports'] = true;
+        $tree = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $tree->create('reports:mri:mioveni:261008-testescu-ana', [
+            'visibility' => 'private', 'patient' => ['name' => 'Testescu Ana', 'cnp' => '2900101123456'],
+            'exam_title' => 'IRM genunchi drept', 'modality' => ['mri'],
+        ], "# Testescu Ana\n\n## IRM genunchi drept\n\n### Concluzii\n\nGonartroza la pacienta Testescu, CNP 2900101123456.\n", 'owner');
+        $token = $this->newToken('mihai', '');
+
+        $hits = $this->tool($token, 'search', ['query' => 'gonartroza'])['result']['structuredContent']['results'];
+        $reports = array_values(array_filter($hits, static fn (array $h): bool => isset($h['pid'])));
+        self::assertCount(2, $reports, 'both reports, by pid');
+        $report = array_values(array_filter($reports, static fn (array $h): bool => $h['title'] === 'IRM genunchi drept'));
+        self::assertCount(1, $report);
+        self::assertArrayNotHasKey('path', $report[0]);
+        self::assertSame('IRM genunchi drept', $report[0]['title']);
+
+        $all = json_encode($hits, JSON_UNESCAPED_UNICODE) . json_encode($this->tool($token, 'get_page', ['pid' => $report[0]['pid']]), JSON_UNESCAPED_UNICODE);
+        foreach (['Testescu', 'Ana', '2900101123456', '261008', 'mioveni:'] as $identifier) {
+            self::assertStringNotContainsString($identifier, $all, $identifier);
+        }
+        $page = $this->tool($token, 'get_page', ['pid' => $report[0]['pid']])['result']['structuredContent'];
+        self::assertStringContainsString('Gonartroza', $page['body']);
+        self::assertStringContainsString('[pacient]', $page['body']);
+        self::assertTrue($this->tool($token, 'get_page', ['path' => 'reports:mri:mioveni:261008-testescu-ana'])['result']['isError'], 'never by path');
+
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringNotContainsString('testescu', strtolower($audit));
+    }
+
+    public function testWithReportsOffAPidFindsNothing(): void
+    {
+        $token = $this->newToken('mihai', '');
+        $pid = $this->storagePid('reports:mri:mioveni:a');
+        self::assertTrue($this->tool($token, 'get_page', ['pid' => $pid])['result']['isError']);
+    }
+
+    private function storagePid(string $path): string
+    {
+        return (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read($path)->pid;
+    }
+
     public function testAMalformedNamespaceIsRefused(): void
     {
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('mihai');

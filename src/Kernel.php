@@ -515,7 +515,7 @@ final class Kernel
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
-        $mcp = new McpController($index, $storage, $audit);
+        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false));
         $frontmatterFields = new FrontmatterFields(
             $schemas,
             $index,

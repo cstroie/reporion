@@ -98,7 +98,7 @@ POST /logout                                             → 302 /login
 GET  /api/v1/whoami           → { username: string|null, owner: bool, grants: [{namespace, role}] }   (not built)
 POST   /api/v1/session        { username, password } → 200 { data: account } + the session cookie; 401 invalid_credentials (D55, built)
 GET    /api/v1/session        → 200 { data: account } for the signed-in caller; 401 not_signed_in (D55, built)
-POST   /mcp                   JSON-RPC (MCP, Streamable HTTP): initialize, ping, tools/list, tools/call (search, get_page, list_namespace); bearer token only, never a cookie; no patient page (D56, phase 1 built)
+POST   /mcp                   JSON-RPC (MCP, Streamable HTTP): initialize, ping, tools/list, tools/call (search, get_page, list_namespace); bearer token only, never a cookie; patient pages only with `mcp.reports`, de-identified, by pid (D56, phases 1–2 built)
 DELETE /api/v1/session        → 204, the session cookie cleared (D55, built)
                               account = { username, display_name, owner, notes: "users:{u}:notes" }
 ```

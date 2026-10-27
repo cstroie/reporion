@@ -342,6 +342,7 @@ return [
     'admin.settings.feeds_help' => 'Public pages without patient data only; reports never get a feed. Separate with commas; empty = no feeds.',
     'admin.settings.feeds_hint' => 'docs, teaching',
     'admin.settings.allow_public_export' => 'Visitors may export public pages as PDF / ODT / DOCX',
+    'admin.settings.mcp_reports' => 'Let Claude and other MCP clients read reports, de-identified (/mcp: no name, CNP, path or accession; a radiologist\'s token only)',
     'admin.settings.pseudonymise_public' => 'Leave the patient block out of visitors\' exports',
     'admin.settings.allow_draft_export' => 'Allow exporting unsigned drafts',
     'admin.settings.editor' => 'Editor',

@@ -170,6 +170,8 @@ export:
   allow_public_export: true
   pseudonymise_public: true
   allow_draft_export: false
+mcp:
+  reports: false              # D56 phase 2: /mcp serves reports de-identified (by pid), off by default
 pages:
   trash_purge_days: 30
 media:

@@ -83,6 +83,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>><span class="dot"></span><span><?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></span></label>
 <label class="radio"><input type="checkbox" name="<?= $field('export.pseudonymise_public') ?>" value="1"<?= $checked('export.pseudonymise_public') ?>><span class="dot"></span><span><?= $e(t('admin.settings.pseudonymise_public')) ?><?= $source('export.pseudonymise_public') ?></span></label>
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>><span class="dot"></span><span><?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></span></label>
+<label class="radio"><input type="checkbox" name="<?= $field('mcp.reports') ?>" value="1"<?= $checked('mcp.reports') ?>><span class="dot"></span><span><?= $e(t('admin.settings.mcp_reports')) ?><?= $source('mcp.reports') ?></span></label>
 </p>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

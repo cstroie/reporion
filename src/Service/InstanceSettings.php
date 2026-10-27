@@ -46,6 +46,7 @@ final class InstanceSettings
         'export.allow_draft_export' => 'bool',
         'export.allow_public_export' => 'bool',
         'export.pseudonymise_public' => 'bool',
+        'mcp.reports' => 'bool',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
