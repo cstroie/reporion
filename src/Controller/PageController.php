@@ -56,10 +56,11 @@ final class PageController
         }
         if ($indexed === null) {
             // A moved page's old path: follow the stub, but only to a page
-            // this caller may see, or the stub would reveal where it went
+            // this caller may see, or the stub would reveal where it went. A 302, not a
+            // 301: the old path may be used again, and a browser keeps a 301 for ever
             $target = $this->storage->redirectTarget($path);
             if ($target !== null && $this->index->findByPath($target, $principal) !== null) {
-                return Response::redirect($request->basePath . '/' . $target, 301);
+                return Response::redirect($request->basePath . '/' . $target);
             }
             throw new PageNotFoundException();
         }

@@ -56,7 +56,7 @@ final class NamespaceBulkTest extends HttpTestCase
         self::assertSame('/' . self::NS . ':?done=move&n=2&failed=0', $apply->headers['Location']);
 
         self::assertSame(200, $this->as('mihai', 'GET', '/reports:mri:pitesti:260101-test-a')->status);
-        self::assertSame(301, $this->as('mihai', 'GET', '/' . self::A)->status, 'the old path keeps redirecting');
+        self::assertSame(302, $this->as('mihai', 'GET', '/' . self::A)->status, 'the old path keeps redirecting');
         $links = $this->storage()->read('docs:links');
         self::assertSame("[a](reports:mri:pitesti:260101-test-a) and [b](/reports:mri:pitesti:260102-test-b)\n", $links->body);
         self::assertSame(2, $links->rev, 'both links fixed in one new revision, not one per moved page');
