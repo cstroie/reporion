@@ -258,6 +258,17 @@ final class McpTest extends HttpTestCase
         $info = $this->rpc($this->newToken('mihai', ''), 'initialize')['result']['serverInfo'];
         self::assertSame('Reporion', $info['title']);
         self::assertSame('https://wiki.example.org/reporion/assets/icon.svg', $info['icons'][0]['src']);
+        self::assertSame(['16x16', '32x32'], $info['icons'][2]['sizes']);
+    }
+
+    public function testWithoutABaseUrlTheIconsFollowTheAddressOfTheCall(): void
+    {
+        $this->config['site']['base_url'] = '';
+        $token = $this->newToken('mihai', '');
+        $init = fn (string $host): array => json_decode(Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize']), authorization: 'Bearer ' . $token, host: $host, secure: true, basePath: '/reporion'))->body, true)['result']['serverInfo'];
+
+        self::assertSame('https://wiki.example.org/reporion/assets/icon.svg', $init('wiki.example.org')['icons'][0]['src']);
+        self::assertArrayNotHasKey('icons', $init('bad host/"x'), 'a Host that is no host gives no icons');
     }
 
     private function storage(): FileTree

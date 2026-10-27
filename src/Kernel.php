@@ -525,7 +525,7 @@ final class Kernel
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
-        // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
+        // The MCP server (D56): the wiki for MCP clients, by bearer token only
         $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
         $mcpAccess = \in_array($config['mcp']['access'] ?? 'local', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'local') : 'off';
         $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r) && (($config['mcp']['write_anywhere'] ?? false) === true || McpController::isLocal($r)), $mcpAccess);

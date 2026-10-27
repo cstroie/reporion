@@ -103,7 +103,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </p>
 <?php $gate = (string) ($values['mcp.gate'] ?? ''); if ($gate !== ''): ?>
 <p class="wk-dim wk-text-xs"><?= $e(t('admin.settings.mcp_gate_rule')) ?></p>
-<pre class="wk-mono wk-text-xs">lighttpd:
+<pre class="wk-mono wk-text-xs wk-install-fix">lighttpd:
 $HTTP["url"] == "<?= $e($basePath) ?>/mcp" {
   $REQUEST_HEADER["X-Reporion"] != "<?= $e($gate) ?>" {
     url.access-deny = ( "" )

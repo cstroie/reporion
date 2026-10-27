@@ -115,7 +115,7 @@ final class McpController
             'initialize' => self::result($id, [
                 'protocolVersion' => \is_string($params['protocolVersion'] ?? null) ? $params['protocolVersion'] : self::PROTOCOL,
                 'capabilities' => ['tools' => ['listChanged' => false]],
-                'serverInfo' => $this->serverInfo(),
+                'serverInfo' => $this->serverInfo($request),
                 'instructions' => $this->reports
                     ? 'Reporion wiki pages as this account sees them. Address a page by its colon path (ns:sub:slug); a radiology report by its pid only. Reports are de-identified: [pacient], [CNP] and [nr] stand for what was taken out; never try to recover them.'
                     : 'Reporion wiki pages as this account sees them. Address a page by its colon path (ns:sub:slug). Reports and pages about a patient are not served.',
@@ -190,15 +190,21 @@ final class McpController
      *
      * @return array<string, mixed>
      */
-    private function serverInfo(): array
+    private function serverInfo(Request $request): array
     {
         $info = ['name' => 'reporion', 'title' => 'Reporion', 'version' => self::VERSION];
-        if ($this->baseUrl !== '') {
-            $info['websiteUrl'] = $this->baseUrl . '/';
+        // site.base_url when set; else the address this very call arrived at (the icons are links the
+        // client follows, so a Host the caller chose only misdirects the caller; it is never an OAuth issuer)
+        $base = $this->baseUrl;
+        if ($base === '' && preg_match('/^[A-Za-z0-9.-]+(:[0-9]{1,5})?$|^\[[0-9A-Fa-f:]+\](:[0-9]{1,5})?$/', $request->host) === 1) {
+            $base = ($request->secure ? 'https' : 'http') . '://' . $request->host . $request->basePath;
+        }
+        if ($base !== '') {
+            $info['websiteUrl'] = $base . '/';
             $info['icons'] = [
-                ['src' => $this->baseUrl . '/assets/icon.svg', 'mimeType' => 'image/svg+xml', 'sizes' => ['any']],
-                ['src' => $this->baseUrl . '/assets/apple-touch-icon.png', 'mimeType' => 'image/png', 'sizes' => ['180x180']],
-                ['src' => $this->baseUrl . '/assets/favicon.ico', 'mimeType' => 'image/x-icon', 'sizes' => ['48x48']],
+                ['src' => $base . '/assets/icon.svg', 'mimeType' => 'image/svg+xml', 'sizes' => ['any']],
+                ['src' => $base . '/assets/apple-touch-icon.png', 'mimeType' => 'image/png', 'sizes' => ['180x180']],
+                ['src' => $base . '/assets/favicon.ico', 'mimeType' => 'image/x-icon', 'sizes' => ['16x16', '32x32']],
             ];
         }
 
