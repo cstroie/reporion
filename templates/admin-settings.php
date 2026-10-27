@@ -85,9 +85,10 @@ $icon = (string) ($values['site.icon'] ?? '');
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>><span class="dot"></span><span><?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></span></label>
 </p>
 <div class="wk-form-grid">
-<label><?= $e(t('admin.settings.mcp_access')) ?><?= $source('mcp.access') ?><select class="input" name="<?= $field('mcp.access') ?>"><?php foreach (\Reporion\Controller\McpController::ACCESS as $option): ?><option value="<?= $e($option) ?>"<?= $option === (string) ($values['mcp.access'] ?? 'on') ? ' selected' : '' ?>><?= $e(t('admin.settings.mcp_access_' . $option)) ?></option><?php endforeach; ?></select><small><?= $e(t('admin.settings.mcp_access_help')) ?></small></label>
+<label><?= $e(t('admin.settings.mcp_access')) ?><?= $source('mcp.access') ?><select class="input" name="<?= $field('mcp.access') ?>"><?php foreach (\Reporion\Controller\McpController::ACCESS as $option): ?><option value="<?= $e($option) ?>"<?= $option === (string) ($values['mcp.access'] ?? 'local') ? ' selected' : '' ?>><?= $e(t('admin.settings.mcp_access_' . $option)) ?></option><?php endforeach; ?></select><small><?= $e(t('admin.settings.mcp_access_help')) ?></small></label>
 </div>
 <p class="wk-opts">
+<label class="radio"><input type="checkbox" name="<?= $field('mcp.write_anywhere') ?>" value="1"<?= $checked('mcp.write_anywhere') ?>><span class="dot"></span><span><?= $e(t('admin.settings.mcp_write_anywhere')) ?><?= $source('mcp.write_anywhere') ?></span></label>
 <label class="radio"><input type="checkbox" name="<?= $field('mcp.reports') ?>" value="1"<?= $checked('mcp.reports') ?>><span class="dot"></span><span><?= $e(t('admin.settings.mcp_reports')) ?><?= $source('mcp.reports') ?></span></label>
 </p>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>

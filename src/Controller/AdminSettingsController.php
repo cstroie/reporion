@@ -37,7 +37,7 @@ final class AdminSettingsController
     /** Which settings each form saves */
     public const SECTIONS = [
         'site' => ['site.title', 'site.tagline', 'site.base_url', 'site.home_page', 'site.timezone'],
-        'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export', 'mcp.access', 'mcp.reports'],
+        'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export', 'mcp.access', 'mcp.write_anywhere', 'mcp.reports'],
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'editor' => ['editor.save_stays_open'],
         'debug' => ['debug.panels'],

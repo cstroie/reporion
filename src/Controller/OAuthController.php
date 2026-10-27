@@ -15,6 +15,7 @@ use Reporion\Auth\UserStoreInterface;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\Throttle;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 
@@ -36,7 +37,20 @@ final class OAuthController
         private readonly IndexInterface $index,
         // site.base_url: the issuer; empty, no OAuth is offered
         private readonly string $baseUrl,
+        // Registrations and failed token requests per address, and codes already redeemed (hardening)
+        private readonly ?Throttle $throttle = null,
     ) {
+    }
+
+    /** How long a token made here works (hardening): Claude asks again after it */
+    public const TOKEN_DAYS = 30;
+    private const REGISTRATIONS_PER_HOUR = 20;
+    private const TOKEN_FAILURES = 10;
+    private const WINDOW = 900;
+
+    private function tooMany(string $what, Request $request, int $limit, int $window): bool
+    {
+        return $this->throttle !== null && $this->throttle->count($what . ':' . $request->remoteAddr, $window) >= $limit;
     }
 
     public function enabled(): bool
@@ -85,13 +99,17 @@ final class OAuthController
         if (!$this->enabled()) {
             return self::json(['error' => 'not_found'], 404);
         }
+        if ($this->tooMany('register', $request, self::REGISTRATIONS_PER_HOUR, 3600)) {
+            return self::json(['error' => 'too_many_requests'], 429);
+        }
+        $this->throttle?->hit('register:' . $request->remoteAddr, 3600);
         $fields = json_decode($request->body, true);
         $uris = \is_array($fields['redirect_uris'] ?? null) ? array_values(array_filter($fields['redirect_uris'], 'is_string')) : [];
         $name = \is_string($fields['client_name'] ?? null) ? $fields['client_name'] : 'MCP client';
         try {
             $id = $this->oauth->register($name, $uris);
         } catch (InvalidArgumentException) {
-            return self::json(['error' => 'invalid_redirect_uri', 'error_description' => 'https redirect URIs only (http to localhost), at most 5'], 400);
+            return self::json(['error' => 'invalid_redirect_uri', 'error_description' => 'Claude\'s callback, http to localhost, or an address the owner allows; at most 5'], 400);
         }
 
         return self::json([
@@ -153,6 +171,9 @@ final class OAuthController
         if (!$this->enabled()) {
             return self::json(['error' => 'not_found'], 404);
         }
+        if ($this->tooMany('token', $request, self::TOKEN_FAILURES, self::WINDOW)) {
+            return self::json(['error' => 'too_many_requests'], 429);
+        }
         parse_str($request->body, $f);
         $str = static fn (string $k): string => \is_string($f[$k] ?? null) ? $f[$k] : '';
         if ($str('grant_type') !== 'authorization_code') {
@@ -161,13 +182,17 @@ final class OAuthController
         $client = $this->oauth->client($str('client_id'));
         $grant = $client === null ? null : $this->oauth->redeem($str('code'), $str('client_id'), $str('redirect_uri'), $str('code_verifier'));
         $user = $grant === null ? null : $this->users->find($grant['username']);
-        if ($client === null || $grant === null || $user === null || !$user->active) {
+        // A code is good once (RFC 6749 §4.1.2): a second use within its life is refused
+        $reused = $grant !== null && $this->throttle !== null && $this->throttle->hit('code:' . $str('code'), 300) > 1;
+        if ($client === null || $grant === null || $reused || $user === null || !$user->active) {
+            $this->throttle?->hit('token:' . $request->remoteAddr, self::WINDOW);
+
             return self::json(['error' => 'invalid_grant'], 400);
         }
-        [, $token, $id] = $this->tokens->create($user, mb_substr('Claude: ' . ($client['name'] !== '' ? $client['name'] : 'MCP client'), 0, 80), $grant['write'] ? 'write' : 'read', $grant['namespaces']);
+        [, $token, $id] = $this->tokens->create($user, mb_substr('Claude: ' . ($client['name'] !== '' ? $client['name'] : 'MCP client'), 0, 80), $grant['write'] ? 'write' : 'read', $grant['namespaces'], self::TOKEN_DAYS);
         $this->audit->record('token.create', $user->username, $request, extra: ['token' => $id, 'via' => 'oauth']);
 
-        return self::json(['access_token' => $token, 'token_type' => 'Bearer', 'scope' => $grant['write'] ? 'write' : 'read']);
+        return self::json(['access_token' => $token, 'token_type' => 'Bearer', 'scope' => $grant['write'] ? 'write' : 'read', 'expires_in' => self::TOKEN_DAYS * 86400]);
     }
 
     /**

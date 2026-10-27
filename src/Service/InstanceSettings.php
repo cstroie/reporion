@@ -48,6 +48,7 @@ final class InstanceSettings
         'export.pseudonymise_public' => 'bool',
         'mcp.reports' => 'bool',
         'mcp.access' => 'mcp_access',
+        'mcp.write_anywhere' => 'bool',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
@@ -159,6 +160,10 @@ final class InstanceSettings
         }
         if (\is_array($settings['sites'] ?? null)) {
             $config['sites'] = $settings['sites'];
+        }
+        // OAuth return addresses an owner allows (D56 hardening): settings.yaml only, https only (Kernel filters)
+        if (\is_array($settings['mcp']['redirect_uris'] ?? null)) {
+            $config['mcp']['redirect_uris'] = $settings['mcp']['redirect_uris'];
         }
         $config['ai'] = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
         $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
@@ -425,7 +430,7 @@ final class InstanceSettings
             'kbps' => $text === '' ? 0 : (ctype_digit($text) && RsyncConfig::validBwlimit((int) $text) ? (int) $text : $fail()),
             'hours' => ctype_digit($text) && RsyncConfig::validHours((int) $text) ? (int) $text : $fail(),
             'keep' => isset(RsyncConfig::KEEP[$text]) ? $text : $fail(),
-            'mcp_access' => $text === '' ? 'on' : (\in_array($text, \Reporion\Controller\McpController::ACCESS, true) ? $text : $fail()),
+            'mcp_access' => $text === '' ? 'local' : (\in_array($text, \Reporion\Controller\McpController::ACCESS, true) ? $text : $fail()),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),

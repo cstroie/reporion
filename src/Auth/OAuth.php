@@ -22,8 +22,23 @@ final class OAuth
 {
     private const CODE_TTL = 60;
 
-    /** $secret is never empty here: without one, Kernel offers no OAuth (the controller's base URL is empty) */
-    public function __construct(private readonly string $secret)
+    /**
+     * The return addresses a client may register (hardening, 2026-10-27): Claude's own callbacks,
+     * and http on this machine's loopback (Claude Code, Desktop), any port and path. Anything else
+     * only when an owner lists it (`mcp.redirect_uris`), so nobody can register a client that
+     * sends a consent to their own server.
+     */
+    public const REDIRECTS = [
+        'https://claude.ai/api/mcp/auth_callback',
+        'https://claude.com/api/mcp/auth_callback',
+    ];
+
+    /**
+     * $secret is never empty here: without one, Kernel offers no OAuth (the controller's base URL is empty)
+     *
+     * @param list<string> $extraRedirects exact https addresses an owner allows besides REDIRECTS
+     */
+    public function __construct(private readonly string $secret, private readonly array $extraRedirects = [])
     {
     }
 
@@ -39,7 +54,7 @@ final class OAuth
             throw new InvalidArgumentException('invalid_redirect_uri');
         }
         foreach ($redirectUris as $uri) {
-            if (!self::acceptableRedirect($uri)) {
+            if (!$this->allowedRedirect($uri)) {
                 throw new InvalidArgumentException('invalid_redirect_uri');
             }
         }
@@ -97,16 +112,16 @@ final class OAuth
         return rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
     }
 
-    /** https anywhere, http only to this machine (a desktop client's loopback listener) */
-    public static function acceptableRedirect(string $uri): bool
+    /** One of Claude's callbacks, one an owner listed, or http to this machine's loopback */
+    public function allowedRedirect(string $uri): bool
     {
-        $parts = parse_url($uri);
-        if (!\is_array($parts) || isset($parts['fragment']) || !isset($parts['scheme'], $parts['host'])) {
-            return false;
+        if (\in_array($uri, [...self::REDIRECTS, ...$this->extraRedirects], true)) {
+            return true;
         }
+        $parts = parse_url($uri);
 
-        return $parts['scheme'] === 'https'
-            || ($parts['scheme'] === 'http' && \in_array($parts['host'], ['localhost', '127.0.0.1', '[::1]'], true));
+        return \is_array($parts) && !isset($parts['fragment']) && !isset($parts['user']) && !isset($parts['pass']) && ($parts['scheme'] ?? '') === 'http'
+            && \in_array($parts['host'] ?? '', ['localhost', '127.0.0.1', '[::1]'], true);
     }
 
     /** @param array<string, mixed> $data */

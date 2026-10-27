@@ -120,8 +120,8 @@ $b = $e($basePath);
 <tr>
 <td class="wk-card-head"><?= $e($token['name']) ?> <span class="wk-mono wk-dim"><?= $e($token['id']) ?></span></td>
 <td data-label="<?= $e(t('profile.token_scope')) ?>"><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span><?php if (isset($token['namespaces'])): ?> <span class="wk-mono wk-dim wk-text-sm"><?= $e(implode(', ', $token['namespaces'])) ?></span><?php endif; ?></td>
-<td class="wk-dim" data-label="<?= $e(t('profile.token_created')) ?>"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
-<td class="wk-dim" data-label="<?= $e(t('profile.token_used')) ?>"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : 'n/a' ?></td>
+<td class="wk-dim" data-label="<?= $e(t('profile.token_created')) ?>"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?><?php if (isset($token['expires'])): ?><br><span class="wk-text-sm"><?= $e(t(strtotime($token['expires']) < time() ? 'profile.token_expired' : 'profile.token_expires', [\Reporion\Support\MetaText::date(substr($token['expires'], 0, 10), \Reporion\Support\MetaText::DATE)])) ?></span><?php endif; ?></td>
+<td class="wk-dim" data-label="<?= $e(t('profile.token_used')) ?>"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : 'n/a' ?><?php if (isset($token['last_addr'])): ?><br><span class="wk-mono wk-text-sm"><?= $e($token['last_addr']) ?></span><?php endif; ?></td>
 <td class="wk-right"><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-prohibit" aria-hidden="true"></i><?= $e(t('profile.token_revoke')) ?></button></form></td>
 </tr>
 <?php endforeach; ?>
@@ -136,6 +136,8 @@ $b = $e($basePath);
 <input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_hint')) ?>"<?= $tokenError !== null ? ' aria-invalid="true" aria-describedby="token-error"' : '' ?>><?php if ($tokenError !== null): ?><small id="token-error" class="wk-field-error"><?= $e($tokenError) ?></small><?php endif; ?></label></div>
 <div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?>
 <select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></label></div>
+<div class="field"><label for="token-lifetime"><?= $e(t('profile.token_lifetime')) ?>
+<select class="input" id="token-lifetime" name="days"><?php foreach (\Reporion\Auth\ApiTokens::LIFETIMES as $days): ?><option value="<?= $e((string) ($days ?? 'never')) ?>"<?= $days === 90 ? ' selected' : '' ?>><?= $e($days === null ? t('profile.token_never') : t('profile.token_days', [(string) $days])) ?></option><?php endforeach; ?></select></label></div>
 <div class="field"><label for="token-namespaces"><?= $e(t('profile.token_namespaces')) ?>
 <input class="input wk-mono" type="text" id="token-namespaces" name="namespaces" maxlength="1000" placeholder="<?= $e(t('profile.token_namespaces_hint')) ?>">
 <small><?= $e(t('profile.token_namespaces_help')) ?></small></label></div>

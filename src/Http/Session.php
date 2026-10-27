@@ -66,7 +66,7 @@ final class Session
             }
 
             // /mcp is read only (D56, phase 1): its POST carries a question, so a read token may use it
-            return $this->tokens->authenticate($m[1], $request->path === '/mcp' ? 'GET' : $request->method);
+            return $this->tokens->authenticate($m[1], $request->path === '/mcp' ? 'GET' : $request->method, $request->remoteAddr);
         }
 
         return null;
@@ -82,7 +82,7 @@ final class Session
             return false;
         }
         try {
-            $this->tokens->authenticate($m[1], 'POST');
+            $this->tokens->authenticate($m[1], 'POST', $request->remoteAddr);
 
             return true;
         } catch (InvalidTokenException) {

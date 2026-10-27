@@ -28,6 +28,7 @@ final class OAuthTest extends HttpTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->config['mcp']['access'] = 'on';
         $this->config['site']['base_url'] = 'https://wiki.example.org';
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', password_hash('pw-mihai-123', PASSWORD_ARGON2ID), false, [new Grant('docs', GrantRole::Viewer), new Grant('notes', GrantRole::Viewer)]);
@@ -72,12 +73,15 @@ final class OAuthTest extends HttpTestCase
         self::assertSame(400, $this->send(new Request('POST', '/oauth/token', body: http_build_query($form + ['code_verifier' => str_repeat('w', 50)])))->status, 'wrong verifier');
         $token = json_decode($this->send(new Request('POST', '/oauth/token', body: http_build_query($form + ['code_verifier' => $verifier])))->body, true);
         self::assertSame('Bearer', $token['token_type']);
+        self::assertSame(30 * 86400, $token['expires_in']);
+        self::assertSame(400, $this->send(new Request('POST', '/oauth/token', body: http_build_query($form + ['code_verifier' => $verifier])))->status, 'a code is good once');
 
         $hits = json_decode($this->send(new Request('POST', '/mcp', body: (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call', 'params' => ['name' => 'search', 'arguments' => ['query' => 'rsync']]]), authorization: 'Bearer ' . $token['access_token']))->body, true);
         self::assertSame(['docs:howto'], array_column($hits['result']['structuredContent']['results'], 'path'));
 
         $record = (new FlatFileUserStore($this->dataRoot))->find('mihai')->tokens[0];
         self::assertSame(['read', ['docs']], [$record['scope'], $record['namespaces']]);
+        self::assertGreaterThan(time() + 29 * 86400, strtotime($record['expires']));
     }
 
     public function testAllowChangesGivesAWriteToken(): void
@@ -101,7 +105,34 @@ final class OAuthTest extends HttpTestCase
         self::assertSame(400, $this->as('mihai', new Request('GET', '/oauth/authorize', query: ['redirect_uri' => 'https://evil.example/cb'] + $query))->status, 'never back to an address not registered');
         self::assertSame(400, $this->as('mihai', new Request('GET', '/oauth/authorize', query: ['client_id' => 'forged.sig'] + $query))->status);
         self::assertSame(400, $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => ['http://evil.example/cb']])))->status);
+        self::assertSame(400, $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => ['https://evil.example/cb']])))->status, 'https is not enough: Claude\'s callbacks only');
+        self::assertSame(201, $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => ['http://127.0.0.1:33418/callback']])))->status, 'loopback for Claude Code');
         self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('mihai')->tokens);
+    }
+
+    public function testRegistrationAndTokenRequestsAreLimitedPerAddress(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => [self::REDIRECT]]), remoteAddr: '203.0.113.7'));
+        }
+        self::assertSame(429, $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => [self::REDIRECT]]), remoteAddr: '203.0.113.7'))->status);
+        self::assertSame(201, $this->send(new Request('POST', '/oauth/register', body: (string) json_encode(['redirect_uris' => [self::REDIRECT]]), remoteAddr: '203.0.113.8'))->status, 'another address is not held up');
+        for ($i = 0; $i < 10; $i++) {
+            $this->send(new Request('POST', '/oauth/token', body: 'grant_type=authorization_code&code=x', remoteAddr: '203.0.113.9'));
+        }
+        self::assertSame(429, $this->send(new Request('POST', '/oauth/token', body: 'grant_type=authorization_code&code=x', remoteAddr: '203.0.113.9'))->status);
+    }
+
+    public function testSignInIsLimitedPerAddress(): void
+    {
+        $try = fn (string $pw): Response => $this->send(new Request('POST', '/login', body: http_build_query(['username' => 'mihai', 'password' => $pw]), remoteAddr: '198.51.100.4'));
+        for ($i = 0; $i < 5; $i++) {
+            self::assertSame(401, $try('wrong')->status);
+        }
+        $held = $try('pw-mihai-123');
+        self::assertSame(429, $held->status, 'not even the right password, until the window passes');
+        self::assertSame('900', $held->headers['Retry-After']);
+        self::assertSame(302, $this->send(new Request('POST', '/login', body: http_build_query(['username' => 'mihai', 'password' => 'pw-mihai-123']), remoteAddr: '198.51.100.5'))->status);
     }
 
     public function testNoBaseUrlNoOAuth(): void

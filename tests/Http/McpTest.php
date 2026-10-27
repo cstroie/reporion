@@ -25,6 +25,7 @@ final class McpTest extends HttpTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->config['mcp']['access'] = 'on';
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', password_hash('pw-mihai-123', PASSWORD_ARGON2ID), false, [
             new Grant('reports:mri', GrantRole::Editor), new Grant('docs', GrantRole::Viewer), new Grant('notes', GrantRole::Editor),
@@ -142,6 +143,8 @@ final class McpTest extends HttpTestCase
         self::assertTrue($this->tool($read, 'create_page', ['path' => 'notes:new', 'body' => 'x'])['result']['isError']);
 
         $write = $this->newToken('mihai', '', 'write');
+        self::assertNotContains('create_page', array_column($this->rpc($write, 'tools/list')['result']['tools'], 'name'), 'not from outside, unless allowed');
+        $this->config['mcp']['write_anywhere'] = true;
         self::assertContains('update_page', array_column($this->rpc($write, 'tools/list')['result']['tools'], 'name'));
         $made = $this->tool($write, 'create_page', ['path' => 'notes:new', 'body' => "# New\n\nText.\n", 'note' => 'first'])['result'];
         self::assertSame(1, $made['structuredContent']['rev']);
@@ -159,6 +162,13 @@ final class McpTest extends HttpTestCase
         self::assertTrue($this->tool($write, 'create_page', ['path' => 'reports:mri:mioveni:b', 'body' => 'x'])['result']['isError']);
         self::assertTrue($this->tool($write, 'update_page', ['path' => 'docs:howto', 'body' => 'x', 'base_rev' => 1])['result']['isError'], 'a viewer grant writes nothing');
         self::assertSame(1, $this->storage()->read('docs:howto')->rev);
+    }
+
+    public function testWritesFromTheLocalNetworkWithoutWriteAnywhere(): void
+    {
+        $write = $this->newToken('mihai', '', 'write');
+        $made = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: (string) json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call', 'params' => ['name' => 'create_page', 'arguments' => ['path' => 'notes:vpn', 'body' => 'x']]]), remoteAddr: '10.8.0.6', authorization: 'Bearer ' . $write));
+        self::assertSame(1, json_decode($made->body, true)['result']['structuredContent']['rev']);
     }
 
     public function testAccessOffOrLocalOnly(): void

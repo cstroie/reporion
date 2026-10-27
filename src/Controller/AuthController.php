@@ -14,6 +14,7 @@ use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
+use Reporion\Http\Throttle;
 use Reporion\Http\View;
 use Reporion\Support\Notes;
 
@@ -40,7 +41,28 @@ final class AuthController
         private readonly UserStoreInterface $users,
         private readonly Session $session,
         private readonly AuditLog $audit,
+        // Failed sign-ins per address (D56 hardening): after FAILURES in WINDOW, the address waits
+        private readonly ?Throttle $throttle = null,
     ) {
+    }
+
+    public const FAILURES = 5;
+    public const WINDOW = 900;
+
+    /** Too many failed sign-ins from this address lately: nothing is checked until the window passes */
+    private function blocked(Request $request): bool
+    {
+        return $this->throttle !== null && $this->throttle->count('login:' . $request->remoteAddr, self::WINDOW) >= self::FAILURES;
+    }
+
+    /** A failed sign-in counted against its address, a good one clears them */
+    private function counted(Request $request, ?User $user): ?User
+    {
+        if ($this->throttle !== null) {
+            $user === null ? $this->throttle->hit('login:' . $request->remoteAddr, self::WINDOW) : $this->throttle->clear('login:' . $request->remoteAddr);
+        }
+
+        return $user;
     }
 
     public function form(Request $request): Response
@@ -60,7 +82,12 @@ final class AuthController
     public function login(Request $request): Response
     {
         parse_str($request->body, $fields);
-        $user = $this->authenticate($request, $fields['username'] ?? null, $fields['password'] ?? null);
+        if ($this->blocked($request)) {
+            $this->audit->record('auth.throttled', 'anonymous', $request, outcome: 'refused');
+
+            return Response::html(View::render($this->templatePath(), ['error' => true, 'throttled' => true, 'basePath' => $request->basePath, 'next' => self::next($fields['next'] ?? null)]), 429)->withHeader('Retry-After', (string) self::WINDOW);
+        }
+        $user = $this->counted($request, $this->authenticate($request, $fields['username'] ?? null, $fields['password'] ?? null));
         if ($user === null) {
             return Response::html(View::render($this->templatePath(), ['error' => true, 'basePath' => $request->basePath, 'next' => self::next($fields['next'] ?? null)]), 401);
         }
@@ -77,7 +104,10 @@ final class AuthController
     public function apiLogin(Request $request): Response
     {
         $fields = $request->json();
-        $user = $this->authenticate($request, $fields['username'] ?? null, $fields['password'] ?? null);
+        if ($this->blocked($request)) {
+            return ApiResponse::error(429, 'too_many_attempts', t('auth.throttled'))->withHeader('Retry-After', (string) self::WINDOW);
+        }
+        $user = $this->counted($request, $this->authenticate($request, $fields['username'] ?? null, $fields['password'] ?? null));
         if ($user === null) {
             return ApiResponse::error(401, 'invalid_credentials', t('auth.invalid'));
         }

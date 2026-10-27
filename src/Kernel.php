@@ -59,6 +59,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Router;
 use Reporion\Http\Session;
+use Reporion\Http\Throttle;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\Sqlite;
 use Reporion\Plugin\Hooks;
@@ -502,7 +503,9 @@ final class Kernel
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
-        $auth = new AuthController($users, $session, $audit);
+        // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
+        $throttle = new Throttle((string) $config['paths']['data'] . '/tmp/throttle.json');
+        $auth = new AuthController($users, $session, $audit, $throttle);
         $theme = new ThemeController();
         $notes = new NotesController();
         $signing = new Signing($storage, $schemas, $audit);
@@ -518,10 +521,15 @@ final class Kernel
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         // The MCP server (D56): the wiki for Claude and other MCP clients, by bearer token only
         $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
-        $mcpAccess = \in_array($config['mcp']['access'] ?? 'on', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'on') : 'off';
-        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r), $mcpAccess);
+        $mcpAccess = \in_array($config['mcp']['access'] ?? 'local', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'local') : 'off';
+        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r) && (($config['mcp']['write_anywhere'] ?? false) === true || McpController::isLocal($r)), $mcpAccess);
         // Its OAuth 2.1 (D56, phase 3), for claude.ai and Desktop: offered only with site.base_url set
-        $oauth = new OAuthController(new OAuth((string) $config['auth']['session_secret']), $apiTokens, $users, $audit, $index, (string) $config['auth']['session_secret'] !== '' && $mcpAccess === 'on' ? $baseUrl : '');
+        $oauth = new OAuthController(
+            new OAuth((string) $config['auth']['session_secret'], array_values(array_filter((array) ($config['mcp']['redirect_uris'] ?? []), static fn (mixed $u): bool => \is_string($u) && str_starts_with($u, 'https://')))),
+            $apiTokens, $users, $audit, $index,
+            (string) $config['auth']['session_secret'] !== '' && $mcpAccess === 'on' ? $baseUrl : '',
+            $throttle,
+        );
         $frontmatterFields = new FrontmatterFields(
             $schemas,
             $index,

@@ -101,9 +101,9 @@ GET    /api/v1/session        → 200 { data: account } for the signed-in caller
 POST   /mcp                   JSON-RPC (MCP, Streamable HTTP): initialize, ping, tools/list, tools/call (search, get_page, list_namespace; with a write token create_page, update_page); bearer token only; 404 with `mcp.access` off, or local and asked from outside, never a cookie; patient pages only with `mcp.reports`, de-identified, by pid (D56, phases 1–2 built)
 GET    /.well-known/oauth-protected-resource[/mcp]   RFC 9728 metadata of /mcp; 404 without site.base_url (D56, phase 3 built)
 GET    /.well-known/oauth-authorization-server       RFC 8414 metadata: code + PKCE S256, public clients, dynamic registration (D56)
-POST   /oauth/register        { client_name, redirect_uris } → 201 { client_id, … } (RFC 7591; signed, nothing stored) (D56)
+POST   /oauth/register        { client_name, redirect_uris } → 201 { client_id, … } (RFC 7591; signed, nothing stored; Claude's callbacks, http loopback or `mcp.redirect_uris` only; 429 past 20 an hour per address) (D56)
 GET    /oauth/authorize       the consent screen (signed in; else /login?next=); POST: Allow (namespaces) / Deny → 302 to the client (D56)
-POST   /oauth/token           grant_type=authorization_code, code, client_id, redirect_uri, code_verifier → { access_token, token_type } (a read API token) (D56)
+POST   /oauth/token           grant_type=authorization_code, code, client_id, redirect_uri, code_verifier → { access_token, token_type, scope, expires_in } (an API token, 30 days; a code once; 429 after 10 failures from an address) (D56)
 DELETE /api/v1/session        → 204, the session cookie cleared (D55, built)
                               account = { username, display_name, owner, notes: "users:{u}:notes" }
 ```

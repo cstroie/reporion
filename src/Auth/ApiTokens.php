@@ -36,9 +36,18 @@ final class ApiTokens
      *
      * @return array{0: User, 1: string, 2: string} the account, the token, its id
      */
-    /** @param list<string> $namespaces what the token is limited to (D56); empty: the whole account */
-    public function create(User $user, string $name, string $scope, array $namespaces = []): array
+    /** How long a token may be made to last on /profile, in days; null: until revoked */
+    public const LIFETIMES = [30, 90, 365, null];
+
+    /**
+     * @param list<string> $namespaces what the token is limited to (D56); empty: the whole account
+     * @param ?int         $days       how long it works (hardening, 2026-10-27); null: until revoked
+     */
+    public function create(User $user, string $name, string $scope, array $namespaces = [], ?int $days = null): array
     {
+        if ($days !== null && ($days < 1 || $days > 3650)) {
+            throw new InvalidArgumentException('A token lasts 1 to 3650 days');
+        }
         $namespaces = array_values(array_unique(array_filter(array_map('trim', $namespaces), static fn (string $ns): bool => $ns !== '')));
         foreach ($namespaces as $ns) {
             new Grant($ns, GrantRole::Viewer); // throws for a malformed namespace
@@ -62,6 +71,9 @@ final class ApiTokens
         ];
         if ($namespaces !== []) {
             $record['namespaces'] = $namespaces;
+        }
+        if ($days !== null) {
+            $record['expires'] = (new DateTimeImmutable('now'))->modify('+' . $days . ' days')->format('Y-m-d\TH:i:sP');
         }
         $saved = $this->users->save($user->with(tokens: [...$user->tokens, $record]));
 
@@ -87,7 +99,7 @@ final class ApiTokens
      *
      * @throws InvalidTokenException
      */
-    public function authenticate(string $token, string $method): User
+    public function authenticate(string $token, string $method, string $address = ''): User
     {
         if (preg_match('/^rpn_([A-Za-z0-9_-]+)\.([a-z2-7]{8})\.([A-Za-z0-9_-]{43})$/', $token, $m) !== 1) {
             throw new InvalidTokenException();
@@ -104,11 +116,15 @@ final class ApiTokens
         $hash = hash('sha256', $m[3]);
         foreach ($user->tokens as $t) {
             if ($t['id'] === $m[2] && hash_equals($t['hash'], $hash)) {
+                // Past its expiry it is as good as revoked (hardening)
+                if (isset($t['expires']) && strtotime($t['expires']) < time()) {
+                    throw new InvalidTokenException();
+                }
                 if ($t['scope'] !== 'write' && !\in_array($method, ['GET', 'HEAD'], true)) {
                     throw new InvalidTokenException(scope: true);
                 }
 
-                $user = $this->touch($user, $t['id']);
+                $user = $this->touch($user, $t['id'], $address);
 
                 // A token limited to namespaces (D56) is the account narrowed to them, after the touch is saved
                 return isset($t['namespaces']) ? $user->narrowedTo($t['namespaces']) : $user;
@@ -117,14 +133,20 @@ final class ApiTokens
         throw new InvalidTokenException();
     }
 
-    /** When a token was last used, to the day: at most one write a day per token */
-    private function touch(User $user, string $id): User
+    /**
+     * When a token was last used, to the day, and from which address (hardening, shown on
+     * /profile): at most one write a day per token, or when the address changes
+     */
+    private function touch(User $user, string $id, string $address): User
     {
         $today = (new DateTimeImmutable('now'))->format('Y-m-d');
         $tokens = $user->tokens;
         foreach ($tokens as $i => $t) {
-            if ($t['id'] === $id && $t['last_used'] !== $today) {
+            if ($t['id'] === $id && ($t['last_used'] !== $today || ($address !== '' && ($t['last_addr'] ?? '') !== $address))) {
                 $tokens[$i]['last_used'] = $today;
+                if ($address !== '') {
+                    $tokens[$i]['last_addr'] = mb_substr($address, 0, 45);
+                }
 
                 return $this->users->save($user->with(tokens: $tokens));
             }

@@ -157,6 +157,8 @@ final class ProfileController
                 \is_string($fields['scope'] ?? null) ? $fields['scope'] : '',
                 // Limited to namespaces (D56): one per line or comma; none, the whole account
                 preg_split('/[\s,]+/', \is_string($fields['namespaces'] ?? null) ? $fields['namespaces'] : '') ?: [],
+                // How long it works (hardening): a lifetime offered, or until revoked; 90 days when not sent
+                self::lifetime($fields['days'] ?? null),
             );
         } catch (InvalidArgumentException) {
             return $this->render($request, $principal, error: null, saved: false, tokenError: t('profile.err_token'));
@@ -167,6 +169,19 @@ final class ProfileController
         $response = $this->render($request, $saved, error: null, saved: false, newToken: $token);
 
         return new Response($response->status, $response->body, $response->headers + ['Cache-Control' => 'no-store']);
+    }
+
+    /** A token lifetime from the form: one of ApiTokens::LIFETIMES ('never' for none), else 0, which create() refuses */
+    private static function lifetime(mixed $days): ?int
+    {
+        if ($days === 'never') {
+            return null;
+        }
+        if ($days === null) {
+            return 90;
+        }
+
+        return \is_string($days) && ctype_digit($days) && \in_array((int) $days, ApiTokens::LIFETIMES, true) ? (int) $days : 0;
     }
 
     /** POST /profile/tokens/{id}/revoke */

@@ -271,6 +271,12 @@ final class FlatFileUserStore implements UserStoreInterface
             if ($ns !== null && $ns !== []) {
                 $tokens[\array_key_last($tokens)]['namespaces'] = $ns;
             }
+            // When it stops working, and the address it was last used from (hardening)
+            foreach (['expires', 'last_addr'] as $key) {
+                if (\is_string($t[$key] ?? null) && $t[$key] !== '') {
+                    $tokens[\array_key_last($tokens)][$key] = $t[$key];
+                }
+            }
         }
 
         return $tokens;

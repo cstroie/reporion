@@ -123,6 +123,23 @@ final class ApiTokensTest extends HttpTestCase
         self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('mihai')->tokens);
     }
 
+    public function testATokenStopsAtItsExpiryAndKeepsItsLastAddress(): void
+    {
+        $token = $this->newToken('mihai', 'read');
+        $store = new FlatFileUserStore($this->dataRoot);
+        self::assertGreaterThan(time() + 89 * 86400, strtotime($store->find('mihai')->tokens[0]['expires']), '90 days unless chosen');
+
+        Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/pages/reports:mri:mioveni:a', remoteAddr: '10.8.0.6', authorization: 'Bearer ' . $token));
+        self::assertSame('10.8.0.6', $store->find('mihai')->tokens[0]['last_addr']);
+        self::assertStringContainsString('10.8.0.6', $this->as('mihai', 'GET', '/profile')->body);
+
+        $user = $store->find('mihai');
+        $tokens = $user->tokens;
+        $tokens[0]['expires'] = '2020-01-01T00:00:00+00:00';
+        $store->save($user->with(tokens: $tokens));
+        self::assertSame(401, $this->bearer($token, 'GET', '/api/v1/pages/reports:mri:mioveni:a')->status);
+    }
+
     public function testTheProfileEditsItsOwnSignatureDetails(): void
     {
         $response = $this->as('mihai', 'POST', '/profile/signature', ['display_name' => ' Dr. Mihai Test ', 'title' => 'Medic primar radiologie']);
