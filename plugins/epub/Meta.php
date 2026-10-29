@@ -6,10 +6,13 @@ declare(strict_types=1);
 
 namespace Reporion\Plugin\Epub;
 
+use DateTimeInterface;
+
 /**
  * The book's descriptive metadata, from the front page's own front matter:
  * `author` (a name or a list), `summary` (the description), `language`,
- * `publisher`, `rights`, and `tags` (the subjects). A missing or malformed
+ * `publisher`, `rights`, `date` (the publishing year or day: `2026`, `2026-10`,
+ * `2026-10-29`), and `tags` (the subjects). A missing or malformed
  * value is left out, never an error.
  */
 final class Meta
@@ -18,11 +21,13 @@ final class Meta
 
     /**
      * @param array<string, mixed> $frontmatter
-     * @return array{authors: list<string>, publisher: string, description: string, language: string, rights: string, subjects: list<string>}
+     * @return array{authors: list<string>, publisher: string, description: string, language: string, rights: string, date: string, subjects: list<string>}
      */
     public static function from(array $frontmatter): array
     {
         $language = self::text($frontmatter['language'] ?? null);
+        $date = $frontmatter['date'] ?? null;
+        $date = $date instanceof DateTimeInterface ? $date->format('Y-m-d') : self::text($date);
 
         return [
             'authors' => self::list($frontmatter['author'] ?? null),
@@ -30,6 +35,7 @@ final class Meta
             'description' => self::text($frontmatter['summary'] ?? null),
             'language' => preg_match('#^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$#', $language) === 1 ? $language : '',
             'rights' => self::text($frontmatter['rights'] ?? null),
+            'date' => preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $date) === 1 ? $date : '',
             'subjects' => self::list($frontmatter['tags'] ?? null),
         ];
     }

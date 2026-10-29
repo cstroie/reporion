@@ -43,6 +43,7 @@ final class BuilderTest extends TestCase
             'language' => 'en-GB',
             'summary' => 'About',
             'rights' => ['bad'],
+            'date' => 2026,
             'tags' => ['procedures'],
         ]);
         self::assertSame('', $meta['rights']);
@@ -53,6 +54,7 @@ final class BuilderTest extends TestCase
         self::assertTrue($doc->loadXML($opf));
         self::assertStringContainsString('<dc:creator>Ana &lt;A&gt;</dc:creator><dc:creator>Bob</dc:creator>', $opf);
         self::assertStringContainsString('<dc:language>en-GB</dc:language>', $opf);
+        self::assertStringContainsString('<dc:date>2026</dc:date>', $opf);
         self::assertStringContainsString('<dc:description>About</dc:description>', $opf);
         self::assertStringContainsString('<dc:subject>procedures</dc:subject>', $opf);
     }

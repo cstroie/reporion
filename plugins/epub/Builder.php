@@ -68,7 +68,7 @@ final class Builder
         foreach ((array) ($meta['authors'] ?? []) as $author) {
             $out .= '<dc:creator>' . self::e((string) $author) . '</dc:creator>';
         }
-        foreach (['publisher' => 'publisher', 'description' => 'description', 'rights' => 'rights'] as $key => $element) {
+        foreach (['publisher' => 'publisher', 'description' => 'description', 'rights' => 'rights', 'date' => 'date'] as $key => $element) {
             if (($meta[$key] ?? '') !== '') {
                 $out .= '<dc:' . $element . '>' . self::e((string) $meta[$key]) . '</dc:' . $element . '>';
             }
