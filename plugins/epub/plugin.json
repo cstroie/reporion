@@ -1,0 +1,28 @@
+{
+  "id": "epub",
+  "name": "EPUB export (a namespace as a book)",
+  "version": "0.1",
+  "api": 1,
+  "description": "Exports a namespace as an EPUB e-book: the page named like the namespace (its title and text) is the front matter, each page directly in the namespace is a chapter, in the namespace's sort order. For notes, procedures and documents written in Markdown. It never handles patient data: reports (the reports namespace) and pages with a patient block are refused, or left out as chapters. No images are embedded.",
+  "hooks": [],
+  "ui": {
+    "export_action": [
+      {
+        "label": "epub.action",
+        "icon": "file-code",
+        "href": "/x/epub/{pid}",
+        "for": "page"
+      }
+    ]
+  },
+  "settings": {
+    "language": {
+      "type": "text",
+      "group": "Book",
+      "default": "ro",
+      "pattern": "#^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$#",
+      "label": "Language",
+      "help": "The book's language code (dc:language): ro, en, fr, en-GB"
+    }
+  }
+}
