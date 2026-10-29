@@ -47,6 +47,7 @@ final class BuilderTest extends TestCase
             'tags' => ['procedures'],
         ]);
         self::assertSame('', $meta['rights']);
+        self::assertSame('1884', \Reporion\Plugin\Epub\Meta::from(['year' => 1884])['date']);
         $epub = Builder::build(['title' => 'B', 'html' => '<p>f</p>'], [['title' => 'One', 'html' => '<p>1</p>']], 'ro', Builder::identifier('01ABC'), new DateTimeImmutable('2026-10-29T10:00:00Z'), 'Contents', $meta);
         $opf = Zip::read($epub)['OEBPS/content.opf']->bytes();
 

@@ -10,7 +10,7 @@ included.
 - Chapters are what the caller may see (the one visibility predicate).
 - No images are embedded; links to other pages become plain text.
 - The front page's front matter describes the book (all optional): `author` (a name or a list),
-  `summary` (the description), `language` (wins over the setting), `publisher`, `rights`, `date` (the publishing year or day: `2026`, `2026-10`, `2026-10-29`); the page's
+  `summary` (the description), `language` (wins over the setting), `publisher`, `rights`, `date` or `year` (the publishing year or day: `2026`, `2026-10`, `2026-10-29`); the page's
   `tags` become the book's subjects. A malformed value is left out.
 - Setting: `language` (the book's `dc:language`, default `ro`).
 - Audited as `export` (`format: epub`); the plugin writes no page.

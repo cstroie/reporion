@@ -11,7 +11,7 @@ use DateTimeInterface;
 /**
  * The book's descriptive metadata, from the front page's own front matter:
  * `author` (a name or a list), `summary` (the description), `language`,
- * `publisher`, `rights`, `date` (the publishing year or day: `2026`, `2026-10`,
+ * `publisher`, `rights`, `date` or `year` (the publishing year or day: `2026`, `2026-10`,
  * `2026-10-29`), and `tags` (the subjects). A missing or malformed
  * value is left out, never an error.
  */
@@ -26,7 +26,7 @@ final class Meta
     public static function from(array $frontmatter): array
     {
         $language = self::text($frontmatter['language'] ?? null);
-        $date = $frontmatter['date'] ?? null;
+        $date = $frontmatter['date'] ?? $frontmatter['year'] ?? null;
         $date = $date instanceof DateTimeInterface ? $date->format('Y-m-d') : self::text($date);
 
         return [
