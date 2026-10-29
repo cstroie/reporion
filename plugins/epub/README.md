@@ -9,5 +9,8 @@ included.
   chapters. Anonymous, invisible and chapterless pages are all the same 404.
 - Chapters are what the caller may see (the one visibility predicate).
 - No images are embedded; links to other pages become plain text.
+- The front page's front matter describes the book (all optional): `author` (a name or a list),
+  `summary` (the description), `language` (wins over the setting), `publisher`, `rights`; the page's
+  `tags` become the book's subjects. A malformed value is left out.
 - Setting: `language` (the book's `dc:language`, default `ro`).
 - Audited as `export` (`format: epub`); the plugin writes no page.

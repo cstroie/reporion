@@ -34,4 +34,26 @@ final class BuilderTest extends TestCase
         self::assertSame(Builder::identifier('01ABC'), Builder::identifier('01ABC'));
         self::assertMatchesRegularExpression('/^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-a[0-9a-f]{3}-[0-9a-f]{12}$/', Builder::identifier('01ABC'));
     }
+
+    public function testTheFrontMatterKeysDescribeTheBook(): void
+    {
+        $meta = \Reporion\Plugin\Epub\Meta::from([
+            'author' => ['Ana <A>', 'Bob'],
+            'publisher' => 'Press',
+            'language' => 'en-GB',
+            'summary' => 'About',
+            'rights' => ['bad'],
+            'tags' => ['procedures'],
+        ]);
+        self::assertSame('', $meta['rights']);
+        $epub = Builder::build(['title' => 'B', 'html' => '<p>f</p>'], [['title' => 'One', 'html' => '<p>1</p>']], 'ro', Builder::identifier('01ABC'), new DateTimeImmutable('2026-10-29T10:00:00Z'), 'Contents', $meta);
+        $opf = Zip::read($epub)['OEBPS/content.opf']->bytes();
+
+        $doc = new DOMDocument();
+        self::assertTrue($doc->loadXML($opf));
+        self::assertStringContainsString('<dc:creator>Ana &lt;A&gt;</dc:creator><dc:creator>Bob</dc:creator>', $opf);
+        self::assertStringContainsString('<dc:language>en-GB</dc:language>', $opf);
+        self::assertStringContainsString('<dc:description>About</dc:description>', $opf);
+        self::assertStringContainsString('<dc:subject>procedures</dc:subject>', $opf);
+    }
 }

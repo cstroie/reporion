@@ -100,6 +100,7 @@ final class Plugin implements PluginInterface
             Builder::identifier($record->pid),
             new DateTimeImmutable(),
             t('epub.contents'),
+            Meta::from($record->frontmatter),
         );
         $this->audit->record('export', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'epub', 'chapters' => \count($chapters)]);
 
