@@ -59,4 +59,11 @@ final class BuilderTest extends TestCase
         self::assertStringContainsString('<dc:description>About</dc:description>', $opf);
         self::assertStringContainsString('<dc:subject>procedures</dc:subject>', $opf);
     }
+
+    public function testAChapterThatOpensWithASecondLevelHeadingIsTitledByIt(): void
+    {
+        $record = new \Reporion\Storage\PageRecord('P', 'docs:b:ch2', 1, 'draft', 'private', [], "## II\n\nText\n", [], []);
+        self::assertSame('II', \Reporion\Plugin\Epub\Titles::of($record));
+        self::assertSame("Text\n", \Reporion\Plugin\Epub\Titles::withoutHeading($record->body, 'II'));
+    }
 }
