@@ -142,11 +142,80 @@ final class EditorFormatTest extends TestCase
         [$exit] = $this->run1('continueList', [$empty, $at3]);
         self::assertSame(self::DOC . '- Una' . "\n", $exit['text']);
 
+        // A task item opens an unchecked one, ticked or not; ordered too
+        foreach (['- [ ] Una' => "\n- [ ] ", '* [x] Una' => "\n* [ ] ", '+ [X] Una' => "\n+ [ ] ", '1. [x] Una' => "\n2. [ ] "] as $line => $added) {
+            $task = self::DOC . $line;
+            [$t] = $this->run1('continueList', [$task, \strlen($task)]);
+            self::assertSame($task . $added, $t['text'], $line);
+        }
+        // An empty task item breaks out, ticked or not
+        foreach (['- [ ] ', '- [x] '] as $box) {
+            $emptyTask = self::DOC . "- [ ] Una\n" . $box;
+            [$out] = $this->run1('continueList', [$emptyTask, \strlen($emptyTask)]);
+            self::assertSame(self::DOC . "- [ ] Una\n", $out['text'], $box);
+        }
+        // `[ ]` without a space after it is no task (the renderer says so): a plain bullet
+        $loose = self::DOC . '- [ ]';
+        [$l] = $this->run1('continueList', [$loose, \strlen($loose)]);
+        self::assertSame($loose . "\n- ", $l['text']);
+        // A blockquote keeps its prefix, alone or around a list; empty exits
+        $quote = self::DOC . '> Una';
+        [$q] = $this->run1('continueList', [$quote, \strlen($quote)]);
+        self::assertSame($quote . "\n> ", $q['text']);
+        $quoted = self::DOC . '> - [ ] Una';
+        [$qt] = $this->run1('continueList', [$quoted, \strlen($quoted)]);
+        self::assertSame($quoted . "\n> - [ ] ", $qt['text']);
+        $quoteOut = self::DOC . "> Una\n> ";
+        [$qo] = $this->run1('continueList', [$quoteOut, \strlen($quoteOut)]);
+        self::assertSame(self::DOC . "> Una\n", $qo['text']);
+
         // Not at the end of the line, or not on a list line: no edit
         [$mid] = $this->run1('continueList', [$text, $at - 1]);
         self::assertNull($mid['result']);
         [$plain] = $this->run1('continueList', [self::DOC . 'Una', \strlen(self::DOC . 'Una')]);
         self::assertNull($plain['result']);
+    }
+
+    public function testTableRowOnEnterAndTaskHelpers(): void
+    {
+        $t = self::DOC . "| A | B |\n| --- | --- |\n| 1 | 2 |";
+        [$row] = $this->run1('continueList', [$t, \strlen($t)]);
+        self::assertSame($t . "\n|  |  |", $row['text']);
+        self::assertSame(\strlen($t) + 3, $row['result']['selStart']);
+
+        // On the header row the new one goes under the delimiter
+        $head = self::DOC . "| A | B |\n| --- | --- |\n| 1 | 2 |";
+        $at = \strlen(self::DOC . '| A | B |');
+        [$h] = $this->run1('continueList', [$head, $at]);
+        self::assertSame(self::DOC . "| A | B |\n| --- | --- |\n|  |  |\n| 1 | 2 |", $h['text']);
+
+        // An empty row is removed
+        $empty = $t . "\n|  |  |";
+        [$gone] = $this->run1('continueList', [$empty, \strlen($empty)]);
+        self::assertSame($t . "\n", $gone['text']);
+
+        // Ctrl+Enter cycle: plain -> task -> ticked -> plain
+        $cycle = ['Una' => '- [ ] Una', '- Una' => '- [ ] Una', '- [ ] Una' => '- [x] Una', '- [x] Una' => '- Una', '2. Una' => '- [ ] Una'];
+        foreach ($cycle as $from => $to) {
+            $doc = self::DOC . $from;
+            [$r] = $this->run1('toggleTask', [$doc, \strlen($doc), \strlen($doc)]);
+            self::assertSame(self::DOC . $to, $r['text'], $from);
+        }
+
+        // The checklist button: all lines tasks, again removes them
+        $lines = self::DOC . "Una\nDoua";
+        [$l] = $this->run1('list', [$lines, \strlen(self::DOC), \strlen($lines), 'task']);
+        self::assertSame(self::DOC . "- [ ] Una\n- [ ] Doua", $l['text']);
+
+        // Backspace after an empty marker drops it; elsewhere nothing
+        foreach (['- ' => '', '3. ' => '', '- [ ] ' => '', '> ' => ''] as $from => $to) {
+            $doc = self::DOC . $from;
+            [$d] = $this->run1('dropMarker', [$doc, \strlen($doc)]);
+            self::assertSame(self::DOC . $to, $d['text'], $from);
+        }
+        $none = self::DOC . '- Una';
+        [$n] = $this->run1('dropMarker', [$none, \strlen($none)]);
+        self::assertNull($n['result']);
     }
 
     public function testTableFromTabSeparatedLinesOrASkeleton(): void

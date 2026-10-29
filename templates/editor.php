@@ -507,6 +507,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'tbTable' => t('editor.slash.table'),
         'tbBullets' => t('editor.tb.bullets'),
         'tbNumbers' => t('editor.tb.numbers'),
+        'tbTasks' => t('editor.slash.tasks'),
         'tbCode' => t('editor.tb.code'),
         'tbLink' => t('editor.tb.link'),
         'tbUrl' => t('editor.tb.url'),

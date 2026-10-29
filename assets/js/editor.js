@@ -725,6 +725,7 @@
       italic: function (v, a, b) { applyEdit(F.toggleWrap(v, a, b, '*')); },
       bullets: function (v, a, b) { applyEdit(F.list(v, a, b, 'bullet')); },
       numbers: function (v, a, b) { applyEdit(F.list(v, a, b, 'number')); },
+      tasks: function (v, a, b) { applyEdit(F.list(v, a, b, 'task')); },
       table: function (v, a, b) { applyEdit(F.table(v, a, b, [s.column || 'Column', s.column || 'Column'])); },
       code: function (v, a, b) { applyEdit(F.toggleWrap(v, a, b, '`')); },
       link: function (v, a, b) {
@@ -822,7 +823,7 @@
       var items = [];
       var sections = Array.isArray(config.slashSections) ? config.slashSections : [];
       sections.forEach(function (name) { items.push({ title: '### ' + name, meta: s.slashSection || '', value: { kind: 'section', name: name } }); });
-      [['table', 'tbTable'], ['bullets', 'tbBullets'], ['numbers', 'tbNumbers'], ['code', 'tbCode'], ['link', 'tbLink'], ['url', 'tbUrl'], ['image', 'tbImage']].forEach(function (a) {
+      [['table', 'tbTable'], ['bullets', 'tbBullets'], ['numbers', 'tbNumbers'], ['tasks', 'tbTasks'], ['code', 'tbCode'], ['link', 'tbLink'], ['url', 'tbUrl'], ['image', 'tbImage']].forEach(function (a) {
         items.push({ title: s[a[1]] || a[0], meta: s.slashFormat || '', value: { kind: 'action', name: a[0] } });
       });
       if (Array.isArray(config.priors) && config.priors.length > 0) items.push({ title: s.tbPrior || 'prior', meta: s.slashInsert || '', value: { kind: 'action', name: 'prior' } });
@@ -1025,6 +1026,21 @@
         if (!e) return;
         event.preventDefault();
         applyEdit(e, el);
+      });
+      // Backspace right after an empty item's marker takes the marker away
+      el.addEventListener('keydown', function (event) {
+        if (event.key !== 'Backspace' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+        if (el.selectionStart !== el.selectionEnd) return;
+        var e = F.dropMarker(el.value, el.selectionStart);
+        if (!e) return;
+        event.preventDefault();
+        applyEdit(e, el);
+      });
+      // Ctrl+Enter: item -> task -> ticked task -> item
+      el.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+        event.preventDefault();
+        applyEdit(F.toggleTask(el.value, el.selectionStart, el.selectionEnd), el);
       });
       if (snippetList.length > 0) {
         el.addEventListener('input', function (event) {

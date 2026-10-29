@@ -1385,6 +1385,7 @@ return [
     'editor.slash.off'    => 'Turn the / menu off (a typed / stays a /)',
     'editor.slash.on'     => 'Turn the / menu on',
     'editor.slash.table'  => 'Table',
+    'editor.slash.tasks'  => 'Checklist (Ctrl+Enter: task, ticked, plain)',
     'editor.slash.sections' => 'Indicație|Tehnică|Descriere|Concluzii',
     'editor.tb.snippet_modality' => 'this modality',
     'editor.new_title'    => 'New page · %s',

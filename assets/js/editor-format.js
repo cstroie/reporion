@@ -114,6 +114,7 @@
   }
 
   var BULLET = /^(\s*)[-*+] /;
+  var TASK_ITEM = /^(\s*)[-*+] \[[ xX]\] /;
   var NUMBER = /^(\s*)\d+[.)] /;
 
   /** Adds or removes `- ` / `1. ` on every selected line; numbers count up. */
@@ -121,7 +122,7 @@
     var c = clamp(text, start, end);
     var r = lineRange(text, c[0], c[1]);
     var lines = text.slice(r[0], r[1]).split('\n');
-    var own = kind === 'number' ? NUMBER : BULLET;
+    var own = kind === 'number' ? NUMBER : (kind === 'task' ? TASK_ITEM : BULLET);
     var other = kind === 'number' ? BULLET : NUMBER;
     var content = lines.filter(function (l) { return l.trim() !== ''; });
     var removing = content.length > 0 && content.every(function (l) { return own.test(l); });
@@ -133,10 +134,10 @@
     var out = lines.map(function (l) {
       if (skipBlank && l.trim() === '') return l;
       if (removing) return l.replace(own, '$1');
-      var bare = l.replace(own, '$1').replace(other, '$1');
+      var bare = l.replace(TASK_ITEM, '$1').replace(own, '$1').replace(other, '$1');
       var indent = bare.match(/^\s*/)[0];
       n++;
-      return indent + (kind === 'number' ? n + '. ' : '- ') + bare.slice(indent.length);
+      return indent + (kind === 'number' ? n + '. ' : (kind === 'task' ? '- [ ] ' : '- ')) + bare.slice(indent.length);
     });
     var insert = out.join('\n');
 
@@ -144,33 +145,118 @@
   }
 
   var NUMBER_ITEM = /^(\s*)(\d+)([.)]) /;
+  var QUOTE = /^\s*(?:> ?)+/;
+  var TASK_BOX = /^\[[ xX]\] /;
+
+  var TABLE_ROW = /^\s*\|.*\|\s*$/;
+  var TABLE_DELIM = /^\s*\|(\s*:?-+:?\s*\|)+\s*$/;
+
+  /**
+   * Enter at the end of a table row: a new empty row with as many cells,
+   * the cursor in its first one. On the header row the new row goes below
+   * the delimiter line; on an already-empty row the row is removed (the
+   * way a list is left), leaving a blank line after the table.
+   */
+  function tableRow(text, r) {
+    var whole = text.slice(r[0], r[1]);
+    var cells = whole.trim().replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|/);
+    if (TABLE_DELIM.test(whole) && r[0] === 0) return null;
+    if (cells.every(function (c) { return c.trim() === ''; }) && !TABLE_DELIM.test(whole)) {
+      return edit(r[0], r[1], '', r[0], r[0]);
+    }
+    var indent = whole.match(/^\s*/)[0];
+    var row = indent + '|' + cells.map(function () { return '  |'; }).join('');
+    var at = r[1];
+    var next = lineRange(text, r[1] + 1, r[1] + 1);
+    if (r[1] < text.length && TABLE_DELIM.test(text.slice(next[0], next[1]))) at = next[1];
+    var insert = '\n' + row;
+    var caret = at + 1 + indent.length + 2;
+
+    return edit(at, at, insert, caret, caret);
+  }
+
+  /**
+   * Ctrl+Enter on the line(s) holding the selection: a list item becomes a
+   * task, a task is ticked, a ticked one goes back to a plain item; a line
+   * with no marker becomes an open task. Every line follows the first one's
+   * step so a selection stays uniform.
+   */
+  function toggleTask(text, start, end) {
+    var c = clamp(text, start, end);
+    var r = lineRange(text, c[0], c[1]);
+    var lines = text.slice(r[0], r[1]).split('\n');
+    var first = lines.filter(function (l) { return l.trim() !== ''; })[0] || '';
+    var step = /^\s*[-*+] \[ \] /.test(first) ? 'tick' : (/^\s*[-*+] \[[xX]\] /.test(first) ? 'plain' : 'open');
+    var out = lines.map(function (l) {
+      if (l.trim() === '' && lines.length > 1) return l;
+      var bare = l.replace(/^(\s*)[-*+] \[[ xX]\] /, '$1').replace(BULLET, '$1').replace(NUMBER, '$1');
+      var indent = bare.match(/^\s*/)[0];
+      var body = bare.slice(indent.length);
+      if (step === 'tick') return indent + '- [x] ' + body;
+      if (step === 'plain') return indent + '- ' + body;
+      return indent + '- [ ] ' + body;
+    });
+    var insert = out.join('\n');
+
+    return edit(r[0], r[1], insert, r[0], r[0] + insert.length);
+  }
+
+  /**
+   * Backspace with the cursor right after an empty item's marker (`- `,
+   * `3. `, `- [ ] `, `> `): the marker goes, as a second Enter would do.
+   * Null anywhere else, so the browser deletes one character as usual.
+   */
+  function dropMarker(text, at) {
+    if (at < bodyStart(text)) return null;
+    var r = lineRange(text, at, at);
+    if (at !== r[1]) return null;
+    var whole = text.slice(r[0], r[1]);
+    var quote = (whole.match(QUOTE) || [''])[0];
+    var inner = whole.slice(quote.length);
+    var m = inner.match(/^(\s*)(?:[-*+]|\d+[.)]) (?:\[[ xX]\] )?$/);
+    var kept;
+    if (m) kept = quote + m[1];
+    else if (quote !== '' && inner === '') kept = '';
+    else return null;
+    if (kept === whole) return null;
+
+    return edit(r[0], r[1], kept, r[0] + kept.length, r[0] + kept.length);
+  }
 
   /**
    * Enter pressed at the end of a list line (TODO 13): the next marker on a
-   * new line (a number counts up from the current one), or: pressed on an
-   * already-empty item: the marker is dropped and the line stays, breaking
-   * out of the list the way most editors do on a second Enter. Null when
-   * `at` is not at the end of a list line, so the caller falls back to a
-   * plain newline.
+   * new line (a number counts up from the current one; a task item `- [x] `
+   * opens an unchecked `- [ ] `; a blockquote keeps its `> `), or: pressed
+   * on an already-empty item: the marker is dropped and the line stays,
+   * breaking out of the list the way most editors do on a second Enter.
+   * Null when `at` is not at the end of a list or quote line, so the caller
+   * falls back to a plain newline.
    */
   function continueList(text, at) {
     if (at < bodyStart(text)) return null;
     var r = lineRange(text, at, at);
     if (at !== r[1]) return null;
     var whole = text.slice(r[0], r[1]);
-    var bm = whole.match(BULLET);
-    var nm = whole.match(NUMBER_ITEM);
-    if (!bm && !nm) return null;
-    var marker = bm ? bm[0] : nm[0];
-    var indent = bm ? bm[1] : nm[1];
-    var rest = whole.slice(marker.length);
+    if (TABLE_ROW.test(whole)) return tableRow(text, r);
+    var quote = (whole.match(QUOTE) || [''])[0];
+    var inner = whole.slice(quote.length);
+    var bm = inner.match(BULLET);
+    var nm = inner.match(NUMBER_ITEM);
+    if (!bm && !nm && quote === '') return null;
+    var marker = bm ? bm[0] : (nm ? nm[0] : '');
+    var indent = bm ? bm[1] : (nm ? nm[1] : '');
+    var rest = inner.slice(marker.length);
+    var task = marker !== '' && TASK_BOX.test(rest);
+    if (task) rest = rest.slice(4);
 
     if (rest.trim() === '') {
-      return edit(r[0], r[1], indent, r[0] + indent.length, r[0] + indent.length);
+      var kept = marker !== '' ? quote + indent : '';
+      if (marker === '' && quote === '') return null;
+      return edit(r[0], r[1], kept, r[0] + kept.length, r[0] + kept.length);
     }
 
-    var nextMarker = bm ? marker.slice(indent.length) : (parseInt(nm[2], 10) + 1) + nm[3] + ' ';
-    var insert = '\n' + indent + nextMarker;
+    var nextMarker = bm ? marker.slice(indent.length) : (nm ? (parseInt(nm[2], 10) + 1) + nm[3] + ' ' : '');
+    var insert = '\n' + quote + indent + nextMarker + (task ? '[ ] ' : '');
 
     return edit(at, at, insert, at + insert.length, at + insert.length);
   }
@@ -711,6 +797,8 @@
     heading: heading,
     list: list,
     continueList: continueList,
+    toggleTask: toggleTask,
+    dropMarker: dropMarker,
     table: table,
     codeBlock: codeBlock,
     link: link,
