@@ -15,6 +15,7 @@ use Reporion\Service\Backup\RsyncConfig;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\InstanceSettings;
+use Reporion\Service\Library\Extractor;
 use Reporion\Service\TagDictionary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
@@ -88,6 +89,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkIntegrityVerified(),
             $this->checkStateDatabase(),
             $this->checkRsyncBackup(),
+            $this->checkLibraryTools(),
         ];
 
         $failed = false;
@@ -673,6 +675,29 @@ final class DoctorCommand implements CommandInterface
         }
 
         return CheckResult::pass($label, 'last snapshot ' . $age . ' h ago');
+    }
+
+    /** The programs the library reads files with (docs/library.md): a missing one only narrows what it takes */
+    private function checkLibraryTools(): CheckResult
+    {
+        $label = 'Library can read uploaded files';
+        $tools = \is_array($this->config['library']['tools'] ?? null) ? array_filter($this->config['library']['tools'], 'is_string') : [];
+        $found = (new Extractor(sys_get_temp_dir(), $tools))->check();
+        $cannot = [];
+        if (!$found['pdftotext'] || !$found['pdfinfo']) {
+            $cannot[] = 'PDF (install poppler-utils)';
+        }
+        if (!$found['pandoc']) {
+            $cannot[] = 'Word, OpenDocument, RTF, HTML and EPUB (install pandoc)';
+        }
+        if (!$found['soffice']) {
+            $cannot[] = '.doc and office slides and sheets (install LibreOffice)';
+        }
+        if ($cannot !== []) {
+            return CheckResult::warn($label, 'not ' . implode('; ', $cannot));
+        }
+
+        return CheckResult::pass($label, $found['pdftohtml'] ? 'every type' : 'every type (no pdftohtml: titles are guessed from the text only)');
     }
 
     /**

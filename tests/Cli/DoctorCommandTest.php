@@ -63,6 +63,18 @@ final class DoctorCommandTest extends TestCase
     }
 
     /** D54 §9: the permanent database, never silently re-created over pages */
+    public function testAMissingProgramNarrowsWhatTheLibraryReadsAndOnlyWarns(): void
+    {
+        $this->createOwnerAccount();
+        $config = $this->config();
+        $config['library']['tools'] = ['pdftotext' => '/nonexistent/pdftotext', 'pandoc' => '/nonexistent/pandoc', 'soffice' => '/nonexistent/soffice'];
+
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('[WARN] Library can read uploaded files: not PDF (install poppler-utils); Word, OpenDocument, RTF, HTML and EPUB (install pandoc); .doc and office slides and sheets (install LibreOffice)', $output);
+    }
+
     public function testAMissingOrDamagedStateDatabaseBesidePagesFails(): void
     {
         $this->createOwnerAccount();
