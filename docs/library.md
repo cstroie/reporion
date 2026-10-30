@@ -242,6 +242,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    unchanged; a meaning hit counts as a match for "no passage, no model call"; an embedding failure is a notice. Needs the
    embedding model of Admin → AI (*Similar reports*) and a run of `index:vectors` (as `www-data`; the first run over a large
    library is many requests: `--limit`). Report passages (Ask the archive) are not embedded.
+   *Step 2 built 2026-10-30:* **What it cites**, on a source's card: its reference list (the `text` fence under `## References`)
+   cut into entries (`Support\ReferenceList`: numbered ones with their wrapped lines joined, else paragraphs or lines; at most
+   300) and matched against the library's records the caller reads (`listNamespaceMeta`, the index only: no source file is read
+   for a page view): by DOI or PMID exactly, by title only when the library's title is at least 25 characters, stands whole in
+   the entry (folded) and the entry has its year. A match links to the source; the rest are shown as extracted, with a `doi.org`
+   link when the entry has a DOI. *Not built:* adding an entry that is not in the library (a record from it), and a whole
+   library's citation graph.
 8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
 
 ## Long sources

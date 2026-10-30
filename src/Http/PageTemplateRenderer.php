@@ -161,6 +161,8 @@ final class PageTemplateRenderer
                 ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))
                 : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
+            // What it cites (phase 7): its reference list against the records the caller reads (the index only)
+            'cites' => $this->cites($record, $principal),
         ] : null;
         // Ask the notebook (docs/library.md, phase 5): a page that cites library sources, for an editor of it and of the library, with the prompt there
         $notebook = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)
@@ -203,5 +205,29 @@ final class PageTemplateRenderer
         return preg_match('/^exams\.(\d+)\.(title|conclusion)$/', $code, $m) === 1
             ? t('page.exam_' . $m[2], [(int) $m[1]])
             : t('page.exam_count');
+    }
+
+    /**
+     * A library source's reference list matched against the library (docs/library.md, phase 7):
+     * the records the caller reads, from the index (no source file read), itself left out; null
+     * when the source keeps no reference list
+     *
+     * @return ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int}
+     */
+    private function cites(PageRecord $record, ?User $principal): ?array
+    {
+        $entries = \Reporion\Support\ReferenceList::entries(\Reporion\Support\ReferenceList::of($record->body));
+        if ($entries === []) {
+            return null;
+        }
+        $records = [];
+        foreach ($this->index->listNamespaceMeta($this->libraryNamespace, $principal) as $row) {
+            if ($row['pid'] !== $record->pid && LibrarySource::isSource($row['meta']) && \is_array($row['meta']['csl'] ?? null)) {
+                $records[] = ['key' => substr($row['path'], \strlen($this->libraryNamespace) + 1), 'path' => $row['path'], 'title' => (string) $row['title'], 'csl' => $row['meta']['csl']];
+            }
+        }
+        $matched = \Reporion\Support\ReferenceList::match($entries, $records);
+
+        return ['entries' => $matched, 'found' => \count(array_filter($matched, static fn (array $e): bool => $e['match'] !== null))];
     }
 }

@@ -157,6 +157,20 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('Nobody A. A corrected title. 2024.', html_entity_decode($this->call('reader', 'GET', '/' . $page['path'])->body, ENT_QUOTES));
     }
 
+    public function testASourceShowsWhatItCitesThatIsInTheLibrary(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage->create('library:abel2020', ['title' => 'Abel', 'visibility' => 'private', 'csl' => ['title' => 'Grading white matter lesions', 'DOI' => '10.1234/abc.1']], "Text.\n", 'owner');
+        $storage->create('library:cole2021', ['title' => 'Cole', 'visibility' => 'private', 'csl' => ['title' => 'Cole']], "Text.\n\n## References\n\n```text\n1. Abel A. Grading. 2020. doi:10.1234/abc.1\n2. Nobody N. Not here. 2015.\n```\n", 'owner');
+
+        $view = html_entity_decode($this->call('reader', 'GET', '/library:cole2021')->body, ENT_QUOTES);
+
+        self::assertStringContainsString('What it cites: 2 references, 1 in the library', $view);
+        self::assertStringContainsString('href="/library:abel2020"', $view);
+        self::assertStringContainsString('Nobody N. Not here. 2015.', $view);
+        self::assertStringNotContainsString('What it cites', html_entity_decode($this->call('reader', 'GET', '/library:abel2020')->body, ENT_QUOTES), 'no reference list, no section');
+    }
+
     public function testAnUnlistedSourceIsRefusedSoNoAnonymousLinkReadsIt(): void
     {
         $page = $this->add('editor', self::ARTICLE, 'study.md');

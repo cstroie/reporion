@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * A library source's card on its page view (docs/library.md, phase 2): the reference in
- * Vancouver, the original to open, the reference to copy, and for a writer the record to correct
- * (assets/js/library.js, PUT /api/v1/library/{pid}/record).
+ * Vancouver, the original to open, the reference to copy, what it cites (its reference list
+ * against the library, phase 7), and for a writer the record to correct (assets/js/library.js,
+ * PUT /api/v1/library/{pid}/record).
  *
  * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
- * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource;
+ * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool,
+ * cites: ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int}} $librarySource;
  * string $basePath
  */
 
@@ -42,6 +44,20 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
     ? t('library.original_info_pages', [strtoupper($source['original']['ext']), (string) $source['original']['pages'], (string) max(1, (int) round($source['original']['bytes'] / 1024))])
     : t('library.original_info', [strtoupper($source['original']['ext']), (string) max(1, (int) round($source['original']['bytes'] / 1024))])) ?><?php endif; ?>
 </p>
+<?php endif; ?>
+<?php if (($source['cites'] ?? null) !== null): ?>
+<details class="wk-lib-cites">
+<summary class="wk-dim wk-text-sm"><i class="ph ph-list-numbers" aria-hidden="true"></i> <?= $e(t('library.cites', [(string) \count($source['cites']['entries']), (string) $source['cites']['found']])) ?></summary>
+<ol class="wk-lib-cites-list wk-text-sm">
+<?php foreach ($source['cites']['entries'] as $entry): ?>
+<li>
+<?php if ($entry['match'] !== null): ?><a href="<?= $e($basePath . '/' . $entry['match']['path']) ?>" title="<?= $e(t('library.cites_by_' . $entry['match']['by'])) ?>"><i class="ph ph-book-open-text" aria-hidden="true"></i> <?= $e($entry['match']['title']) ?></a> <code class="wk-dim">[@<?= $e($entry['match']['key']) ?>]</code><br><?php endif; ?>
+<span class="wk-dim"><?= $e($entry['text']) ?></span>
+<?php if ($entry['match'] === null && $entry['doi'] !== null): ?> <a href="https://doi.org/<?= $e($entry['doi']) ?>" rel="noopener noreferrer" target="_blank" class="wk-mono">doi</a><?php endif; ?>
+</li>
+<?php endforeach; ?>
+</ol>
+</details>
 <?php endif; ?>
 <?php if ($source['canEdit']): ?>
 <div class="wk-lib-edit" data-lib-edit-host hidden></div>
