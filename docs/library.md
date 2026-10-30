@@ -175,6 +175,14 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    takes the file** (`Library::attach()`: the original and the text added to that page, its key, tags and record kept, only blanks filled;
    the upload form says so and does not block); D58 amended. The upload form (and the add panel) take `.bib`, `.ris`, `.json` as imports; a
    proposal's tags are filled in the form (the lookups' MeSH terms, step 4). `library:export` writes the library's references.
+   *Step 4 built 2026-10-30:* the online lookups, **opt-in** (Admin → Settings → Library, `library.lookup`, off by default): a DOI to CrossRef
+   `works/{doi}`, a PMID to PubMed `efetch`, a DOI's PMID by `esearch` (`Service\Library\Lookup`; the fetch is a closure, HTTPS to those two hosts only, 5 s,
+   one attempt, no e-mail in the User-Agent). **Only the identifier is sent**, never text, a title or a file name (invariant 8): so the plan's
+   title query is **not built** (a first line can be a name; it could become a button that sends the title the writer sees). What returns
+   replaces what was read from the file, the abstract and MeSH terms (as proposed tags) come with PubMed; the proposal says what was done
+   (`lookup`: `crossref`, `pubmed`, `crossref+pubmed`, `none`, `failed`) and the form asks the writer to check it is the right article (D8). A failure
+   leaves the proposal as read. PubMed's XML is parsed with no network and no entity substitution (a declared entity is refused). `library:add
+   --dry-run` sends nothing. Not built: lookups for an imported record, "find the DOI by title", the assistant reading page 1 into the record.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from

@@ -55,6 +55,8 @@ final class InstanceSettings
         'media.max_bytes' => 'bytes',
         // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
         'editor.save_stays_open' => 'bool',
+        // Library lookups (docs/library.md, phase 4): a DOI or PMID sent to CrossRef and PubMed to complete a record; off unless an owner turns it on
+        'library.lookup' => 'bool',
         // Owner-only debug panels in a page's footer (the new-report form's raw findscu exchange); off unless an owner turns them on
         'debug.panels' => 'bool',
         'reports.modality_namespaces' => 'modality_map',

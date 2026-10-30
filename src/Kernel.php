@@ -122,6 +122,7 @@ use Reporion\Service\TemplatePages;
 use Reporion\Service\Library\Citations;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
+use Reporion\Service\Library\Lookup;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
@@ -193,7 +194,7 @@ final class Kernel
         'feeds' => ['namespaces' => []],
         'references' => ['namespaces' => ['radiology']],
         // The library (docs/library.md): its namespace, the largest file taken, the programs that read files
-        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => []],
+        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => [], 'lookup' => false],
         'sites' => [],
         'plugins' => ['enabled' => []],
     ];
@@ -229,6 +230,7 @@ final class Kernel
             new TempUploads($data),
             $namespace,
             max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024,
+            ($settings['lookup'] ?? false) === true ? new Lookup(Lookup::http()) : null,
         );
     }
 

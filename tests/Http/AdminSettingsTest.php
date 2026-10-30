@@ -121,6 +121,20 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/settings/backup', 'owner', http_build_query(['backup_host' => '-oProxyCommand=x'] + $form))->status);
     }
 
+    public function testTheLibraryLookupIsOffUntilTheOwnerTurnsItOn(): void
+    {
+        $form = $this->request('GET', '/admin/settings', 'owner')->body;
+        self::assertStringContainsString('action="/admin/settings/library"', $form);
+        self::assertStringNotContainsString('name="library_lookup" value="1" checked', $form);
+
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_lookup' => '1']))->status);
+        self::assertStringContainsString("library:\n  lookup: true", (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(404, $this->request('POST', '/admin/settings/library', 'editor', http_build_query(['library_lookup' => '1']))->status);
+
+        $this->request('POST', '/admin/settings/library', 'owner', '');
+        self::assertStringContainsString('lookup: false', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+    }
+
     public function testTheReportsSectionIsSaved(): void
     {
         $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => "MR = rm\nCT = ct\n"]));

@@ -56,6 +56,8 @@ final class Library
         private readonly TempUploads $temp,
         private readonly string $namespace = 'library',
         private readonly int $maxBytes = 50 * 1024 * 1024,
+        // The online lookups (Admin → Settings → Library, off by default): null sends nothing anywhere
+        private readonly ?Lookup $lookup = null,
     ) {
     }
 
@@ -84,7 +86,7 @@ final class Library
      */
     public function upload(string $bytes, string $name, User $principal): array
     {
-        [$ext, $extracted, $proposal] = $this->proposal($bytes, $name, $principal);
+        [$ext, $extracted, $proposal] = $this->proposal($bytes, $name, $principal, true);
         $fileToken = $this->temp->put(self::FILE_BUCKET, $bytes);
         $token = $this->temp->put(self::BUCKET, (string) json_encode([
             'name' => self::fileName($name),
@@ -106,7 +108,7 @@ final class Library
      */
     public function propose(string $bytes, string $name, User $principal): array
     {
-        return $this->proposal($bytes, $name, $principal)[2];
+        return $this->proposal($bytes, $name, $principal, false)[2];
     }
 
     /**
@@ -114,10 +116,11 @@ final class Library
      *
      * @throws LibraryException
      */
-    private function proposal(string $bytes, string $name, User $principal): array
+    private function proposal(string $bytes, string $name, User $principal, bool $online): array
     {
         [$ext, $extracted] = $this->read($bytes, $name);
         $identified = Identify::propose($extracted);
+        [$identified['csl'], $tags, $looked] = $online ? $this->lookedUp($identified['csl']) : [$identified['csl'], [], null];
 
         return [$ext, $extracted, [
             'name' => self::fileName($name),
@@ -127,6 +130,9 @@ final class Library
             'has_text' => $extracted->hasText,
             'csl' => $identified['csl'],
             'how' => $identified['how'],
+            // What the online lookup did: 'crossref', 'pubmed', 'crossref+pubmed', 'none' (nothing found), 'failed' (not reached), null (off)
+            'lookup' => $looked,
+            'tags' => $tags,
             'key' => CitationKey::make($identified['csl'], fn (string $k): bool => $this->keyTaken($k)),
             'duplicate' => $this->duplicateOf($identified['csl'], hash('sha256', $bytes), $principal),
             'preview' => self::preview($extracted->body),
@@ -171,8 +177,9 @@ final class Library
     public function add(string $bytes, string $name, User $principal, string $actor, array $fields = []): array
     {
         [$ext, $extracted] = $this->read($bytes, $name);
-        $csl = self::cleanCsl(array_merge(Identify::propose($extracted)['csl'], \is_array($fields['csl'] ?? null) ? $fields['csl'] : []));
-        $record = $this->create($bytes, $ext, self::fileName($name), $extracted, $csl, $fields['key'] ?? null, self::cleanTags($fields['tags'] ?? []), $principal, $actor);
+        [$looked, $mesh] = $this->lookedUp(Identify::propose($extracted)['csl']);
+        $csl = self::cleanCsl(array_merge($looked, \is_array($fields['csl'] ?? null) ? $fields['csl'] : []));
+        $record = $this->create($bytes, $ext, self::fileName($name), $extracted, $csl, $fields['key'] ?? null, self::cleanTags(array_merge($mesh, \is_array($fields['tags'] ?? null) ? $fields['tags'] : [])), $principal, $actor);
 
         return [$record, $csl];
     }
@@ -492,6 +499,47 @@ final class Library
         }
 
         return ['added' => $added, 'skipped' => $skipped];
+    }
+
+    /**
+     * A proposed record completed from CrossRef (a DOI) and PubMed (a PMID, or the one PubMed has for
+     * the DOI), when the lookup is on: what they return replaces what was read from the file; only
+     * the identifier is sent. A failure leaves the record as it was.
+     *
+     * @param array<string, mixed> $csl
+     *
+     * @return array{0: array<string, mixed>, 1: list<string>, 2: ?string} the record, MeSH terms as tags, what was done
+     */
+    private function lookedUp(array $csl): array
+    {
+        if ($this->lookup === null) {
+            return [$csl, [], null];
+        }
+        $doi = \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : null;
+        $pmid = \is_scalar($csl['PMID'] ?? null) ? (string) $csl['PMID'] : null;
+        if ($doi === null && $pmid === null) {
+            return [$csl, [], 'none'];
+        }
+        $found = [];
+        $tags = [];
+        try {
+            $crossref = $doi !== null ? $this->lookup->crossref($doi) : null;
+            if ($crossref !== null) {
+                $found[] = 'crossref';
+                $csl = $crossref['csl'] + $csl;
+            }
+            $pmid ??= $doi !== null ? $this->lookup->pmidOf($doi) : null;
+            $pubmed = $pmid !== null ? $this->lookup->pubmed($pmid) : null;
+            if ($pubmed !== null) {
+                $found[] = 'pubmed';
+                $csl = ($crossref !== null ? $csl + $pubmed['csl'] : $pubmed['csl'] + $csl);
+                $tags = $pubmed['tags'];
+            }
+        } catch (\RuntimeException) {
+            return [$csl, $tags, 'failed'];
+        }
+
+        return [$csl, $tags, $found === [] ? 'none' : implode('+', $found)];
     }
 
     /** Whether the text holds a valid CNP: a patient document, which the library never takes */

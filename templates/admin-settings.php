@@ -151,6 +151,17 @@ Apache:
 </form>
 </div>
 
+<div class="wk-panel" id="library">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.library')) ?></h2></hgroup></header>
+<?= $notice('library') ?>
+<form action="<?= $b ?>/admin/settings/library" method="post">
+<p class="wk-opts">
+<label class="radio"><input type="checkbox" name="<?= $field('library.lookup') ?>" value="1"<?= $checked('library.lookup') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_lookup')) ?><?= $source('library.lookup') ?><small><?= $e(t('admin.settings.library_lookup_help')) ?></small></span></label>
+</p>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
+</form>
+</div>
+
 <div class="wk-panel" id="limits">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.limits')) ?></h2></hgroup></header>
 <?= $notice('limits') ?>

@@ -62,7 +62,7 @@ $total = \count($entries);
     'strings' => [
         'reading' => t('library.reading'), 'adding' => t('library.adding'), 'added' => t('library.added'), 'open' => t('library.open'),
         'failed' => t('library.failed'), 'too_large' => t('library.err_too_large', [(string) $maxMb]), 'unsupported' => t('library.err_unsupported'),
-        'importing' => t('library.importing'), 'imported' => t('library.imported'), 'attach' => t('library.attach'),
+        'lookup_done' => t('library.lookup_done'), 'lookup_none' => t('library.lookup_none'), 'lookup_failed' => t('library.lookup_failed'), 'importing' => t('library.importing'), 'imported' => t('library.imported'), 'attach' => t('library.attach'),
         'duplicate' => t('library.duplicate'), 'duplicate_title' => t('library.duplicate_title'), 'discarded' => t('library.discarded'),
         'pages' => t('library.pages'), 'title_needed' => t('library.title_needed'),
     ],

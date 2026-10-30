@@ -183,6 +183,8 @@ media:
   max_bytes: 8388608
 editor:
   save_stays_open: false             # true: Save returns to the editor at the new revision; Cancel reads Close (2026-10-10)
+library:
+  lookup: false                    # true: a DOI or PMID found in an upload is sent to CrossRef and PubMed to complete the record; never text (docs/library.md, 2026-10-30)
 debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)
 backup:                              # the periodic rsync backup (D49), edited in Admin → Settings → Backup

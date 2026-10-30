@@ -332,4 +332,64 @@ BIB;
         $this->expectException(LibraryException::class);
         Library::cleanCsl(['title' => 'Patient ' . CnpTest::make(1, '800115') . ' study']);
     }
+
+    /** @param \Closure(string): ?string $fetch */
+    private function withLookup(\Closure $fetch): Library
+    {
+        return new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp'), new TempUploads($this->dataRoot), 'library', 50 * 1024 * 1024, new \Reporion\Service\Library\Lookup($fetch));
+    }
+
+    public function testTheLookupCompletesTheProposalFromTheIdentifiersOnly(): void
+    {
+        $asked = [];
+        $library = $this->withLookup(function (string $url) use (&$asked): ?string {
+            $asked[] = $url;
+
+            return match (true) {
+                str_contains($url, 'crossref') => '{"message":{"type":"journal-article","title":["Looked-up made-up study"],"author":[{"given":"Zed","family":"Abel"}],"issued":{"date-parts":[[2024]]},"container-title":["J Synth"]}}',
+                str_contains($url, 'esearch') => '{"esearchresult":{"idlist":["12345678"]}}',
+                default => '<PubmedArticleSet><PubmedArticle><MedlineCitation><Article><Abstract><AbstractText>Abs.</AbstractText></Abstract></Article><MeshHeadingList><MeshHeading><DescriptorName>Lesions</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation></PubmedArticle></PubmedArticleSet>',
+            };
+        });
+
+        $proposal = $library->upload(self::ARTICLE, 'study.md', self::owner());
+
+        self::assertSame('crossref+pubmed', $proposal['lookup']);
+        self::assertSame(['Lesions'], $proposal['tags']);
+        self::assertSame('Looked-up made-up study', $proposal['csl']['title'], 'the lookup replaces what was read');
+        self::assertSame('12345678', $proposal['csl']['PMID']);
+        self::assertSame('Abs.', $proposal['csl']['abstract']);
+        foreach ($asked as $url) {
+            self::assertStringNotContainsString('made-up', $url, 'no title and no text: the identifier only');
+            self::assertStringNotContainsString('study', $url);
+        }
+        self::assertCount(3, $asked);
+    }
+
+    public function testAFailedLookupLeavesTheRecordAsReadAndSaysSo(): void
+    {
+        $proposal = $this->withLookup(static fn (string $url): ?string => null)->upload(self::ARTICLE, 'study.md', self::owner());
+
+        self::assertSame('failed', $proposal['lookup']);
+        self::assertSame('A made-up study of test lesions', $proposal['csl']['title']);
+        self::assertSame([], $proposal['tags']);
+    }
+
+    public function testNoIdentifierNoRequestAndLookupOffNothingAtAll(): void
+    {
+        $asked = 0;
+        $library = $this->withLookup(function () use (&$asked): ?string {
+            ++$asked;
+
+            return null;
+        });
+        self::assertSame('none', $library->upload("# A made-up study with no identifier\n\nText only.\n", 'x.md', self::owner())['lookup']);
+        self::assertSame(0, $asked);
+
+        // The dry run (library:add --dry-run) sends nothing even when the lookup is on
+        $library->propose(self::ARTICLE, 'study.md', self::owner());
+        self::assertSame(0, $asked);
+
+        self::assertNull($this->library->upload(self::ARTICLE, 'study.md', self::owner())['lookup'], 'off: null');
+    }
 }

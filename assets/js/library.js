@@ -241,6 +241,12 @@
         dup.appendChild(notice(blocking ? 'warn' : 'info', attach ? s.attach : (blocking ? s.duplicate : s.duplicate_title),
           [base + '/' + proposal.duplicate.path, proposal.duplicate.title || proposal.duplicate.path]));
       }
+      // What the online lookup did (Admin → Settings → Library), if it is on
+      if (proposal.lookup === 'failed' || proposal.lookup === 'none') {
+        dup.appendChild(notice('info', proposal.lookup === 'failed' ? s.lookup_failed : s.lookup_none));
+      } else if (proposal.lookup) {
+        dup.appendChild(notice('info', (s.lookup_done || '%s').replace('%s', proposal.lookup.replace('+', ' + ').replace('crossref', 'CrossRef').replace('pubmed', 'PubMed'))));
+      }
       var preview = form.querySelector('[data-lib-preview]');
       if (preview && proposal.preview) {
         preview.hidden = false;

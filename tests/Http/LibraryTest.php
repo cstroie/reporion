@@ -249,6 +249,16 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('wk-reflist-apa', $preview['html']);
     }
 
+    public function testTheLookupSettingReachesTheUpload(): void
+    {
+        // No identifier in the text: nothing is sent, but the answer says the lookup is on
+        $article = "# A made-up study with no identifier\n\nText only.\n";
+        self::assertNull(json_decode($this->upload('editor', $article, 'a.md')->body, true)['lookup'], 'off by default');
+
+        $this->config['library']['lookup'] = true;
+        self::assertSame('none', json_decode($this->upload('editor', $article, 'b.md')->body, true)['lookup']);
+    }
+
     public function testAnEditorImportsAReferenceManagersExportAndOthersCannot(): void
     {
         $bib = "@article{Abel2020, author = {Abel, Zed}, title = {Imported made-up study}, journal = {J Synth}, year = {2020}, doi = {10.9999/jsi.2020.0001}}\n@book{bad, title = {   }}\n";

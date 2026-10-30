@@ -39,7 +39,7 @@ final class LibraryAddCommand implements CommandInterface
                 '--dry-run' => 'read each file and print the record it would get; keep nothing',
                 '--json' => 'print the results as JSON',
             ],
-            details: 'An article already in the library (same file, DOI or PMID) and a file holding a CNP are skipped. No online lookup.',
+            details: 'An article already in the library (same file, DOI or PMID) and a file holding a CNP are skipped. With Admin → Settings → Library on, a DOI or PMID found is sent to CrossRef and PubMed to complete the record (the identifier only); --dry-run sends nothing.',
         );
     }
 
