@@ -199,7 +199,9 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    otherwise passages (about 1200 characters, cut as `SourceChunks`, each with the page marker in force) are chosen by the question's words and those the
    `notebook-terms` prompt adds in English and in the question's language (`AskExpansion::parse()`, `RecallTerms`), at most 4 a source, until the budget is full.
    The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
-   given never renders as a valid citation; it is rendered by the server in the page's citation style. No follow-up turns yet (each question stands alone).
+   given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
+   (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default
+   32 000). A part's notes ask for at most 1500 words and are cut to their share, so the parts' answers and the notes always fit (`SourceAnalysis::shares()`).
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),

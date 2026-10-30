@@ -57,6 +57,8 @@ final class InstanceSettings
         'editor.save_stays_open' => 'bool',
         // Library lookups (docs/library.md, phase 4): a DOI or PMID sent to CrossRef and PubMed to complete a record; off unless an owner turns it on
         'library.lookup' => 'bool',
+        // What one assistant request about the library may hold (docs/library.md, phase 5): the model's context, in tokens
+        'library.context_tokens' => 'context_tokens',
         // Owner-only debug panels in a page's footer (the new-report form's raw findscu exchange); off unless an owner turns them on
         'debug.panels' => 'bool',
         'reports.modality_namespaces' => 'modality_map',
@@ -406,6 +408,7 @@ final class InstanceSettings
             'path' => preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $text) === 1 ? $text : $fail(),
             'timezone' => self::isTimezone($text) ? $text : $fail(),
             'bool' => \in_array($raw, [true, '1', 'on', 'yes'], true),
+            'context_tokens' => $text === '' ? 32000 : (ctype_digit($text) && (int) $text >= 4000 && (int) $text <= 2_000_000 ? (int) $text : $fail()),
             'days' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 3650 ? (int) $text : $fail(),
             'bytes' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 512 ? (int) $text * 1024 * 1024 : $fail(),
             'namespaces' => self::validNamespaces($raw, $fail),

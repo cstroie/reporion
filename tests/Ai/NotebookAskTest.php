@@ -106,6 +106,21 @@ final class NotebookAskTest extends HttpTestCase
         self::assertStringNotContainsString('Page 2 filler', $user, 'a passage without the words is left out');
     }
 
+    public function testNothingMatchingAsksNoModel(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+
+        $response = $this->ask('writer', ['path' => 'wiki:long', 'question' => 'Ce spune despre zebre?']);
+
+        self::assertSame(200, $response->status, $response->body);
+        $data = json_decode($response->body, true)['data'];
+        self::assertNull($data['answer']);
+        self::assertSame([], $data['sources']);
+        self::assertNotSame([], $data['notices']);
+        self::assertSame(0, $this->server->requests());
+    }
+
     public function testOnlyAnEditorOfTheNotebookAndOfTheLibraryAsksAndNeverAboutAPatient(): void
     {
         foreach ([null, 'libreader', 'viewer'] as $user) {

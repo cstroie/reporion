@@ -46,6 +46,23 @@ final class SourceAnalysis
     /** Characters of notes a word takes, with its space */
     private const CHARS_PER_WORD = 6;
 
+    /** The most words a part's notes may ask for: its answer must fit the reserve a part leaves (SourceChunks::RESERVED_TOKENS) */
+    public const MAX_PART_WORDS = 1500;
+
+    /**
+     * What each of $n parts may write: the words its prompt asks for (its share of the analysis
+     * request, never more than the reserve a part's request leaves for its answer) and the
+     * characters its notes are cut to, so that all the notes always fit the request analysing them
+     *
+     * @return array{words: int, noteChars: int}
+     */
+    public static function shares(int $budget, int $n): array
+    {
+        $noteChars = intdiv((int) ($budget * 0.8), max(1, $n));
+
+        return ['words' => max(60, min(self::MAX_PART_WORDS, intdiv($noteChars, self::CHARS_PER_WORD))), 'noteChars' => $noteChars];
+    }
+
     public function __construct(
         private readonly Actions $actions,
         private readonly Assistant $assistant,
@@ -129,14 +146,13 @@ final class SourceAnalysis
             if ($partAction === null) {
                 throw new AiException('not_configured', 'No prompt page for condensing a long source');
             }
-            // The notes of all the parts together must fit the request that analyses them
-            $words = max(60, intdiv((int) ($budget * 0.8), self::CHARS_PER_WORD * $n));
+            ['words' => $words, 'noteChars' => $noteChars] = self::shares($budget, $n);
             $notes = [];
             foreach ($parts as $i => $part) {
                 $progress($i + 1, $steps);
                 $done = $this->assistant->runSource($partAction, $page, $part, 'source part ' . ($i + 1) . ' of ' . $n, ($i + 1) . ' of ' . $n, $words, $user, $request);
                 $note($done);
-                $notes[] = mb_substr(trim($done['result']), 0, $words * self::CHARS_PER_WORD * 2);
+                $notes[] = mb_substr(trim($done['result']), 0, $noteChars);
             }
             $text = implode("\n\n", $notes);
             $label = 'source notes (' . $n . ' parts)';

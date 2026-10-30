@@ -176,6 +176,19 @@ final class LibraryAnalysisTest extends HttpTestCase
         self::assertStringContainsString('Grade 3 was the most common', $this->server->lastRequest()['body']['messages'][1]['content']);
     }
 
+    public function testThePartsAnswersAndTheirNotesAlwaysFitTheirRequests(): void
+    {
+        foreach ([2, 3, 6] as $n) {
+            foreach ([4000, 32000, 128000] as $tokens) {
+                $budget = \Reporion\Support\SourceChunks::budget($tokens);
+                ['words' => $words, 'noteChars' => $noteChars] = \Reporion\Service\Library\SourceAnalysis::shares($budget, $n);
+                self::assertLessThanOrEqual(\Reporion\Service\Library\SourceAnalysis::MAX_PART_WORDS, $words, "{$n} parts of {$tokens}: a part's answer stays inside the reserve");
+                self::assertLessThanOrEqual($budget, $n * $noteChars, "{$n} parts of {$tokens}: the notes fit the analysis request");
+                self::assertLessThanOrEqual(\Reporion\Support\SourceChunks::RESERVED_TOKENS, (int) ($words * 1.4), 'about 1.4 tokens a word');
+            }
+        }
+    }
+
     private function storage(): FileTree
     {
         return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));

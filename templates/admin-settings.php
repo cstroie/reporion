@@ -158,6 +158,9 @@ Apache:
 <p class="wk-opts">
 <label class="radio"><input type="checkbox" name="<?= $field('library.lookup') ?>" value="1"<?= $checked('library.lookup') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_lookup')) ?><?= $source('library.lookup') ?><small><?= $e(t('admin.settings.library_lookup_help')) ?></small></span></label>
 </p>
+<div class="wk-form-grid">
+<label><?= $e(t('admin.settings.library_tokens')) ?><?= $source('library.context_tokens') ?><input class="input" type="number" min="4000" max="2000000" step="1000" name="<?= $field('library.context_tokens') ?>" value="<?= (int) ($values['library.context_tokens'] ?? 32000) ?>" placeholder="<?= $e(t('admin.settings.library_tokens_hint')) ?>"><small><?= $e(t('admin.settings.library_tokens_help')) ?></small></label>
+</div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>

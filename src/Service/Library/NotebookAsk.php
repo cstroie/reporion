@@ -94,7 +94,7 @@ final class NotebookAsk
     }
 
     /**
-     * @return array{answer: string, sources: list<array{n: int, key: ?string, title: string, page: ?int, path: string}>, whole: bool, understood: ?string, notices: list<string>, dropped: int, ms: int, provider: string, context: list<string>}
+     * @return array{answer: ?string, sources: list<array{n: int, key: ?string, title: string, page: ?int, path: string}>, whole: bool, understood: ?string, notices: list<string>, dropped: int, ms: int, provider: string, context: list<string>}
      *
      * @throws AiException not_configured without the prompt, or the provider's reason
      */
@@ -136,6 +136,10 @@ final class NotebookAsk
         $sources = [];
         foreach ($passages as $i => $p) {
             $sources[] = ['n' => $i + 1] + $p;
+        }
+        // No source: no model call (as Ask the archive, D53)
+        if ($sources === []) {
+            return ['answer' => null, 'sources' => [], 'whole' => $whole, 'understood' => $understood, 'notices' => [...$notices, t('notebook.nothing')], 'dropped' => 0, 'ms' => 0, 'provider' => '', 'context' => []];
         }
         $done = $this->assistant->runNotebook($action, $understood ?? $question, array_map(static fn (array $s): array => ['n' => $s['n'], 'key' => $s['key'], 'title' => $s['title'], 'page' => $s['page'], 'text' => $s['text']], $sources), $notebook->frontmatter['language'] ?? null, $principal, $request);
         $sent = array_values(array_unique(array_filter(array_column($sources, 'key'), 'is_string')));

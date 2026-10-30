@@ -133,6 +133,10 @@ final class AdminSettingsTest extends HttpTestCase
 
         $this->request('POST', '/admin/settings/library', 'owner', '');
         self::assertStringContainsString('lookup: false', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_context_tokens' => '128000']))->status);
+        self::assertStringContainsString('context_tokens: 128000', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_context_tokens' => '100']))->status, 'below 4000');
     }
 
     public function testTheReportsSectionIsSaved(): void

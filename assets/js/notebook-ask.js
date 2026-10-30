@@ -39,6 +39,7 @@
       out.textContent = '';
       if (data.understood) out.appendChild(el('p', 'wk-dim wk-text-sm', (s.understood || '%s').replace('%s', data.understood)));
       (data.notices || []).forEach(function (n) { out.appendChild(notice('info', n)); });
+      if (data.answer === null) return;
       var body = el('div', 'wk-notebook-answer wk-prose');
       out.appendChild(body);
       var extra = { citation_style: cfg.citationStyle || '', language: cfg.language || '' };

@@ -162,7 +162,7 @@ assistant's own, with its retries, so the worst case is 7 × (4 × `ai.timeout` 
 time. `max_execution_time` (the pool's `php_admin_value`) and `request_terminate_timeout` must allow what the owner
 accepts: with a 60 s model, 10 minutes covers a normal long article. The page shows "part k of n" as the events come
 (`server.stream-response-body = 2`, above), so an idle timeout in front of PHP does not cut it; a source needing more
-than 6 parts is refused before any request (raise `library.context_tokens` in `conf/local.php` if the model allows).
+than 6 parts is refused before any request (raise *Assistant context for the library* in Admin → Settings → Library, `library.context_tokens`, if the model allows).
 
 ## The groff plugin
 
