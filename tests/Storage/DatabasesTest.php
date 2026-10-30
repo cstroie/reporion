@@ -45,11 +45,11 @@ final class DatabasesTest extends TestCase
         self::assertNotContains('pages', self::tables($pdo, 'main'));
         self::assertContains('pages', self::tables($pdo, 'idx'));
         self::assertNotContains('page_vectors', self::tables($pdo, 'idx'));
-        self::assertSame(['page_vectors', 'schema_meta'], self::tables($pdo, 'vec'));
+        self::assertSame(['page_vectors', 'passage_vectors', 'schema_meta'], self::tables($pdo, 'vec'));
 
         self::assertSame(self::latest('state'), self::version($pdo, 'main'));
         self::assertSame(self::latest('index'), self::version($pdo, 'idx'));
-        self::assertSame(1, self::version($pdo, 'vec'));
+        self::assertSame(self::latest('vectors'), self::version($pdo, 'vec'));
     }
 
     public function testTheConnectionJoinsAcrossFilesWithoutASchemaPrefix(): void

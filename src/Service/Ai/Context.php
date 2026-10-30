@@ -843,4 +843,24 @@ final class Context
 
         return $redactor->leaks($text) ? ['text' => null, 'withheld' => true] : ['text' => $text, 'withheld' => false];
     }
+
+    /**
+     * A library source's passage as it may go to the embedding model (docs/library.md, phase 7):
+     * de-identified like a source's text for a prompt (source()): what the page teaches the
+     * redactor, contact details scrubbed, the final guard. One that still leaks is withheld, never
+     * sent.
+     *
+     * @return array{text: ?string, withheld: bool}
+     */
+    public static function passageEmbeddingText(PageRecord $page, string $passage): array
+    {
+        $redactor = new Redactor();
+        $redactor->learn($page->frontmatter, $page->path, $page->body);
+        $text = mb_substr(trim(Redactor::scrubContacts($redactor->redact($passage))), 0, self::EMBED_MAX);
+        if ($text === '') {
+            return ['text' => null, 'withheld' => false];
+        }
+
+        return $redactor->leaks($text) ? ['text' => null, 'withheld' => true] : ['text' => $text, 'withheld' => false];
+    }
 }

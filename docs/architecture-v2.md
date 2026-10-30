@@ -210,7 +210,7 @@ the state DB), `import_review` (the importer is gone), the unused `redirects`. `
 no longer walks `pages/`: it reads `SELECT pid, path FROM page WHERE trashed_at IS NULL` and
 opens each page file. The determinism test (rebuild == incremental) stays.
 
-`vectors.sqlite`: `page_vectors`, moved as it is (D15). Its own file because it is the one that
+`vectors.sqlite`: `page_vectors`, moved as it is (D15), and since 2026-10-30 `passage_vectors`, library sources' passages (docs/library.md, phase 7). Its own file because it is the one that
 grows with the model's dimension and the one whose rebuild asks the embedding server.
 
 **One connection, three files.** `reporion.sqlite` is the main database; the other two are

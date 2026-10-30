@@ -20,7 +20,6 @@ use Reporion\Support\AskExpansion;
 use Reporion\Support\InternalLink;
 use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
-use Reporion\Support\RecallTerms;
 use Reporion\Support\SourceChunks;
 
 /**
@@ -30,20 +29,15 @@ use Reporion\Support\SourceChunks;
  * system-side citation records).
  *
  * Adaptive, as the owner chose: when the notebook and its sources fit `library.context_tokens`
- * they go whole; otherwise their passages are chosen by the question's words and those the
- * `notebook-terms` prompt adds in English and in the question's language (the sources are mostly
- * English, the notebooks Romanian), best first, until the budget is full. The answer cites
+ * they go whole; otherwise their passages are chosen (PassageSearch) by the question's words and
+ * those the `notebook-terms` prompt adds in English and in the question's language (the sources
+ * are mostly English, the notebooks Romanian), and by meaning when the library's passages have
+ * vectors (phase 7), best first, until the budget is full. The answer cites
  * `[@key, p. N]`; a citation of a key that was not sent is taken out, so a source the model
  * remembers but was not given never reads as a valid citation. Shown, never written.
  */
 final class NotebookAsk
 {
-    /** The most passages a source gives when they are chosen */
-    private const PER_SOURCE = 4;
-
-    /** A passage: about this many characters, cut at paragraphs */
-    private const PASSAGE = 1200;
-
     public function __construct(
         private readonly Actions $actions,
         private readonly Assistant $assistant,
@@ -51,7 +45,14 @@ final class NotebookAsk
         private readonly IndexInterface $index,
         private readonly string $libraryNamespace,
         private readonly int $contextTokens,
+        private readonly PassageSearch $search = new PassageSearch(),
     ) {
+    }
+
+    /** How passages are chosen when a notebook does not fit (by words, and by meaning when vectors are set) */
+    public function search(): PassageSearch
+    {
+        return $this->search;
     }
 
     /** The `ask-notebook` prompt of the profile serving $path, when there is one */
@@ -130,7 +131,11 @@ final class NotebookAsk
                     $notices[] = t('notebook.expand_failed');
                 }
             }
-            $passages = self::passages($texts, $terms, $budget);
+            $found = $this->search->choose($texts, $terms, $budget, $this->assistant->safeQuestion($understood ?? $question), $principal);
+            $passages = $found['passages'];
+            if ($found['failed']) {
+                $notices[] = t('notebook.meaning_failed');
+            }
         }
 
         $sources = [];
@@ -156,45 +161,6 @@ final class NotebookAsk
             'provider' => $done['provider'],
             'context' => $done['contextSet'],
         ];
-    }
-
-    /**
-     * The passages the question's words are in, best first, at most PER_SOURCE a text, until $budget
-     * is full; each with the page of the marker in force where it starts
-     *
-     * @param list<array{key: ?string, path: string, title: string, text: string}> $texts
-     * @param list<string> $terms folded
-     *
-     * @return list<array{key: ?string, path: string, title: string, page: ?int, text: string}>
-     */
-    public static function passages(array $texts, array $terms, int $budget): array
-    {
-        $scored = [];
-        foreach ($texts as $order => $t) {
-            foreach (SourceChunks::split($t['text'], self::PASSAGE) as $part) {
-                // A part opens with the page marker in force where it starts (SourceChunks::split())
-                $page = preg_match('/\*— p\. (\d+) —\*/u', $part, $m) === 1 ? (int) $m[1] : null;
-                $score = \count(RecallTerms::matched($terms, RecallTerms::fold($part)));
-                if ($score > 0) {
-                    $scored[] = ['score' => $score, 'order' => $order, 'key' => $t['key'], 'path' => $t['path'], 'title' => $t['title'], 'page' => $page, 'text' => $part];
-                }
-            }
-        }
-        usort($scored, static fn (array $a, array $b): int => [$b['score'], $a['order']] <=> [$a['score'], $b['order']]);
-        $chosen = [];
-        $used = 0;
-        $per = [];
-        foreach ($scored as $p) {
-            if (($per[$p['path']] ?? 0) >= self::PER_SOURCE || $used + mb_strlen($p['text']) > $budget) {
-                continue;
-            }
-            $per[$p['path']] = ($per[$p['path']] ?? 0) + 1;
-            $used += mb_strlen($p['text']);
-            unset($p['score'], $p['order']);
-            $chosen[] = $p;
-        }
-
-        return $chosen;
     }
 
     /**

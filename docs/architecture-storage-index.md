@@ -311,6 +311,25 @@ CREATE TABLE page_vectors (
 - **Normal reports are left out** (they all read alike and would crowd out the rest): tagged `normal`: read live from `page_tags`, so a save counts at once, or a stock conclusion, the same `sha` on at least `ai.embed_common_min` vectors (default 5; 0: off), counted in the query. Neither is a candidate, and neither gets a list (`Sqlite::similarExcluded()`). No column: both are derived at query time from what the index already holds.
 - **Staleness:** a save does not re-embed. `Embedder::vectorState()` compares the stored `sha` with the report's text as it is now; the page view says when they differ, until the next `index:vectors`.
 
+**Library passages** (docs/library.md, phase 7, `migrations/vectors/002_passage_vectors.sql`; schema change approved by the owner 2026-10-30): each library source's passages, so Ask the notebook and Studio's check find a passage by its meaning (a Romanian question, an English article), not only by its words.
+
+```
+CREATE TABLE passage_vectors (
+  pid    TEXT NOT NULL,
+  n      INTEGER NOT NULL,    -- the passage's place in the source, from 0
+  model  TEXT NOT NULL,
+  sha    TEXT NOT NULL,       -- sha256(model + the passage's raw text)
+  page   INTEGER,             -- the page marker in force where it starts
+  dim    INTEGER NOT NULL,
+  vec    BLOB NOT NULL,
+  PRIMARY KEY (pid, n)
+);
+```
+
+- **Cut in one place:** `Support\SourcePassages` (about 1 200 characters, at headings, paragraphs and sentences, a marker-only part dropped and a short tail joined to the passage before), used by `index:vectors` and by the query alike, so passage `n` is the same text on both sides; a vector is used only while its `sha` matches the passage cut now.
+- **Filled by `index:vectors`** after the reports: a source whose model and every passage's `sha` (in order) match is `sources_current`; any other has all its passages embedded (de-identified by `Context::passageEmbeddingText()`: contact details scrubbed, the final guard) and its rows replaced in one transaction (`Sqlite::putPassages()`), so a source is never half one text and half another. A passage still holding an identifier is a row with no vector (`passages_withheld`, never sent, never matched); one the server rejects a row with no vector and no `sha`, so the source is asked for again next run (`passages_failed`). `--limit` counts reports and whole sources. Sources that are gone are dropped; `remove()` deletes a page's passages.
+- **Query: `Sqlite::passageCandidates($query, $model, $pids, $principal)`:** only the notebook's own sources' pids, joined to `pages` under `visibilityClause()` (invariant 6), cosine by brute force in PHP at or above `ai.embed_min_score`. `Service\Library\PassageSearch` fuses it by rank (RRF, k = 60) with the words' ranking, keeps two places for passages only meaning finds, at most four passages a text, until the budget is full; an embedding failure is a notice and the words alone are used. Report passages (Ask the archive) have no vectors yet (TODO 19).
+
 ### Visibility inside the query
 
 Multi-user (D35–D37, superseding the old D6/D13 single-user design): `visibility` still controls

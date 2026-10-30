@@ -23,15 +23,15 @@ final class IndexVectorsCommand extends PagesSummarizeCommand
     public static function help(): CommandHelp
     {
         return new CommandHelp(
-            summary: "Embeds each report's de-identified conclusion for Similar reports into page_vectors. It is a cache: unchanged reports are skipped.",
+            summary: "Embeds each report's de-identified conclusion for Similar reports into page_vectors, and each library source's passages for Ask the notebook into passage_vectors. It is a cache: unchanged reports and sources are skipped.",
             usage: '[--dry-run] [--limit=<n>] [--force] [--json]',
             options: [
                 '--dry-run' => 'count what would be embedded; send nothing',
-                '--limit=<n>' => 'at most n per run (the next run carries on)',
-                '--force' => 'embed every report again, including the current ones',
+                '--limit=<n>' => 'at most n reports and sources per run, reports first; a source counts once, all its passages (the next run carries on)',
+                '--force' => 'embed every report and source again, including the current ones',
                 '--json' => 'print the run report as JSON',
             ],
-            details: 'Writes no page. Uses the one embedding model set under Admin → AI.',
+            details: 'Writes no page. Uses the one embedding model set under Admin → AI. A library source is many passages: the first run over a large library may take long, so bound it with --limit.',
         );
     }
 }

@@ -125,6 +125,7 @@ use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
+use Reporion\Service\Library\PassageSearch;
 use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\Library\Studio;
 use Reporion\Service\TempUploads;
@@ -378,7 +379,7 @@ final class Kernel
      */
     public static function vectorsTask(array $config, FileTree $storage, Sqlite $index): VectorsTask
     {
-        return new VectorsTask($storage, $index, Embedder::fromConfig($config), AiConfig::fromConfig($config)->timeout);
+        return new VectorsTask($storage, $index, Embedder::fromConfig($config), AiConfig::fromConfig($config)->timeout, self::libraryNamespace($config));
     }
 
     public static function newReport(array $config, string $rootDir, Sqlite $index, FileTree $storage, Accessions $accessions, Loader $schemas): NewReport
@@ -613,7 +614,8 @@ final class Kernel
             Embedder::fromConfig($config),
         );
         $libraryTokens = max(4000, (int) ($config['library']['context_tokens'] ?? 32000));
-        $notebookAsk = new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens);
+        // Phase 7: passages found by meaning too, when an embedding model is set and index:vectors has run
+        $notebookAsk = new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens, new PassageSearch(Embedder::fromConfig($config), $index, Embedder::minScore($config)));
         $libraryAi = new LibraryAiController(
             $aiConfig,
             $assistant,

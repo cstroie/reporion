@@ -106,6 +106,40 @@ final class NotebookAskTest extends HttpTestCase
         self::assertStringNotContainsString('Page 2 filler', $user, 'a passage without the words is left out');
     }
 
+    public function testAPassageSharingNoWordIsFoundByMeaningOnceItsVectorsAreThere(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        $this->config['ai']['embed_server'] = 1;
+        $this->config['ai']['embed_model'] = 'embed-test';
+        $this->config['ai']['embed_min_score'] = 0.9;
+        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $question = 'Ce spune despre zebre?';
+        $bag = static function (string $text): array {
+            $vector = array_fill(0, 16, 0.0);
+            foreach (preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+                $vector[crc32($word) % 16] += 1.0;
+            }
+
+            return \Reporion\Service\Ai\Embedder::unit($vector);
+        };
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $source = $this->storage()->read('library:long2021');
+        $rows = [];
+        foreach (\Reporion\Support\SourcePassages::ofSource($source->body) as $p) {
+            $near = str_contains($p['text'], 'Fazekas');
+            $rows[] = ['n' => $p['n'], 'sha' => \Reporion\Service\Ai\Embedder::sha('embed-test', $p['text']), 'page' => $p['page'], 'vec' => $bag($near ? $question : 'other words entirely')];
+        }
+        $index->putPassages($source->pid, 'embed-test', $rows);
+
+        $response = $this->ask('writer', ['path' => 'wiki:long', 'question' => $question]);
+
+        self::assertSame(200, $response->status, $response->body);
+        $data = json_decode($response->body, true)['data'];
+        self::assertSame(['long2021'], array_column($data['sources'], 'key'));
+        self::assertSame(1, $this->server->requests(), 'found by meaning: the model is asked');
+        self::assertStringContainsString('graded with Fazekas', $this->server->lastRequest()['body']['messages'][1]['content']);
+    }
+
     public function testNothingMatchingAsksNoModel(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];

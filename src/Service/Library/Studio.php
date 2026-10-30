@@ -346,7 +346,7 @@ final class Studio
     /**
      * A check's sources when they do not fit beside the page: the passages holding the page's
      * words, its headings' and those `notebook-terms` adds (the sources are mostly English, the
-     * notebooks Romanian)
+     * notebooks Romanian), and those nearest in meaning to its title and headings (PassageSearch)
      *
      * @param list<array{key: ?string, path: string, title: string, text: string}> $texts
      * @param \Closure(\Closure): string $call
@@ -367,7 +367,8 @@ final class Studio
             }
         }
         $out = [];
-        foreach (NotebookAsk::passages($texts, array_values(array_unique($terms)), $budget) as $p) {
+        $found = $this->notebooks->search()->choose($texts, array_values(array_unique($terms)), $budget, $this->assistant->safeQuestion(mb_substr($subject, 0, 600)), $user);
+        foreach ($found['passages'] as $p) {
             $out[] = ['n' => \count($out) + 1, 'key' => $p['key'], 'title' => $p['title'], 'page' => $p['page'], 'text' => $p['text']];
         }
 

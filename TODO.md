@@ -474,7 +474,7 @@ account model or a decision, or needs real external output first.
 
 **Built 2026-10-19:** the editor's slash menu, backlinks with titles and dates, saved views, comments (`comments.json`), the proposed rail prompts, and Ask the archive (`/ask`).
 
-- [ ] **Ask the archive: passage-level vectors.** Done 2026-10-19: hybrid retrieval, keyword (`recallCandidates()`) and meaning (`Index\Sqlite::vectorCandidates()` over `page_vectors`, a report's conclusion) fused by reciprocal rank, plus query expansion (`ask-expand`) and follow-ups. Remains: passages with vectors of their own (a cache, rebuildable, invariant 1), which is a schema change and needs approval. Not built.
+- [ ] **Ask the archive: passage-level vectors.** Done 2026-10-19: hybrid retrieval, keyword (`recallCandidates()`) and meaning (`Index\Sqlite::vectorCandidates()` over `page_vectors`, a report's conclusion) fused by reciprocal rank, plus query expansion (`ask-expand`) and follow-ups. Remains: report passages with vectors of their own. **Library sources' passages are built** (2026-10-30, docs/library.md phase 7: `passage_vectors` in `vectors.sqlite`, schema change approved; Ask the notebook and Studio's check); the archive's report passages are not (patient text: a decision of its own).
 
 ## 20. Reporion 2.0 storage (D54)
 

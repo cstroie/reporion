@@ -231,6 +231,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),
    web clip by URL (opt-in).
+   *Step 1 built 2026-10-30 (schema change approved by the owner the same day):* `passage_vectors` in `vectors.sqlite`
+   (`migrations/vectors/002_passage_vectors.sql`, architecture-storage-index.md §6): each library source cut by
+   `Support\SourcePassages` (the one cutter, used by the indexer and the query alike; a marker-only part dropped, a short tail
+   joined to the passage before), de-identified (`Context::passageEmbeddingText()`) and embedded by `index:vectors` after the
+   reports, a source's rows replaced together, `--limit` counting whole sources. When a notebook does not fit one request, Ask the
+   notebook and Studio's check choose passages with `Service\Library\PassageSearch`: the words' ranking and the meaning's
+   (`Sqlite::passageCandidates()`, the notebook's own sources only, under the caller's visibility) fused by rank, two places kept
+   for what only meaning finds, so a Romanian question finds an English passage; a vector is used only while its text is
+   unchanged; a meaning hit counts as a match for "no passage, no model call"; an embedding failure is a notice. Needs the
+   embedding model of Admin → AI (*Similar reports*) and a run of `index:vectors` (as `www-data`; the first run over a large
+   library is many requests: `--limit`). Report passages (Ask the archive) are not embedded.
 8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
 
 ## Long sources

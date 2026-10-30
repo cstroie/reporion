@@ -90,6 +90,7 @@ final class Sqlite implements IndexInterface
             // Links to it are broken now; they resolve again if it comes back
             $this->pdo->prepare('UPDATE links SET dst_pid = NULL WHERE dst_pid = ?')->execute([$pid]);
             $this->pdo->prepare('DELETE FROM page_vectors WHERE pid = ?')->execute([$pid]);
+            $this->pdo->prepare('DELETE FROM passage_vectors WHERE pid = ?')->execute([$pid]);
             $this->pdo->commit();
         } catch (Throwable $e) {
             $this->pdo->rollBack();
@@ -1392,6 +1393,100 @@ final class Sqlite implements IndexInterface
         foreach ($pids as $pid) {
             $stmt->execute([$pid]);
         }
+    }
+
+    /**
+     * Library passages (docs/library.md, phase 7): what passage_vectors holds, per pid, the model
+     * and each passage's sha in order
+     *
+     * @return array<string, array{model: string, shas: list<string>}>
+     */
+    public function passageStates(): array
+    {
+        $states = [];
+        foreach ($this->pdo->query('SELECT pid, model, sha FROM passage_vectors ORDER BY pid, n')?->fetchAll(PDO::FETCH_ASSOC) ?? [] as $row) {
+            $pid = (string) $row['pid'];
+            $states[$pid] ??= ['model' => (string) $row['model'], 'shas' => []];
+            $states[$pid]['shas'][] = (string) $row['sha'];
+        }
+
+        return $states;
+    }
+
+    /**
+     * A source's passage vectors, all of them at once: its rows replaced in one transaction, so a
+     * source is never half one text and half another
+     *
+     * @param list<array{n: int, sha: string, page: ?int, vec: list<float>}> $passages unit length
+     */
+    public function putPassages(string $pid, string $model, array $passages): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->prepare('DELETE FROM passage_vectors WHERE pid = ?')->execute([$pid]);
+            $stmt = $this->pdo->prepare('INSERT INTO passage_vectors (pid, n, model, sha, page, dim, vec) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            foreach ($passages as $p) {
+                $stmt->execute([$pid, $p['n'], $model, $p['sha'], $p['page'], \count($p['vec']), pack('g*', ...$p['vec'])]);
+            }
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /** @param list<string> $pids */
+    public function deletePassages(array $pids): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM passage_vectors WHERE pid = ?');
+        foreach ($pids as $pid) {
+            $stmt->execute([$pid]);
+        }
+    }
+
+    /**
+     * The passages of $pids nearest to $query (cosine: unit vectors, a dot product), best first,
+     * among the pages the caller can see (invariant 6: the visibility predicate picks the
+     * candidates before any score); a score under $minScore is no match. Brute force in PHP, as
+     * similar(). The caller checks each passage's sha against the text it cuts now.
+     *
+     * @param list<float>  $query unit length
+     * @param list<string> $pids
+     *
+     * @return list<array{pid: string, n: int, sha: string, page: ?int, score: float}>
+     */
+    public function passageCandidates(array $query, string $model, array $pids, ?User $principal, int $limit = 20, float $minScore = 0.0): array
+    {
+        $dim = \count($query);
+        if ($dim === 0 || $pids === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $marks = [];
+        $params = ['model' => $model, 'dim' => $dim] + $clauseParams;
+        foreach (array_values($pids) as $i => $pid) {
+            $marks[] = ':q' . $i;
+            $params['q' . $i] = $pid;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT v.pid, v.n, v.sha, v.page, v.vec FROM passage_vectors v JOIN pages p ON p.pid = v.pid '
+            . 'WHERE v.model = :model AND v.dim = :dim AND v.pid IN (' . implode(', ', $marks) . ')' . $clauseSql
+        );
+        $stmt->execute($params);
+        $hits = [];
+        while (($row = $stmt->fetch(PDO::FETCH_NUM)) !== false) {
+            $other = unpack('g*', (string) $row[4]) ?: [];
+            $dot = 0.0;
+            for ($i = 0; $i < $dim; ++$i) {
+                $dot += $query[$i] * $other[$i + 1];
+            }
+            if ($dot >= $minScore) {
+                $hits[] = ['pid' => (string) $row[0], 'n' => (int) $row[1], 'sha' => (string) $row[2], 'page' => $row[3] !== null ? (int) $row[3] : null, 'score' => round($dot, 4)];
+            }
+        }
+        usort($hits, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+
+        return \array_slice($hits, 0, max(1, $limit));
     }
 
     /** The tag that marks a normal report: Similar reports leaves it out (the `tags` prompt adds it) */

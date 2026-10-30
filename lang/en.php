@@ -2106,6 +2106,7 @@ return [
     'notebook.unavailable'     => 'Ask the notebook is not set up: the assistant is off, or the profile serving this page has no ask-notebook prompt (Admin → AI).',
     'notebook.err_question'    => 'Ask a question of at most 1000 characters.',
     'notebook.expand_failed'   => 'The search words could not be made: the passages were chosen by the question\'s own words.',
+    'notebook.meaning_failed'  => 'The embedding server did not answer: the passages were chosen by their words only.',
     'notebook.nothing'         => 'Nothing in this page or its sources holds the question\'s words: the assistant was not asked. Try the words the articles would use.',
     'notebook.failed'          => 'The question could not be answered.',
     'notebook.sources'         => 'Read',
