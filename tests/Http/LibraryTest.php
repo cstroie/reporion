@@ -168,6 +168,50 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(404, $this->call(null, 'GET', '/api/v1/pages/' . $page['path'])->status);
     }
 
+    public function testAReadTokenCannotAddOrCorrect(): void
+    {
+        $page = $this->add('editor', self::ARTICLE, 'study.md');
+        $store = new FlatFileUserStore($this->dataRoot);
+        [$user, $token] = (new \Reporion\Auth\ApiTokens($store))->create($store->find('editor'), 'script', 'read');
+        $store->save($user);
+        $config = $this->config;
+        $bearer = static fn (string $method, string $path, string $body, array $query = []): Response => Kernel::boot($config)->handle(
+            new Request($method, $path, query: $query, body: $body, authorization: 'Bearer ' . $token),
+        );
+
+        self::assertSame(403, $bearer('POST', '/api/v1/library/uploads', "# Another made-up study\n\n© 2020\n", ['name' => 'x.md'])->status);
+        self::assertSame(403, $bearer('POST', '/api/v1/library', (string) json_encode(['token' => str_repeat('0', 32), 'csl' => ['title' => 'X y z']]))->status);
+        self::assertSame(403, $bearer('PUT', '/api/v1/library/' . $page['pid'] . '/record', (string) json_encode(['csl' => ['title' => 'X y z'], 'base_rev' => 1]))->status);
+        self::assertSame([], glob($this->dataRoot . '/tmp/library/*') ?: []);
+    }
+
+    public function testSavingTheTextFromTheEditorKeepsTheRecordAndTheOriginal(): void
+    {
+        $page = $this->add('editor', self::ARTICLE, 'study.md');
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Tests\Storage\RecordingIndex());
+        $before = $storage->read($page['path'])->frontmatter;
+        $cookie = $this->cookie('editor');
+
+        $curated = $this->saveOpened($this->call('editor', 'GET', '/' . $page['path'] . '/edit'), $cookie, ['body' => "Grade 3 was the most common (corrected).\n"]);
+        self::assertSame(302, $curated->status, 'curated save');
+        $raw = $this->call('editor', 'GET', '/' . $page['path'] . '/edit?raw=1');
+        self::assertSame(200, $raw->status);
+        preg_match('/<textarea[^>]*name="document"[^>]*>(.*?)<\/textarea>/s', $raw->body, $m);
+        $document = html_entity_decode($m[1] ?? '', ENT_QUOTES);
+        self::assertStringContainsString('csl:', $document);
+        // The raw form posts to ?raw=1 (saveOpened() keeps the action's path only)
+        $saved = Kernel::boot($this->config)->handle(new Request('POST', '/' . $page['path'] . '/edit', query: ['raw' => '1'], cookies: ['reporion' => $cookie],
+            body: http_build_query(['document' => str_replace('(corrected)', '(corrected twice)', $document), 'base_rev' => 2])));
+        self::assertSame(302, $saved->status, 'raw save');
+
+        $after = $storage->read($page['path']);
+        self::assertSame(3, $after->rev);
+        self::assertStringContainsString('(corrected twice)', $after->body);
+        self::assertSame($before['csl'], $after->frontmatter['csl']);
+        self::assertSame($before['original'], $after->frontmatter['original']);
+        self::assertSame('private', $after->visibility);
+    }
+
     /**
      * @param list<string> $tags
      *
