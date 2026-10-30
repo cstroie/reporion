@@ -2020,4 +2020,15 @@ return [
     'install.ver.next_settings' => 'Sign in and fill Admin → Settings: sites and devices, modality namespaces, report templates.',
     'install.ver.remove'      => 'Also delete install.php (it only redirects to the site from now on either way)',
     'install.ver.finish'      => 'Finish and sign in',
+
+    // The library (docs/library.md)
+    'library.err_unsupported'  => 'This kind of file cannot go into the library. PDF, Word, OpenDocument, RTF, HTML, EPUB, PowerPoint, Excel, text and Markdown can.',
+    'library.err_too_large'    => 'The file is larger than %s MB, the most the library takes.',
+    'library.err_tool_missing' => 'The program that reads this kind of file is not installed on the server (bin/reporion doctor names it).',
+    'library.err_failed'       => 'The file could not be read. It may be damaged or protected by a password.',
+    'library.err_timeout'      => 'Reading the file took too long and was stopped.',
+    'library.err_patient_data' => 'The file holds a personal numeric code (CNP): the library is for literature, never a patient\'s documents. Nothing was kept.',
+    'library.err_expired'      => 'The upload is no longer there (it is kept an hour, and used once). Upload the file again.',
+    'library.err_duplicate'    => 'This article is in the library already.',
+    'library.err_invalid'      => 'The record needs a title, and a key is a letter followed by letters, digits or hyphens.',
 ];

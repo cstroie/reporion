@@ -20,7 +20,7 @@ final class ArticleIdsTest extends TestCase
         $text = "Journal of Test Imaging 2019;12(3):45-52\n"
             . "https://doi.org/10.1234/JTI.2019.0042\n\n"
             . "References\n1. A. Author. doi:10.5678/abc-1(2)3.\n"
-            . "2. Again 10.1234/jti.2019.0042, cited twice.";
+            . '2. Again 10.1234/jti.2019.0042, cited twice.';
 
         self::assertSame(['10.1234/jti.2019.0042', '10.5678/abc-1(2)3'], ArticleIds::find($text)['doi']);
     }

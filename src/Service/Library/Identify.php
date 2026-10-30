@@ -146,7 +146,7 @@ final class Identify
     {
         // Superscript affiliation marks and symbols the byline carries
         $line = (string) preg_replace('/[\d*†‡§¶#]+(?=[,;\s]|$)|\s+\d+(?:,\d+)*\b/u', '', $line);
-        $line = trim((string) preg_replace('/\s+/u', ' ', $line), " ,;.");
+        $line = trim((string) preg_replace('/\s+/u', ' ', $line), ' ,;.');
         if ($line === '' || mb_strlen($line) > 600) {
             return [];
         }
@@ -181,7 +181,7 @@ final class Identify
         }
         // Vancouver: "Nobody AB": the last word is initials only
         $last = (string) end($words);
-        if (preg_match('/^\p{Lu}{1,3}$/u', $last) === 1 && \count($words) >= 2) {
+        if (preg_match('/^\p{Lu}{1,3}$/u', $last) === 1) {
             $family = implode(' ', \array_slice($words, 0, -1));
 
             return self::valid($family) ? ['family' => $family, 'given' => implode('. ', mb_str_split($last)) . '.'] : null;

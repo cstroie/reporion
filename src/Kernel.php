@@ -34,6 +34,7 @@ use Reporion\Controller\HomeController;
 use Reporion\Controller\JoinController;
 use Reporion\Controller\McpController;
 use Reporion\Controller\OAuthController;
+use Reporion\Controller\LibraryController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
@@ -118,6 +119,8 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\TagCuration;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
+use Reporion\Service\Library\Extractor;
+use Reporion\Service\Library\Library;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
@@ -188,9 +191,33 @@ final class Kernel
         'export' => ['allow_draft_export' => false, 'allow_public_export' => true, 'pseudonymise_public' => true],
         'feeds' => ['namespaces' => []],
         'references' => ['namespaces' => ['radiology']],
+        // The library (docs/library.md): its namespace, the largest file taken, the programs that read files
+        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => []],
         'sites' => [],
         'plugins' => ['enabled' => []],
     ];
+
+    /**
+     * The library (docs/library.md), as the web and the CLI make it
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function library(array $config, FileTree $storage, IndexInterface $index): Library
+    {
+        $data = (string) $config['paths']['data'];
+        $settings = \is_array($config['library'] ?? null) ? $config['library'] : [];
+        $namespace = \is_string($settings['namespace'] ?? null) && preg_match('/^[a-z0-9-]+(?::[a-z0-9-]+)*$/', $settings['namespace']) === 1 ? $settings['namespace'] : 'library';
+        $tools = array_filter(\is_array($settings['tools'] ?? null) ? $settings['tools'] : [], 'is_string');
+
+        return new Library(
+            $storage,
+            $index,
+            new Extractor($data . '/tmp', $tools),
+            new TempUploads($data),
+            $namespace,
+            max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024,
+        );
+    }
 
     /**
      * @param array<string, mixed> $config
@@ -510,6 +537,7 @@ final class Kernel
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
+        $libraryController = new LibraryController(self::library($config, $storage, $index), $storage, $index, $audit);
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
         $theme = new ThemeController();
@@ -665,6 +693,12 @@ final class Kernel
             => $media->upload($request, $session->principal($request)));
         $router->get('/media/{sha:[0-9a-f]+}.{ext:png|jpg|gif|webp}', static fn (Request $request, array $params): Response
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
+        $router->post('/api/v1/library/uploads', static fn (Request $request, array $params): Response
+            => $libraryController->upload($request, $session->principal($request)));
+        $router->post('/api/v1/library', static fn (Request $request, array $params): Response
+            => $libraryController->confirm($request, $session->principal($request)));
+        $router->get('/library/file/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $libraryController->original($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
         $router->get('/ask', static fn (Request $request, array $params): Response
