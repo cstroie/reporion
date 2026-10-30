@@ -12,7 +12,8 @@ namespace Reporion\Support;
  * fromPages() takes a PDF's text page by page (pdftotext's form feeds): drops the lines repeated
  * at the top or bottom of most pages (running heads, footers) and bare page numbers, rejoins words
  * hyphenated over a line end and the lines of one paragraph, fixes ligatures, and puts an anchor
- * before each page (`<a id="p12"></a>`) so a citation can open the original at that page.
+ * before each page of more than one (`*— p. 12 —*`, a paragraph of its own: markdown the renderer shows as
+ * it is, D17) so a passage can be traced to the original's page.
  * The references section is cut off and returned apart (phase 7 reads it).
  *
  * fromMarkdown() takes what pandoc made of a docx/odt/html: already in paragraphs, only tidied.
@@ -74,7 +75,9 @@ final class SourceText
                 if ($page !== [] || $parts !== []) {
                     $parts[] = self::paragraphs($page);
                 }
-                $parts[] = '<a id="p' . substr($line, \strlen(self::ANCHOR)) . '"></a>';
+                if (\count($pages) > 1) {
+                    $parts[] = self::marker((int) substr($line, \strlen(self::ANCHOR)));
+                }
                 $page = [];
                 continue;
             }
@@ -87,6 +90,15 @@ final class SourceText
             'references' => $references,
         ];
     }
+
+    /** A page's marker, `*— p. 12 —*` */
+    public static function marker(int $page): string
+    {
+        return '*— p. ' . $page . ' —*';
+    }
+
+    /** The page markers' pattern, for readers of the body (the page a passage is on) */
+    public const MARKER = '/^\*— p\. (\d+) —\*$/mu';
 
     /** @return array{body: string, references: string} */
     public static function fromMarkdown(string $markdown): array
@@ -196,15 +208,22 @@ final class SourceText
     }
 
     /**
-     * Lines joined into paragraphs: a blank line ends one; a line ending in a hyphen joins the next
-     * without it when the next starts in lower case (a word broken over the line end).
+     * Lines joined into paragraphs: a blank line ends one, and so does a line that ends a sentence
+     * well short of the page's usual line length (PDF text often has no blank line between
+     * paragraphs); a line ending in a hyphen joins the next without it when the next starts in
+     * lower case (a word broken over the line end).
      *
      * @param list<string> $lines
      */
     private static function paragraphs(array $lines): string
     {
+        $lengths = array_map(static fn (string $l): int => mb_strlen(trim($l)), array_filter($lines, static fn (string $l): bool => mb_strlen(trim($l)) > 20));
+        sort($lengths);
+        $usual = \count($lengths) >= 5 ? $lengths[intdiv(\count($lengths) * 3, 4)] : 0;
+
         $paragraphs = [];
         $current = '';
+        $ended = false;
         foreach ($lines as $line) {
             $t = trim((string) preg_replace('/\s+/u', ' ', $line));
             if ($t === '') {
@@ -222,6 +241,11 @@ final class SourceText
                 $current = '';
                 continue;
             }
+            if ($ended && $current !== '') {
+                $paragraphs[] = $current;
+                $current = '';
+            }
+            $ended = $usual > 0 && preg_match('/[.!?:]["”’)]?$/u', $t) === 1 && mb_strlen($t) < 0.8 * $usual;
             if ($current === '') {
                 $current = $t;
             } elseif (preg_match('/\p{Ll}-$/u', $current) === 1 && preg_match('/^\p{Ll}/u', $t) === 1) {

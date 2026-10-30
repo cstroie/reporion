@@ -599,7 +599,7 @@ plain one-line strings for `container-title`, `container-title-short`, `volume`,
 `author` as `{family, given?}` or `{literal}` (at most 100); `issued.date-parts` `[[year, month?, day?]]`;
 `DOI` folded to lower case without `https://doi.org/`; `PMID` digits; `URL` http(s) only; `abstract` up to
 10 000 characters. The body is the article's text as `Support\SourceText` made it (paragraphs, `##`
-section headings, `<a id="p{n}"></a>` before each page of a PDF), then the article's own reference list
+section headings, a paragraph `*— p. {n} —*` before each page of a PDF: plain markdown, so no new syntax), then the article's own reference list
 under `## References` in a `text` fence, as printed. Nothing about it is in the index but what any page has
 (`meta_json` holds `csl` and `original`).
 

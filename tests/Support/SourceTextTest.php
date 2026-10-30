@@ -34,7 +34,7 @@ final class SourceTextTest extends TestCase
         self::assertStringNotContainsString('Journal of Synthetic Imaging', $body);
         self::assertDoesNotMatchRegularExpression('/^(?:- )?1[1-4](?: -)?$/m', $body);
         foreach ([1, 2, 3, 4] as $page) {
-            self::assertStringContainsString('<a id="p' . $page . '"></a>', $body);
+            self::assertStringContainsString("\n*— p. {$page} —*\n", "\n" . $body);
         }
     }
 
@@ -87,6 +87,16 @@ final class SourceTextTest extends TestCase
         self::assertStringContainsString('\# not a heading', $body);
         self::assertStringContainsString('\- not a list', $body);
         self::assertStringContainsString('see \[1\] and &lt;b>', $body);
+    }
+
+    public function testALineEndingASentenceWellShortOfTheOthersEndsTheParagraph(): void
+    {
+        $long = 'The made-up lesions were graded by an imaginary panel of readers who';
+        $page = "{$long}\nlooked at synthetic scans.\n{$long}\nagreed on four grades.\n{$long}\nsaw nothing real at all.\n";
+
+        $body = SourceText::fromPages([$page])['body'];
+
+        self::assertStringContainsString("{$long} looked at synthetic scans.\n\n{$long} agreed on four grades.\n\n{$long} saw nothing real at all.\n", $body);
     }
 
     public function testMarkdownFromPandocIsOnlyTidied(): void

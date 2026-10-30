@@ -221,17 +221,53 @@ final class Extractor
         foreach ($fonts as $f) {
             $sizes[$f[1]] = (float) $f[2];
         }
-        $lines = [];
-        preg_match_all('/<text\s+top="(\d+)"[^>]*\sfont="(\d+)"[^>]*>(.*?)<\/text>/s', $xml, $texts, PREG_SET_ORDER);
+        $fragments = [];
+        preg_match_all('/<text\s+top="(\d+)"\s+left="(-?\d+)"\s+width="(\d+)"\s+height="(\d+)"\s+font="(\d+)"[^>]*>(.*?)<\/text>/s', $xml, $texts, PREG_SET_ORDER);
         foreach ($texts as $t) {
-            $text = trim(html_entity_decode(strip_tags($t[3]), ENT_QUOTES | ENT_XML1, 'UTF-8'));
-            if ($text !== '') {
-                $lines[] = ['size' => $sizes[$t[2]] ?? 0.0, 'top' => (int) $t[1], 'text' => $text];
+            $text = html_entity_decode(strip_tags($t[6]), ENT_QUOTES | ENT_XML1, 'UTF-8');
+            if (trim($text) !== '') {
+                $fragments[] = ['top' => (int) $t[1], 'left' => (int) $t[2], 'width' => (int) $t[3], 'height' => (int) $t[4], 'size' => $sizes[$t[5]] ?? 0.0, 'text' => $text];
             }
         }
-        usort($lines, static fn (array $a, array $b): int => $a['top'] <=> $b['top']);
+        usort($fragments, static fn (array $a, array $b): int => [$a['top'], $a['left']] <=> [$b['top'], $b['left']]);
 
-        return $lines;
+        // Fragments that overlap vertically are one line (a superscript affiliation mark sits a little higher)
+        $lines = [];
+        foreach ($fragments as $f) {
+            $last = \count($lines) - 1;
+            if ($last >= 0) {
+                $line = $lines[$last];
+                $overlap = min($line['bottom'], $f['top'] + $f['height']) - max($line['top'], $f['top']);
+                if ($overlap >= 0.5 * min($f['height'], $line['bottom'] - $line['top'])) {
+                    $lines[$last]['parts'][] = $f;
+                    $lines[$last]['bottom'] = max($line['bottom'], $f['top'] + $f['height']);
+                    continue;
+                }
+            }
+            $lines[] = ['top' => $f['top'], 'bottom' => $f['top'] + $f['height'], 'parts' => [$f]];
+        }
+
+        $result = [];
+        foreach ($lines as $line) {
+            usort($line['parts'], static fn (array $a, array $b): int => $a['left'] <=> $b['left']);
+            $text = '';
+            $end = null;
+            $chars = [];
+            foreach ($line['parts'] as $part) {
+                if ($end !== null && $part['left'] - $end > 2 && !str_ends_with($text, ' ') && !str_starts_with($part['text'], ' ')) {
+                    $text .= ' ';
+                }
+                $text .= $part['text'];
+                $end = $part['left'] + $part['width'];
+                $key = (string) $part['size'];
+                $chars[$key] = ($chars[$key] ?? 0) + mb_strlen($part['text']);
+            }
+            // The line's size is the one most of its characters are in
+            arsort($chars);
+            $result[] = ['size' => (float) array_key_first($chars), 'top' => $line['top'], 'text' => trim((string) preg_replace('/\s+/u', ' ', $text))];
+        }
+
+        return $result;
     }
 
     /** Text that is not UTF-8 is taken as Windows-1250 (Romanian files of old editors), then Latin-1 */

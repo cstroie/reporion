@@ -41,7 +41,7 @@ final class ExtractorTest extends TestCase
 
         self::assertSame(2, $x->pages);
         self::assertTrue($x->hasText);
-        self::assertStringContainsString('<a id="p2"></a>', $x->body);
+        self::assertStringContainsString("\n*— p. 2 —*\n", $x->body);
         self::assertStringContainsString('Second page text.', $x->body);
         self::assertStringContainsString('10.1234/jti.2024.0001', $x->head);
         self::assertSame('A made-up study of test lesions', $x->lines[0]['text']);
@@ -85,6 +85,21 @@ final class ExtractorTest extends TestCase
         $extractor = new Extractor($this->tmp, runner: static fn (array $argv, int $timeout, array $env): array => [-2, '']);
         $this->expectExceptionObject(new LibraryException(LibraryException::TIMEOUT));
         $extractor->extract('PK', 'docx');
+    }
+
+    public function testFragmentsOfOneLineAreJoinedAndTheLineHasItsMainSize(): void
+    {
+        $xml = '<fontspec id="0" size="20" family="X" color="#000"/><fontspec id="1" size="11" family="X" color="#000"/><fontspec id="2" size="7" family="X" color="#000"/>'
+            . '<text top="134" left="85" width="592" height="27" font="0"><b>A made-up title</b></text>'
+            . '<text top="187" left="85" width="86" height="15" font="1">Ann Nobody</text>'
+            . '<text top="183" left="171" width="7" height="13" font="2">1</text>'
+            . '<text top="187" left="178" width="112" height="15" font="1">, Bob B. Nobody</text>'
+            . '<text top="187" left="320" width="40" height="15" font="1">et al</text>';
+
+        self::assertSame([
+            ['size' => 20.0, 'top' => 134, 'text' => 'A made-up title'],
+            ['size' => 11.0, 'top' => 183, 'text' => 'Ann Nobody1, Bob B. Nobody et al'],
+        ], Extractor::parseLayout($xml));
     }
 
     public function testExtensionsAreKnownCaseFolded(): void

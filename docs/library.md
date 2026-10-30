@@ -49,7 +49,7 @@ History (attic), search, tags, the visibility predicate (invariant 6), trash, ba
    layer is a scan: kept, flagged.
 3. **Clean** (`Support\SourceText`, pure, no AI): rejoin hyphenation and wrapped lines, drop repeated
    headers/footers and page numbers, fix ligatures, find headings, the abstract and the references
-   section (kept apart for phase 7), insert page anchors (`<a id="p12"></a>`) so a citation opens the
+   section (kept apart for phase 7), insert page markers (`*— p. 12 —*`, plain markdown; an anchor syntax comes with phase 3) so a citation opens the
    original at `#page=12`. An AI tidy-up is an optional button later, never automatic.
 4. **Identify**, each step only when the previous found nothing: the PDF's own metadata
    (`pdfinfo -meta`, XMP DOI/title); identifiers in the first pages (`Support\ArticleIds`: DOI, PMID,

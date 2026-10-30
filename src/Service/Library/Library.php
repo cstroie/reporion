@@ -18,6 +18,7 @@ use Reporion\Support\ArticleIds;
 use Reporion\Support\CitationKey;
 use Reporion\Support\Cnp;
 use Reporion\Support\Slug;
+use Reporion\Support\SourceText;
 
 /**
  * The library (docs/library.md): one page per article, `{namespace}:{key}`, its body the
@@ -422,7 +423,7 @@ final class Library
 
     private static function preview(string $body): string
     {
-        $text = trim((string) preg_replace(['/<a id="p\d+"><\/a>/', '/^#+\s*/m', '/\\\\([\[\]#>*+\-.)])/', '/\s+/u'], ['', '', '$1', ' '], $body));
+        $text = trim((string) preg_replace([SourceText::MARKER, '/^#+\s*/m', '/\\\\([\[\]#>*+\-.)])/', '/\s+/u'], ['', '', '$1', ' '], $body));
 
         return mb_strlen($text) > self::PREVIEW_CHARS ? mb_substr($text, 0, self::PREVIEW_CHARS) . '…' : $text;
     }
