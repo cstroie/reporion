@@ -1,0 +1,13 @@
+List the main points of the scientific article "{title}" ({citation}).
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- Five to ten bullet points, the most important first, each one sentence.
+- Only what the article says: no opinion, no outside knowledge, nothing invented. Figures exactly as the article gives them.
+- Where the text carries a page marker `*— p. N —*`, end the point with (p. N).
+- Write in {language}; keep technical terms and quotations in the language of the article.
+- Answer with the list only.

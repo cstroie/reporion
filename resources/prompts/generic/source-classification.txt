@@ -1,0 +1,13 @@
+Extract the classifications, grading and staging systems from the scientific article "{title}" ({citation}).
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- For each system, a short heading with its name, then a Markdown table of its categories: the category, the criteria, and (when the article gives it) the management or the meaning. Add the page (p. N) when the text carries a page marker `*— p. N —*`.
+- Only what the article states or adopts; nothing from outside knowledge, nothing invented. Figures and thresholds exactly as given.
+- If the article presents no classification, say so in one line.
+- Write in {language}; keep category names in the article's language.
+- Answer with the headings and tables only.

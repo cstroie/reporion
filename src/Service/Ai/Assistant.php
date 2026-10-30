@@ -135,6 +135,49 @@ final class Assistant
         });
     }
 
+    /**
+     * A library source's analysis step (docs/library.md, phase 5): one request, no stream (the
+     * caller reports progress between steps). Same lock, retries and `ai.call` line as the rest,
+     * with the source's pid and path on it (a source is not a patient's page).
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runSource(Action $action, PageRecord $page, string $text, string $label, string $part, int $words, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->source($action, $page, $text, $label, $part, $words), $page, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
+     * Ask the notebook's request: the question and the passages found (Context::notebook())
+     *
+     * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runNotebook(Action $action, string $question, array $sources, mixed $language, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->notebook($action, $question, $sources, $language), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
+     * Ask the notebook's first step: search words for the question (Context::notebookTerms())
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runNotebookTerms(Action $action, string $question, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->notebookTerms($action, $question), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
     /** A question as it may leave the box (Context::safeQuestion()): for the embedding server */
     public function safeQuestion(string $question): string
     {

@@ -1,0 +1,13 @@
+You are condensing one part of a long scientific article so that a colleague can later ask questions of the whole. This is part {part} of the article "{title}".
+
+The part:
+<source>
+{source}
+</source>
+
+Rules:
+- Keep every fact a reader of the article would need: definitions, classifications and staging, study design, numbers (n, percentages, effect sizes, confidence intervals, p values), results, conclusions, limitations, recommendations.
+- Keep the page markers `*— p. N —*` where they fall, so the facts can be traced to their page.
+- Only what the part says: no opinion, no outside knowledge, nothing invented. Say nothing about parts you were not given.
+- Use short lines or bullet points, in {language}; keep quotations and technical terms in the language of the article.
+- At most {words} words.

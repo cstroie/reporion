@@ -15,7 +15,7 @@ use Reporion\Storage\StorageInterface;
  * 2026-10-19) made into prompt pages of an AI profile. They come in two
  * targets (2026-10-20): `radiology` (reports; written in Romanian; every
  * prompt) and `generic` (ordinary pages; in English; the ones that make
- * sense for any page: summary, tags, tags-review, commit, ask). A profile is
+ * sense for any page: summary, tags, tags-review, commit, ask, and the library's source analyses and Ask the notebook). A profile is
  * made from one of them. the reserved prompts
  * as `ai:profiles:{profile}:special:{id}`, the rail actions as
  * `ai:profiles:{profile}:{id}` (among them *Ask*, whose `{prompt}` gives the
@@ -73,6 +73,15 @@ final class DefaultPrompts
         'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
         'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
+        'source-part' => ['kind' => self::SPECIAL, 'title' => 'Source: condense one part', 'file' => 'source-part.txt', 'targets' => self::GENERIC_ONLY],
+        'source-points' => ['kind' => self::SPECIAL, 'title' => 'Source: key points', 'file' => 'source-points.txt', 'targets' => self::GENERIC_ONLY],
+        'source-definitions' => ['kind' => self::SPECIAL, 'title' => 'Source: definitions', 'file' => 'source-definitions.txt', 'targets' => self::GENERIC_ONLY],
+        'source-classification' => ['kind' => self::SPECIAL, 'title' => 'Source: classifications and staging', 'file' => 'source-classification.txt', 'targets' => self::GENERIC_ONLY],
+        'source-design' => ['kind' => self::SPECIAL, 'title' => 'Source: design and level of evidence', 'file' => 'source-design.txt', 'targets' => self::GENERIC_ONLY],
+        'source-limitations' => ['kind' => self::SPECIAL, 'title' => 'Source: limitations', 'file' => 'source-limitations.txt', 'targets' => self::GENERIC_ONLY],
+        'source-questions' => ['kind' => self::SPECIAL, 'title' => 'Source: questions it answers', 'file' => 'source-questions.txt', 'targets' => self::GENERIC_ONLY],
+        'ask-notebook' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook', 'file' => 'ask-notebook.txt', 'targets' => self::GENERIC_ONLY],
+        'notebook-terms' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook: search words', 'file' => 'notebook-terms.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
         'create' => ['kind' => self::ACTION, 'title' => 'Create', 'file' => 'create.txt', 'targets' => self::RADIOLOGY_ONLY],
         'conclusion' => ['kind' => self::ACTION, 'title' => 'Conclusion', 'file' => 'conclusion.txt', 'targets' => self::RADIOLOGY_ONLY],

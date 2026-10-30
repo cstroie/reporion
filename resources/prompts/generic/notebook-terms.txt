@@ -1,0 +1,8 @@
+A colleague asks a question about a subject, and the answer is looked up in scientific articles, most of them in English. Today is {current_date}.
+
+The question:
+<question>
+{question}
+</question>
+
+Write, on the first line, the question as a complete standalone question in the language it was asked. On the second line, up to 12 search words or short phrases, in English and in the language of the question, that the articles would use (synonyms, abbreviations, the medical term and the everyday one), separated by commas. Nothing else: no numbering, no explanation.

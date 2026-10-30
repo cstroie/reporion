@@ -1,0 +1,13 @@
+List the limitations of the study in the scientific article "{title}" ({citation}).
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- First the limitations the authors state themselves, then, labelled "Also visible in the text", those the text itself shows (small sample, one centre, retrospective design, no control group, missing data, short follow-up…), only when the article's own figures or methods show them.
+- Bullet points, one sentence each; (p. N) where the text carries a page marker `*— p. N —*`.
+- Nothing from outside knowledge, nothing invented. If the article names none and shows none, say so in one line.
+- Write in {language}.
+- Answer with the list only.

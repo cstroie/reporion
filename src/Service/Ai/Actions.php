@@ -69,7 +69,10 @@ final class Actions
      * and the words a report would use for it; lite). No page, no button.
      * These ids and `special` itself cannot be rail actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand'];
+    /** The library's (docs/library.md, phase 5): one analysis of a source each, the condensing of one part of a long source, Ask the notebook and its search words */
+    public const LIBRARY = ['source-part', 'source-points', 'source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms'];
+
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', ...self::LIBRARY];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,

@@ -1,0 +1,12 @@
+List the questions that the scientific article "{title}" ({citation}) answers, each with its answer in one sentence.
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- Five to eight questions a colleague might ask of this article, each followed by the article's answer; (p. N) where the text carries a page marker `*— p. N —*`.
+- Only answers the article gives: no outside knowledge, nothing invented, figures exactly as given.
+- Write in {language}; keep technical terms in the language of the article.
+- Format: **Question?** answer.

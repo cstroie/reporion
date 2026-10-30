@@ -1,0 +1,13 @@
+Describe how the study in the scientific article "{title}" ({citation}) was done and how strong its evidence is.
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- Short labelled lines: **Design** (randomised trial, cohort, case-control, case series, systematic review, guideline…), **Population** (who, how many: n, setting, period), **Intervention or exposure**, **Comparison**, **Outcomes**, **Main results** (figures as the article gives them), **Level of evidence** (only if the article states one or the design makes it plain; name the scale you use).
+- Write "not stated" for what the article does not say. Nothing from outside knowledge, nothing invented.
+- Add (p. N) where the text carries a page marker `*— p. N —*`.
+- Write in {language}; keep technical terms in the language of the article.
+- Answer with the lines only.

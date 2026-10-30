@@ -15,9 +15,11 @@ use Reporion\Service\PriorStudy;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Citation;
 use Reporion\Support\Conclusion;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
 use RuntimeException;
@@ -420,6 +422,115 @@ final class Context
         $question = (string) preg_replace_callback('/\p{L}+/u', static fn (array $m): string => isset($names[Redactor::fold($m[0])]) ? '[nume]' : $m[0], $question);
 
         return trim((new Redactor())->redact($question));
+    }
+
+    /** The languages a notebook or source may be answered in (frontmatter `language`), by their two-letter code */
+    private const LANGUAGES = ['ro' => 'Romanian', 'en' => 'English', 'fr' => 'French', 'de' => 'German', 'es' => 'Spanish', 'it' => 'Italian', 'hu' => 'Hungarian'];
+
+    /** The name of a page's `language` for {language}; Romanian, the owner's default (docs/library.md), for none or an unknown one */
+    public static function languageName(mixed $code): string
+    {
+        $code = \is_string($code) ? strtolower(substr(trim($code), 0, 2)) : '';
+
+        return self::LANGUAGES[$code] ?? self::LANGUAGES['ro'];
+    }
+
+    /**
+     * A library source's analysis (docs/library.md, phase 5): the article's text, or one part of it
+     * ({part}, {words}: the first step of a source too long for one request) or the notes made of
+     * its parts. {source} and {text} are the text; {title}, {citation} the bibliographic facts.
+     * Literature is not patient data, but it is de-identified like any text that leaves: contact
+     * details (an author's e-mail, a phone) and identifier shapes out, the final guard as ever.
+     *
+     * @param string $part  "2 of 5" for a part, else ''
+     * @param string $label what it is, for "Context sent": "source text", "source part 2 of 5", "source notes"
+     *
+     * @throws AiException identifier_leak
+     */
+    public function source(Action $action, PageRecord $page, string $text, string $label = 'source text', string $part = '', int $words = 0): Prompt
+    {
+        $redactor = new Redactor();
+        $redactor->learn($page->frontmatter, $page->path, $page->body);
+        $clean = Redactor::scrubContacts($redactor->redact($text));
+        $csl = \is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : [];
+        $vars = [
+            'source' => $clean,
+            'text' => $clean,
+            'title' => trim($redactor->redact(\is_string($page->frontmatter['title'] ?? null) ? $page->frontmatter['title'] : PageTitle::of($page->frontmatter, $page->body))),
+            'citation' => $redactor->redact(Citation::vancouver($csl)),
+            'part' => $part,
+            'words' => (string) $words,
+            'language' => self::languageName($page->frontmatter['language'] ?? null),
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, [$label, 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * Ask the notebook's request (docs/library.md, phase 5): a question and the passages of the
+     * notebook's page and of the sources it cites, as `<source id="n" key="…" page="…">` blocks
+     * (the notebook's own with `kind="notebook"` and no key), de-identified like any text that
+     * leaves. {question} goes through safeQuestion().
+     *
+     * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
+     * @param ?string $language the notebook's `language` (Context::languageName())
+     *
+     * @throws AiException identifier_leak
+     */
+    public function notebook(Action $action, string $question, array $sources, mixed $language = null): Prompt
+    {
+        $redactor = new Redactor();
+        $blocks = [];
+        foreach ($sources as $source) {
+            $text = trim(Redactor::scrubContacts($redactor->redact($source['text'])));
+            if ($text === '') {
+                continue;
+            }
+            $attributes = ' id="' . $source['n'] . '"'
+                . ($source['key'] !== null ? ' key="' . self::escape($source['key']) . '"' : ' kind="notebook"')
+                . ($source['page'] !== null ? ' page="' . $source['page'] . '"' : '')
+                . ' title="' . self::escape(str_replace('"', "'", $redactor->redact($source['title']))) . '"';
+            $blocks[] = '<source' . $attributes . ">\n" . self::escape($text) . "\n</source>";
+        }
+        $vars = [
+            'question' => self::escape($this->safeQuestion($question)),
+            'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
+            'language' => self::languageName($language),
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * Ask the notebook's search words (the `notebook-terms` prompt): the question, de-identified
+     *
+     * @throws AiException identifier_leak
+     */
+    public function notebookTerms(Action $action, string $question): Prompt
+    {
+        $redactor = new Redactor();
+        $vars = ['question' => self::escape($this->safeQuestion($question)), 'language' => self::LANGUAGES['ro'], 'current_date' => date('Y-m-d'), 'action' => $action->id];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, ['question', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
 
     /**

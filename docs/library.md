@@ -184,6 +184,9 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    leaves the proposal as read. PubMed's XML is parsed with no network and no entity substitution (a declared entity is refused). `library:add
    --dry-run` sends nothing; `doctor` warns when lookups are on and PHP cannot open an https address (`allow_url_fopen`, openssl). One upload may cost up to three requests of 5 s; PHP-FPM needs `allow_url_fopen`. Not built: lookups for an imported record, "find the DOI by title", the assistant reading page 1 into the record.
 5. **Per-source assistant + Ask the notebook.**
+   *Step 1 built 2026-10-30:* nine reserved prompts (`Actions::LIBRARY`, `resources/prompts/generic`, D15 amended), `Context::source()`/`notebook()`/`notebookTerms()`
+   and `Assistant::runSource()`/`runNotebook()`/`runNotebookTerms()`, `Support\SourceChunks` (a source cut at its headings, then paragraphs and sentences, each part
+   opening with the page marker in force; the budget is `library.context_tokens` less 3000 tokens, 3 characters a token). Model instructions live in the prompt pages, never in code.
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),

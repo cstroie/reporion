@@ -1,0 +1,13 @@
+Extract the definitions from the scientific article "{title}" ({citation}).
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- One line per term: **term**: its definition as the article gives it, then (p. N) when the text carries a page marker `*— p. N —*`.
+- Only definitions the article states or adopts (diagnostic criteria, thresholds, abbreviations spelled out); none of your own, none from outside knowledge.
+- If the article defines nothing, say so in one line.
+- Write in {language}; keep the term in the article's language beside its translation when they differ.
+- Answer with the list only.
