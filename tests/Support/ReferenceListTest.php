@@ -42,7 +42,7 @@ final class ReferenceListTest extends TestCase
     public function testEntriesAreMatchedByDoiPmidOrTitleAndYearOnly(): void
     {
         $matched = ReferenceList::match([
-            'Abel A. Something else. J Test. 2020. doi:10.1234/abc.1',
+            'Abel A. Something else. J Test. 2020. doi:10.1234/abc.1.',
             'Cole C. A different title. PMID: 1234567',
             'Dunn D. Imaging of lesions in adults and children alike. J Test. 2018;3:1-2.',
             'Dunn D. Imaging of lesions in adults and children alike. J Test. 2021;3:1-2.',
@@ -51,7 +51,7 @@ final class ReferenceListTest extends TestCase
         ], self::RECORDS);
 
         self::assertSame(['doi', 'pmid', 'title', null, null, null], array_map(static fn (array $e): ?string => $e['match']['by'] ?? null, $matched));
-        self::assertSame('abel2020', $matched[0]['match']['key']);
+        self::assertSame('abel2020', $matched[0]['match']['key'], 'a DOI ending the entry, its full stop not part of it');
         self::assertSame('10.9999/none', $matched[5]['doi']);
     }
 }

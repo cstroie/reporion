@@ -129,6 +129,19 @@ final class PassageVectorsTest extends StorageTestCase
         self::assertCount(1, $this->index->passageStates(), 'no source half embedded');
     }
 
+    public function testNoVectorsYetAsksTheEmbeddingModelNothing(): void
+    {
+        $page = $this->storage->read('library:abel2020');
+        $texts = [['key' => 'abel2020', 'path' => 'library:abel2020', 'title' => 'A made-up study', 'text' => SourceChunks::withoutReferences($page->body), 'record' => $page]];
+        $reader = new User('reader', '', false, [new Grant('library', GrantRole::Viewer)], true, '', '');
+
+        $found = (new PassageSearch(Embedder::fromConfig($this->config()), $this->index))->choose($texts, ['cohort'], 100000, 'cohort imaging', $reader);
+
+        self::assertNotSame([], $found['passages'], 'by words');
+        self::assertFalse($found['failed']);
+        self::assertNull($this->server->lastRequest()['body'], 'before index:vectors, no embedding is asked for');
+    }
+
     public function testAPassageWithNoWordOfTheQuestionIsFoundByMeaning(): void
     {
         $page = $this->storage->read('library:abel2020');

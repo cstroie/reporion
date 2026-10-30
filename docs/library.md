@@ -239,7 +239,9 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    notebook and Studio's check choose passages with `Service\Library\PassageSearch`: the words' ranking and the meaning's
    (`Sqlite::passageCandidates()`, the notebook's own sources only, under the caller's visibility) fused by rank, two places kept
    for what only meaning finds, so a Romanian question finds an English passage; a vector is used only while its text is
-   unchanged; a meaning hit counts as a match for "no passage, no model call"; an embedding failure is a notice. Needs the
+   unchanged; a meaning hit counts as a match for "no passage, no model call"; an embedding failure is a notice; the question
+   is not embedded while the sources have no passage vectors yet; the best passage by words is always taken first, then the
+   places kept for meaning. Needs the
    embedding model of Admin → AI (*Similar reports*) and a run of `index:vectors` (as `www-data`; the first run over a large
    library is many requests: `--limit`). Report passages (Ask the archive) are not embedded.
    *Step 2 built 2026-10-30:* **What it cites**, on a source's card: its reference list (the `text` fence under `## References`)
@@ -247,7 +249,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    300) and matched against the library's records the caller reads (`listNamespaceMeta`, the index only: no source file is read
    for a page view): by DOI or PMID exactly, by title only when the library's title is at least 25 characters, stands whole in
    the entry (folded) and the entry has its year. A match links to the source; the rest are shown as extracted, with a `doi.org`
-   link when the entry has a DOI. *Not built:* adding an entry that is not in the library (a record from it), and a whole
+   link when the entry has a DOI. About 12 ms a view with 300 sources (abstracts included) and 200 references. *Not built:* adding an entry that is not in the library (a record from it), and a whole
    library's citation graph.
    *Step 3 built 2026-10-30:* **Highlights.** A comment on a source that quotes it (select the text, then comment, D52) is a highlight;
    in the page view's comments it has *Send to page*: the writer names a page (the last one is remembered in this browser) and
@@ -265,8 +267,12 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    certificate verified against it), so a DNS answer that changes between check and connection cannot redirect it; redirects
    handled here, at most 3, each checked again; no proxy; 15 s; the library's size limit read as it streams; HTML, PDF or plain
    text. At most 30 an hour a writer; audited with the host only. Only the address typed leaves the box. PHP-FPM needs
-   `allow_url_fopen` (doctor warns, as for lookups). *Not built:* a page's own `<title>`, author and date metadata read into the
-   record (the text's first line is the title, as for an upload), pages that need JavaScript to show their text.
+   `allow_url_fopen` (doctor warns, as for lookups). A page's own record is read from its head (`Support\HtmlMeta`: the
+   `citation_*` tags journals publish, else Dublin Core and Open Graph, else `<title>`; also for an uploaded `.html`), over the guess
+   from its text, before the lookups and the key. Checked live 2026-10-30 over https through the pinned connection (example.org,
+   Radiopaedia, PubMed, Wikipedia: CDN-fronted sites included, so `peer_name` gives SNI and the certificate check). An original
+   that is not a PDF is served as a download with `nosniff` and `Content-Security-Policy: sandbox`, so a clipped page's script
+   never runs as this site. *Not built:* pages that need JavaScript to show their text.
 8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
 
 ## Long sources

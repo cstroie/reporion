@@ -1445,6 +1445,23 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * Whether any of $pids has passage vectors by $model: none (index:vectors not run yet) asks
+     * the embedding model nothing
+     *
+     * @param list<string> $pids
+     */
+    public function hasPassages(string $model, array $pids): bool
+    {
+        if ($pids === []) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('SELECT 1 FROM passage_vectors WHERE model = ? AND dim > 0 AND pid IN (' . implode(', ', array_fill(0, \count($pids), '?')) . ') LIMIT 1');
+        $stmt->execute([$model, ...array_values($pids)]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /**
      * The passages of $pids nearest to $query (cosine: unit vectors, a dot product), best first,
      * among the pages the caller can see (invariant 6: the visibility predicate picks the
      * candidates before any score); a score under $minScore is no match. Brute force in PHP, as

@@ -299,7 +299,10 @@ final class LibraryController
             'Content-Disposition' => ($ext === 'pdf' ? 'inline' : 'attachment') . '; filename="' . $name . '"',
             'Cache-Control' => 'private, max-age=3600',
             'X-Content-Type-Options' => 'nosniff',
-        ]);
+        ] + ($ext === 'pdf' ? [] : [
+            // A clipped web page's scripts never run as this site, even if a browser rendered it (a sandbox would stop a PDF viewer)
+            'Content-Security-Policy' => 'sandbox; default-src \'none\'',
+        ]));
     }
 
     private const EXPORT_TYPES = [

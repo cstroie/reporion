@@ -215,6 +215,18 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'http://[::ffff:10.0.0.1]/'])->status);
     }
 
+    public function testAWebPagesOriginalIsDownloadedSandboxedNeverRunAsThisSite(): void
+    {
+        $page = $this->add('editor', "<html><head><script>alert(1)</script></head><body><h1>A made-up page on test lesions</h1><p>Grades 0 to 3.</p></body></html>", 'clip.html');
+
+        $file = $this->call('reader', 'GET', '/library/file/' . $page['pid']);
+
+        self::assertSame(200, $file->status);
+        self::assertStringStartsWith('attachment;', $file->headers['Content-Disposition']);
+        self::assertSame('nosniff', $file->headers['X-Content-Type-Options']);
+        self::assertSame("sandbox; default-src 'none'", $file->headers['Content-Security-Policy']);
+    }
+
     public function testAClippedPageIsProposedWithItsAddressAndTheDay(): void
     {
         $config = $this->config;

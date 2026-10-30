@@ -18,6 +18,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Support\ArticleIds;
 use Reporion\Support\Citation;
 use Reporion\Support\CitationKey;
+use Reporion\Support\HtmlMeta;
 use Reporion\Support\Cnp;
 use Reporion\Support\LibrarySource;
 use Reporion\Support\Slug;
@@ -120,6 +121,11 @@ final class Library
     {
         [$ext, $extracted] = $this->read($bytes, $name);
         $identified = Identify::propose($extracted);
+        // A web page says what it is in its head (citation_* tags, else <title>): that, over a guess from its text (phase 7)
+        if (\in_array($ext, ['html', 'htm'], true) && ($meta = HtmlMeta::csl($bytes)) !== []) {
+            $identified['csl'] = array_merge($identified['csl'], $meta);
+            $identified['how'] = array_merge($identified['how'], array_fill_keys(array_keys($meta), 'html'));
+        }
         [$identified['csl'], $tags, $looked] = $online ? $this->lookedUp($identified['csl']) : [$identified['csl'], [], null];
 
         return [$ext, $extracted, [

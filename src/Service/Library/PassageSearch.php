@@ -95,7 +95,6 @@ final class PassageSearch
         $chosen = [];
         $used = 0;
         $per = [];
-        $semantic = 0;
         $take = function (array $ids, int $max) use (&$chosen, &$used, &$per, $all, $texts, $budget): int {
             $taken = 0;
             foreach ($ids as $id) {
@@ -115,6 +114,8 @@ final class PassageSearch
 
             return $taken;
         };
+        // The best passage by words first, so a small budget is never all meaning; then the places kept for meaning
+        $take(\array_slice($keyword, 0, 1), 1);
         $semantic = $take($meaningOnly, self::SEMANTIC_PLACES);
         $take(array_keys($rrf), PHP_INT_MAX);
 
@@ -141,7 +142,8 @@ final class PassageSearch
      */
     private function byMeaning(string $meaning, array $byPid, array $all, ?User $principal): array
     {
-        if ($this->embedder === null || $this->index === null || trim($meaning) === '' || $byPid === []) {
+        if ($this->embedder === null || $this->index === null || trim($meaning) === '' || $byPid === []
+            || !$this->index->hasPassages($this->embedder->model, array_map('strval', array_keys($byPid)))) {
             return [[], false];
         }
         try {
