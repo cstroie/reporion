@@ -16,13 +16,14 @@ final class ProcessRun
     private const MAX_OUTPUT = 262144;
 
     /**
-     * @param list<string> $argv
+     * @param list<string>          $argv
+     * @param array<string, string> $env  added to (or replacing) the inherited environment
      *
      * @return array{0: int, 1: string} exit status (-1: did not start, -2: killed at the timeout) and stdout
      */
-    public static function run(array $argv, int $timeout): array
+    public static function run(array $argv, int $timeout, array $env = []): array
     {
-        $env = array_merge(getenv() ?: [], ['LC_ALL' => 'C']);
+        $env = array_merge(getenv() ?: [], ['LC_ALL' => 'C'], $env);
         $process = @proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, null, $env);
         if (!\is_resource($process)) {
             return [-1, ''];
