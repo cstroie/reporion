@@ -291,13 +291,14 @@ final class EditorController
             $frontmatter = self::withChosenVisibility($frontmatter, $fields);
         }
 
+        // A library source is always private (D58): said here, before Storage refuses it
+        if (LibrarySource::refusesVisibility($frontmatter)) {
+            return $this->isRawMode($request, [])
+                ? $this->renderNew($request, $path, $document, t('library.err_private'), $principal)
+                : $this->renderNewCurated($request, $path, $body, $frontmatter, t('library.err_private'), $principal, carried: isset($carried));
+        }
         // D16: public only with the acknowledgement, which only the Metadata view asks for
         if (($frontmatter['visibility'] ?? null) === 'public') {
-            if (LibrarySource::isSource($frontmatter)) {
-                return $this->isRawMode($request, [])
-                    ? $this->renderNew($request, $path, $document, t('library.err_public'), $principal)
-                    : $this->renderNewCurated($request, $path, $body, $frontmatter, t('library.err_public'), $principal, carried: isset($carried));
-            }
             if ($this->isRawMode($request, [])) {
                 return $this->renderNew($request, $path, $document ?? '', t('vis.err_raw_public'), $principal);
             }
@@ -565,10 +566,11 @@ final class EditorController
 
         // D16: a page becomes public only with the acknowledgement the Metadata view asks for
         $publishes = ($frontmatter['visibility'] ?? null) === 'public' && $record->visibility !== 'public';
-        if ($publishes && LibrarySource::isSource($frontmatter)) {
+        // A library source is always private (D58): said here, before Storage refuses it
+        if (LibrarySource::refusesVisibility($frontmatter)) {
             return $rawMode
-                ? $this->render($request, $record, error: t('library.err_public'), document: $document ?? '', conflictDocument: null, principal: $principal)
-                : $this->renderCurated($request, $record, error: t('library.err_public'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal);
+                ? $this->render($request, $record, error: t('library.err_private'), document: $document ?? '', conflictDocument: null, principal: $principal)
+                : $this->renderCurated($request, $record, error: t('library.err_private'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal);
         }
         if ($publishes && $rawMode) {
             return $this->render($request, $record, error: t('vis.err_raw_public'), document: $document ?? '', conflictDocument: null, principal: $principal);

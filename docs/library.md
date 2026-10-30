@@ -11,7 +11,7 @@ library view, the upload form and a source's card. The rest is planned.
 |---|---|
 | Where article records live | **One central library**, the `library:` namespace (setting `library.namespace`), one page per article; notebooks cite and link them |
 | Originals | **`data/sources/{ab}/{sha256}.{ext}`**, content-addressed, backed up with `data/` (an on-disk layout change: approved) |
-| Who sees the library | **Signed-in only.** Library pages are `private` or `unlisted`, never `public` (republishing a paper is redistribution); a notebook may be published with its bibliography |
+| Who sees the library | **Signed-in only.** Library pages are `private` only (republishing a paper is redistribution; `unlisted`, readable by anyone with the link, ruled out by the owner the same day); a notebook may be published with its bibliography |
 | Who adds and runs the assistant | **Any editor** with a grant on `library` (and on the notebook's namespace); not tied to the radiologist flag |
 | Online lookups | **Opt-in** (`library.lookup`, off by default): CrossRef and PubMed get a DOI, a PMID or title words only, never page text |
 | Citation styles | **Vancouver** (default), **APA**, **AMA**, hand-written (`Support\Citation`), no CSL engine dependency |
@@ -71,8 +71,8 @@ checked, so it is refused too until OCR gives it text that goes through the same
 2026-10-30). A title is never taken from the file's name (a file may be named after a person): the
 text's first line, else *Untitled document*. Recognising an epicrisis without a CNP is not built.
 
-**Never public:** a page carrying `csl` or `original` (`Support\LibrarySource`) is refused as `public`
-by `Storage::create()`/`save()` (`PublicSourceException`), wherever it is moved; the editor and the
+**Always private:** a page carrying `csl` or `original` (`Support\LibrarySource`) is refused as `public`
+or `unlisted` (anyone with the link could read the article's text; owner, 2026-10-30) by `Storage::create()`/`save()` (`SourceVisibilityException`), wherever it is moved; the editor and the
 visibility screen say so first.
 
 ## Citations and bibliography

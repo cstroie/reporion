@@ -8,7 +8,7 @@ namespace Reporion\Service;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
-use Reporion\Exception\PublicSourceException;
+use Reporion\Exception\SourceVisibilityException;
 use Reporion\Http\Request;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -136,8 +136,8 @@ final class Publishing
      */
     public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null, bool $minor = false, ?string $note = null): PageRecord
     {
-        if (LibrarySource::refusesPublic(self::merge($page->frontmatter, $changes))) {
-            throw new PublicSourceException();
+        if (LibrarySource::refusesVisibility(self::merge($page->frontmatter, $changes))) {
+            throw new SourceVisibilityException();
         }
         if (isset($changes['visibility']) && !\in_array($changes['visibility'], self::VISIBILITIES, true)) {
             throw new InvalidArgumentException('visibility must be private, unlisted or public');

@@ -90,10 +90,10 @@ final class LibraryTest extends HttpTestCase
         $proposal = json_decode($this->upload('owner', self::ARTICLE, 'study.md')->body, true);
         $page = json_decode($this->call('owner', 'POST', '/api/v1/library', ['token' => $proposal['token'], 'csl' => $proposal['csl']])->body, true);
 
-        $patched = $this->call('owner', 'PATCH', '/api/v1/pages/' . $page['path'] . '/meta', ['changes' => ['visibility' => 'public'], 'base_rev' => 1, 'acknowledge' => true]);
+        $patched = $this->call('owner', 'PATCH', '/api/v1/pages/' . $page['path'] . '/meta', ['meta' => ['visibility' => 'public'], 'base_rev' => 1, 'acknowledge' => true]);
 
-        self::assertGreaterThanOrEqual(400, $patched->status);
-        self::assertLessThan(500, $patched->status);
+        self::assertSame(422, $patched->status);
+        self::assertSame(['invalid_meta', 'A library source is always private'], array_values(array_intersect_key(json_decode($patched->body, true)['error'], ['code' => 1, 'message' => 1])));
         self::assertSame('private', (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Tests\Storage\RecordingIndex()))->read($page['path'])->visibility);
     }
 
@@ -110,7 +110,7 @@ final class LibraryTest extends HttpTestCase
         ));
 
         self::assertSame(422, $refused->status);
-        self::assertStringContainsString('A library source is never public', $refused->body);
+        self::assertStringContainsString('A library source is always private', $refused->body);
         self::assertStringContainsString('edited text', $refused->body);
     }
 
@@ -155,6 +155,17 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(2, json_decode($saved->body, true)['rev']);
         self::assertSame(409, $this->call('editor', 'PUT', '/api/v1/library/' . $page['pid'] . '/record', ['csl' => $csl, 'base_rev' => 1])->status, 'a stale revision');
         self::assertStringContainsString('Nobody A. A corrected title. 2024.', html_entity_decode($this->call('reader', 'GET', '/' . $page['path'])->body, ENT_QUOTES));
+    }
+
+    public function testAnUnlistedSourceIsRefusedSoNoAnonymousLinkReadsIt(): void
+    {
+        $page = $this->add('editor', self::ARTICLE, 'study.md');
+
+        $patched = $this->call('editor', 'PATCH', '/api/v1/pages/' . $page['path'] . '/meta', ['meta' => ['visibility' => 'unlisted'], 'base_rev' => 1]);
+
+        self::assertSame(422, $patched->status);
+        self::assertSame(404, $this->call(null, 'GET', '/' . $page['path'])->status);
+        self::assertSame(404, $this->call(null, 'GET', '/api/v1/pages/' . $page['path'])->status);
     }
 
     /**

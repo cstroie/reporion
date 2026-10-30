@@ -10,7 +10,7 @@ use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Exception\LibraryException;
-use Reporion\Exception\PublicSourceException;
+use Reporion\Exception\SourceVisibilityException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
@@ -136,23 +136,22 @@ final class LibraryTest extends StorageTestCase
         }
     }
 
-    public function testALibrarySourceIsNeverPublicWhereverItIs(): void
+    public function testALibrarySourceIsAlwaysPrivateWhereverItIs(): void
     {
         [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
-        $fm = $page->frontmatter;
-        $fm['visibility'] = 'unlisted';
-        $saved = $this->storage->save($page->path, $fm, $page->body, 1, 'owner');
-        self::assertSame('unlisted', $saved->visibility);
-
-        $fm['visibility'] = 'public';
-        foreach ([fn () => $this->storage->save($page->path, $fm, $page->body, 2, 'owner'), fn () => $this->storage->create('wiki:copy', $fm, $page->body, 'owner')] as $write) {
-            try {
-                $write();
-                self::fail('no exception');
-            } catch (PublicSourceException) {
+        foreach (['unlisted', 'public'] as $visibility) {
+            $fm = $page->frontmatter;
+            $fm['visibility'] = $visibility;
+            foreach ([fn () => $this->storage->save($page->path, $fm, $page->body, 1, 'owner'), fn () => $this->storage->create('wiki:copy', $fm, $page->body, 'owner')] as $write) {
+                try {
+                    $write();
+                    self::fail('no exception for ' . $visibility);
+                } catch (SourceVisibilityException) {
+                }
             }
         }
-        self::assertSame('unlisted', $this->storage->read($page->path)->visibility);
+        self::assertSame('private', $this->storage->read($page->path)->visibility);
+        self::assertSame(1, $this->storage->read($page->path)->rev);
         self::assertFalse($this->storage->isPathTaken('wiki:copy'));
     }
 

@@ -8,9 +8,10 @@ namespace Reporion\Support;
 
 /**
  * Whether a page is a library source (docs/library.md, D58): it carries a bibliographic record
- * (`csl`) or an original (`original`). Such a page is never public, wherever it is moved:
- * publishing it would republish the article (owner, 2026-10-30). Storage enforces it on every
- * write; the editor and the visibility screen say it first.
+ * (`csl`) or an original (`original`). Such a page is always private, wherever it is moved: public,
+ * or unlisted (readable by anyone with the link), would republish the article; grants decide who
+ * reads it (owner, 2026-10-30). Storage enforces it on every write; the editor and the visibility
+ * screen say it first.
  */
 final class LibrarySource
 {
@@ -21,8 +22,8 @@ final class LibrarySource
     }
 
     /** @param array<string, mixed> $frontmatter */
-    public static function refusesPublic(array $frontmatter): bool
+    public static function refusesVisibility(array $frontmatter): bool
     {
-        return ($frontmatter['visibility'] ?? null) === 'public' && self::isSource($frontmatter);
+        return self::isSource($frontmatter) && ($frontmatter['visibility'] ?? 'private') !== 'private';
     }
 }
