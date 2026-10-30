@@ -10,6 +10,7 @@ use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Exception\LibraryException;
+use Reporion\Exception\PublicSourceException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
@@ -121,6 +122,38 @@ final class LibraryTest extends StorageTestCase
         }
         self::assertSame([], glob($this->dataRoot . '/tmp/library*/*') ?: []);
         self::assertFalse(Library::holdsPatientData('Thirteen digits that are no CNP: 1234567890123'));
+    }
+
+    public function testAFileWithNoTextToCheckIsRefused(): void
+    {
+        foreach (["   \n\n", "\u{FEFF}"] as $empty) {
+            try {
+                $this->library->upload($empty, 'scan.txt', self::owner());
+                self::fail('no exception');
+            } catch (LibraryException $e) {
+                self::assertSame(LibraryException::NO_TEXT, $e->reason);
+            }
+        }
+    }
+
+    public function testALibrarySourceIsNeverPublicWhereverItIs(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $fm = $page->frontmatter;
+        $fm['visibility'] = 'unlisted';
+        $saved = $this->storage->save($page->path, $fm, $page->body, 1, 'owner');
+        self::assertSame('unlisted', $saved->visibility);
+
+        $fm['visibility'] = 'public';
+        foreach ([fn () => $this->storage->save($page->path, $fm, $page->body, 2, 'owner'), fn () => $this->storage->create('wiki:copy', $fm, $page->body, 'owner')] as $write) {
+            try {
+                $write();
+                self::fail('no exception');
+            } catch (PublicSourceException) {
+            }
+        }
+        self::assertSame('unlisted', $this->storage->read($page->path)->visibility);
+        self::assertFalse($this->storage->isPathTaken('wiki:copy'));
     }
 
     public function testAnUnknownOrUsedTokenHasExpired(): void

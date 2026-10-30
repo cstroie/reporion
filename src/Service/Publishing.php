@@ -8,9 +8,11 @@ namespace Reporion\Service;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Exception\PublicSourceException;
 use Reporion\Http\Request;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
 
@@ -134,6 +136,9 @@ final class Publishing
      */
     public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null, bool $minor = false, ?string $note = null): PageRecord
     {
+        if (LibrarySource::refusesPublic(self::merge($page->frontmatter, $changes))) {
+            throw new PublicSourceException();
+        }
         if (isset($changes['visibility']) && !\in_array($changes['visibility'], self::VISIBILITIES, true)) {
             throw new InvalidArgumentException('visibility must be private, unlisted or public');
         }

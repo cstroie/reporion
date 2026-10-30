@@ -573,7 +573,7 @@ the next ones; a letter, then letters, digits and hyphens). Frontmatter:
 
 ```yaml
 title: A made-up study of test lesions      # the record's title (an override: the body has no `#`)
-visibility: private                         # never public (docs/library.md)
+visibility: private                         # never public: Storage refuses it (Support\LibrarySource)
 tags: [grading, lesions]
 csl:                                        # the bibliographic record, CSL-JSON (Zotero, Mendeley, pandoc)
   type: article-journal

@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Service\Library;
 
 use Reporion\Support\ArticleIds;
+use Reporion\Support\SourceText;
 
 /**
  * Which article a file is, offline (docs/library.md, pipeline step 4): a proposed record in
@@ -23,7 +24,7 @@ final class Identify
     /**
      * @return array{csl: array<string, mixed>, how: array<string, string>} `how`: field => where it was found
      */
-    public static function propose(Extracted $x, string $fileName): array
+    public static function propose(Extracted $x): array
     {
         $csl = ['type' => 'article-journal'];
         $how = [];
@@ -74,8 +75,9 @@ final class Identify
         if (isset($csl['ISBN']) && !isset($csl['DOI'])) {
             $csl['type'] = 'book';
         }
-        // The file's own name, when nothing better was found
-        $set('title', self::titleFromFileName($fileName), 'file');
+        // The text's first line, else nothing: never the file's name, which may name a person
+        $set('title', self::firstLine($x->body), 'text');
+        $set('title', 'Untitled document', 'none');
 
         return ['csl' => $csl, 'how' => $how];
     }
@@ -300,10 +302,20 @@ final class Identify
         return null;
     }
 
-    private static function titleFromFileName(string $name): string
+    /** The first line of the text that reads as a title: 2 to 30 words, not a page marker */
+    private static function firstLine(string $body): ?string
     {
-        $base = pathinfo($name, PATHINFO_FILENAME);
+        foreach (explode("\n", $body) as $line) {
+            $line = trim((string) preg_replace(['/^#+\s*/', '/\\\\([\[\]#>*+\-.)])/'], ['', '$1'], $line));
+            if ($line === '' || preg_match(SourceText::MARKER, $line) === 1) {
+                continue;
+            }
+            $words = \count(preg_split('/\s+/u', $line) ?: []);
+            $line = mb_strlen($line) > 200 ? mb_substr($line, 0, 200) . '…' : $line;
 
-        return trim((string) preg_replace('/[_\s]+/u', ' ', $base));
+            return $words >= 2 && $words <= 30 ? $line : null;
+        }
+
+        return null;
     }
 }

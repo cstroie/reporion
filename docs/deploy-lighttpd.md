@@ -110,14 +110,17 @@ with an `<If "%{QUERY_STRING} =~ /^v=/">`, and the shipped root-mode `.htaccess`
     php_admin_value[max_execution_time] = 300     ; Admin -> Maintenance / Tags pages:summarize/pages:tag/
                                                    ; index:vectors/integrity:verify run through FPM, not
                                                    ; only in CLI, and call set_time_limit(300) themselves
-    php_admin_value[upload_max_filesize] = 32M
-    php_admin_value[post_max_size] = 32M
+    php_admin_value[upload_max_filesize] = 64M     ; the library takes files up to library.max_mb (50 MB)
+    php_admin_value[post_max_size] = 64M           ; as the request body: keep both above it
     ; optional hardening, if set, it must also list the directories of the plugin binaries
     ; (is_file()/is_executable() on /usr/bin/findscu or /usr/bin/groff fail outside it) and the
     ; system temp path; test a PDF export and each plugin's own test screen after setting it
     ;php_admin_value[open_basedir] = /var/www/html/reporion:/tmp:/usr/bin:/usr/local/bin
     php_admin_flag[expose_php] = off
     php_admin_value[ffi.enable] = 1               ; real fsync() needs FFI: see below
+
+lighttpd limits a request body itself: `server.max-request-size` (in KiB) must allow the library's
+largest file too, e.g. `server.max-request-size = 65536` for 64 MiB (docs/library.md).
 
 > **`max_execution_time` must be at least as long as the longest browser-triggered task.**
 > `AdminMaintenanceController`/`AdminIndexController` call `set_time_limit(300)` before a long

@@ -85,6 +85,35 @@ final class LibraryTest extends HttpTestCase
         self::assertSame('library:madeup2024', json_decode($duplicate->body, true)['error']['fields']['path']);
     }
 
+    public function testTheVisibilityScreenRefusesToPublishALibrarySource(): void
+    {
+        $proposal = json_decode($this->upload('owner', self::ARTICLE, 'study.md')->body, true);
+        $page = json_decode($this->call('owner', 'POST', '/api/v1/library', ['token' => $proposal['token'], 'csl' => $proposal['csl']])->body, true);
+
+        $patched = $this->call('owner', 'PATCH', '/api/v1/pages/' . $page['path'] . '/meta', ['changes' => ['visibility' => 'public'], 'base_rev' => 1, 'acknowledge' => true]);
+
+        self::assertGreaterThanOrEqual(400, $patched->status);
+        self::assertLessThan(500, $patched->status);
+        self::assertSame('private', (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Tests\Storage\RecordingIndex()))->read($page['path'])->visibility);
+    }
+
+    public function testTheEditorRefusesToPublishALibrarySourceAndKeepsTheText(): void
+    {
+        $proposal = json_decode($this->upload('owner', self::ARTICLE, 'study.md')->body, true);
+        $page = json_decode($this->call('owner', 'POST', '/api/v1/library', ['token' => $proposal['token'], 'csl' => $proposal['csl']])->body, true);
+
+        $refused = Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/' . $page['path'] . '/edit',
+            cookies: ['reporion' => $this->cookie('owner')],
+            body: http_build_query(['body' => 'edited text', 'base_rev' => 1, 'visibility' => 'public', 'acknowledge' => '1']),
+        ));
+
+        self::assertSame(422, $refused->status);
+        self::assertStringContainsString('A library source is never public', $refused->body);
+        self::assertStringContainsString('edited text', $refused->body);
+    }
+
     private function upload(?string $user, string $bytes, string $name): Response
     {
         return Kernel::boot($this->config)->handle(new Request(

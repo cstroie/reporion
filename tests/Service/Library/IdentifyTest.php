@@ -28,7 +28,7 @@ final class IdentifyTest extends TestCase
 
     public function testTheXmpPacketGivesTheWholeRecord(): void
     {
-        $proposal = Identify::propose(new Extracted('', '', 4, true, '', xmp: self::XMP), 'paper.pdf');
+        $proposal = Identify::propose(new Extracted('', '', 4, true, '', xmp: self::XMP));
 
         self::assertSame([
             'type' => 'article-journal',
@@ -56,7 +56,6 @@ final class IdentifyTest extends TestCase
         $head = "J Synth Imaging 2024;3:11-14\nA made-up study of\ntest lesions\nhttps://doi.org/10.1234/jti.2024.0001\n";
         $proposal = Identify::propose(
             new Extracted('', '', 4, true, $head, info: ['Title' => 'Microsoft Word - draft7.docx', 'Author' => 'Adobe Acrobat'], lines: $lines),
-            'scan_0042.pdf',
         );
 
         self::assertSame('A made-up study of test lesions', $proposal['csl']['title']);
@@ -84,15 +83,17 @@ final class IdentifyTest extends TestCase
         self::assertSame([], Identify::authors('Received 3 March 2024'));
     }
 
-    public function testATextFileIsTitledByItsFirstHeadingElseByItsName(): void
+    public function testATextFileIsTitledByItsFirstHeadingElseItsFirstLineNeverItsFileName(): void
     {
-        self::assertSame('Grading made simple', Identify::propose(new Extracted("# Grading made simple\n\nText.\n", '', 1, true, ''), 'x.md')['csl']['title']);
-        self::assertSame('grading notes 2024', Identify::propose(new Extracted("Text.\n", '', 1, true, ''), 'grading_notes 2024.txt')['csl']['title']);
+        self::assertSame('Grading made simple', Identify::propose(new Extracted("# Grading made simple\n\nText.\n", '', 1, true, ''))['csl']['title']);
+        self::assertSame('Notes on grading lesions', Identify::propose(new Extracted("Notes on grading lesions\n\nText.\n", '', 1, true, ''))['csl']['title']);
+        $untitled = Identify::propose(new Extracted("Text.\n", '', 1, true, ''));
+        self::assertSame(['Untitled document', 'none'], [$untitled['csl']['title'], $untitled['how']['title']]);
     }
 
     public function testAnIsbnWithoutDoiIsABook(): void
     {
-        $proposal = Identify::propose(new Extracted('', '', 300, true, 'ISBN 978-0-306-40615-7 © 2019'), 'book.pdf');
+        $proposal = Identify::propose(new Extracted('', '', 300, true, 'ISBN 978-0-306-40615-7 © 2019'));
 
         self::assertSame('book', $proposal['csl']['type']);
         self::assertSame('9780306406157', $proposal['csl']['ISBN']);

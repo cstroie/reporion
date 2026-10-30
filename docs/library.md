@@ -61,11 +61,19 @@ History (attic), search, tags, the visibility predicate (invariant 6), trash, ba
    type, tags); nothing is authoritative until the writer saves it (D8).
 6. **Duplicates**: by DOI, PMID, folded title + year, then sha256. A second upload of a known article
    attaches to it (adds the original if it had none); a notebook upload links the existing record.
-7. **Create** through `Storage`: the original into `data/sources/` (`Storage\SourceStore`, atomic),
-   then the page `library:{key}`; one journal line covers both.
+7. **Create** through `Storage`: the original into `data/sources/` (`Storage::storeOriginal()`, temp
+   file + link, outside the journal like media: an original written before a crash and named by no
+   page is harmless), then the page `library:{key}` (`create()`, its own journal line).
 
-**Patient guard:** a document whose text holds a valid CNP, or that is a patient file (epicrisis), is
-refused with a notice: the library is literature, never patient data (invariants 8 and 10).
+**Patient guard:** a document whose text holds a valid CNP is refused with a notice, nothing kept: the
+library is literature, never patient data (invariants 8 and 10). A file with no text (a scan) cannot be
+checked, so it is refused too until OCR gives it text that goes through the same check (owner,
+2026-10-30). A title is never taken from the file's name (a file may be named after a person): the
+text's first line, else *Untitled document*. Recognising an epicrisis without a CNP is not built.
+
+**Never public:** a page carrying `csl` or `original` (`Support\LibrarySource`) is refused as `public`
+by `Storage::create()`/`save()` (`PublicSourceException`), wherever it is moved; the editor and the
+visibility screen say so first.
 
 ## Citations and bibliography
 
@@ -109,14 +117,16 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
 
 ## Phases
 
-1. **Ingest + identify (offline)**, **built 2026-10-30**: `Storage\SourceStore`, `Service\Library\Extractor`,
+1. **Ingest + identify (offline)**, **built 2026-10-30**: `Storage::storeOriginal()`, `Service\Library\Extractor`,
    `Support\SourceText`, `Support\ArticleIds`, `Service\Library\Identify`, `Service\Library\Library`
    (dedupe, create); `POST /api/v1/library/uploads` (proposal), `POST /api/v1/library` (confirm),
    `GET /library/file/{pid}`; `bin/reporion library:add`; doctor checks the tools; integrity:verify
    checks every `original.sha256`. Fixtures are synthetic articles written for the tests, never real
    papers. *As built:* an original no page names is not swept (as media); PHP-FPM's `post_max_size`
    and `upload_max_filesize` must allow `library.max_mb`; the source page's title is frontmatter
-   `title` (the article's text has no `#` of its own).
+   `title` (the article's text has no `#` of its own); the never-public guard came forward from
+   phase 2. For phase 2's form: `confirm()` uses the token up before the duplicate check in
+   `create()`, so a 409 there means uploading again; check first when the form is built.
 2. **Library view + metadata form + publishing guard** (library pages never `public`).
 3. **Citations + References section** (render fixtures), `@` picker, `Support\Citation`.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.

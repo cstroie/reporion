@@ -36,6 +36,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ExamTemplates;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use RuntimeException;
@@ -292,6 +293,9 @@ final class EditorController
 
         // D16: public only with the acknowledgement, which only the Metadata view asks for
         if (($frontmatter['visibility'] ?? null) === 'public') {
+            if (LibrarySource::isSource($frontmatter)) {
+                return $this->renderNew($request, $path, $document ?? '', t('library.err_public'), $principal);
+            }
             if ($this->isRawMode($request, [])) {
                 return $this->renderNew($request, $path, $document ?? '', t('vis.err_raw_public'), $principal);
             }
@@ -559,6 +563,11 @@ final class EditorController
 
         // D16: a page becomes public only with the acknowledgement the Metadata view asks for
         $publishes = ($frontmatter['visibility'] ?? null) === 'public' && $record->visibility !== 'public';
+        if ($publishes && LibrarySource::isSource($frontmatter)) {
+            return $rawMode
+                ? $this->render($request, $record, error: t('library.err_public'), document: $document ?? '', conflictDocument: null, principal: $principal)
+                : $this->renderCurated($request, $record, error: t('library.err_public'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal);
+        }
         if ($publishes && $rawMode) {
             return $this->render($request, $record, error: t('vis.err_raw_public'), document: $document ?? '', conflictDocument: null, principal: $principal);
         }

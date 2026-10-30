@@ -2028,6 +2028,8 @@ return [
     'library.err_failed'       => 'The file could not be read. It may be damaged or protected by a password.',
     'library.err_timeout'      => 'Reading the file took too long and was stopped.',
     'library.err_patient_data' => 'The file holds a personal numeric code (CNP): the library is for literature, never a patient\'s documents. Nothing was kept.',
+    'library.err_no_text'      => 'The file has no text to read: a scan. Scans cannot be checked for patient data, so the library does not take them yet (OCR is planned).',
+    'library.err_public'       => 'A library source is never public: publishing it would republish the article. Cite it from a public page instead.',
     'library.err_expired'      => 'The upload is no longer there (it is kept an hour, and used once). Upload the file again.',
     'library.err_duplicate'    => 'This article is in the library already.',
     'library.err_unreadable'   => 'The file cannot be read.',

@@ -20,6 +20,7 @@ final class LibraryException extends RuntimeException
     public const FAILED = 'failed';
     public const TIMEOUT = 'timeout';
     public const PATIENT_DATA = 'patient_data';
+    public const NO_TEXT = 'no_text';
     public const EXPIRED = 'expired';
     public const DUPLICATE = 'duplicate';
     public const INVALID = 'invalid';

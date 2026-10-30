@@ -16,11 +16,13 @@ use Reporion\Auth\User;
 use Reporion\Exception\AtticException;
 use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PublicSourceException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
 use Reporion\Support\Canonical;
 use Reporion\Support\Exams;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\Fsync;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
@@ -105,6 +107,9 @@ final class FileTree implements StorageInterface
     {
         return $this->locked(function () use ($path, $frontmatter, $body, $actor, $note, $auto, $exclusive): PageRecord {
             $finalPath = $this->allocatePath($path, $exclusive);
+            if (LibrarySource::refusesPublic($frontmatter)) {
+                throw new PublicSourceException();
+            }
             $pid = Ulid::generate();
             // Every report is written in the one exams shape (phase 27, docs/FORMATS.md §12)
             if (ReportPath::isReport($finalPath)) {
@@ -161,6 +166,9 @@ final class FileTree implements StorageInterface
             }
 
             $frontmatter = self::withoutPid($frontmatter);
+            if (LibrarySource::refusesPublic($frontmatter)) {
+                throw new PublicSourceException();
+            }
             // The one exams shape (phase 27): a top-level value changed since the
             // current revision is an edit and goes into the exam
             if (ReportPath::isReport($path)) {

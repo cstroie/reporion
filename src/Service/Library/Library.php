@@ -27,7 +27,8 @@ use Reporion\Support\SourceText;
  *
  * Two steps, as Mendeley's: upload() reads the file and proposes a record (nothing stored but a
  * temporary upload), confirm() makes the page from the record the writer saw and corrected (D8).
- * add() does both at once, for the CLI. Never patient data: a text holding a valid CNP is refused.
+ * add() does both at once, for the CLI. Never patient data: a text holding a valid CNP is refused, and
+ * so is a file with no text to check (a scan), until OCR.
  */
 final class Library
 {
@@ -113,7 +114,7 @@ final class Library
     private function proposal(string $bytes, string $name, User $principal): array
     {
         [$ext, $extracted] = $this->read($bytes, $name);
-        $identified = Identify::propose($extracted, $name);
+        $identified = Identify::propose($extracted);
 
         return [$ext, $extracted, [
             'name' => self::fileName($name),
@@ -164,7 +165,7 @@ final class Library
     public function add(string $bytes, string $name, User $principal, string $actor, array $fields = []): array
     {
         [$ext, $extracted] = $this->read($bytes, $name);
-        $csl = self::cleanCsl(array_merge(Identify::propose($extracted, $name)['csl'], \is_array($fields['csl'] ?? null) ? $fields['csl'] : []));
+        $csl = self::cleanCsl(array_merge(Identify::propose($extracted)['csl'], \is_array($fields['csl'] ?? null) ? $fields['csl'] : []));
         $key = $this->keyFor($fields['key'] ?? null, $csl);
         $record = $this->create($bytes, $ext, self::fileName($name), $extracted, $csl, $key, self::cleanTags($fields['tags'] ?? []), $principal, $actor);
 
@@ -307,6 +308,10 @@ final class Library
         }
         $ext = Extractor::extensionOf($name) ?? throw new LibraryException(LibraryException::UNSUPPORTED);
         $extracted = $this->extractor->extract($bytes, $ext);
+        // A scan cannot be checked for patient data: refused until OCR gives it text (owner, 2026-10-30)
+        if (!$extracted->hasText) {
+            throw new LibraryException(LibraryException::NO_TEXT);
+        }
         if (self::holdsPatientData($extracted->body . "\n" . $extracted->references . "\n" . $extracted->head)) {
             throw new LibraryException(LibraryException::PATIENT_DATA);
         }
