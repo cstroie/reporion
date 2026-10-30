@@ -763,9 +763,27 @@
     return pos === 0 || /[\s(\[;]/.test(value.charAt(pos - 1));
   }
 
-  /** The citation for a library source's key, at pos: `[@key]` (inside an open `[@a; ` it is just `@key`) */
-  function citation(key) {
-    return '[@' + String(key) + ']';
+  /**
+   * The edit that cites a library source's key at pos: `[@key]`; right after a `[` just `@key]`;
+   * inside a citation still open (`[@a; `) just `@key`. The closing bracket is left out where
+   * the line already has one.
+   */
+  function citeEdit(text, pos, key) {
+    var value = String(text);
+    var lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+    var lineEnd = value.indexOf('\n', pos);
+    var before = value.slice(lineStart, pos);
+    var after = value.slice(pos, lineEnd === -1 ? value.length : lineEnd);
+    var closed = /^[^\[\]]*\]/.test(after);
+    var insert;
+    if (/\[@[^\[\]]*$/.test(before)) {
+      insert = '@' + key + (closed ? '' : ']');
+    } else if (before.slice(-1) === '[') {
+      insert = '@' + key + (closed ? '' : ']');
+    } else {
+      insert = '[@' + key + ']';
+    }
+    return edit(pos, pos, insert, pos + insert.length, pos + insert.length);
   }
 
   /** A `###` section heading put at pos, on its own line, the cursor on the line after it */
@@ -825,7 +843,7 @@
     insertSnippet: insertSnippet,
     slashAt: slashAt,
     citeAt: citeAt,
-    citation: citation,
+    citeEdit: citeEdit,
     sectionAt: sectionAt,
     cleanText: cleanText,
     unitsDegrees: unitsDegrees,

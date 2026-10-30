@@ -102,10 +102,12 @@ final class Render
      *                              section built (a page's `citation_style`, docs/library.md)
      * @param bool   $citeLinks     a cited source links to its library page: the reader may open
      *                              it (never in print or an export, `unlinkPages`)
+     * @param string $language      the References heading's language: the page's `language` (ro, en;
+     *                              empty or another: Romanian, the notebook default of docs/library.md)
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false, string $language = ''): RenderResult
     {
-        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines, $breaks, $citationStyle, $citeLinks);
+        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines, $breaks, $citationStyle, $citeLinks, $language);
     }
 
     /**
@@ -122,7 +124,7 @@ final class Render
             return new RenderResult(self::textBody($body), [], []);
         }
 
-        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false, BodyFormat::hardBreaks($frontmatter), Citation::style($frontmatter['citation_style'] ?? null), $citeLinks);
+        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false, BodyFormat::hardBreaks($frontmatter), Citation::style($frontmatter['citation_style'] ?? null), $citeLinks, \is_string($frontmatter['language'] ?? null) ? $frontmatter['language'] : '');
     }
 
     /**
@@ -151,7 +153,7 @@ final class Render
     }
 
     /** @param ?Closure(string $sha256, string $ext): ?string $mediaSrc */
-    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false): RenderResult
+    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false, string $language = ''): RenderResult
     {
         $document = $this->parser->parse($markdown);
         if ($breaks) {
@@ -164,7 +166,7 @@ final class Render
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         // Anchors first: the table of contents links to them
         $toc = $this->extractToc($document, $examIds ? explode("\n", $markdown) : null);
-        [$references, $unknown] = $this->resolveCitations($document, Citation::style($citationStyle), $citeLinks && !$unlinkPages ? $basePath : null);
+        [$references, $unknown] = $this->resolveCitations($document, Citation::style($citationStyle), $citeLinks && !$unlinkPages ? $basePath : null, $language);
         $html = (string) $this->renderer->renderDocument($document) . $references;
         // A fenced block with no language fence (```) renders bare <pre><code>;
         // marking it nohighlight stops highlight.js (templates/layout.php)
@@ -187,7 +189,7 @@ final class Render
      *
      * @return array{0: string, 1: list<string>} the section's HTML ('' when nothing is cited), the keys no source has
      */
-    private function resolveCitations(CommonMarkNode $document, string $style, ?string $linkBase): array
+    private function resolveCitations(CommonMarkNode $document, string $style, ?string $linkBase, string $language): array
     {
         $nodes = [];
         foreach ($document->iterator() as $node) {
@@ -237,7 +239,7 @@ final class Render
             uksort($entries, static fn (string $a, string $b): int => $numbers[$a] <=> $numbers[$b]);
         }
         $tag = $style === 'apa' ? 'ul' : 'ol';
-        $html = '<div class="wk-references"><h2 id="references">' . htmlspecialchars(t('library.references'), ENT_QUOTES) . '</h2>'
+        $html = '<div class="wk-references"><h2 id="references">' . htmlspecialchars(t(strtolower(substr(trim($language), 0, 2)) === 'en' ? 'library.references_en' : 'library.references_ro'), ENT_QUOTES) . '</h2>'
             . '<' . $tag . ' class="wk-reflist wk-reflist-' . $style . '">' . implode('', $entries) . '</' . $tag . '></div>' . "\n";
 
         return [$html, array_keys($unknown)];

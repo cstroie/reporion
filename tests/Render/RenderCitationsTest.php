@@ -40,7 +40,9 @@ final class RenderCitationsTest extends TestCase
         self::assertStringContainsString('href="#ref-abel2020">2</a>', $html);
         self::assertSame(3, substr_count($html, 'class="wk-cite-ref"'));
         self::assertMatchesRegularExpression('~<ol class="wk-reflist wk-reflist-vancouver"><li id="ref-nobody2024">Nobody A, Other B\. A study\. J Rad\. 2024\.</li><li id="ref-abel2020">~', $html);
-        self::assertStringContainsString('<h2 id="references">References</h2>', $html);
+        self::assertStringContainsString('<h2 id="references">Bibliografie</h2>', $html, 'the notebook default is Romanian');
+        self::assertStringContainsString('<h2 id="references">References</h2>', self::render()->toHtml('A [@abel2020].', language: 'en')->html);
+        self::assertStringContainsString('>References</h2>', self::render()->body('A [@abel2020].', ['language' => 'en-GB'])->html);
     }
 
     public function testALocatorBelongsToItsSource(): void
@@ -103,9 +105,20 @@ final class RenderCitationsTest extends TestCase
         self::assertStringNotContainsString('wk-references', $html);
     }
 
+    public function testAColonAfterACitationIsProseAndADefinitionLineIsADefinition(): void
+    {
+        $html = self::render()->toHtml("Two grades are described [@abel2020]: low and high.")->html;
+        self::assertStringContainsString('</span>: low and high.', $html);
+        self::assertStringContainsString('wk-reflist', $html);
+
+        $html = self::render()->toHtml("[x]: https://example.test/\n\nSee [x] and [@abel2020].")->html;
+        self::assertStringContainsString('<a href="https://example.test/">x</a>', $html, 'an ordinary link definition still works');
+        self::assertStringNotContainsString('[x]: https', $html, 'and is not shown');
+    }
+
     public function testWhatIsNotACitationStaysCommonMark(): void
     {
-        $html = self::render()->toHtml("[@abel2020](https://example.test/) and `[@abel2020]` and [@Bad Key] and [@x].\n\n[@abel2020]: https://example.test/")->html;
+        $html = self::render()->toHtml("[@abel2020](https://example.test/) and `[@abel2020]` and [@Bad Key] and [@x].")->html;
 
         self::assertStringNotContainsString('wk-cite', $html);
         self::assertStringNotContainsString('wk-references', $html);

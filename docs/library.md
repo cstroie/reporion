@@ -147,12 +147,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    library page only for a reader of the library (`Render::body(citeLinks:)`), never in print or an export;
    an anonymous reader of a public notebook gets the reference printed from the record, no link. The
    editor's **`@` picker** (typed `@` at the start of a word; `GET /api/v1/search?ns=library`; no new
-   endpoint) inserts `[@key]`. *As built:* the reference list heading is `library.references` (English;
-   the notebook's `language` is not read yet); the editor's preview styles with Vancouver unless
-   `POST /render` is sent `citation_style`; reference text is plain (no italics); the render check is
-   `tests/Render/RenderCitationsTest` (a fixture file cannot carry a source). **Not built (next, with
-   the index):** the *cited by* column and *notebooks citing it* (backlinks need `[@key]` in the links
-   table: an index change, to ask first), `page:move` fixups for a renamed key.
+   endpoint) inserts `[@key]` (right after a `[` or inside an open citation it adds only what is missing);
+   like the slash menu (D24) it can be turned off from that menu (this browser only; the menu's *Cite a
+   source* opens it either way) and takes the `@` of AltGr layouts. The References heading is content, in
+   the page's `language` (`ro` by default, `en`: `library.references_ro|en`); the editor's preview sends
+   the page's `citation_style` and `language` (`POST /render`); a visitor is not shown a render warning
+   (a key no source has). *As built:* reference text is plain (no italics); the citation render check is
+   `tests/Render/RenderCitationsTest` (a fixture file cannot carry a source) and the exports'
+   `tests/Plugin/CitationExportsTest` (PDF, ODT, EPUB, groff keep the numbers and the list); reading
+   30 sources of 140 KB for one page view took about 10 ms. **Not built (next, with the index):** the
+   *cited by* column and *notebooks citing it* (backlinks need `[@key]` in the links table: an index
+   change, to ask first), `page:move` fixups for a renamed key.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.

@@ -49,7 +49,7 @@ final class RenderController
         }
 
         // A multi-exam report (Support\Exams): each top-level `##` is an exam, anchored exam-N
-        $result = $this->render->toHtml($markdown, $request->basePath, examIds: ($body['exams'] ?? false) === true, lines: ($body['lines'] ?? false) === true, breaks: ($body['breaks'] ?? false) === true, citationStyle: \Reporion\Support\Citation::style($body['citation_style'] ?? null), citeLinks: true);
+        $result = $this->render->toHtml($markdown, $request->basePath, examIds: ($body['exams'] ?? false) === true, lines: ($body['lines'] ?? false) === true, breaks: ($body['breaks'] ?? false) === true, citationStyle: \Reporion\Support\Citation::style($body['citation_style'] ?? null), citeLinks: true, language: \is_string($body['language'] ?? null) ? $body['language'] : '');
 
         return ApiResponse::json([
             'html' => $result->html,

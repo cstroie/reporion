@@ -1382,6 +1382,9 @@ return [
     'editor.slash.snippet' => 'snippet',
     'editor.slash.rail'   => 'rail',
     'editor.slash.recall' => 'Recall this line',
+    'editor.slash.cite'   => 'Cite a source from the library',
+    'editor.slash.cite_off' => 'Turn the @ citation picker off (a typed @ stays an @)',
+    'editor.slash.cite_on' => 'Turn the @ citation picker on',
     'editor.slash.checks' => 'Check the text now',
     'editor.slash.off'    => 'Turn the / menu off (a typed / stays a /)',
     'editor.slash.on'     => 'Turn the / menu on',
@@ -2024,7 +2027,9 @@ return [
 
     // The library's screens (docs/library.md, phase 2)
     'library.title'            => 'Library',
-    'library.references'       => 'References',
+    // The References heading is content, in the page's `language` (ro by default, en): not chrome
+    'library.references_ro'    => 'Bibliografie',
+    'library.references_en'    => 'References',
     'library.cite_missing'     => 'No source with this key in the library',
     'library.cite_unknown'     => 'Not in the library: %s',
     'library.lede'             => 'Articles, guidelines and books the team keeps: their text, their record and the original file.',

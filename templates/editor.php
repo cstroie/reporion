@@ -502,6 +502,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'slashSnippet' => t('editor.slash.snippet'),
         'slashRail' => t('editor.slash.rail'),
         'slashRecall' => t('editor.slash.recall'),
+        'slashCite' => t('editor.slash.cite'),
+        'citeOff' => t('editor.slash.cite_off'),
+        'citeOnLabel' => t('editor.slash.cite_on'),
         'slashChecks' => t('editor.slash.checks'),
         'slashOff' => t('editor.slash.off'),
         'slashOnLabel' => t('editor.slash.on'),
@@ -732,7 +735,15 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     opts.examIds = declared && !tabbed && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.hidden = false;
     if (pane) pane.classList.add('wk-editpane-split');
-    ReporionRender.html(opts.basePath, raw ? ReporionRender.body(doc) : doc, opts.examIds, true).then(function(html) {
+    // A page's citation style and language (docs/library.md): from the frontmatter in the raw text, else the saved page's
+    var cite = { citation_style: <?= json_encode((string) ($details['extra']['citation_style'] ?? '')) ?>, language: <?= json_encode((string) ($details['extra']['language'] ?? '')) ?> };
+    if (fm) {
+      ['citation_style', 'language'].forEach(function(k) {
+        var m = new RegExp('^' + k + ':\\s*["\']?([A-Za-z-]+)', 'm').exec(fm[1]);
+        cite[k] = m ? m[1] : '';
+      });
+    }
+    ReporionRender.html(opts.basePath, raw ? ReporionRender.body(doc) : doc, opts.examIds, true, cite).then(function(html) {
       if (mine !== seq) return;
       preview.innerHTML = html;
       // highlight.js is fetched by copy-code.js the first time a preview has code (layout.php)

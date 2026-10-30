@@ -500,7 +500,16 @@ final class EditorFormatTest extends TestCase
             ['fn' => 'citeAt', 'args' => ['[', 1]],
         ]), 'result');
         self::assertSame([true, true, true, true, true, false, true], $results, 'after a space, a line break, a bracket or a semicolon; not inside a word (an e-mail address)');
-        self::assertSame('[@abel2020]', $this->runCases([['fn' => 'citation', 'args' => ['abel2020']]])[0]['result']);
+
+        $texts = array_column($this->runCases([
+            ['fn' => 'citeEdit', 'args' => ['See ', 4, 'abel2020']],
+            ['fn' => 'citeEdit', 'args' => ['See [', 5, 'abel2020']],
+            ['fn' => 'citeEdit', 'args' => ['See [@a; ', 9, 'abel2020']],
+            ['fn' => 'citeEdit', 'args' => ['See [@a; ] and', 9, 'abel2020']],
+            ['fn' => 'citeEdit', 'args' => ['See []', 5, 'abel2020']],
+            ['fn' => 'citeEdit', 'args' => ["See [@a]\nThen ", 15, 'abel2020']],
+        ]), 'text');
+        self::assertSame(['See [@abel2020]', 'See [@abel2020]', 'See [@a; @abel2020]', 'See [@a; @abel2020] and', 'See [@abel2020]', "See [@a]\nThen [@abel2020]"], $texts, 'a bracket already typed is never doubled');
     }
 
     public function testASectionHeadingGoesOnItsOwnLine(): void

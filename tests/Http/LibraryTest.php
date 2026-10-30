@@ -221,7 +221,7 @@ final class LibraryTest extends HttpTestCase
 
         $owner = $this->call('owner', 'GET', '/wiki:private-notebook');
         self::assertSame(200, $owner->status);
-        self::assertStringContainsString('<h2 id="references">References</h2>', $owner->body);
+        self::assertStringContainsString('<h2 id="references">Bibliografie</h2>', $owner->body);
         self::assertStringContainsString('class="wk-ref-src" href="/library:' . $key . '"', $owner->body, 'a reader of the library follows the citation');
 
         // Reads the notebook, has no grant on the library: the reference without the link
@@ -236,6 +236,7 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('A made-up study of test lesions', $public->body);
         self::assertStringNotContainsString('wk-ref-src', $public->body);
         self::assertStringNotContainsString('href="/library:', $public->body);
+        self::assertStringNotContainsString('Not in the library', $public->body, 'a missing key is said to a signed-in reader, not to a visitor');
         self::assertStringNotContainsString('Grade 3 was the most common', $public->body, 'the source\'s text stays private');
         self::assertSame(404, $this->call(null, 'GET', '/library:' . $key)->status);
 

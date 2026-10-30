@@ -8,6 +8,7 @@
  *
  *   ReporionRender.html(basePath, markdown, exams, lines) -> Promise<string>
  *       lines: each block carries data-line, its source line (the split preview's sync)
+ *       extra: more request fields, e.g. { citation_style, language } of the page (citations, docs/library.md)
  *   ReporionRender.body(documentText)    -> the text below the frontmatter
  *   ReporionRender.skipped(documentText) -> how many lines body() leaves out
  *
@@ -17,12 +18,12 @@
 (function (root) {
   'use strict';
 
-  function html(basePath, markdown, exams, lines) {
+  function html(basePath, markdown, exams, lines, extra) {
     return root.fetch((basePath || '') + '/api/v1/render', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ markdown: markdown, exams: !!exams, lines: !!lines })
+      body: JSON.stringify(Object.assign({ markdown: markdown, exams: !!exams, lines: !!lines }, extra || {}))
     }).then(function (response) {
       if (!response.ok) throw new Error('render ' + response.status);
       return response.json();

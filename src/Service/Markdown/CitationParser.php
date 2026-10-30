@@ -29,7 +29,7 @@ final class CitationParser implements InlineParserInterface
         $cursor = $inlineContext->getCursor();
         $item = '\s*@' . self::KEY . '(?:\s*,[^\];\[]*)?\s*';
         $state = $cursor->saveState();
-        $text = $cursor->match('/\G\[' . $item . '(?:;' . $item . ')*\](?![(\[:])/u');
+        $text = $cursor->match('/\G\[' . $item . '(?:;' . $item . ')*\](?![(\[])/u');
         if ($text === null) {
             $cursor->restoreState($state);
 

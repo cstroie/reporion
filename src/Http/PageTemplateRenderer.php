@@ -94,7 +94,8 @@ final class PageTemplateRenderer
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             // A multi-exam report whose exams do not add up: said here, blocks signing (phase 12)
-            'warnings' => [...$rendered->warnings, ...array_map(self::examProblem(...), Exams::problems($record->frontmatter, $record->body))],
+            // What the dialect could not render (raw HTML, a citation no source has) is for a writer to fix: a visitor is not told
+            'warnings' => [...($principal !== null ? $rendered->warnings : []), ...array_map(self::examProblem(...), Exams::problems($record->frontmatter, $record->body))],
             'basePath' => $request->basePath,
             'currentRev' => $currentRev,
             'signature' => $signature,

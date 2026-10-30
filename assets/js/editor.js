@@ -831,15 +831,24 @@
       snippetList.forEach(function (sn) { items.push({ title: ';' + sn.name + ': ' + sn.title, meta: s.slashSnippet || '', value: { kind: 'snippet', body: sn.body } }); });
       if (document.querySelector('[data-recall-now]')) items.push({ title: s.slashRecall || 'Recall this line', meta: s.slashRail || '', value: { kind: 'click', selector: '[data-recall-now]' } });
       if (document.querySelector('[data-checks-now]')) items.push({ title: s.slashChecks || 'Check now', meta: s.slashRail || '', value: { kind: 'click', selector: '[data-checks-now]' } });
+      if (config.libraryCite) {
+        items.push({ title: s.slashCite || 'Cite a source', meta: s.slashInsert || '', value: { kind: 'cite' } });
+        items.push({ title: citeOn() ? (s.citeOff || 'Turn the @ picker off') : (s.citeOnLabel || 'Turn the @ picker on'), meta: '', value: { kind: 'toggle-cite' } });
+      }
       items.push({ title: slashOn() ? (s.slashOff || 'Turn the / menu off') : (s.slashOnLabel || 'Turn the / menu on'), meta: '', value: { kind: 'toggle' } });
       return items;
     }
     /*
      * The citation picker (docs/library.md, phase 3): an `@` typed by a key at the start of a
      * word searches the library and inserts `[@key]`; Escape types the `@` after all. Only where
-     * the writer may read the library (config.libraryCite); typed keys only, so dictated or
-     * pasted text is never touched (D24).
+     * the writer may read the library (config.libraryCite). Like the slash menu (D24) it can be
+     * turned off from that menu (this browser only), so external dictation that sends trusted
+     * keys keeps working; the menu's Cite a source opens it either way.
      */
+    var CITE_KEY = 'reporion.editor.cite';
+    function citeOn() {
+      try { return localStorage.getItem(CITE_KEY) !== 'off'; } catch (e) { return true; }
+    }
     var citeSeq = 0;
     var citeTimer = null;
     function citeSource(query, show) {
@@ -863,14 +872,14 @@
           .catch(function () { show([]); });
       }, 200);
     }
-    function openCite(at) {
+    function openCite(at, typed) {
       var target = textarea;
       openPicker(citeSource, function (item) {
         target.focus();
-        var c = F.citation(item.key);
-        applyEdit({ from: at, to: at, insert: c, selStart: at + c.length, selEnd: at + c.length }, target);
+        applyEdit(F.citeEdit(target.value, at, item.key), target);
       }, '', function () {
-        applyEdit({ from: at, to: at, insert: '@', selStart: at + 1, selEnd: at + 1 }, target);
+        // Escape: the `@` was meant as text
+        if (typed) applyEdit({ from: at, to: at, insert: '@', selStart: at + 1, selEnd: at + 1 }, target);
       });
     }
 
@@ -890,6 +899,11 @@
           target.setSelectionRange(at, at);
           var button = document.querySelector(item.selector);
           if (button) button.click();
+        } else if (item.kind === 'cite') {
+          openCite(at, false);
+        } else if (item.kind === 'toggle-cite') {
+          try { localStorage.setItem(CITE_KEY, citeOn() ? 'off' : 'on'); } catch (e) { /* private window: stays as it is */ }
+          if (typed) applyEdit({ from: at, to: at, insert: '/', selStart: at + 1, selEnd: at + 1 }, target);
         } else if (item.kind === 'toggle') {
           try { localStorage.setItem(SLASH_KEY, slashOn() ? 'off' : 'on'); } catch (e) { /* private window: stays as it is */ }
           if (typed) applyEdit({ from: at, to: at, insert: '/', selStart: at + 1, selEnd: at + 1 }, target);
@@ -1059,11 +1073,13 @@
       });
       // The citation picker: an `@` typed by a key at the start of a word
       el.addEventListener('keydown', function (event) {
-        if (event.key !== '@' || event.ctrlKey || event.metaKey || event.altKey || !event.isTrusted || !config.libraryCite) return;
+        // AltGr sets ctrl and alt on Windows: the `@` of many layouts is typed with it
+        var altGr = typeof event.getModifierState === 'function' && event.getModifierState('AltGraph');
+        if (event.key !== '@' || event.metaKey || ((event.ctrlKey || event.altKey) && !altGr) || !event.isTrusted || !config.libraryCite || !citeOn()) return;
         if (el.selectionStart !== el.selectionEnd || !F.citeAt(el.value, el.selectionStart)) return;
         event.preventDefault();
         textarea = el;
-        openCite(el.selectionStart);
+        openCite(el.selectionStart, true);
       });
       // Enter at the end of a list line continues it (TODO 13); a plain
       // Enter elsewhere is left to the browser.
