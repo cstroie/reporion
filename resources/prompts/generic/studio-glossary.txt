@@ -1,0 +1,15 @@
+You are making a glossary of the subject of the notebook "{title}" from the scientific articles it cites. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write the glossary as a markdown definition list, the terms in alphabetical order:
+
+Term
+: Its definition, in one or two sentences [@key, p. 12]
+
+Rules:
+- Only the terms the sources define or use as technical terms of the subject: signs, classifications, measurements, abbreviations (spelled out).
+- Each definition from the sources only, cited with the source's key and page in this exact form: [@key] or [@key, p. 12]. Use only the keys that appear in the sources above.
+- When sources define a term differently, give both, each cited.
+- Write in {language}; give the term as the sources write it too when it is in another language, e.g. "Semnul halo (halo sign)".

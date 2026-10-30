@@ -2271,6 +2271,11 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-notebook-out { margin-top: var(--space-3); }
 .wk-notebook-answer { line-height: 1.55; overflow-wrap: anywhere; }
 .wk-notebook-sources { margin: var(--space-2) 0; }
+.wk-notebook-studio > summary { cursor: pointer; }
+.wk-studio-questions { margin: var(--space-2) 0; }
+.wk-studio-template { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
+.wk-studio-template pre { white-space: pre-wrap; }
+.wk-notebook-answer table { display: block; overflow-x: auto; }
 .wk-lib-edit { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 [data-lib-copy].is-done { color: var(--state-ok); }
 /* [@key] citations and the References section (Service\Render, docs/library.md) */

@@ -18,6 +18,8 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Service\Library\SourceAnalysis;
+use Reporion\Service\Library\Studio;
+use Reporion\Http\TemplateLintText;
 use Reporion\Support\ReportPath;
 use Reporion\Storage\FileTree;
 use Reporion\Support\LibrarySource;
@@ -37,6 +39,13 @@ use Reporion\Support\LibrarySource;
  *   `[@key, p. N]` citations of sent sources only. A report, or a page naming a patient, is no
  *   notebook (404, as the EPUB and groff exports). An editor of the notebook and of the library.
  *
+ * - `POST /api/v1/notebook/studio {path, task, questions?, stream?}`: one Studio text of a notebook
+ *   (Service\Library\Studio, docs/library.md phase 6): overview, glossary, faq, timeline, compare
+ *   (`questions`: the table's columns, a list or one per line), check, template. Streamed as
+ *   analyze; `done` carries {task, result, template?, notices, sources, whole, requests, dropped, ms,
+ *   provider}. The same gate as Ask the notebook. Shown, never written: the template page is made
+ *   by the writer through `POST /api/v1/pages` (D8).
+ *
  * An editor of the source's namespace only (the owner's rule: the assistant is for editors), any
  * other caller 404; the profile is the one serving the source's own path (D15).
  */
@@ -47,6 +56,7 @@ final class LibraryAiController
         private readonly Assistant $assistant,
         private readonly SourceAnalysis $analysis,
         private readonly NotebookAsk $notebooks,
+        private readonly Studio $studio,
         private readonly string $libraryNamespace,
         private readonly FileTree $storage,
         private readonly IndexInterface $index,
@@ -148,6 +158,82 @@ final class LibraryAiController
         }
 
         return ApiResponse::json(['data' => $done]);
+    }
+
+    public function studio(Request $request, ?User $principal): Response
+    {
+        $fields = $request->json();
+        $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
+        $page = $principal !== null && $path !== '' ? $this->notebook($path, $principal) : null;
+        if ($principal === null || $page === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if (!$this->config->isConfigured()) {
+            return ApiResponse::error(503, 'not_configured', t('ai.err.not_configured'));
+        }
+        $task = \is_string($fields['task'] ?? null) ? $fields['task'] : '';
+        if (!isset(Studio::TASKS[$task]) || !\in_array($task, $this->studio->available($page->path), true)) {
+            return ApiResponse::error(422, 'unknown_task', t('library.ai.unknown_task'));
+        }
+        $questions = [];
+        if ($task === 'compare') {
+            try {
+                $questions = Studio::questions($fields['questions'] ?? null);
+            } catch (LibraryException) {
+                return ApiResponse::error(422, 'invalid_questions', t('studio.err_questions', [(string) Studio::MAX_QUESTIONS, (string) Studio::MAX_QUESTION]));
+            }
+        }
+        try {
+            $plan = $this->studio->plan($task, $page, $principal);
+        } catch (LibraryException $e) {
+            return match ($e->reason) {
+                LibraryException::TOO_LARGE => ApiResponse::error(413, 'too_long', t($task === 'check' ? 'studio.too_long_check' : 'studio.too_long', [(string) Studio::MAX_REQUESTS])),
+                LibraryException::NO_TEXT => ApiResponse::error(422, 'no_text', t('studio.no_page_text')),
+                default => ApiResponse::error(422, 'no_sources', t('studio.no_sources')),
+            };
+        }
+        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60;
+        $basePath = $request->basePath;
+        $run = function (\Closure $progress) use ($plan, $page, $principal, $request, $questions, $basePath): array {
+            $done = $this->studio->run($plan, $page, $principal, $request, $questions, $progress);
+            foreach ($done['sources'] as $i => $source) {
+                $done['sources'][$i]['href'] = $basePath . '/' . $source['path'];
+            }
+            if ($done['template'] !== null) {
+                $done['template']['problems'] = array_map(static fn (array $p): string => TemplateLintText::message($p), $done['template']['problems']);
+                $done['template']['reference'] = $page->path;
+            }
+
+            return $done;
+        };
+
+        if (($fields['stream'] ?? false) !== true) {
+            @set_time_limit($seconds);
+            try {
+                $done = $run(static function (int $step, int $steps): void {
+                });
+            } catch (AiException $e) {
+                return AiController::error($e);
+            }
+
+            return ApiResponse::json(['data' => $done]);
+        }
+
+        return Response::eventStream(function () use ($run, $seconds): void {
+            set_time_limit($seconds);
+            $send = static function (string $event, array $data): void {
+                echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+                flush();
+            };
+            try {
+                $send('done', $run(static fn (int $step, int $steps) => $send('progress', ['step' => $step, 'steps' => $steps])));
+            } catch (AiException $e) {
+                $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
+            } catch (\Throwable $e) {
+                error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+                $send('error', ['code' => 'internal', 'message' => AiController::message(new AiException('internal'))]);
+            }
+        });
     }
 
     /**

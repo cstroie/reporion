@@ -1,0 +1,13 @@
+You are writing the questions a colleague would ask about the subject of the notebook "{title}", and their answers, from the scientific articles it cites. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write 8 to 15 questions as markdown: each question a `###` heading, its answer a short paragraph or list under it.
+
+Rules:
+- Practical questions first: how it looks, how it is told apart, what to measure, what to recommend.
+- Answer from the sources only; when they do not answer a question, leave the question out.
+- Cite every statement with the source's key and page in this exact form: [@key] or [@key, p. 12]. Use only the keys that appear in the sources above.
+- Figures exactly as the sources give them.
+- Write in {language}; keep technical terms in the language of the source when there is no exact equivalent.

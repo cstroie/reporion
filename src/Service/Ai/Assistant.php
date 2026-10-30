@@ -144,9 +144,9 @@ final class Assistant
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
-    public function runSource(Action $action, PageRecord $page, string $text, string $label, string $part, int $words, User $user, ?Request $request = null): array
+    public function runSource(Action $action, PageRecord $page, string $text, string $label, string $part, int $words, User $user, ?Request $request = null, mixed $language = null): array
     {
-        return $this->retried($action, fn (): Prompt => $this->context->source($action, $page, $text, $label, $part, $words), $page, $user, $request, static function (string $piece): void {
+        return $this->retried($action, fn (): Prompt => $this->context->source($action, $page, $text, $label, $part, $words, $language), $page, $user, $request, static function (string $piece): void {
         });
     }
 
@@ -162,6 +162,22 @@ final class Assistant
     public function runNotebook(Action $action, string $question, array $sources, mixed $language, User $user, ?Request $request = null): array
     {
         return $this->retried($action, fn (): Prompt => $this->context->notebook($action, $question, $sources, $language), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
+     * A Studio request (Context::studio(), docs/library.md phase 6)
+     *
+     * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
+     * @param list<string> $questions
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runStudio(Action $action, string $title, array $sources, mixed $language, User $user, ?Request $request = null, string $page = '', array $questions = []): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->studio($action, $title, $sources, $language, $page, $questions), null, $user, $request, static function (string $piece): void {
         });
     }
 

@@ -163,11 +163,15 @@ final class PageTemplateRenderer
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
         ] : null;
         // Ask the notebook (docs/library.md, phase 5): a page that cites library sources, for an editor of it and of the library, with the prompt there
-        $vars['notebookAsk'] = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)
+        $notebook = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)
             && $principal->canWrite($record->path) && $principal->canWrite($this->libraryNamespace)
-            && (InternalLink::citedKeys($record->body) !== [] || (\is_array($record->frontmatter['sources'] ?? null) && $record->frontmatter['sources'] !== []))
-            && $this->aiActions?->special($record->path, 'ask-notebook') !== null
-            ? ['path' => $record->path] : null;
+            && (InternalLink::citedKeys($record->body) !== [] || (\is_array($record->frontmatter['sources'] ?? null) && $record->frontmatter['sources'] !== []));
+        $vars['notebookAsk'] = $notebook && $this->aiActions?->special($record->path, 'ask-notebook') !== null ? ['path' => $record->path] : null;
+        // Studio (phase 6): the same gate, the tasks whose prompt page the serving profile has
+        $studioTasks = $notebook && $this->aiActions !== null
+            ? array_values(array_filter(array_keys(\Reporion\Service\Library\Studio::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\Studio::TASKS[$task]) !== null))
+            : [];
+        $vars['notebookStudio'] = $studioTasks !== [] ? ['path' => $record->path, 'tasks' => $studioTasks, 'slug' => substr($record->path, (int) strrpos($record->path, ':') + 1)] : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

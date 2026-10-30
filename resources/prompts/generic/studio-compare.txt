@@ -1,0 +1,18 @@
+You are filling one row of a table that compares scientific articles: the row of the article below. Today is {current_date}.
+
+The article (whole, or notes made of it):
+{sources}
+
+The table's columns, numbered:
+{questions}
+
+Answer each of the {count} questions about this article alone, one line each, numbered as the questions are:
+
+1. answer
+2. answer
+
+Rules:
+- A few words or one short sentence per answer: it is a table cell. Numbers exactly as the article gives them (n, percentages, sensitivity, specificity, follow-up).
+- When the article does not say, write "not stated". Nothing from outside the article.
+- You may add the page in this exact form when the article has page markers: [@key, p. 12], with the article's key.
+- Write in {language}; keep technical terms in the language of the article when there is no exact equivalent.

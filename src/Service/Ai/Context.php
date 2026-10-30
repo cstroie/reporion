@@ -444,10 +444,11 @@ final class Context
      *
      * @param string $part  "2 of 5" for a part, else ''
      * @param string $label what it is, for "Context sent": "source text", "source part 2 of 5", "source notes"
+     * @param mixed  $language the language to write in when not the source page's own (a notebook's, for Studio's notes)
      *
      * @throws AiException identifier_leak
      */
-    public function source(Action $action, PageRecord $page, string $text, string $label = 'source text', string $part = '', int $words = 0): Prompt
+    public function source(Action $action, PageRecord $page, string $text, string $label = 'source text', string $part = '', int $words = 0, mixed $language = null): Prompt
     {
         $redactor = new Redactor();
         $redactor->learn($page->frontmatter, $page->path, $page->body);
@@ -460,7 +461,7 @@ final class Context
             'citation' => $redactor->redact(Citation::vancouver($csl)),
             'part' => $part,
             'words' => (string) $words,
-            'language' => self::languageName($page->frontmatter['language'] ?? null),
+            'language' => self::languageName($language ?? $page->frontmatter['language'] ?? null),
             'current_date' => date('Y-m-d'),
             'action' => $action->id,
         ];
@@ -487,18 +488,7 @@ final class Context
     public function notebook(Action $action, string $question, array $sources, mixed $language = null): Prompt
     {
         $redactor = new Redactor();
-        $blocks = [];
-        foreach ($sources as $source) {
-            $text = trim(Redactor::scrubContacts($redactor->redact($source['text'])));
-            if ($text === '') {
-                continue;
-            }
-            $attributes = ' id="' . $source['n'] . '"'
-                . ($source['key'] !== null ? ' key="' . self::escape($source['key']) . '"' : ' kind="notebook"')
-                . ($source['page'] !== null ? ' page="' . $source['page'] . '"' : '')
-                . ' title="' . self::escape(str_replace('"', "'", $redactor->redact($source['title']))) . '"';
-            $blocks[] = '<source' . $attributes . ">\n" . self::escape($text) . "\n</source>";
-        }
+        $blocks = self::sourceBlocks($sources, $redactor);
         $vars = [
             'question' => self::escape($this->safeQuestion($question)),
             'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
@@ -513,6 +503,74 @@ final class Context
         }
 
         return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * A Studio request (docs/library.md, phase 6): the notebook's sources (whole, condensed or
+     * passages) as notebook() gives them in {sources}, the notebook's title in {title}, for
+     * `studio-check` the page's own text in {page}, for `studio-compare` the writer's questions in
+     * {questions} (numbered lines). All de-identified like any text that leaves.
+     *
+     * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
+     * @param list<string> $questions
+     *
+     * @throws AiException identifier_leak
+     */
+    public function studio(Action $action, string $title, array $sources, mixed $language, string $page = '', array $questions = []): Prompt
+    {
+        $redactor = new Redactor();
+        $blocks = self::sourceBlocks($sources, $redactor);
+        $numbered = [];
+        foreach (array_values($questions) as $i => $question) {
+            $numbered[] = ($i + 1) . '. ' . self::escape($this->safeQuestion($question));
+        }
+        $vars = [
+            'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
+            'title' => self::escape(trim($redactor->redact($title))),
+            'page' => self::escape(trim(Redactor::scrubContacts($redactor->redact($page)))),
+            'questions' => implode("\n", $numbered),
+            'count' => (string) \count($numbered),
+            'language' => self::languageName($language),
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+        $set = [\count($blocks) . ' sources'];
+        if ($page !== '') {
+            $set[] = 'page text';
+        }
+
+        return new Prompt($system, $user, [...$set, 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * Sources as `<source id="n" key="…" page="…" title="…">` blocks, the notebook's own with
+     * `kind="notebook"` and no key; an empty one left out
+     *
+     * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
+     *
+     * @return list<string>
+     */
+    private static function sourceBlocks(array $sources, Redactor $redactor): array
+    {
+        $blocks = [];
+        foreach ($sources as $source) {
+            $text = trim(Redactor::scrubContacts($redactor->redact($source['text'])));
+            if ($text === '') {
+                continue;
+            }
+            $attributes = ' id="' . $source['n'] . '"'
+                . ($source['key'] !== null ? ' key="' . self::escape($source['key']) . '"' : ' kind="notebook"')
+                . ($source['page'] !== null ? ' page="' . $source['page'] . '"' : '')
+                . ' title="' . self::escape(str_replace('"', "'", $redactor->redact($source['title']))) . '"';
+            $blocks[] = '<source' . $attributes . ">\n" . self::escape($text) . "\n</source>";
+        }
+
+        return $blocks;
     }
 
     /**

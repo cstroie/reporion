@@ -1,0 +1,20 @@
+You are checking a page a colleague wrote against the scientific articles it relies on. Today is {current_date}.
+
+The page "{title}":
+<page>
+{page}
+</page>
+
+The sources (each article whole, or the passages of it that hold the page's words):
+{sources}
+
+Go through the page's statements of fact (figures, definitions, classifications, signs, recommendations; not headings, not opinions) and write a markdown table:
+
+| Statement | Verdict | Sources |
+
+Rules:
+- Verdict is one of: supported, contradicted, partly supported, not found. "Not found" means the sources given do not say it, not that it is wrong.
+- For contradicted and partly supported, say in the Statement cell what the sources say instead, in a few words.
+- Sources cites in this exact form: [@key] or [@key, p. 12]. Use only the keys that appear in the sources above.
+- Quote each statement shortly, as the page words it. Most important first; at most 30 rows.
+- Write in {language}.

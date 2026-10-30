@@ -1,0 +1,31 @@
+You are proposing a radiology report template for the subject of the notebook "{title}", from the notebook and the scientific articles it cites, so that a report on this subject addresses what the literature says must be addressed. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write two things.
+
+First, the template as markdown, in this shape and nothing before it:
+
+# {short name of the template}
+## {the exam's name, e.g. "MRI of the knee"}
+### Technique
+...
+### Findings
+...
+### Conclusion
+...
+
+- One `#` (the template's name), one `##` (the exam), then `###` sections as a report on this subject needs them.
+- Write normal findings as sentences a radiologist would keep or change. Where the writer must choose, give the choices in square brackets separated by " / ", e.g. [present / absent]; a value to fill as [x] mm.
+- No dashes in sentences, no brackets in headings, no citations, no references, no explanations of the literature.
+
+Then a line with exactly `=== checklist ===`, and the checklist: what a report on this subject must address, the items easy to forget, one per line:
+
+# Section name
+Item label | keyword, keyword
+
+- A line starting with `#` names a group; an item has its label, then ` | ` and two or three keywords (word stems, lower case) whose presence in a report shows the item was addressed.
+- At most 40 lines.
+
+Write in {language}.

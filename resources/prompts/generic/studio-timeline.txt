@@ -1,0 +1,14 @@
+You are making a timeline of the subject of the notebook "{title}" from the scientific articles it cites: how knowledge, classifications, techniques and recommendations changed over time. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write it as a markdown table, oldest first:
+
+| Year | What happened | Source |
+
+Rules:
+- Only events the sources date: a first description, a classification and its revisions, a study, a guideline, a change of practice. Each source's own publication may be a row when it changed something.
+- The Source cell cites it in this exact form: [@key] or [@key, p. 12]. Use only the keys that appear in the sources above.
+- Nothing undated, nothing from outside the sources.
+- Write in {language}.

@@ -63,7 +63,7 @@ final class NotebookAsk
     /**
      * The sources a notebook cites that the caller may read, in the order they are first cited
      *
-     * @return list<array{key: string, path: string, title: string, text: string}>
+     * @return list<array{key: string, path: string, title: string, text: string, record: PageRecord}>
      */
     public function sources(PageRecord $notebook, User $principal): array
     {
@@ -87,7 +87,7 @@ final class NotebookAsk
             if (!LibrarySource::isSource($page->frontmatter)) {
                 continue;
             }
-            $sources[] = ['key' => $key, 'path' => $path, 'title' => PageTitle::of($page->frontmatter, $page->body), 'text' => SourceChunks::withoutReferences($page->body)];
+            $sources[] = ['key' => $key, 'path' => $path, 'title' => PageTitle::of($page->frontmatter, $page->body), 'text' => SourceChunks::withoutReferences($page->body), 'record' => $page];
         }
 
         return $sources;
@@ -130,7 +130,7 @@ final class NotebookAsk
                     $notices[] = t('notebook.expand_failed');
                 }
             }
-            $passages = $this->passages($texts, $terms, $budget);
+            $passages = self::passages($texts, $terms, $budget);
         }
 
         $sources = [];
@@ -167,7 +167,7 @@ final class NotebookAsk
      *
      * @return list<array{key: ?string, path: string, title: string, page: ?int, text: string}>
      */
-    private function passages(array $texts, array $terms, int $budget): array
+    public static function passages(array $texts, array $terms, int $budget): array
     {
         $scored = [];
         foreach ($texts as $order => $t) {

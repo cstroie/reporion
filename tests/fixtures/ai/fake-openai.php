@@ -115,7 +115,16 @@ if ($model === 'fail-mid-stream') {
 
     return;
 }
+// Studio (docs/library.md, phase 6): a prompt page saying STUDIO-ROW gets a comparison row, STUDIO-TEMPLATE a template
+$sent = json_encode($request['messages'] ?? [], JSON_UNESCAPED_UNICODE);
+if (str_contains($sent, 'STUDIO-ROW')) {
+    $model = 'studio-row';
+} elseif (str_contains($sent, 'STUDIO-TEMPLATE')) {
+    $model = 'studio-template';
+}
 $chunks = match ($model) {
+    'studio-row' => ["1. Prospective | cohort [@abel2020, p. 4] [@ghost2000]\n", "2. 128\n"],
+    'studio-template' => ["```markdown\n# Art: Substanța albă\n## IRM cerebral\n### Tehnica\nSecvențe [T2 / FLAIR] [@abel2020].\n```\n", "=== checklist ===\n", "# Leziuni\n- Grad Fazekas | fazekas, grad\n", "Număr de leziuni\n"],
     'tags' => ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.'],
     // tags:review (2026-10-15): one good proposal per line, then ones its checks must leave out
     'tags-review' => [

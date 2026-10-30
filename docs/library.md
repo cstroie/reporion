@@ -2,8 +2,9 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **phases 1–3 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
-library view, the upload form and a source's card; `[@key]` citations and the References section. The rest is planned.
+the assistant). Status: **phases 1–6 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
+library view, the upload form and a source's card; `[@key]` citations and the References section; import, export and
+lookups; the assistant on a source and Ask the notebook; Studio and the template generator. Phases 7 and 8 are planned.
 
 ## Owner's decisions (2026-10-30)
 
@@ -204,7 +205,29 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default
    32 000). A part's notes ask for at most 1500 words and are cut to their share, so the parts' answers and the notes always fit (`SourceAnalysis::shares()`).
-6. **Studio** + the template generator.
+6. **Studio** + the template generator, **built 2026-10-30**: `POST /api/v1/notebook/studio` (`LibraryAiController::studio()`,
+   `Service\Library\Studio`), a *Studio* panel on a notebook's page beside Ask the notebook (`partials/notebook-studio.php`,
+   `assets/js/notebook-studio.js`), the same gate (an editor of the page and of the library, never a report or a page naming a
+   patient), one button per task whose prompt page the serving profile has: seven reserved prompts `studio-overview` (the
+   systematization), `studio-glossary`, `studio-faq`, `studio-timeline`, `studio-compare`, `studio-check`, `studio-template`
+   (generic target, D15 amended). The sources are read under the caller (`NotebookAsk::sources()`), the answer is in the notebook's
+   `language` and cites `[@key]`; citations of keys not sent are taken out; shown with Copy, rendered by the server, **never written**.
+   *As built:* overview, glossary, FAQ, timeline and template send the notebook and its sources whole when they fit
+   `library.context_tokens`, else each text longer than its share is condensed part by part (`source-part`, in the notebook's
+   language) and stays in its own `<source key>` block. **Compare** asks each source on its own (whole, or from its notes) the
+   writer's questions (1–8 columns, typed one per line), its `1. …` lines read into cells (`Studio::cells()`) and the markdown
+   table assembled on the server, each row citing only its own key; a source with no text gets a row of dashes and no request.
+   **Check** sends the page's own text as `{page}` (at most half the budget) and the sources whole, or their passages holding
+   the page's words, its headings' and those `notebook-terms` adds (`NotebookAsk::passages()`), never notes (a claim checked against
+   a summary would be "not found" for nothing); no passage: no request. At most **16 requests a run**, counted before the first
+   (`Studio::plan()`), refused beyond (413); progress streamed. **The template generator**: the model writes the template's
+   markdown, `=== checklist ===`, then the checklist's lines, never YAML (`Support\TemplateDraft`: a code fence and bullets
+   stripped, the lines read by `Support\Checklist`, at most 80, the D45 shape and the bracket notation checked as `templates:lint`
+   does: warnings shown, never a block, D7; every citation taken out, a template goes into reports). The writer names its page
+   under `templates:` (not `snippets` or `pages`) and *Make the template page* creates it with the existing `POST /api/v1/pages`:
+   `reference:` the notebook (any namespace: `references.namespaces` only feeds the Metadata view's picker), its `checklist`,
+   `private`, the revision note `assisted: studio-template` (D8), then the editor opens on it. **Not built:** snippets from a
+   notebook, Studio's notes kept between runs (each run condenses again), follow-up questions, writing Studio's text into a page.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),
    web clip by URL (opt-in).

@@ -1,0 +1,13 @@
+You are writing an overview of a subject for colleagues, from the notebook "{title}" and the scientific articles it cites, so that the subject can be learned from one page. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write the overview as markdown, with `##` headings in this order, leaving out a heading the sources say nothing about:
+definition; epidemiology; causes and pathophysiology; clinical presentation; imaging, one `###` per modality; classification and staging; differential diagnosis; pitfalls; management and follow-up.
+
+Rules:
+- Only what the sources say: no outside knowledge, nothing invented. When the sources disagree, say so and cite both.
+- Cite every statement with the source's key and page, in this exact form: [@key] or [@key, p. 12] when the source has a page marker. Use only the keys that appear in the sources above; the notebook's own text has no key and is not cited.
+- Figures exactly as the sources give them. Short paragraphs and lists; a table where the sources compare things.
+- Write in {language}; keep technical terms and quotations in the language of the source when there is no exact equivalent.

@@ -126,6 +126,7 @@ use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Service\Library\SourceAnalysis;
+use Reporion\Service\Library\Studio;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
@@ -612,11 +613,13 @@ final class Kernel
             Embedder::fromConfig($config),
         );
         $libraryTokens = max(4000, (int) ($config['library']['context_tokens'] ?? 32000));
+        $notebookAsk = new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens);
         $libraryAi = new LibraryAiController(
             $aiConfig,
             $assistant,
             new SourceAnalysis($aiActions, $assistant, $libraryTokens),
-            new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens),
+            $notebookAsk,
+            new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens),
             self::libraryNamespace($config),
             $storage,
             $index,
@@ -727,6 +730,8 @@ final class Kernel
             => $libraryAi->analyze($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/notebook/ask', static fn (Request $request, array $params): Response
             => $libraryAi->askNotebook($request, $session->principal($request)));
+        $router->post('/api/v1/notebook/studio', static fn (Request $request, array $params): Response
+            => $libraryAi->studio($request, $session->principal($request)));
         $router->post('/api/v1/library/import', static fn (Request $request, array $params): Response
             => $libraryController->import($request, $session->principal($request)));
         $router->post('/api/v1/library', static fn (Request $request, array $params): Response

@@ -164,6 +164,12 @@ accepts: with a 60 s model, 10 minutes covers a normal long article. The page sh
 (`server.stream-response-body = 2`, above), so an idle timeout in front of PHP does not cut it; a source needing more
 than 6 parts is refused before any request (raise *Assistant context for the library* in Admin → Settings → Library, `library.context_tokens`, if the model allows).
 
+**Studio is longer still.** A Studio text of a notebook (docs/library.md, phase 6) whose sources do not fit one request
+condenses them source by source, then writes; the comparison asks each source on its own. At most 16 requests in one
+HTTP request (refused before the first beyond), so the worst case is 16 × (4 × `ai.timeout` + 14 s) and a normal run
+16 × the model's time: with a 60 s model, about 16 minutes. Set `max_execution_time` and `request_terminate_timeout` for
+what the owner accepts; the page shows "request k of n" as the events come.
+
 ## The groff plugin
 
 `plugins/groff` (D42) typesets an ordinary Markdown page (never a report) with **groff**. Install the full package, not
