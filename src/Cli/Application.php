@@ -207,7 +207,17 @@ final class Application
 
             return new LibraryAddCommand(Kernel::library($config, $storage, $index), $audit());
         });
-        $app->register('page:move', PageMoveCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
+        $app->register('library:import', LibraryImportCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryImportCommand(Kernel::library($config, $storage, $index), $audit());
+        });
+        $app->register('library:export', LibraryExportCommand::class, static function () use ($indexAndStorage, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryExportCommand(Kernel::library($config, $storage, $index));
+        });
+        $app->register('page:move', PageMoveCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage] = $indexAndStorage();
 
             return new PageMoveCommand(new PageMoves($storage, $audit(), Kernel::libraryNamespace($config)));

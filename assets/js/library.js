@@ -179,10 +179,12 @@
       Array.prototype.forEach.call(files, function (file) {
         var slot = card(file);
         var ext = (file.name.split('.').pop() || '').toLowerCase();
-        if (extensions.indexOf(ext) < 0 || file.name.indexOf('.') < 0) { say(slot, 'error', s.unsupported); return; }
+        // A reference manager's export (BibTeX, RIS, CSL-JSON): records with no file
+        var records = file.name.indexOf('.') >= 0 && (cfg.importExtensions || []).indexOf(ext) >= 0;
+        if (!records && (extensions.indexOf(ext) < 0 || file.name.indexOf('.') < 0)) { say(slot, 'error', s.unsupported); return; }
         if (cfg.maxBytes && file.size > cfg.maxBytes) { say(slot, 'error', s.too_large); return; }
-        say(slot, 'info', s.reading);
-        waiting.push({ file: file, slot: slot });
+        say(slot, 'info', records ? s.importing : s.reading);
+        waiting.push({ file: file, slot: slot, records: records });
       });
       next();
     }
@@ -192,6 +194,23 @@
       if (running || !waiting.length) return;
       running = true;
       var job = waiting.shift();
+      if (job.records) {
+        api(base + '/api/v1/library/import', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: job.file }).then(function (result) {
+          if (result.status === 200 || result.status === 201) {
+            var added = (result.json.added || []).length;
+            var skipped = (result.json.skipped || []).length;
+            say(job.slot, 'ok', (s.imported || '%s / %s').replace('%s', added).replace('%s', skipped));
+          } else {
+            say(job.slot, 'error', errorOf(result, s.failed));
+          }
+        }, function () {
+          say(job.slot, 'error', s.failed);
+        }).then(function () {
+          running = false;
+          next();
+        });
+        return;
+      }
       api(base + '/api/v1/library/uploads?name=' + encodeURIComponent(job.file.name), {
         method: 'POST',
         headers: { 'Content-Type': 'application/octet-stream' },
@@ -212,12 +231,14 @@
       slot.meta.textContent = slot.meta.textContent + (proposal.pages > 1 ? ' · ' + (s.pages || '%s').replace('%s', proposal.pages) : '');
       var form = formFrom(box);
       if (!form) return;
-      fill(form, proposal.csl || {}, { key: proposal.key || '', tags: [] });
+      fill(form, proposal.csl || {}, { key: proposal.key || '', tags: proposal.tags || [] });
       var dup = form.querySelector('[data-lib-dup]');
       var blocking = false;
       if (proposal.duplicate) {
-        blocking = proposal.duplicate.by !== 'title';
-        dup.appendChild(notice(blocking ? 'warn' : 'info', blocking ? s.duplicate : s.duplicate_title,
+        // A record kept with no file takes this file: nothing to refuse
+        var attach = proposal.duplicate.has_original === false && (proposal.duplicate.by === 'doi' || proposal.duplicate.by === 'pmid');
+        blocking = proposal.duplicate.by !== 'title' && !attach;
+        dup.appendChild(notice(blocking ? 'warn' : 'info', attach ? s.attach : (blocking ? s.duplicate : s.duplicate_title),
           [base + '/' + proposal.duplicate.path, proposal.duplicate.title || proposal.duplicate.path]));
       }
       var preview = form.querySelector('[data-lib-preview]');

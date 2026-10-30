@@ -50,7 +50,7 @@ $total = \count($entries);
 <i class="ph ph-file-arrow-up" aria-hidden="true"></i>
 <span><?= $e(t('library.drop')) ?></span>
 <small><?= $e(t('library.drop_help', [(string) $maxMb])) ?></small>
-<input type="file" multiple accept="<?= $e(implode(',', array_map(static fn (string $x): string => '.' . $x, $extensions))) ?>" data-lib-files>
+<input type="file" multiple accept="<?= $e(implode(',', array_map(static fn (string $x): string => '.' . $x, [...$extensions, ...\Reporion\Controller\LibraryController::IMPORT_EXTENSIONS]))) ?>" data-lib-files>
 </label>
 <div class="wk-lib-queue" data-lib-queue></div>
 <template data-lib-form-template><?php $libraryFormMode = 'add'; include __DIR__ . '/partials/library-record-form.php'; ?></template>
@@ -58,9 +58,11 @@ $total = \count($entries);
     'basePath' => $basePath,
     'maxBytes' => $maxMb * 1024 * 1024,
     'extensions' => $extensions,
+    'importExtensions' => \Reporion\Controller\LibraryController::IMPORT_EXTENSIONS,
     'strings' => [
         'reading' => t('library.reading'), 'adding' => t('library.adding'), 'added' => t('library.added'), 'open' => t('library.open'),
         'failed' => t('library.failed'), 'too_large' => t('library.err_too_large', [(string) $maxMb]), 'unsupported' => t('library.err_unsupported'),
+        'importing' => t('library.importing'), 'imported' => t('library.imported'), 'attach' => t('library.attach'),
         'duplicate' => t('library.duplicate'), 'duplicate_title' => t('library.duplicate_title'), 'discarded' => t('library.discarded'),
         'pages' => t('library.pages'), 'title_needed' => t('library.title_needed'),
     ],

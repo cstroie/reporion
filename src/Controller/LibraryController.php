@@ -55,6 +55,9 @@ final class LibraryController
     ) {
     }
 
+    /** The exports of a reference manager the upload takes as records with no file */
+    public const IMPORT_EXTENSIONS = ['bib', 'ris', 'json'];
+
     /** The orders the view offers; the first is the default */
     public const SORTS = ['author', 'year', 'title'];
 
@@ -162,6 +165,32 @@ final class LibraryController
             'key' => substr($page->path, \strlen($this->library->namespace()) + 1),
             'href' => $request->basePath . '/' . $page->path,
         ], 201);
+    }
+
+    /**
+     * POST /api/v1/library/import: the raw body of a BibTeX, RIS or CSL-JSON export (a reference
+     * manager's) added as sources with no file; `?tags=a,b` for every record. Editors of the library.
+     */
+    public function import(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || !$this->library->canAdd($principal)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            if (\strlen($request->body) > $this->library->maxBytes()) {
+                throw new LibraryException(LibraryException::TOO_LARGE);
+            }
+            $extra = array_values(array_filter(array_map('trim', explode(',', (string) ($request->query['tags'] ?? '')))));
+            $result = $this->library->importRecords($request->body, $principal, $principal->username, $extra);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        }
+        $this->audit->record('library.import', $principal->username, $request, null, null, null, extra: ['added' => \count($result['added']), 'skipped' => \count($result['skipped'])]);
+        foreach ($result['added'] as &$added) {
+            $added['href'] = $request->basePath . '/' . $added['path'];
+        }
+
+        return ApiResponse::json($result, $result['added'] !== [] ? 201 : 200);
     }
 
     public function original(Request $request, string $pid, ?User $principal): Response

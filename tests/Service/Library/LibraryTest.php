@@ -251,4 +251,85 @@ final class LibraryTest extends StorageTestCase
         self::assertFalse($this->library->canAdd(new User('ro', 'x', false, [new Grant('library', GrantRole::Viewer)], true, 'now', 'now')));
         self::assertFalse($this->library->canAdd(null));
     }
+
+    private const BIB = <<<'BIB'
+@article{Nobody2024,
+  author = {Nobody, Ann}, title = {Imported made-up study}, journal = {Journal of Synthetic Imaging},
+  year = {2024}, doi = {10.1234/jti.2024.0001}, keywords = {mri, grading}
+}
+@article{Nobody2024,
+  author = {Nobody, Bob}, title = {Another made-up study}, year = {2023}, doi = {10.1234/jti.2023.0002}
+}
+@article{bad key!,
+  author = {Nobody, Cleo}, title = {A third one}, year = {2022}
+}
+@article{noyear, title = {   }}
+@article{cnp, author = {Nobody, Dan}, title = {Study of patient CNPHERE}, year = {2021}}
+BIB;
+
+    private static function bib(): string
+    {
+        return str_replace('CNPHERE', CnpTest::make(1, '800115'), self::BIB);
+    }
+
+    public function testRecordsAreImportedAsPrivateSourcesWithNoFile(): void
+    {
+        $result = $this->library->importRecords(self::bib(), self::owner(), 'owner', ['batch']);
+
+        self::assertSame(['nobody2024', 'nobody2023', 'nobody2022'], array_column($result['added'], 'key'), 'the file\'s key when it is one and free; made otherwise');
+        self::assertSame([['title' => '', 'reason' => 'patient_data']], array_filter($result['skipped'], static fn (array $s): bool => $s['reason'] === 'patient_data'), 'a CNP in a record: nothing kept, nothing echoed');
+        $page = $this->storage->read('library:nobody2024');
+        self::assertSame('private', $page->visibility);
+        self::assertSame(['mri', 'grading', 'batch'], $page->frontmatter['tags']);
+        self::assertArrayNotHasKey('original', $page->frontmatter);
+        self::assertSame('10.1234/jti.2024.0001', $page->frontmatter['csl']['DOI']);
+
+        $again = $this->library->importRecords(self::bib(), self::owner(), 'owner');
+        self::assertSame([], $again['added'], 'importing the same file again adds nothing');
+        self::assertContains('duplicate', array_column($again['skipped'], 'reason'));
+    }
+
+    public function testAnImportTakesOnlyAReferenceManagersFormats(): void
+    {
+        $this->expectException(LibraryException::class);
+        $this->library->importRecords("Just some text, not a bibliography\n", self::owner(), 'owner');
+    }
+
+    public function testADryRunImportKeepsNothing(): void
+    {
+        $result = $this->library->importRecords(self::bib(), self::owner(), 'owner', null, dryRun: true);
+
+        self::assertCount(3, $result['added']);
+        self::assertFalse($this->storage->isPathTaken('library:nobody2024'));
+    }
+
+    public function testTheFileOfARecordAlreadyKeptIsAttachedToIt(): void
+    {
+        $this->library->importRecords(self::bib(), self::owner(), 'owner');
+        $before = $this->storage->read('library:nobody2024');
+
+        $proposal = $this->library->upload(self::ARTICLE, 'study.md', self::owner());
+        self::assertSame('doi', $proposal['duplicate']['by']);
+        self::assertFalse($proposal['duplicate']['has_original']);
+
+        $page = $this->library->confirm($proposal['token'], ['csl' => $proposal['csl'], 'key' => 'other-key'], self::owner(), 'owner');
+
+        self::assertSame('library:nobody2024', $page->path, 'the same page and key: citations of it stand');
+        self::assertSame($before->rev + 1, $page->rev);
+        self::assertSame('md', $page->frontmatter['original']['ext']);
+        self::assertSame(['mri', 'grading'], $page->frontmatter['tags']);
+        self::assertSame('Imported made-up study', $page->frontmatter['csl']['title'], 'the record the page had is kept');
+        self::assertStringContainsString('Grade 3 was the most common', $page->body);
+
+        // Now it has a file: the same article again is a duplicate
+        $second = $this->library->upload(self::ARTICLE, 'study2.md', self::owner());
+        $this->expectException(LibraryException::class);
+        $this->library->confirm($second['token'], ['csl' => $second['csl']], self::owner(), 'owner');
+    }
+
+    public function testARecordTypedWithACnpIsRefused(): void
+    {
+        $this->expectException(LibraryException::class);
+        Library::cleanCsl(['title' => 'Patient ' . CnpTest::make(1, '800115') . ' study']);
+    }
 }

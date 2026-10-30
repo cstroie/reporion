@@ -169,6 +169,12 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    caller's visibility (`Library::records()`, the index predicate), narrowed by `key` or `tag`, or with `page=` the sources one page cites
    (`[@key]` and a `sources:` list; the page must be readable by the caller, 404 otherwise; its records as its References section prints
    them, `Library::citedRecords()`); anonymous 404. Export links on `/library` and on a source's card (BibTeX, RIS).
+   *Step 3 built 2026-10-30:* `POST /api/v1/library/import` and `bin/reporion library:import` (`Library::importRecords()`): each record
+   cleaned as a confirmed one, skipped without a title, with a CNP in any text (`cleanCsl()`, ids and numbers excluded), or in the library (DOI, PMID,
+   title and year); the file's key kept when valid and free, else made; a source with no file. **A later upload of the same DOI or PMID
+   takes the file** (`Library::attach()`: the original and the text added to that page, its key, tags and record kept, only blanks filled;
+   the upload form says so and does not block); D58 amended. The upload form (and the add panel) take `.bib`, `.ris`, `.json` as imports; a
+   proposal's tags are filled in the form (the lookups' MeSH terms, step 4). `library:export` writes the library's references.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from

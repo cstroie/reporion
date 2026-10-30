@@ -181,6 +181,7 @@ final class LibraryTest extends HttpTestCase
 
         self::assertSame(403, $bearer('POST', '/api/v1/library/uploads', "# Another made-up study\n\n© 2020\n", ['name' => 'x.md'])->status);
         self::assertSame(403, $bearer('POST', '/api/v1/library', (string) json_encode(['token' => str_repeat('0', 32), 'csl' => ['title' => 'X y z']]))->status);
+        self::assertSame(403, $bearer('POST', '/api/v1/library/import', "@article{k, title = {A made-up one}, year = {2020}}")->status);
         self::assertSame(403, $bearer('PUT', '/api/v1/library/' . $page['pid'] . '/record', (string) json_encode(['csl' => ['title' => 'X y z'], 'base_rev' => 1]))->status);
         self::assertSame([], glob($this->dataRoot . '/tmp/library/*') ?: []);
     }
@@ -246,6 +247,44 @@ final class LibraryTest extends HttpTestCase
         // The editor's preview numbers them the same way
         $preview = json_decode($this->call('other', 'POST', '/api/v1/render', ['markdown' => "A [@{$key}].", 'citation_style' => 'apa'])->body, true);
         self::assertStringContainsString('wk-reflist-apa', $preview['html']);
+    }
+
+    public function testAnEditorImportsAReferenceManagersExportAndOthersCannot(): void
+    {
+        $bib = "@article{Abel2020, author = {Abel, Zed}, title = {Imported made-up study}, journal = {J Synth}, year = {2020}, doi = {10.9999/jsi.2020.0001}}\n@book{bad, title = {   }}\n";
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->importAs($user, $bib)->status, $user ?? 'anonymous');
+        }
+        self::assertFalse(is_file($this->dataRoot . '/pages/library/abel2020.md'));
+
+        $imported = $this->importAs('editor', $bib, 'batch');
+        self::assertSame(201, $imported->status);
+        $json = json_decode($imported->body, true);
+        self::assertSame(['abel2020'], array_column($json['added'], 'key'));
+        self::assertSame('/library:abel2020', $json['added'][0]['href']);
+        self::assertSame([], $json['skipped'], 'an entry with no title is no entry');
+        self::assertSame(200, $this->importAs('editor', $bib)->status);
+
+        self::assertSame(415, $this->importAs('editor', 'Not a bibliography')->status);
+        $this->config['library']['max_mb'] = 1;
+        self::assertSame(413, $this->importAs('editor', str_repeat('a', 1024 * 1024 + 1))->status);
+
+        // It is a source like any: private, listed, exportable, cited
+        self::assertStringContainsString('Imported made-up study', $this->call('reader', 'GET', '/library')->body);
+        self::assertStringContainsString('Abel', $this->call('reader', 'GET', '/library/export?format=ris')->body);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"action":"library.import"', $audit);
+    }
+
+    private function importAs(?string $user, string $body, string $tags = ''): Response
+    {
+        return Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/api/v1/library/import',
+            query: $tags !== '' ? ['tags' => $tags] : [],
+            cookies: $user === null ? [] : ['reporion' => $this->cookie($user)],
+            body: $body,
+        ));
     }
 
     public function testTheExportIsWhatTheCallerMayReadAndNothingElse(): void

@@ -708,6 +708,8 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->post('/api/v1/library/uploads', static fn (Request $request, array $params): Response
             => $libraryController->upload($request, $session->principal($request)));
+        $router->post('/api/v1/library/import', static fn (Request $request, array $params): Response
+            => $libraryController->import($request, $session->principal($request)));
         $router->post('/api/v1/library', static fn (Request $request, array $params): Response
             => $libraryController->confirm($request, $session->principal($request)));
         $router->get('/library', static fn (Request $request, array $params): Response

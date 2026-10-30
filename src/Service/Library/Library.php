@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Reporion\Auth\User;
 use Reporion\Exception\LibraryException;
 use Reporion\Exception\PageExistsException;
+use Reporion\Support\Bibliography;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
@@ -142,7 +143,6 @@ final class Library
     public function confirm(string $token, array $fields, User $principal, string $actor): PageRecord
     {
         $csl = self::cleanCsl(\is_array($fields['csl'] ?? null) ? $fields['csl'] : []);
-        $key = $this->keyFor($fields['key'] ?? null, $csl);
         $tags = self::cleanTags($fields['tags'] ?? []);
 
         // Read, not taken: a refusal below (a duplicate, a taken key) leaves the upload for another try
@@ -152,7 +152,7 @@ final class Library
         if (!\is_array($upload) || $bytes === null) {
             throw new LibraryException(LibraryException::EXPIRED);
         }
-        $page = $this->create($bytes, (string) $upload['ext'], (string) $upload['name'], Extracted::fromArray((array) $upload['extracted']), $csl, $key, $tags, $principal, $actor);
+        $page = $this->create($bytes, (string) $upload['ext'], (string) $upload['name'], Extracted::fromArray((array) $upload['extracted']), $csl, $fields['key'] ?? null, $tags, $principal, $actor);
         $this->temp->take(self::BUCKET, $token);
         $this->temp->take(self::FILE_BUCKET, (string) $upload['file']);
 
@@ -172,8 +172,7 @@ final class Library
     {
         [$ext, $extracted] = $this->read($bytes, $name);
         $csl = self::cleanCsl(array_merge(Identify::propose($extracted)['csl'], \is_array($fields['csl'] ?? null) ? $fields['csl'] : []));
-        $key = $this->keyFor($fields['key'] ?? null, $csl);
-        $record = $this->create($bytes, $ext, self::fileName($name), $extracted, $csl, $key, self::cleanTags($fields['tags'] ?? []), $principal, $actor);
+        $record = $this->create($bytes, $ext, self::fileName($name), $extracted, $csl, $fields['key'] ?? null, self::cleanTags($fields['tags'] ?? []), $principal, $actor);
 
         return [$record, $csl];
     }
@@ -400,8 +399,99 @@ final class Library
         if ($abstract !== '') {
             $clean['abstract'] = $abstract;
         }
+        // A record is literature too: a CNP in any of its texts is a patient's (invariants 8, 10); ids and numbers are not text
+        $texts = array_values(array_diff_key($clean, array_flip(['DOI', 'ISBN', 'ISSN', 'URL', 'PMID', 'PMCID', 'page', 'volume', 'issue', 'number'])));
+        foreach ($authors as $author) {
+            $texts = array_merge($texts, array_values($author));
+        }
+        if (self::holdsPatientData(implode("\n", array_filter($texts, 'is_string')))) {
+            throw new LibraryException(LibraryException::PATIENT_DATA);
+        }
 
         return $clean;
+    }
+
+    /**
+     * The file added to a source that had only its record: the original, the text as the page body, and the
+     * fields the record lacked; the key, the tags and the rest of the record untouched
+     *
+     * @param array<string, mixed> $csl the file's own proposal
+     *
+     * @throws LibraryException
+     */
+    private function attach(string $path, string $bytes, string $ext, string $name, Extracted $extracted, array $csl, string $actor): PageRecord
+    {
+        $page = $this->storage->read($path);
+        $original = $this->storage->storeOriginal($bytes, $ext) + ['name' => $name, 'pages' => $extracted->pages, 'text' => $extracted->hasText];
+        $frontmatter = $page->frontmatter;
+        $frontmatter['original'] = $original;
+        $frontmatter['csl'] = \is_array($frontmatter['csl'] ?? null) ? $frontmatter['csl'] + $csl : $csl;
+
+        try {
+            return $this->storage->save($path, $frontmatter, trim($page->body) === '' ? self::body($extracted) : $page->body, $page->rev, $actor, 'library: file added (' . $ext . ')');
+        } catch (\Reporion\Exception\RevisionConflictException) {
+            throw new LibraryException(LibraryException::DUPLICATE, $page->pid);
+        }
+    }
+
+    /** The most records one import takes */
+    public const MAX_IMPORT = 500;
+
+    /**
+     * Records from a reference manager's export (BibTeX, RIS or CSL-JSON, docs/library.md) as sources
+     * with no file: each cleaned as a confirmed record, skipped when it has no title, holds a patient's
+     * CNP, or is in the library already (DOI, PMID, or the same title and year). A later upload of
+     * the same DOI or PMID takes the file.
+     *
+     * @param ?list<string> $extraTags added to every record
+     *
+     * @return array{added: list<array{key: string, path: string, pid: string, title: string}>, skipped: list<array{title: string, reason: string}>}
+     *
+     * @throws LibraryException UNSUPPORTED when the text is none of the formats, TOO_LARGE above MAX_IMPORT records
+     */
+    public function importRecords(string $text, User $principal, string $actor, ?array $extraTags = null, bool $dryRun = false): array
+    {
+        $entries = Bibliography::parse($text);
+        if ($entries === [] && Bibliography::detect($text) === null) {
+            throw new LibraryException(LibraryException::UNSUPPORTED);
+        }
+        if (\count($entries) > self::MAX_IMPORT) {
+            throw new LibraryException(LibraryException::TOO_LARGE);
+        }
+        $added = [];
+        $skipped = [];
+        foreach ($entries as $entry) {
+            $label = \is_string($entry['csl']['title'] ?? null) ? mb_substr($entry['csl']['title'], 0, 200) : '';
+            try {
+                $csl = self::cleanCsl($entry['csl']);
+            } catch (LibraryException $e) {
+                $skipped[] = ['title' => $e->reason === LibraryException::PATIENT_DATA ? '' : $label, 'reason' => $e->reason];
+                continue;
+            }
+            if ($this->duplicateOf($csl, '', $principal) !== null) {
+                $skipped[] = ['title' => $label, 'reason' => LibraryException::DUPLICATE];
+                continue;
+            }
+            $wanted = strtolower(trim($entry['key']));
+            $key = CitationKey::isValid($wanted) && !$this->keyTaken($wanted) ? $wanted : CitationKey::make($csl, fn (string $k): bool => $this->keyTaken($k));
+            $tags = self::cleanTags(array_merge($entry['tags'], $extraTags ?? []));
+            if ($dryRun) {
+                $added[] = ['key' => $key, 'path' => $this->namespace . ':' . $key, 'pid' => '', 'title' => $csl['title']];
+                continue;
+            }
+            try {
+                $page = $this->storage->create($this->namespace . ':' . $key, array_filter(['title' => $csl['title'], 'visibility' => 'private', 'tags' => $tags, 'csl' => $csl], static fn (mixed $v): bool => $v !== []), '', $actor, 'library: imported record', exclusive: true);
+            } catch (PageExistsException) {
+                $skipped[] = ['title' => $label, 'reason' => LibraryException::DUPLICATE];
+                continue;
+            } catch (InvalidArgumentException) {
+                $skipped[] = ['title' => $label, 'reason' => LibraryException::INVALID];
+                continue;
+            }
+            $added[] = ['key' => $key, 'path' => $page->path, 'pid' => $page->pid, 'title' => $csl['title']];
+        }
+
+        return ['added' => $added, 'skipped' => $skipped];
     }
 
     /** Whether the text holds a valid CNP: a patient document, which the library never takes */
@@ -450,13 +540,19 @@ final class Library
      *
      * @throws LibraryException
      */
-    private function create(string $bytes, string $ext, string $name, Extracted $extracted, array $csl, string $key, array $tags, User $principal, string $actor): PageRecord
+    private function create(string $bytes, string $ext, string $name, Extracted $extracted, array $csl, mixed $typedKey, array $tags, User $principal, string $actor): PageRecord
     {
         $sha = hash('sha256', $bytes);
         $duplicate = $this->duplicateOf($csl, $sha, $principal);
+        // A record kept with no file (an import) takes the file of the same DOI or PMID: the page, its key and
+        // its notebooks' citations stay as they are
+        if ($duplicate !== null && !$duplicate['has_original'] && \in_array($duplicate['by'], ['doi', 'pmid'], true)) {
+            return $this->attach($duplicate['path'], $bytes, $ext, $name, $extracted, $csl, $actor);
+        }
         if ($duplicate !== null && $duplicate['by'] !== 'title') {
             throw new LibraryException(LibraryException::DUPLICATE, $duplicate['pid']);
         }
+        $key = $this->keyFor($typedKey, $csl);
 
         $original = $this->storage->storeOriginal($bytes, $ext) + [
             'name' => $name,
