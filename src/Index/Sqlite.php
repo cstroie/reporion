@@ -297,6 +297,19 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listNamespaceMeta(string $ns, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare('SELECT pid, path, title, meta_json FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY path');
+        $stmt->execute(['ns' => $ns] + $clauseParams);
+
+        return array_map(static function (array $row): array {
+            $meta = json_decode((string) $row['meta_json'], true);
+
+            return ['pid' => (string) $row['pid'], 'path' => (string) $row['path'], 'title' => (string) $row['title'], 'meta' => \is_array($meta) ? $meta : []];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     /**
      * The distinct years present in $ns's direct children's `study_date`,
      * each with a page count, most recent first: the namespace index's

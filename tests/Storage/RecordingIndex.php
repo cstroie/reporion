@@ -54,6 +54,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function listNamespaceMeta(string $ns, ?User $principal): array
+    {
+        return [];
+    }
+
     public function listNamespaceYears(string $ns, ?User $principal): array
     {
         return [];

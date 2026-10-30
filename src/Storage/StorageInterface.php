@@ -235,6 +235,21 @@ interface StorageInterface
     public function mediaFile(string $sha, string $ext): ?string;
 
     /**
+     * Keeps the original file of a library source (docs/library.md): stored once by content in
+     * data/sources/{ab}/{sha256}.{ext}, written atomically; nothing else. The page that names it
+     * (its `original` key) is made after, through create()/save(): an original no page names is
+     * harmless and trash:purge removes it.
+     *
+     * @return array{sha256: string, ext: string, bytes: int}
+     *
+     * @throws \InvalidArgumentException when $ext is not a plain extension
+     */
+    public function storeOriginal(string $bytes, string $ext): array;
+
+    /** The stored original {sha256}.{ext}, or null when there is none */
+    public function originalFile(string $sha, string $ext): ?string;
+
+    /**
      * Records that a revision of the page was delivered somewhere: the
      * report's DICOM SR stored to a PACS (roadmap phase 22): appended to
      * `meta.json`'s `deliveries` (FORMATS §4b), never to the frontmatter,

@@ -164,6 +164,24 @@ final class VisibilityMatrixTest extends IndexTestCase
         );
     }
 
+    /** The library's records with their frontmatter (docs/library.md): the tree listing's rule exactly */
+    public function testNamespaceMetaListingMatchesTheTreeListingForEveryPrincipal(): void
+    {
+        $index = $this->seededIndex();
+        foreach ([$this->owner(), $this->editorWithGrant(), $this->viewerWithGrant(), $this->editorWithoutGrant(), null] as $principal) {
+            foreach (['reports:mri:mioveni', 'reports:ct:cervical'] as $ns) {
+                self::assertSame(
+                    $this->pidsFrom($index->listNamespace($ns, $principal)),
+                    $this->pidsFrom($index->listNamespaceMeta($ns, $principal)),
+                    ($principal?->username ?? 'anonymous') . ' on ' . $ns,
+                );
+            }
+        }
+        self::assertSame(['p-public'], $this->pidsFrom($index->listNamespaceMeta('reports:mri:mioveni', null)));
+        $row = $index->listNamespaceMeta('reports:mri:mioveni', null)[0];
+        self::assertSame('IRM A', $row['meta']['exams'][0]['title'] ?? null);
+    }
+
     /**
      * listNamespaceYears() applies the same visibility predicate as
      * listNamespace(), inside the aggregate before GROUP BY: same shape as

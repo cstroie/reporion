@@ -682,6 +682,31 @@ final class FileTree implements StorageInterface
         return $files[0] ?? null;
     }
 
+    public function storeOriginal(string $bytes, string $ext): array
+    {
+        if (preg_match('/^[a-z0-9]{1,8}$/', $ext) !== 1) {
+            throw new InvalidArgumentException('Invalid extension');
+        }
+        $sha = hash('sha256', $bytes);
+        $dir = $this->dataRoot . '/sources/' . substr($sha, 0, 2);
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new RuntimeException('Cannot create the sources directory');
+        }
+        AtomicWriter::putOnce($dir . '/' . $sha . '.' . $ext, $bytes);
+
+        return ['sha256' => $sha, 'ext' => $ext, 'bytes' => \strlen($bytes)];
+    }
+
+    public function originalFile(string $sha, string $ext): ?string
+    {
+        if (preg_match('/^[0-9a-f]{64}$/', $sha) !== 1 || preg_match('/^[a-z0-9]{1,8}$/', $ext) !== 1) {
+            return null;
+        }
+        $file = $this->dataRoot . '/sources/' . substr($sha, 0, 2) . '/' . $sha . '.' . $ext;
+
+        return is_file($file) ? $file : null;
+    }
+
     public function recordDelivery(string $path, array $entry): void
     {
         $pid = (string) $this->liveRow($path)['pid'];
@@ -1485,6 +1510,12 @@ final class FileTree implements StorageInterface
      * redirect does not: a page created there takes the old name, and the
      * redirect goes (create()). A namespace of the same name never does.
      */
+    /** Whether a page (or its file, or its attic zip) is at $path: create() would not put a new one there */
+    public function isPathTaken(string $path): bool
+    {
+        return $this->isTaken($path);
+    }
+
     private function isTaken(string $path): bool
     {
         return $this->state->pageAt($path) !== null || file_exists($this->pageFile($path)) || file_exists($this->atticFile($path));

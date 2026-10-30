@@ -64,6 +64,15 @@ interface IndexInterface
     public function listNamespace(string $ns, ?User $principal, ?string $year = null): array;
 
     /**
+     * listNamespace()'s pages with their whole frontmatter (`meta`, decoded), under the same
+     * predicate (Search\Query::visibilityClause()): the library's records (docs/library.md),
+     * matched against an upload for duplicates.
+     *
+     * @return list<array{pid: string, path: string, title: string, meta: array<string, mixed>}>
+     */
+    public function listNamespaceMeta(string $ns, ?User $principal): array;
+
+    /**
      * The distinct years present in $ns's direct children's `study_date`,
      * each with a page count, most recent first: the namespace index's
      * year-filter cards (Search\Query::visibilityClause()). Pages with no
