@@ -25,7 +25,8 @@ use Throwable;
  * - every signature's digest, recomputed from its stored revision, matches
  *   (Service\Revisions::signature(), every signed revision. D3);
  * - every file in data/media/ hashes to its own name, and every page's
- *   media row points at a file that exists (D10/D27);
+ *   media row points at a file that exists (D10/D27); the same for a
+ *   library page's original in data/sources/ (docs/library.md);
  * - reporion.sqlite passes SQLite's integrity and foreign-key checks;
  * - no journal intent is older than the replay age (invariant 7);
  * - no page row lacks its page file, no attic zip lacks its row, and every
@@ -105,6 +106,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
             $this->page($report, $path, $backup);
         }
         $this->media($report);
+        $this->originals($report);
         $this->stray($report);
         $this->journal($report);
         $this->indexDrift($report);
@@ -171,6 +173,15 @@ final class IntegrityVerifyTask implements MaintenanceTask
             }
         }
 
+        // A library source's original (docs/library.md)
+        $original = $page->frontmatter['original'] ?? null;
+        if (\is_array($original) && isset($original['sha256'], $original['ext'])) {
+            $report->count('originals');
+            if ($this->storage->originalFile((string) $original['sha256'], (string) $original['ext']) === null) {
+                $this->problem($report, $page->pid, null, 'original_missing', 'The library page names an original that is not in data/sources', ['file' => $original['sha256'] . '.' . $original['ext']]);
+            }
+        }
+
         // The backup: every signed revision there, byte for byte
         if ($backup !== '') {
             foreach (array_keys($signedRevs) as $rev) {
@@ -195,6 +206,19 @@ final class IntegrityVerifyTask implements MaintenanceTask
             $report->count('media');
             if (hash_file('sha256', $file) !== $m[1]) {
                 $this->problem($report, null, null, 'media_changed', 'The file does not hash to its name', ['file' => basename($file)]);
+            }
+        }
+    }
+
+    /** Every file in data/sources/ hashes to its name (content-addressed, docs/library.md) */
+    private function originals(MaintenanceReport $report): void
+    {
+        foreach (glob($this->dataRoot . '/sources/[0-9a-f][0-9a-f]/*') ?: [] as $file) {
+            if (!is_file($file) || preg_match('/^([0-9a-f]{64})\.([a-z0-9]+)$/', basename($file), $m) !== 1) {
+                continue;
+            }
+            if (hash_file('sha256', $file) !== $m[1]) {
+                $this->problem($report, null, null, 'original_changed', 'The library original does not hash to its name', ['file' => basename($file)]);
             }
         }
     }

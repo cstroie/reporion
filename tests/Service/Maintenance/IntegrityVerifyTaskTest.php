@@ -188,6 +188,20 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
         $this->assertContainsOutcome('media_missing', $this->verify());
     }
 
+    public function testALibraryOriginalThatChangedOrWentMissing(): void
+    {
+        $original = $this->storage->storeOriginal("A made-up article.\n", 'txt');
+        $this->storage->create('library:nobody2024', ['title' => 'A made-up article', 'original' => $original + ['name' => 'a.txt', 'pages' => 1, 'text' => true]], "A made-up article.\n", 'owner');
+        self::assertNotContains('original_missing', $this->outcomes($this->verify()));
+
+        $file = (string) $this->storage->originalFile($original['sha256'], 'txt');
+        file_put_contents($file, 'other bytes');
+        $this->assertContainsOutcome('original_changed', $this->verify());
+
+        unlink($file);
+        $this->assertContainsOutcome('original_missing', $this->verify());
+    }
+
     public function testAStateMirrorThatDisagreesWithTheAtticIsReported(): void
     {
         (new PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->exec('DELETE FROM signature');
