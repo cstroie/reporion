@@ -129,7 +129,7 @@ final class PageTemplateRenderer
             $vars['warnings'][] = $lint;
         }
         // Summarize: a writer, the current revision of an unsigned page, and the prompt there
-        $vars['aiSummary'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
+        $vars['aiSummary'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path) && !LibrarySource::isSource($record->frontmatter)
             && $this->aiActions?->special($record->path, 'summary') !== null;
         // Suggest tags (2026-10-08): the same rule, the `tags` prompt
         $vars['aiTags'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
@@ -154,6 +154,11 @@ final class PageTemplateRenderer
                 'pages' => (int) ($record->frontmatter['original']['pages'] ?? 0),
                 'bytes' => (int) ($record->frontmatter['original']['bytes'] ?? 0),
             ] : null,
+            'path' => $record->path,
+            // The analyses the assistant can make of it (docs/library.md, phase 5): those whose prompt page the serving profile has
+            'aiTasks' => $currentRev === null && $principal->canWrite($record->path) && $this->aiActions !== null
+                ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))
+                : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
         ] : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];

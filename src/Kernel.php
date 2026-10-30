@@ -34,6 +34,7 @@ use Reporion\Controller\HomeController;
 use Reporion\Controller\JoinController;
 use Reporion\Controller\McpController;
 use Reporion\Controller\OAuthController;
+use Reporion\Controller\LibraryAiController;
 use Reporion\Controller\LibraryController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
@@ -123,6 +124,7 @@ use Reporion\Service\Library\Citations;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
+use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
@@ -194,7 +196,7 @@ final class Kernel
         'feeds' => ['namespaces' => []],
         'references' => ['namespaces' => ['radiology']],
         // The library (docs/library.md): its namespace, the largest file taken, the programs that read files
-        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => [], 'lookup' => false],
+        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => [], 'lookup' => false, 'context_tokens' => 32000],
         'sites' => [],
         'plugins' => ['enabled' => []],
     ];
@@ -608,6 +610,7 @@ final class Kernel
             $hooks,
             Embedder::fromConfig($config),
         );
+        $libraryAi = new LibraryAiController($aiConfig, $assistant, new SourceAnalysis($aiActions, $assistant, max(4000, (int) ($config['library']['context_tokens'] ?? 32000))), $storage, $index);
         $ai = new AiController(
             $aiConfig,
             $aiActions,
@@ -710,6 +713,8 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->post('/api/v1/library/uploads', static fn (Request $request, array $params): Response
             => $libraryController->upload($request, $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/analyze', static fn (Request $request, array $params): Response
+            => $libraryAi->analyze($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/import', static fn (Request $request, array $params): Response
             => $libraryController->import($request, $session->principal($request)));
         $router->post('/api/v1/library', static fn (Request $request, array $params): Response

@@ -11,6 +11,11 @@
  * - library-record (a source's page): Copy reference, and for a writer Edit record, the same
  *   form filled from the record, saved by PUT /api/v1/library/{pid}/record, then the page reloads.
  *
+ * - library-ai (a source's page, an editor, the assistant on): one button per analysis; the request
+ *   (POST /api/v1/library/{pid}/analyze, streamed) reports "part k of n" for a long source, then the
+ *   answer is shown rendered with Copy; the one-line summary can be saved as the page's `summary`
+ *   (PATCH /api/v1/pages/{path}/meta), the only thing written (D8).
+ *
  * The record's fields the form does not show (abstract, ISSN, a month…) are kept: the form's
  * values are laid over the record it started from.
  */
@@ -396,10 +401,144 @@
     });
   }
 
+  // ---- library-ai ----
+
+  /** One line, no marker or quotes, at most 160 characters (as the Summarize button of a page) */
+  function tidySummary(answer) {
+    var lines = String(answer).replace(/\r\n?/g, '\n').split('\n').map(function (l) { return l.trim(); })
+      .filter(function (l) { return l !== '' && !/^```/.test(l); });
+    var line = (lines[0] || '').replace(/^(#{1,6}|[-*•]|\d+[.)])\s+/, '').replace(/\*\*/g, '')
+      .replace(/^(rezumat|summary)\s*:\s*/i, '').replace(/^["'„“”«»`]+|["'„“”«»`]+$/g, '').trim();
+    return line.length > 160 ? line.slice(0, 159).replace(/\s+\S*$/, '') + '…' : line;
+  }
+
+  function mountAi(box) {
+    var cfg = config(box);
+    var s = cfg.strings || {};
+    var base = cfg.basePath || '';
+    var buttons = Array.prototype.slice.call(box.querySelectorAll('[data-lib-ai-task]'));
+    var out = box.querySelector('[data-lib-ai-out]');
+    var running = false;
+
+    function busy(on) {
+      running = on;
+      buttons.forEach(function (b) { b.disabled = on; });
+    }
+
+    function show(task, data) {
+      out.textContent = '';
+      var body = el('div', 'wk-lib-ai-answer wk-prose');
+      out.appendChild(body);
+      if (window.ReporionRender) {
+        window.ReporionRender.html(base, data.result).then(function (html) { body.innerHTML = html; }, function () { body.textContent = data.result; });
+      } else {
+        body.textContent = data.result;
+      }
+      var meta = [data.provider || '', ((data.ms || 0) / 1000).toFixed(1) + ' s'].concat(data.requests > 1 ? [data.requests + ' ×'] : []).filter(Boolean).join(' · ');
+      out.appendChild(el('p', 'wk-dim wk-text-xs wk-mono', meta));
+      out.appendChild(el('p', 'wk-dim wk-text-sm', s.note));
+      var row = el('div', 'wk-actions');
+      var copy = el('button', 'btn btn-secondary btn-sm', s.copy);
+      copy.type = 'button';
+      copy.addEventListener('click', function () {
+        var done = function () { copy.textContent = s.copied; };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(data.result).then(done);
+        else { var t = document.createElement('textarea'); t.value = data.result; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) { /* the text is on the screen */ } t.remove(); }
+      });
+      row.appendChild(copy);
+      out.appendChild(row);
+      if (task === 'summary') {
+        var field = el('label', 'field');
+        var input = el('input', 'input');
+        input.type = 'text';
+        input.maxLength = 160;
+        input.value = tidySummary(data.result);
+        field.appendChild(input);
+        var use = el('button', 'btn btn-primary btn-sm', s.use_summary);
+        use.type = 'button';
+        use.addEventListener('click', function () {
+          var value = input.value.trim();
+          if (!value) return;
+          use.disabled = true;
+          fetch(base + '/api/v1/pages/' + cfg.path + '/meta', {
+            method: 'PATCH', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ meta: { summary: value }, base_rev: cfg.rev })
+          }).then(function (r) {
+            if (r.ok) { window.location.reload(); return; }
+            use.disabled = false;
+            out.appendChild(notice('error', s.failed));
+          }, function () { use.disabled = false; out.appendChild(notice('error', s.failed)); });
+        });
+        out.insertBefore(field, row);
+        row.appendChild(use);
+      }
+    }
+
+    function fail(message) {
+      out.textContent = '';
+      out.appendChild(notice('error', message || s.failed));
+    }
+
+    function run(task) {
+      if (running) return;
+      busy(true);
+      out.hidden = false;
+      out.textContent = '';
+      out.appendChild(notice('info', s.working));
+      fetch(base + '/api/v1/library/' + cfg.pid + '/analyze', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify({ task: task, stream: true })
+      }).then(function (response) {
+        if (!response.ok || !response.body) {
+          return response.json().then(function (j) { fail(j && j.error && j.error.message); }, function () { fail(); });
+        }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var finished = false;
+        function handle(block) {
+          var m = /^event: (\w+)\ndata: (.*)$/m.exec(block);
+          if (!m) return;
+          var data;
+          try { data = JSON.parse(m[2]); } catch (e) { return; }
+          if (m[1] === 'progress') {
+            out.textContent = '';
+            // N parts, then the analysis itself: the last step has no part number
+            out.appendChild(notice('info', data.steps > 1 && data.step < data.steps ? (s.progress || '%s / %s').replace('%s', data.step).replace('%s', data.steps - 1) : s.working));
+          } else if (m[1] === 'done') {
+            finished = true;
+            show(task, data);
+          } else if (m[1] === 'error') {
+            finished = true;
+            fail(data.message);
+          }
+        }
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (chunk.done) { if (!finished) fail(); return; }
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var blocks = buffer.split('\n\n');
+            buffer = blocks.pop();
+            blocks.forEach(handle);
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function () { fail(); }).then(function () { busy(false); });
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { run(b.getAttribute('data-lib-ai-task')); });
+    });
+  }
+
   function start() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-add"]'), mountAdd);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-list"]'), mountList);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-record"]'), mountRecord);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-ai"]'), mountAi);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -156,6 +156,14 @@ end. A local model can take a minute: keep `ai.timeout` (Admin → AI) below the
 `request_terminate_timeout`, and count one busy worker per user asking: the assistant runs one
 request per user at a time, when setting `pm.max_children`.
 
+**Library analyses are longer.** An analysis of a library source too long for one request (docs/library.md, phase 5)
+is N+1 requests in one HTTP request: one per part of the source (at most 6), then the analysis. Each request is the
+assistant's own, with its retries, so the worst case is 7 × (4 × `ai.timeout` + 14 s); a normal run is 7 × the model's
+time. `max_execution_time` (the pool's `php_admin_value`) and `request_terminate_timeout` must allow what the owner
+accepts: with a 60 s model, 10 minutes covers a normal long article. The page shows "part k of n" as the events come
+(`server.stream-response-body = 2`, above), so an idle timeout in front of PHP does not cut it; a source needing more
+than 6 parts is refused before any request (raise `library.context_tokens` in `conf/local.php` if the model allows).
+
 ## The groff plugin
 
 `plugins/groff` (D42) typesets an ordinary Markdown page (never a report) with **groff**. Install the full package, not

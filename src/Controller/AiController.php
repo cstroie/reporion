@@ -196,7 +196,7 @@ final class AiController
      * own words when it answered with an error: to the signed-in user who
      * sent the request only; the audit line keeps just the reason and status
      */
-    private static function message(AiException $e): string
+    public static function message(AiException $e): string
     {
         $key = 'ai.err.' . $e->reason;
         $message = t($key) !== $key ? t($key) : t('ai.err.provider_error');

@@ -187,6 +187,12 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    *Step 1 built 2026-10-30:* nine reserved prompts (`Actions::LIBRARY`, `resources/prompts/generic`, D15 amended), `Context::source()`/`notebook()`/`notebookTerms()`
    and `Assistant::runSource()`/`runNotebook()`/`runNotebookTerms()`, `Support\SourceChunks` (a source cut at its headings, then paragraphs and sentences, each part
    opening with the page marker in force; the budget is `library.context_tokens` less 3000 tokens, 3 characters a token). Model instructions live in the prompt pages, never in code.
+   *Step 2 built 2026-10-30:* `POST /api/v1/library/{pid}/analyze` (`Controller\LibraryAiController`, `Service\Library\SourceAnalysis`): the source's card has one button per analysis
+   (key points, definitions, classifications, design and evidence, limitations, questions, one-line summary) whose prompt page the profile serving the source has; an editor of
+   the library only. A source that fits goes whole (its own reference list left out); a longer one is condensed in at most 6 parts (`source-part`, each given its share of words so the
+   notes fit) and analysed from the notes; beyond that it is refused before any request. Progress is streamed ("part k of n"). **Nothing is written into the source's body** (Ask the
+   notebook would find the assistant's own text and cite the article for it): the answer is shown with Copy, and only the summary can be applied, to `summary`. The page's
+   own Summarize button is not offered on a source (it refuses text over its limit). Profile: the one serving the source's own path, normally the fallback profile.
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),

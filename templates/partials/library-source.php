@@ -7,7 +7,7 @@
  * (assets/js/library.js, PUT /api/v1/library/{pid}/record).
  *
  * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
- * tags: list<string>, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource;
+ * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource;
  * string $basePath
  */
 
@@ -59,6 +59,28 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 <?php else: ?>
 <script type="application/json"><?= json_encode(['strings' => ['copied' => t('library.copied')]], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+<?php endif; ?>
+<?php if ($source['canEdit'] && ($source['aiTasks'] ?? []) !== []): ?>
+<div class="wk-lib-ai" data-island="library-ai">
+<h3 class="wk-eyebrow"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('library.ai.title')) ?></h3>
+<div class="wk-lib-ai-tasks">
+<?php foreach ($source['aiTasks'] as $task): ?>
+<button class="btn btn-secondary btn-sm" type="button" data-lib-ai-task="<?= $e($task) ?>"><?= $e(t('library.ai.' . $task)) ?></button>
+<?php endforeach; ?>
+</div>
+<div class="wk-lib-ai-out" data-lib-ai-out aria-live="polite" hidden></div>
+<script type="application/json"><?= json_encode([
+    'basePath' => $basePath,
+    'pid' => $source['pid'],
+    'path' => $source['path'],
+    'rev' => $source['rev'],
+    'strings' => [
+        'working' => t('library.ai.working'), 'progress' => t('library.ai.progress'), 'failed' => t('library.ai.failed'), 'note' => t('library.ai.note'),
+        'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'use_summary' => t('library.ai.use_summary'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</div>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/render-client.js')) ?>" defer></script>
 <?php endif; ?>
 </section>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/library.js')) ?>" defer></script>

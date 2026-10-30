@@ -55,6 +55,12 @@ final class FakeServer
         return json_decode((string) @file_get_contents($this->log), true) ?: ['path' => '', 'auth' => '', 'body' => null];
     }
 
+    /** How many chat completions the server has answered (or refused) so far */
+    public function requests(): int
+    {
+        return (int) @file_get_contents($this->log . '.count');
+    }
+
     public function stop(): void
     {
         proc_terminate($this->process);
