@@ -18,6 +18,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Library\Extractor;
+use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\Library;
 use Reporion\Storage\FileTree;
 use Reporion\Support\Bibliography;
@@ -52,6 +53,7 @@ final class LibraryController
         private readonly FileTree $storage,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly ?Highlights $highlights = null,
     ) {
     }
 
@@ -121,6 +123,32 @@ final class LibraryController
         $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $page->rev);
 
         return ApiResponse::json(['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev]);
+    }
+
+    /**
+     * POST /api/v1/library/{pid}/highlights {comment, to}: a comment quoting the source appended to
+     * the page `to` as `> quote [@key, p. N]` (Service\Library\Highlights, phase 7), one revision of
+     * that page by the caller; a source, comment or page the caller may not reach 404
+     */
+    public function highlight(Request $request, string $pid, ?User $principal): Response
+    {
+        $fields = $request->json();
+        if ($principal === null || $this->highlights === null || !\is_string($fields['comment'] ?? null) || !\is_string($fields['to'] ?? null)) {
+            return ApiResponse::error($principal === null ? 404 : 422, $principal === null ? 'not_found' : 'invalid_body', $principal === null ? 'Not found.' : '"comment" and "to" (strings) are required.');
+        }
+        try {
+            $sent = $this->highlights->send($pid, $fields['comment'], $fields['to'], $principal);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', t('library.highlight_not_found'));
+        } catch (LibraryException) {
+            return ApiResponse::error(422, 'refused', t('library.highlight_refused'));
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        }
+        $row = $this->index->findByPath($sent['path'], $principal);
+        $this->audit->record('page.save', $principal->username, $request, (string) ($row['pid'] ?? ''), $sent['path'], $sent['rev'], extra: ['highlight_from' => $pid]);
+
+        return ApiResponse::json(['path' => $sent['path'], 'rev' => $sent['rev'], 'page' => $sent['page'], 'href' => $request->basePath . '/' . $sent['path']]);
     }
 
     public function upload(Request $request, ?User $principal): Response

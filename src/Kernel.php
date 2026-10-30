@@ -125,6 +125,7 @@ use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
+use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\PassageSearch;
 use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\Library\Studio;
@@ -557,7 +558,7 @@ final class Kernel
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
-        $libraryController = new LibraryController(self::library($config, $storage, $index), $storage, $index, $audit);
+        $libraryController = new LibraryController(self::library($config, $storage, $index), $storage, $index, $audit, new Highlights($storage, $index, new Comments($storage, $audit), self::libraryNamespace($config)));
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
         $theme = new ThemeController();
@@ -728,6 +729,8 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->post('/api/v1/library/uploads', static fn (Request $request, array $params): Response
             => $libraryController->upload($request, $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/highlights', static fn (Request $request, array $params): Response
+            => $libraryController->highlight($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/analyze', static fn (Request $request, array $params): Response
             => $libraryAi->analyze($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/notebook/ask', static fn (Request $request, array $params): Response

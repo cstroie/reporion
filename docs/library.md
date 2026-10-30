@@ -249,6 +249,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    the entry (folded) and the entry has its year. A match links to the source; the rest are shown as extracted, with a `doi.org`
    link when the entry has a DOI. *Not built:* adding an entry that is not in the library (a record from it), and a whole
    library's citation graph.
+   *Step 3 built 2026-10-30:* **Highlights.** A comment on a source that quotes it (select the text, then comment, D52) is a highlight;
+   in the page view's comments it has *Send to page*: the writer names a page (the last one is remembered in this browser) and
+   `POST /api/v1/library/{pid}/highlights` (`Service\Library\Highlights`) appends `> quote [@key, p. N]` and the comment's words, as plain
+   text, one revision by the writer (note `Highlight from [@key]`, audit `highlight_from`). The page is the marker in force where the
+   quote stands in the source (whitespace folded, the extracted text's escapes undone), none when it is not found (a quote cut with
+   "…" at 300 characters is looked for without it). Never into a report, a page naming a patient, a library source or a signed page.
+   No assistant. *Not built:* highlight colours, a list of a source's highlights apart from its comments.
 8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
 
 ## Long sources

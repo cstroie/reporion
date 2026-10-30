@@ -2261,6 +2261,9 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-lib-source .wk-panel-h { margin-bottom: var(--space-3); }
 .wk-lib-ref { margin: 0 0 var(--space-2); line-height: 1.55; overflow-wrap: anywhere; }
 .wk-lib-ids { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.wk-comment-send { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: flex-end; margin-top: var(--space-2); }
+.wk-comment-send label { flex: 1 1 14rem; }
+.wk-comment-send p { flex-basis: 100%; margin: 0; }
 .wk-lib-cites { margin-top: var(--space-3); }
 .wk-lib-cites > summary { cursor: pointer; }
 .wk-lib-cites-list { margin: var(--space-2) 0 0; padding-left: var(--space-5); max-height: 28rem; overflow-y: auto; overflow-wrap: anywhere; }

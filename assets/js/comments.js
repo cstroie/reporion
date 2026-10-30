@@ -72,6 +72,9 @@
       row.appendChild(button(c.resolved ? s.reopen : s.resolve, c.resolved ? 'arrow-counter-clockwise' : 'check', function () {
         act(c.id, c.resolved ? 'reopen' : 'resolve');
       }));
+      if (cfg.highlight && c.quote) {
+        row.appendChild(button(s.send, 'arrow-square-out', function () { sendForm(li, c); }));
+      }
       if (c.by === cfg.me || cfg.owner) {
         row.appendChild(button(s.delete, 'trash', function () {
           if (window.confirm(s.deleteConfirm || '')) act(c.id, 'delete');
@@ -79,6 +82,42 @@
       }
       li.appendChild(row);
       return li;
+    }
+
+    // A highlight sent to a page the writer names (docs/library.md, phase 7): `> quote [@key, p. N]`
+    function sendForm(li, c) {
+      if (li.querySelector('.wk-comment-send')) return;
+      var box = el('div', 'wk-comment-send');
+      var label = el('label', 'wk-text-sm', s.sendTo);
+      var input = el('input', 'input');
+      input.type = 'text';
+      input.placeholder = s.sendHint || '';
+      input.spellcheck = false;
+      input.setAttribute('autocapitalize', 'off');
+      try { input.value = window.localStorage.getItem('reporion.library.highlightTo') || ''; } catch (e) { /* no storage */ }
+      label.appendChild(input);
+      box.appendChild(label);
+      var said = el('p', 'wk-mono wk-dim');
+      said.setAttribute('aria-live', 'polite');
+      var go = button(s.sendGo, 'paper-plane-right', function () {
+        var to = input.value.trim();
+        if (!to) { input.focus(); return; }
+        go.disabled = true;
+        call('POST', cfg.basePath + '/api/v1/library/' + cfg.highlight.pid + '/highlights', { comment: c.id, to: to }).then(function (r) {
+          go.disabled = false;
+          said.textContent = '';
+          if (!r.ok) { said.textContent = r.json && r.json.error ? r.json.error.message : (s.failed || ''); return; }
+          try { window.localStorage.setItem('reporion.library.highlightTo', to); } catch (e) { /* no storage */ }
+          var a = el('a', '', r.json.path);
+          a.href = r.json.href;
+          said.appendChild(document.createTextNode((s.sent || '%s').split('%s')[0]));
+          said.appendChild(a);
+        }, function () { go.disabled = false; said.textContent = s.failed || ''; });
+      });
+      box.appendChild(go);
+      box.appendChild(said);
+      li.appendChild(box);
+      input.focus();
     }
 
     function show(comments) {

@@ -171,6 +171,36 @@ final class LibraryTest extends HttpTestCase
         self::assertStringNotContainsString('What it cites', html_entity_decode($this->call('reader', 'GET', '/library:abel2020')->body, ENT_QUOTES), 'no reference list, no section');
     }
 
+    public function testAHighlightIsSentToAPageWithItsCitationAndPage(): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('library', GrantRole::Viewer), new Grant('wiki', GrantRole::Editor)]);
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $source = $storage->create('library:abel2020', ['title' => 'Abel', 'visibility' => 'private', 'csl' => ['title' => 'Abel']], "*— p. 1 —*\n\nFirst page.\n\n*— p. 2 —*\n\nLesions were graded \\[0–3\\] in   128 patients.\n", 'owner');
+        $storage->create('wiki:notebook', ['title' => 'Notebook', 'visibility' => 'private'], "# Notebook\n", 'owner');
+        $storage->create('wiki:patient', ['title' => 'P', 'visibility' => 'private', 'patient' => ['name' => 'X Y']], "Text.\n", 'owner');
+        $added = $this->call('writer', 'POST', '/api/v1/pages/library:abel2020/comments', ['text' => 'Our *grading* too', 'quote' => 'Lesions were graded [0–3] in 128 patients.']);
+        self::assertSame(201, $added->status, $added->body);
+        $id = json_decode($added->body, true)['data']['id'];
+        $send = fn (?string $user, string $to): Response => $this->call($user, 'POST', '/api/v1/library/' . $source->pid . '/highlights', ['comment' => $id, 'to' => $to]);
+
+        $sent = $send('writer', 'wiki:notebook');
+
+        self::assertSame(200, $sent->status, $sent->body);
+        self::assertSame(['path' => 'wiki:notebook', 'rev' => 2, 'page' => 2, 'href' => '/wiki:notebook'], json_decode($sent->body, true));
+        $page = $storage->read('wiki:notebook');
+        self::assertSame("# Notebook\n\n> Lesions were graded \\[0–3\\] in 128 patients. [@abel2020, p. 2]\n\nOur \\*grading\\* too\n", $page->body);
+        $revlog = $page->revlog;
+        self::assertSame('Highlight from [@abel2020]', end($revlog)['note'] ?? null);
+        self::assertStringContainsString('"highlight_from":"' . $source->pid . '"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+
+        self::assertSame(422, $send('writer', 'wiki:patient')->status, 'never a page naming a patient');
+        self::assertSame(404, $send('writer', 'wiki:nothing')->status);
+        self::assertSame(404, $send('reader', 'wiki:notebook')->status, 'no write on the page');
+        self::assertSame(404, $send('other', 'wiki:notebook')->status, 'no read on the source');
+        self::assertSame(404, $send(null, 'wiki:notebook')->status);
+        self::assertSame(2, $storage->read('wiki:notebook')->rev);
+    }
+
     public function testAnUnlistedSourceIsRefusedSoNoAnonymousLinkReadsIt(): void
     {
         $page = $this->add('editor', self::ARTICLE, 'study.md');

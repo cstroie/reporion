@@ -6,7 +6,9 @@
  * section, mounted by assets/js/comments.js (the page includes the script).
  *
  * Variables in scope: string $basePath, $path; ?array{username: string, owner: bool} $commenter;
- * bool $commentsInRail (the editor's: no heading, its section summary names it and holds the count).
+ * bool $commentsInRail (the editor's: no heading, its section summary names it and holds the count);
+ * ?array{pid: string} $librarySource (the page view's, when the page is a library source: a comment
+ * quoting it may be sent to a page, phase 7).
  */
 
 declare(strict_types=1);
@@ -37,11 +39,15 @@ $commentsInRail = ($commentsInRail ?? false) === true;
     'path' => $path,
     'me' => $commenter['username'] ?? null,
     'owner' => ($commenter['owner'] ?? false) === true,
+    // A library source's comment that quotes it is a highlight: Send to page (docs/library.md, phase 7)
+    'highlight' => !$commentsInRail && ($librarySource ?? null) !== null ? ['pid' => $librarySource['pid']] : null,
     'strings' => [
         'none' => t('comments.none'), 'failed' => t('comments.failed'), 'resolved' => t('comments.resolved'),
         'resolve' => t('comments.resolve'), 'reopen' => t('comments.reopen'), 'delete' => t('comments.delete'),
         'deleteConfirm' => t('comments.delete_confirm'), 'quote' => t('comments.quote'), 'rev' => t('comments.rev'),
         'resolvedBy' => t('comments.resolved_by'),
+        'send' => t('library.highlight_send'), 'sendTo' => t('library.highlight_to'), 'sendHint' => t('library.highlight_to_hint'),
+        'sendGo' => t('library.highlight_go'), 'sent' => t('library.highlight_sent'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </section>
