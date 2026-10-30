@@ -2030,5 +2030,6 @@ return [
     'library.err_patient_data' => 'The file holds a personal numeric code (CNP): the library is for literature, never a patient\'s documents. Nothing was kept.',
     'library.err_expired'      => 'The upload is no longer there (it is kept an hour, and used once). Upload the file again.',
     'library.err_duplicate'    => 'This article is in the library already.',
+    'library.err_unreadable'   => 'The file cannot be read.',
     'library.err_invalid'      => 'The record needs a title, and a key is a letter followed by letters, digits or hyphens.',
 ];

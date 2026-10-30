@@ -79,33 +79,53 @@ final class Library
      */
     public function upload(string $bytes, string $name, User $principal): array
     {
-        [$ext, $extracted] = $this->read($bytes, $name);
-        $proposal = Identify::propose($extracted, $name);
-        $sha = hash('sha256', $bytes);
-        $duplicate = $this->duplicateOf($proposal['csl'], $sha, $principal);
-
+        [$ext, $extracted, $proposal] = $this->proposal($bytes, $name, $principal);
         $fileToken = $this->temp->put(self::FILE_BUCKET, $bytes);
         $token = $this->temp->put(self::BUCKET, (string) json_encode([
             'name' => self::fileName($name),
             'ext' => $ext,
-            'sha256' => $sha,
+            'sha256' => hash('sha256', $bytes),
             'file' => $fileToken,
             'extracted' => $extracted->toArray(),
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE));
 
-        return [
-            'token' => $token,
+        return ['token' => $token] + $proposal;
+    }
+
+    /**
+     * upload()'s answer without keeping anything (bin/reporion library:add --dry-run)
+     *
+     * @return array<string, mixed>
+     *
+     * @throws LibraryException
+     */
+    public function propose(string $bytes, string $name, User $principal): array
+    {
+        return $this->proposal($bytes, $name, $principal)[2];
+    }
+
+    /**
+     * @return array{0: string, 1: Extracted, 2: array<string, mixed>}
+     *
+     * @throws LibraryException
+     */
+    private function proposal(string $bytes, string $name, User $principal): array
+    {
+        [$ext, $extracted] = $this->read($bytes, $name);
+        $identified = Identify::propose($extracted, $name);
+
+        return [$ext, $extracted, [
             'name' => self::fileName($name),
             'ext' => $ext,
             'bytes' => \strlen($bytes),
             'pages' => $extracted->pages,
             'has_text' => $extracted->hasText,
-            'csl' => $proposal['csl'],
-            'how' => $proposal['how'],
-            'key' => CitationKey::make($proposal['csl'], fn (string $k): bool => $this->keyTaken($k)),
-            'duplicate' => $duplicate,
+            'csl' => $identified['csl'],
+            'how' => $identified['how'],
+            'key' => CitationKey::make($identified['csl'], fn (string $k): bool => $this->keyTaken($k)),
+            'duplicate' => $this->duplicateOf($identified['csl'], hash('sha256', $bytes), $principal),
             'preview' => self::preview($extracted->body),
-        ];
+        ]];
     }
 
     /**

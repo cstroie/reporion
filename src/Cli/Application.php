@@ -202,6 +202,11 @@ final class Application
 
             return new PageNewCommand($storage, $audit());
         });
+        $app->register('library:add', LibraryAddCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryAddCommand(Kernel::library($config, $storage, $index), $audit());
+        });
         $app->register('page:move', PageMoveCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 
