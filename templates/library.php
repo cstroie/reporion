@@ -74,6 +74,11 @@ $total = \count($entries);
 <section class="wk-panel wk-lib-list" data-island="library-list">
 <header class="wk-panel-h">
 <hgroup><h2 class="wk-eyebrow"><i class="ph ph-books" aria-hidden="true"></i> <?= $e(t('library.articles')) ?><span class="wk-count" data-lib-count><?= $total ?></span></h2></hgroup>
+<nav class="wk-lib-sort" aria-label="<?= $e(t('library.export')) ?>"><span class="wk-dim wk-text-xs"><?= $e(t('library.export')) ?></span>
+<?php foreach (['bibtex', 'ris', 'csl', 'text'] as $exportFormat): ?>
+<a class="wk-chip" href="<?= $e($basePath . '/library/export?' . http_build_query(['format' => $exportFormat] + ($tag !== '' ? ['tag' => $tag] : []))) ?>" title="<?= $e(t('library.export_title', [t('library.export_' . $exportFormat)])) ?>"><?= $e(t('library.export_' . $exportFormat)) ?></a>
+<?php endforeach; ?>
+</nav>
 <nav class="wk-lib-sort" aria-label="<?= $e(t('library.sort')) ?>"><span class="wk-dim wk-text-xs"><?= $e(t('library.sort')) ?></span>
 <?php foreach (\Reporion\Controller\LibraryController::SORTS as $order): ?>
 <a class="wk-chip<?= $order === $sort ? ' wk-chip-on' : '' ?>" href="<?= $e($link(['sort' => $order])) ?>"<?= $order === $sort ? ' aria-current="true"' : '' ?>><?= $e(t('library.sort_' . $order)) ?></a>

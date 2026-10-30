@@ -20,6 +20,9 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Storage\FileTree;
+use Reporion\Support\Bibliography;
+use Reporion\Support\Citation;
+use Reporion\Support\InternalLink;
 
 /**
  * The library's endpoints (docs/library.md, phase 1):
@@ -188,6 +191,62 @@ final class LibraryController
             'Content-Type' => $ext === 'pdf' ? self::TYPES['pdf'] : (self::TYPES[$ext] ?? 'application/octet-stream'),
             'Content-Disposition' => ($ext === 'pdf' ? 'inline' : 'attachment') . '; filename="' . $name . '"',
             'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private const EXPORT_TYPES = [
+        'bibtex' => ['application/x-bibtex; charset=utf-8', 'bib'],
+        'ris' => ['application/x-research-info-systems; charset=utf-8', 'ris'],
+        'csl' => ['application/json; charset=utf-8', 'json'],
+        'text' => ['text/plain; charset=utf-8', 'txt'],
+    ];
+
+    /**
+     * GET /library/export?format=bibtex|ris|csl|text[&style=][&key=a,b][&tag=][&page=path]: the
+     * library the caller may read (or the keys/tag asked for), or the sources one page cites (the
+     * page read under the caller; its sources' records as its References section prints them)
+     */
+    public function export(Request $request, ?User $principal): Response
+    {
+        $notFound = new Response(404, 'Not found', ['Content-Type' => 'text/plain; charset=utf-8']);
+        if ($principal === null) {
+            return $notFound;
+        }
+        $format = (string) ($request->query['format'] ?? 'bibtex');
+        if (!isset(self::EXPORT_TYPES[$format])) {
+            return new Response(422, 'Unknown format', ['Content-Type' => 'text/plain; charset=utf-8']);
+        }
+        $pagePath = (string) ($request->query['page'] ?? '');
+        if ($pagePath !== '') {
+            $row = $this->index->findByPath($pagePath, $principal);
+            if ($row === null) {
+                return $notFound;
+            }
+            try {
+                $page = $this->storage->read((string) $row['path']);
+            } catch (PageNotFoundException) {
+                return $notFound;
+            }
+            $keys = InternalLink::citedKeys($page->body);
+            foreach (\is_array($page->frontmatter['sources'] ?? null) ? $page->frontmatter['sources'] : [] as $key) {
+                if (\is_string($key) && !\in_array($key, $keys, true)) {
+                    $keys[] = $key;
+                }
+            }
+            $records = $this->library->citedRecords($keys);
+        } else {
+            $keys = (string) ($request->query['key'] ?? '') !== '' ? array_values(array_filter(explode(',', (string) $request->query['key']))) : null;
+            $tag = (string) ($request->query['tag'] ?? '');
+            $records = $this->library->records($principal, $keys, $tag !== '' ? $tag : null);
+        }
+        $this->audit->record('library.export', $principal->username, $request, null, null, null, extra: ['format' => $format, 'count' => \count($records), 'scope' => $pagePath !== '' ? 'page' : 'library']);
+        [$type, $ext] = self::EXPORT_TYPES[$format];
+
+        return new Response(200, Bibliography::write($format, $records, Citation::style($request->query['style'] ?? null)), [
+            'Content-Type' => $type,
+            'Content-Disposition' => 'attachment; filename="library.' . $ext . '"',
+            'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

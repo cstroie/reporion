@@ -248,6 +248,51 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('wk-reflist-apa', $preview['html']);
     }
 
+    public function testTheExportIsWhatTheCallerMayReadAndNothingElse(): void
+    {
+        $source = $this->add('editor', self::ARTICLE, 'study.md', ['grading']);
+        $key = $source['key'];
+
+        // Anonymous: nothing, as a page that is not there
+        self::assertSame(404, $this->call(null, 'GET', '/library/export?format=bibtex')->status);
+        // A reader of the library: the record, in each format
+        $bib = $this->call('reader', 'GET', '/library/export?format=bibtex');
+        self::assertSame(200, $bib->status);
+        self::assertStringContainsString('@article{' . $key . ',', $bib->body);
+        self::assertStringContainsString('A made-up study of test lesions', $bib->body);
+        self::assertStringContainsString('attachment; filename="library.bib"', $bib->headers['Content-Disposition']);
+        self::assertSame('nosniff', $bib->headers['X-Content-Type-Options']);
+        self::assertStringContainsString('TY  - JOUR', $this->call('reader', 'GET', '/library/export?format=ris')->body);
+        self::assertSame($key, json_decode($this->call('reader', 'GET', '/library/export?format=csl')->body, true)[0]['id']);
+        self::assertStringContainsString('A made-up study of test lesions', $this->call('reader', 'GET', '/library/export?format=text&style=apa')->body);
+        self::assertSame(422, $this->call('reader', 'GET', '/library/export?format=pdf')->status);
+        // Narrowed by a tag or a key
+        self::assertStringContainsString('@article', $this->call('reader', 'GET', '/library/export?format=bibtex&tag=grading')->body);
+        self::assertSame('', trim($this->call('reader', 'GET', '/library/export?format=bibtex&tag=none')->body));
+        self::assertSame('', trim($this->call('reader', 'GET', '/library/export?format=bibtex&key=other2020')->body));
+        // Signed in with no grant on the library: an empty list, not the records
+        self::assertSame('', trim($this->call('other', 'GET', '/library/export?format=bibtex')->body));
+        self::assertSame('', trim($this->call('other', 'GET', '/library/export?format=bibtex&key=' . $key)->body));
+    }
+
+    public function testANotebooksExportIsTheSourcesItCitesAndNeedsTheNotebookToBeReadable(): void
+    {
+        $key = $this->add('editor', self::ARTICLE, 'study.md')['key'];
+        $this->createPage('wiki:notebook', 'private', 'A notebook', "Cites [@{$key}] and [@gone2000].\n");
+
+        $export = $this->call('other', 'GET', '/library/export?format=bibtex&page=wiki:notebook');
+        self::assertSame(200, $export->status);
+        self::assertStringContainsString('@article{' . $key . ',', $export->body, 'its References section prints the record for this reader too');
+        self::assertStringNotContainsString('gone2000', $export->body);
+        self::assertSame(404, $this->call('reader', 'GET', '/library/export?format=bibtex&page=wiki:notebook')->status, 'no grant on the notebook');
+        self::assertSame(404, $this->call(null, 'GET', '/library/export?format=bibtex&page=wiki:notebook')->status);
+        self::assertSame(404, $this->call('owner', 'GET', '/library/export?format=bibtex&page=wiki:missing')->status);
+
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"action":"library.export"', $audit);
+        self::assertStringNotContainsString('notebook', substr($audit, (int) strpos($audit, 'library.export')), 'the page path is not logged');
+    }
+
     /**
      * @param list<string> $tags
      *

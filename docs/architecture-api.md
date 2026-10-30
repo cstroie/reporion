@@ -259,6 +259,7 @@ GET  /media/{sha256}.{ext}           content-addressed, immutable, private long 
 POST /library/uploads?name={file}    raw file body → 201 { token, name, ext, bytes, pages, has_text, csl, how, key, duplicate, preview }   (built)
 POST /library                        { token, csl, key?, tags? } → 201 { pid, path, rev, key, href }                    (built)
 GET  /library/file/{pid}             a library source's original, signed-in, under the page's visibility             (built)
+GET  /library/export?format=bibtex|ris|csl|text[&style=][&key=a,b][&tag=][&page=path]   references as a download, signed-in: the library as the caller may read it (narrowed by key or tag), or the sources a page cites (the caller must read the page; the records as its References section prints them); audited `library.export` with a count, never a path   (built)
 GET  /library                        SSR: the library's view and upload form (assets/js/library.js)                  (built)
 PUT  /library/{pid}/record           { csl, base_rev, tags? } → 200 { pid, path, rev }; 409 on a stale base_rev      (built)
 ```

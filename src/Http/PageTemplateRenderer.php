@@ -144,6 +144,7 @@ final class PageTemplateRenderer
         // A library source (docs/library.md): its reference, its original, its record to correct
         $vars['librarySource'] = LibrarySource::isSource($record->frontmatter) ? [
             'pid' => $record->pid,
+            'key' => substr($record->path, (int) strrpos($record->path, ':') + 1),
             'rev' => $record->rev,
             'citation' => Citation::vancouver(\is_array($record->frontmatter['csl'] ?? null) ? $record->frontmatter['csl'] : ['title' => $title]),
             'csl' => \is_array($record->frontmatter['csl'] ?? null) ? $record->frontmatter['csl'] : [],

@@ -6,14 +6,14 @@
  * Vancouver, the original to open, the reference to copy, and for a writer the record to correct
  * (assets/js/library.js, PUT /api/v1/library/{pid}/record).
  *
- * Variables in scope: array{pid: string, rev: int, citation: string, csl: array<string, mixed>,
+ * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
  * tags: list<string>, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource;
  * string $basePath
  */
 
 declare(strict_types=1);
 
-/** @var array{pid: string, rev: int, citation: string, csl: array<string, mixed>, tags: list<string>, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource */
+/** @var array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>, tags: list<string>, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool} $librarySource */
 /** @var string $basePath */
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $source = $librarySource;
@@ -27,6 +27,8 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <a class="btn btn-secondary btn-sm" href="<?= $e($basePath . '/library/file/' . $source['pid']) ?>"<?= $source['original']['ext'] === 'pdf' ? ' target="_blank" rel="noopener"' : '' ?>><i class="ph ph-file" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.open_original', [strtoupper($source['original']['ext'])])) ?></span></a>
 <?php endif; ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-copy title="<?= $e(t('library.copy_ref')) ?>"><i class="ph ph-copy" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.copy_ref')) ?></span></button>
+<a class="btn btn-ghost btn-sm" href="<?= $e($basePath . '/library/export?format=bibtex&key=' . rawurlencode($source['key'])) ?>" title="<?= $e(t('library.export_title', [t('library.export_bibtex')])) ?>"><i class="ph ph-download-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.export_bibtex')) ?></span></a>
+<a class="btn btn-ghost btn-sm" href="<?= $e($basePath . '/library/export?format=ris&key=' . rawurlencode($source['key'])) ?>" title="<?= $e(t('library.export_title', [t('library.export_ris')])) ?>"><span class="wk-btn-label"><?= $e(t('library.export_ris')) ?></span></a>
 <?php if ($source['canEdit']): ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-edit><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.edit_record')) ?></span></button>
 <?php endif; ?>

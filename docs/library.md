@@ -165,6 +165,10 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `@string`/`@comment`, braced and quoted values, `#` joins, LaTeX accents decoded (Romanian `\c{s}` → ș), `{{Body}}` names as literals;
    RIS with BOM/CRLF, repeated `AU`, `SP`/`EP`, `PY  - 2019///`; CSL-JSON as a list, an item or `{items}`; each written back (UTF-8, escaped).
    An entry is `{key, csl, tags}`; the key is the file's, checked by the importer.
+   *Step 2 built 2026-10-30:* `GET /library/export?format=bibtex|ris|csl|text` (`LibraryController::export()`): the library under the
+   caller's visibility (`Library::records()`, the index predicate), narrowed by `key` or `tag`, or with `page=` the sources one page cites
+   (`[@key]` and a `sources:` list; the page must be readable by the caller, 404 otherwise; its records as its References section prints
+   them, `Library::citedRecords()`); anonymous 404. Export links on `/library` and on a source's card (BibTeX, RIS).
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from

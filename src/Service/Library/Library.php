@@ -248,6 +248,53 @@ final class Library
     }
 
     /**
+     * The records the caller may read, for an export (docs/library.md): the same listing as entries(),
+     * under the index predicate (invariant 6)
+     *
+     * @param ?list<string> $keys only these keys
+     * @param ?string       $tag  only sources with this tag
+     *
+     * @return list<array{key: string, csl: array<string, mixed>, tags: list<string>}>
+     */
+    public function records(User $principal, ?array $keys = null, ?string $tag = null): array
+    {
+        $records = [];
+        foreach ($this->index->listNamespaceMeta($this->namespace, $principal) as $row) {
+            $meta = $row['meta'];
+            $key = substr($row['path'], \strlen($this->namespace) + 1);
+            $tags = array_values(array_filter(\is_array($meta['tags'] ?? null) ? $meta['tags'] : [], 'is_string'));
+            if (!LibrarySource::isSource($meta) || !\is_array($meta['csl'] ?? null) || ($keys !== null && !\in_array($key, $keys, true)) || ($tag !== null && !\in_array($tag, $tags, true))) {
+                continue;
+            }
+            $records[] = ['key' => $key, 'csl' => $meta['csl'], 'tags' => $tags];
+        }
+
+        return $records;
+    }
+
+    /**
+     * The records of the keys a page cites, in the order given: bibliographic facts only, whoever
+     * reads the citing page (owner, 2026-10-30), as its References section prints them
+     *
+     * @param list<string> $keys
+     *
+     * @return list<array{key: string, csl: array<string, mixed>, tags: list<string>}>
+     */
+    public function citedRecords(array $keys): array
+    {
+        $citations = new Citations($this->storage, $this->namespace);
+        $records = [];
+        foreach ($keys as $key) {
+            $csl = $citations->record($key);
+            if ($csl !== null) {
+                $records[] = ['key' => $key, 'csl' => $csl, 'tags' => []];
+            }
+        }
+
+        return $records;
+    }
+
+    /**
      * An article already in the library that $csl or the file's hash names: by the file, the DOI,
      * the PMID, else the folded title and year (the last only a hint, never a refusal)
      *

@@ -712,6 +712,8 @@ final class Kernel
             => $libraryController->confirm($request, $session->principal($request)));
         $router->get('/library', static fn (Request $request, array $params): Response
             => $libraryController->index($request, $session->principal($request)));
+        $router->get('/library/export', static fn (Request $request, array $params): Response
+            => $libraryController->export($request, $session->principal($request)));
         $router->put('/api/v1/library/{pid:[0-9A-Z]+}/record', static fn (Request $request, array $params): Response
             => $libraryController->record($request, $params['pid'], $session->principal($request)));
         $router->get('/library/file/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
