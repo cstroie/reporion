@@ -134,7 +134,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    copy the reference; Edit record, `PUT /api/v1/library/{pid}/record`), the quick-nav's *Library*.
    *As built:* sorted by author, year or title and filtered by one tag (links) or by text (in the
    browser); no year/journal/author facets yet, no *notebooks citing it* column (that needs phase 3's
-   citations). `/library` is the view's address, so a page named `library` is reached only by its
+   citations). `/library` is the view's address (owner, 2026-10-30: fine), so a page named `library` is reached only by its
    edit and history URLs; the quick-nav link shows to a reader of the `library` namespace (not of a
    renamed `library.namespace`). A confirm that is refused (a duplicate, a taken key) keeps the
    upload for another try (`TempUploads::peek()`).
