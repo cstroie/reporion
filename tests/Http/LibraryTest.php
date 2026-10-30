@@ -212,6 +212,38 @@ final class LibraryTest extends HttpTestCase
         self::assertSame('private', $after->visibility);
     }
 
+    public function testANotebookCitesASourceAndEachReaderGetsTheReferenceItMayHave(): void
+    {
+        $source = $this->add('editor', self::ARTICLE, 'study.md');
+        $key = $source['key'];
+        $this->createPage('wiki:notebook', 'public', 'A notebook', "Grading is common [@{$key}, p. 2] and unknown [@nobody1999].\n");
+        $this->createPage('wiki:private-notebook', 'private', 'Private', "Same [@{$key}].\n");
+
+        $owner = $this->call('owner', 'GET', '/wiki:private-notebook');
+        self::assertSame(200, $owner->status);
+        self::assertStringContainsString('<h2 id="references">References</h2>', $owner->body);
+        self::assertStringContainsString('class="wk-ref-src" href="/library:' . $key . '"', $owner->body, 'a reader of the library follows the citation');
+
+        // Reads the notebook, has no grant on the library: the reference without the link
+        $other = $this->call('other', 'GET', '/wiki:private-notebook');
+        self::assertSame(200, $other->status);
+        self::assertStringContainsString('A made-up study of test lesions', $other->body);
+        self::assertStringNotContainsString('wk-ref-src', $other->body);
+
+        // An anonymous reader of the public notebook: the reference, no link into the library (owner, 2026-10-30)
+        $public = $this->call(null, 'GET', '/wiki:notebook');
+        self::assertSame(200, $public->status);
+        self::assertStringContainsString('A made-up study of test lesions', $public->body);
+        self::assertStringNotContainsString('wk-ref-src', $public->body);
+        self::assertStringNotContainsString('href="/library:', $public->body);
+        self::assertStringNotContainsString('Grade 3 was the most common', $public->body, 'the source\'s text stays private');
+        self::assertSame(404, $this->call(null, 'GET', '/library:' . $key)->status);
+
+        // The editor's preview numbers them the same way
+        $preview = json_decode($this->call('other', 'POST', '/api/v1/render', ['markdown' => "A [@{$key}].", 'citation_style' => 'apa'])->body, true);
+        self::assertStringContainsString('wk-reflist-apa', $preview['html']);
+    }
+
     /**
      * @param list<string> $tags
      *

@@ -15,7 +15,7 @@ use League\CommonMark\Extension\ExtensionInterface;
  * What the dialect adds to CommonMark that league/commonmark does not ship:
  * superscript `^x^` and subscript `~x~`, abbreviations `*[MRI]: …`,
  * callouts `::: warning Title` … `:::`, table captions and column spans,
- * and ☐/☑ task marks. (Highlight `==x==`, autolinks, task lists and tables
+ * ☐/☑ task marks and `[@key]` citations (Render builds their References section). (Highlight `==x==`, autolinks, task lists and tables
  * are the library's own, added in Service\Render.)
  */
 final class DialectExtension implements ExtensionInterface
@@ -23,6 +23,8 @@ final class DialectExtension implements ExtensionInterface
     public function register(EnvironmentBuilderInterface $environment): void
     {
         $environment
+            ->addInlineParser(new CitationParser(), 110)
+            ->addRenderer(CitationNode::class, new CitationRenderer())
             ->addDelimiterProcessor(new ScriptDelimiterProcessor('^', 'sup'))
             ->addDelimiterProcessor(new ScriptDelimiterProcessor('~', 'sub'))
             ->addRenderer(ScriptSpan::class, new ScriptSpanRenderer())

@@ -488,6 +488,21 @@ final class EditorFormatTest extends TestCase
         self::assertSame([true, true, false, false, true], $results, 'an empty line, after a list marker; not after text, not before it');
     }
 
+    public function testTheCitationPickerOpensOnlyAtTheStartOfAWord(): void
+    {
+        $results = array_column($this->runCases([
+            ['fn' => 'citeAt', 'args' => ['', 0]],
+            ['fn' => 'citeAt', 'args' => ['See ', 4]],
+            ['fn' => 'citeAt', 'args' => ["See\n", 4]],
+            ['fn' => 'citeAt', 'args' => ['(', 1]],
+            ['fn' => 'citeAt', 'args' => ['[@a; ', 5]],
+            ['fn' => 'citeAt', 'args' => ['name', 4]],
+            ['fn' => 'citeAt', 'args' => ['[', 1]],
+        ]), 'result');
+        self::assertSame([true, true, true, true, true, false, true], $results, 'after a space, a line break, a bracket or a semicolon; not inside a word (an e-mail address)');
+        self::assertSame('[@abel2020]', $this->runCases([['fn' => 'citation', 'args' => ['abel2020']]])[0]['result']);
+    }
+
     public function testASectionHeadingGoesOnItsOwnLine(): void
     {
         [$after, $first] = array_column($this->runCases([

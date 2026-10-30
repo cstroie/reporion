@@ -63,6 +63,7 @@ declare(strict_types=1);
 /** @var string $basePath */
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
+/** @var string $libraryCite the library's namespace when the writer may read it: the `@` picker cites its sources ('' otherwise) */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
 /** @var list<array{exam: int, title: string, template: string, items: list<array{section: bool, label: string, keywords: list<string>}>}> $checklists */
 /** @var ?array{expand: bool, descriptors: bool} $recall */
@@ -518,6 +519,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     // The slash menu's section headings (Romanian content, D26): a report's usual `###` sections
     'slashSections' => \Reporion\Support\ReportPath::isReport($path) ? explode('|', t('editor.slash.sections')) : [],
     'isReport' => \Reporion\Support\ReportPath::isReport($path),
+    // The `@` picker (docs/library.md): the library's namespace, searched for the source to cite
+    'libraryCite' => $libraryCite ?? '',
     'ai' => $ai !== null ? [
         'actions' => $ai['actions'],
         'strings' => [

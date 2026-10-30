@@ -119,6 +119,7 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\TagCuration;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
+use Reporion\Service\Library\Citations;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\TempUploads;
@@ -198,6 +199,18 @@ final class Kernel
     ];
 
     /**
+     * The library's namespace (`library.namespace`, default `library`)
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function libraryNamespace(array $config): string
+    {
+        $namespace = \is_array($config['library'] ?? null) ? ($config['library']['namespace'] ?? null) : null;
+
+        return \is_string($namespace) && preg_match('/^[a-z0-9-]+(?::[a-z0-9-]+)*$/', $namespace) === 1 ? $namespace : 'library';
+    }
+
+    /**
      * The library (docs/library.md), as the web and the CLI make it
      *
      * @param array<string, mixed> $config
@@ -206,7 +219,7 @@ final class Kernel
     {
         $data = (string) $config['paths']['data'];
         $settings = \is_array($config['library'] ?? null) ? $config['library'] : [];
-        $namespace = \is_string($settings['namespace'] ?? null) && preg_match('/^[a-z0-9-]+(?::[a-z0-9-]+)*$/', $settings['namespace']) === 1 ? $settings['namespace'] : 'library';
+        $namespace = self::libraryNamespace($config);
         $tools = array_filter(\is_array($settings['tools'] ?? null) ? $settings['tools'] : [], 'is_string');
 
         return new Library(
@@ -465,7 +478,7 @@ final class Kernel
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         // Failed sign-ins, bearer tokens, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $throttle = new Throttle((string) $config['paths']['data'] . '/tmp/throttle.json');
-        $render = new Render();
+        $render = new Render(new Citations($storage, self::libraryNamespace($config)));
         $session = new Session(
             (string) $config['auth']['session_secret'],
             (string) $config['auth']['session_name'],
@@ -491,7 +504,7 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config));
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
@@ -610,7 +623,7 @@ final class Kernel
         $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
         $compare = new CompareController($storage, $index, $patientStudies, $render, $aiActions);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index));
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index), self::libraryNamespace($config));
         $export = new ExportController(
             $storage,
             $index,

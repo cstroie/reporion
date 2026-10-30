@@ -2,8 +2,8 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **phases 1 and 2 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
-library view, the upload form and a source's card. The rest is planned.
+the assistant). Status: **phases 1–3 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
+library view, the upload form and a source's card; `[@key]` citations and the References section. The rest is planned.
 
 ## Owner's decisions (2026-10-30)
 
@@ -138,7 +138,21 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    edit and history URLs; the quick-nav link shows to a reader of the `library` namespace (not of a
    renamed `library.namespace`). A confirm that is refused (a duplicate, a taken key) keeps the
    upload for another try (`TempUploads::peek()`).
-3. **Citations + References section** (render fixtures), `@` picker, `Support\Citation`.
+3. **Citations + References section**, **built 2026-10-30** (no schema change): `[@key]`, `[@key, p. 12]`,
+   `[@a; @b]` parsed by `Service\Markdown\CitationParser` (a `CitationNode`), resolved by `Service\Render`
+   against a `Markdown\CitationSource` (`Service\Library\Citations`: the page `{library}:{key}`, its `csl`
+   only) and shown numbered by first citation (Vancouver, AMA) or author-date (APA), with a **References**
+   section appended (`Support\Citation::vancouver|ama|apa|apaLabel`); the page's `citation_style` (default
+   Vancouver) picks the style. A key no source has is marked and a render warning. A source links to its
+   library page only for a reader of the library (`Render::body(citeLinks:)`), never in print or an export;
+   an anonymous reader of a public notebook gets the reference printed from the record, no link. The
+   editor's **`@` picker** (typed `@` at the start of a word; `GET /api/v1/search?ns=library`; no new
+   endpoint) inserts `[@key]`. *As built:* the reference list heading is `library.references` (English;
+   the notebook's `language` is not read yet); the editor's preview styles with Vancouver unless
+   `POST /render` is sent `citation_style`; reference text is plain (no italics); the render check is
+   `tests/Render/RenderCitationsTest` (a fixture file cannot carry a source). **Not built (next, with
+   the index):** the *cited by* column and *notebooks citing it* (backlinks need `[@key]` in the links
+   table: an index change, to ask first), `page:move` fixups for a renamed key.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.

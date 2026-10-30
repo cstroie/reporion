@@ -834,6 +834,46 @@
       items.push({ title: slashOn() ? (s.slashOff || 'Turn the / menu off') : (s.slashOnLabel || 'Turn the / menu on'), meta: '', value: { kind: 'toggle' } });
       return items;
     }
+    /*
+     * The citation picker (docs/library.md, phase 3): an `@` typed by a key at the start of a
+     * word searches the library and inserts `[@key]`; Escape types the `@` after all. Only where
+     * the writer may read the library (config.libraryCite); typed keys only, so dictated or
+     * pasted text is never touched (D24).
+     */
+    var citeSeq = 0;
+    var citeTimer = null;
+    function citeSource(query, show) {
+      if (citeTimer) window.clearTimeout(citeTimer);
+      var q = query.trim();
+      if (q === '') {
+        show([]);
+        return;
+      }
+      var seq = ++citeSeq;
+      citeTimer = window.setTimeout(function () {
+        fetch(basePath + '/api/v1/search?q=' + encodeURIComponent(q) + '&ns=' + encodeURIComponent(config.libraryCite), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+          .then(function (response) { return response.ok ? response.json() : { data: [] }; })
+          .then(function (json) {
+            if (seq !== citeSeq) return;
+            show((json.data || []).slice(0, 20).map(function (row) {
+              var key = String(row.path).split(':').pop();
+              return { title: row.title || key, meta: '@' + key, value: { key: key } };
+            }));
+          })
+          .catch(function () { show([]); });
+      }, 200);
+    }
+    function openCite(at) {
+      var target = textarea;
+      openPicker(citeSource, function (item) {
+        target.focus();
+        var c = F.citation(item.key);
+        applyEdit({ from: at, to: at, insert: c, selStart: at + c.length, selEnd: at + c.length }, target);
+      }, '', function () {
+        applyEdit({ from: at, to: at, insert: '@', selStart: at + 1, selEnd: at + 1 }, target);
+      });
+    }
+
     function openSlash(at, typed) {
       var target = textarea;
       openPicker(localSource(slashItems()), function (item) {
@@ -1016,6 +1056,14 @@
         event.preventDefault();
         textarea = el;
         openSlash(el.selectionStart, true);
+      });
+      // The citation picker: an `@` typed by a key at the start of a word
+      el.addEventListener('keydown', function (event) {
+        if (event.key !== '@' || event.ctrlKey || event.metaKey || event.altKey || !event.isTrusted || !config.libraryCite) return;
+        if (el.selectionStart !== el.selectionEnd || !F.citeAt(el.value, el.selectionStart)) return;
+        event.preventDefault();
+        textarea = el;
+        openCite(el.selectionStart);
       });
       // Enter at the end of a list line continues it (TODO 13); a plain
       // Enter elsewhere is left to the browser.

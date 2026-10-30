@@ -53,4 +53,39 @@ final class CitationTest extends TestCase
         self::assertNull(Citation::year([]));
         self::assertSame('A title.', Citation::vancouver(['title' => 'A title']));
     }
+
+    public function testAnArticleInApaAndAma(): void
+    {
+        self::assertSame(
+            'Nobody, A., Nobody, B. B., & van Nobody, C. M. (2024). A made-up study of test lesions. Journal of Synthetic Imaging, 3(2), 11–14. https://doi.org/10.1234/jti.2024.0001',
+            Citation::apa(self::ARTICLE),
+        );
+        self::assertSame(
+            'Nobody A, Nobody BB, van Nobody CM. A made-up study of test lesions. J Synth Imaging. 2024;3(2):11-14. doi:10.1234/jti.2024.0001',
+            Citation::ama(self::ARTICLE),
+        );
+    }
+
+    public function testAmaShortensAboveSixAuthorsToThreeAndApaKeepsTwenty(): void
+    {
+        $authors = array_map(static fn (int $i): array => ['family' => 'Author' . $i, 'given' => 'X'], range(1, 7));
+
+        self::assertSame('Author1 X, Author2 X, Author3 X, et al. T. 2020.', Citation::ama(['title' => 'T', 'author' => $authors, 'issued' => ['date-parts' => [[2020]]]]));
+        self::assertSame('Author1, X., Author2, X., & Author3, X. (2020). T.', Citation::apa(['title' => 'T', 'author' => \array_slice($authors, 0, 3), 'issued' => ['date-parts' => [[2020]]]]));
+    }
+
+    public function testTheInTextFormOfAuthorDateStyles(): void
+    {
+        self::assertSame('Nobody et al., 2024', Citation::apaLabel(self::ARTICLE));
+        self::assertSame('Nobody & Other, 2020', Citation::apaLabel(['author' => [['family' => 'Nobody'], ['family' => 'Other']], 'issued' => ['date-parts' => [[2020]]]]));
+        self::assertSame('A title, n.d.', Citation::apaLabel(['title' => 'A title']));
+    }
+
+    public function testAStyleNameIsKnownOrVancouver(): void
+    {
+        self::assertSame('apa', Citation::style(' APA '));
+        self::assertSame('vancouver', Citation::style('chicago'));
+        self::assertSame('vancouver', Citation::style(null));
+        self::assertSame(Citation::apa(self::ARTICLE), Citation::format('apa', self::ARTICLE));
+    }
 }

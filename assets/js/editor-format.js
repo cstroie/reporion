@@ -754,6 +754,20 @@
     return /^\s*(?:(?:[-*+]|\d+[.)])\s+)?$/.test(value.slice(from, pos)) && after.trim() === '';
   }
 
+  /**
+   * The citation picker (docs/library.md): an `@` typed at pos opens it when it starts a word,
+   * so an e-mail address (name@host) or a handle in the middle of a word stays text.
+   */
+  function citeAt(text, pos) {
+    var value = String(text);
+    return pos === 0 || /[\s(\[;]/.test(value.charAt(pos - 1));
+  }
+
+  /** The citation for a library source's key, at pos: `[@key]` (inside an open `[@a; ` it is just `@key`) */
+  function citation(key) {
+    return '[@' + String(key) + ']';
+  }
+
   /** A `###` section heading put at pos, on its own line, the cursor on the line after it */
   function sectionAt(text, pos, name) {
     var value = String(text);
@@ -810,6 +824,8 @@
     expandAt: expandAt,
     insertSnippet: insertSnippet,
     slashAt: slashAt,
+    citeAt: citeAt,
+    citation: citation,
     sectionAt: sectionAt,
     cleanText: cleanText,
     unitsDegrees: unitsDegrees,

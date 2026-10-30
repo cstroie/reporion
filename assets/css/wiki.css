@@ -2263,6 +2263,18 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-lib-ids { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .wk-lib-edit { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 [data-lib-copy].is-done { color: var(--state-ok); }
+/* [@key] citations and the References section (Service\Render, docs/library.md) */
+.wk-cite { white-space: nowrap; }
+.wk-cite a { text-decoration: none; }
+.wk-cite-raw, .wk-cite-missing { color: var(--state-warn, var(--color-dim)); border-bottom: 1px dotted currentColor; cursor: help; }
+.wk-references { margin-top: var(--space-6); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
+.wk-reflist { padding-left: var(--space-5); line-height: 1.5; font-size: var(--text-sm); }
+.wk-reflist-apa { list-style: none; padding-left: 0; }
+.wk-reflist li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.wk-reflist-apa li { padding-left: var(--space-5); text-indent: calc(-1 * var(--space-5)); }
+.wk-reflist li:target { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.wk-ref-src { color: inherit; text-decoration: none; }
+.wk-ref-src:hover { text-decoration: underline; }
 @media (max-width: 767.98px) { .wk-ask-keys { display: none; } .wk-ask-compose > footer { justify-content: flex-end; } }
 @media (prefers-reduced-motion: no-preference) { .wk-ask-source { transition: background .15s; } }
 

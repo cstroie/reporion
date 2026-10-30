@@ -46,6 +46,8 @@ final class PageTemplateRenderer
         private readonly ?\Closure $vectorState = null,
         /** @var ?\Closure(string): ?string why a report's pid has no Similar reports:`normal`, `common`, or null (Index\Sqlite::similarExcluded()) */
         private readonly ?\Closure $similarExcluded = null,
+        // Where `[@key]` citations find their sources (docs/library.md)
+        private readonly string $libraryNamespace = 'library',
     ) {
     }
 
@@ -75,6 +77,8 @@ final class PageTemplateRenderer
             $record->frontmatter,
             $request->basePath,
             examIds: Exams::isMulti($record->frontmatter),
+            // A cited source links to its library page for a reader of the library (docs/library.md)
+            citeLinks: $principal !== null && $principal->canRead($this->libraryNamespace),
         );
         $title = $publicReport ? ReportName::examTitle($record->frontmatter, t('print.untitled')) : PageTitle::of($record->frontmatter, $record->body);
         if ($title === '') {

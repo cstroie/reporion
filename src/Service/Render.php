@@ -30,8 +30,11 @@ use League\CommonMark\Node\StringContainerInterface;
 use League\CommonMark\Parser\MarkdownParser;
 use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
+use Reporion\Service\Markdown\CitationNode;
+use Reporion\Service\Markdown\CitationSource;
 use Reporion\Service\Markdown\DialectExtension;
 use Reporion\Support\BodyFormat;
+use Reporion\Support\Citation;
 use Reporion\Support\Exams;
 use Reporion\Support\InternalLink;
 use Reporion\Support\MediaRef;
@@ -52,7 +55,11 @@ final class Render
     private readonly MarkdownParser $parser;
     private readonly HtmlRenderer $renderer;
 
-    public function __construct()
+    /**
+     * @param ?CitationSource $citations where `[@key]` finds its record (docs/library.md); none:
+     *                                   a citation is shown as typed
+     */
+    public function __construct(private readonly ?CitationSource $citations = null)
     {
         $environment = new Environment([
             'html_input' => HtmlFilter::ESCAPE,
@@ -91,10 +98,14 @@ final class Render
      * @param bool $breaks          a single line break is a line (`<br>`), not a space:
      *                              a page with `breaks: true` (Support\BodyFormat), as
      *                              the notes app writes them (D55)
+     * @param string $citationStyle vancouver|apa|ama: how `[@key]` is shown and the References
+     *                              section built (a page's `citation_style`, docs/library.md)
+     * @param bool   $citeLinks     a cited source links to its library page: the reader may open
+     *                              it (never in print or an export, `unlinkPages`)
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false, bool $breaks = false): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false): RenderResult
     {
-        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines, $breaks);
+        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines, $breaks, $citationStyle, $citeLinks);
     }
 
     /**
@@ -105,13 +116,13 @@ final class Render
      * @param array<string, mixed> $frontmatter the page's (or that revision's) own
      * @param ?Closure(string $sha256, string $ext): ?string $mediaSrc
      */
-    public function body(string $body, array $frontmatter, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
+    public function body(string $body, array $frontmatter, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $citeLinks = false): RenderResult
     {
         if (BodyFormat::isText($frontmatter)) {
             return new RenderResult(self::textBody($body), [], []);
         }
 
-        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false, BodyFormat::hardBreaks($frontmatter));
+        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false, BodyFormat::hardBreaks($frontmatter), Citation::style($frontmatter['citation_style'] ?? null), $citeLinks);
     }
 
     /**
@@ -140,7 +151,7 @@ final class Render
     }
 
     /** @param ?Closure(string $sha256, string $ext): ?string $mediaSrc */
-    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines, bool $breaks = false): RenderResult
+    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines, bool $breaks = false, string $citationStyle = 'vancouver', bool $citeLinks = false): RenderResult
     {
         $document = $this->parser->parse($markdown);
         if ($breaks) {
@@ -153,13 +164,83 @@ final class Render
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         // Anchors first: the table of contents links to them
         $toc = $this->extractToc($document, $examIds ? explode("\n", $markdown) : null);
-        $html = (string) $this->renderer->renderDocument($document);
+        [$references, $unknown] = $this->resolveCitations($document, Citation::style($citationStyle), $citeLinks && !$unlinkPages ? $basePath : null);
+        $html = (string) $this->renderer->renderDocument($document) . $references;
         // A fenced block with no language fence (```) renders bare <pre><code>;
         // marking it nohighlight stops highlight.js (templates/layout.php)
         // guessing a language for it.
         $html = str_replace('<pre><code>', '<pre><code class="nohighlight">', $html);
 
-        return new RenderResult($html, $toc, $this->extractWarnings($document));
+        $warnings = $this->extractWarnings($document);
+        if ($unknown !== []) {
+            $warnings[] = t('library.cite_unknown', [implode(', ', array_map(static fn (string $k): string => '@' . $k, $unknown))]);
+        }
+
+        return new RenderResult($html, $toc, $warnings);
+    }
+
+    /**
+     * Each `[@key]` filled in from its record, and the References section for the sources cited:
+     * numbered by first citation (Vancouver, AMA) or in alphabetical order (APA)
+     *
+     * @param ?string $linkBase the app's base path when a source links to its library page; null: no links
+     *
+     * @return array{0: string, 1: list<string>} the section's HTML ('' when nothing is cited), the keys no source has
+     */
+    private function resolveCitations(CommonMarkNode $document, string $style, ?string $linkBase): array
+    {
+        $nodes = [];
+        foreach ($document->iterator() as $node) {
+            if ($node instanceof CitationNode) {
+                $nodes[] = $node;
+            }
+        }
+        if ($nodes === [] || $this->citations === null) {
+            return ['', []];
+        }
+
+        /** @var array<string, array<string, mixed>> $cited */
+        $cited = [];
+        $numbers = [];
+        $unknown = [];
+        foreach ($nodes as $node) {
+            $node->style = $style;
+            $node->resolved = [];
+            foreach ($node->items as $item) {
+                $key = $item['key'];
+                $csl = $cited[$key] ?? $this->citations->record($key);
+                if ($csl === null) {
+                    $unknown[$key] = true;
+                    $node->resolved[] = ['key' => $key, 'label' => '', 'href' => null, 'number' => null];
+                    continue;
+                }
+                $cited[$key] = $csl;
+                $numbers[$key] ??= \count($numbers) + 1;
+                $node->resolved[] = ['key' => $key, 'label' => Citation::apaLabel($csl), 'href' => null, 'number' => $numbers[$key]];
+            }
+        }
+        if ($cited === []) {
+            return ['', array_keys($unknown)];
+        }
+
+        $entries = [];
+        foreach ($cited as $key => $csl) {
+            $text = htmlspecialchars(Citation::format($style, $csl), ENT_QUOTES);
+            if ($linkBase !== null) {
+                $text = '<a class="wk-ref-src" href="' . htmlspecialchars($linkBase . '/' . $this->citations->path($key), ENT_QUOTES) . '">' . $text . '</a>';
+            }
+            $entries[$key] = '<li id="ref-' . $key . '">' . $text . '</li>';
+        }
+        if ($style === 'apa') {
+            uksort($entries, static fn (string $a, string $b): int => strcasecmp(Citation::format('apa', $cited[$a]), Citation::format('apa', $cited[$b])));
+        } else {
+            uksort($entries, static fn (string $a, string $b): int => $numbers[$a] <=> $numbers[$b]);
+        }
+        $tag = $style === 'apa' ? 'ul' : 'ol';
+        $html = '<div class="wk-references"><h2 id="references">' . htmlspecialchars(t('library.references'), ENT_QUOTES) . '</h2>'
+            . '<' . $tag . ' class="wk-reflist wk-reflist-' . $style . '">' . implode('', $entries) . '</' . $tag . '></div>' . "\n";
+
+        return [$html, array_keys($unknown)];
     }
 
     private function resolvePageLinks(CommonMarkNode $document, string $basePath, bool $unlink): void

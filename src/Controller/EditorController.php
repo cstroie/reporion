@@ -107,7 +107,15 @@ final class EditorController
         private readonly ?CommitNote $commitNote = null,
         /** The visibility a new page starts with, from its nearest namespace description (phase 16, F) */
         private readonly ?NamespaceDefaults $defaults = null,
+        /** Where the `@` picker finds the sources `[@key]` cites (docs/library.md) */
+        private readonly string $libraryNamespace = 'library',
     ) {
+    }
+
+    /** The library's namespace for the editor's `@` picker, when the writer may read it; '' otherwise */
+    private function libraryCite(?User $principal): string
+    {
+        return $principal !== null && $principal->canRead($this->libraryNamespace) ? $this->libraryNamespace : '';
     }
 
     public function edit(Request $request, string $path, ?User $principal): Response
@@ -465,6 +473,7 @@ final class EditorController
                 'templates' => $this->fields->templatesFor($path, $principal),
                 'template' => '',
                 'snippets' => $this->snippets->forPage($path, $principal),
+                'libraryCite' => $this->libraryCite($principal),
                 'editorShell' => true,
             ] + $this->newRail($request, $path, self::frontmatterOf($document), $principal) + [
                 'saveStaysOpen' => $this->saveStaysOpen,
@@ -496,6 +505,7 @@ final class EditorController
                 'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
                 'examTemplates' => array_column(ExamTemplates::of($frontmatter), 1),
                 'snippets' => $this->snippets->forPage($path, $principal),
+                'libraryCite' => $this->libraryCite($principal),
                 'editorShell' => true,
             ] + $this->newRail($request, $path, $frontmatter, $principal) + [
                 'saveStaysOpen' => $this->saveStaysOpen,
@@ -699,6 +709,7 @@ final class EditorController
                 'template' => ExamTemplates::of($record->frontmatter)[0][1] ?? '',
                 'examTemplates' => array_column(ExamTemplates::of($record->frontmatter), 1),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
+                'libraryCite' => $this->libraryCite($principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
                 // Recall while writing (D50): a radiologist's own report
@@ -755,6 +766,7 @@ final class EditorController
                 'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
                 'examTemplates' => array_column(ExamTemplates::of($frontmatter), 1),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
+                'libraryCite' => $this->libraryCite($principal),
                 'ai' => $this->aiRail($record->path),
                 'recall' => $this->recallRail($record->path, $principal),
                 // The writing aids (D51): checks and the prior, same gate as Recall

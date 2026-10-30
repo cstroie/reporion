@@ -2024,6 +2024,9 @@ return [
 
     // The library's screens (docs/library.md, phase 2)
     'library.title'            => 'Library',
+    'library.references'       => 'References',
+    'library.cite_missing'     => 'No source with this key in the library',
+    'library.cite_unknown'     => 'Not in the library: %s',
     'library.lede'             => 'Articles, guidelines and books the team keeps: their text, their record and the original file.',
     'library.add'              => 'Add articles',
     'library.add_lede'         => 'Each file is read on the server and shown with the record found in it; correct the record, then add it. Nothing is kept until you do.',
