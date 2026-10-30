@@ -216,7 +216,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `library.context_tokens`, else each text longer than its share is condensed part by part (`source-part`, in the notebook's
    language) and stays in its own `<source key>` block. **Compare** asks each source on its own (whole, or from its notes) the
    writer's questions (1–8 columns, typed one per line), its `1. …` lines read into cells (`Studio::cells()`) and the markdown
-   table assembled on the server, each row citing only its own key; a source with no text gets a row of dashes and no request.
+   table assembled on the server (its first heading in the notebook's `language`: *Sursă* / *Source*), each row citing only its own key; a cell the source does not answer is a dash; a source with no text gets a row of dashes and no request.
    **Check** sends the page's own text as `{page}` (at most half the budget) and the sources whole, or their passages holding
    the page's words, its headings' and those `notebook-terms` adds (`NotebookAsk::passages()`), never notes (a claim checked against
    a summary would be "not found" for nothing); no passage: no request. At most **16 requests a run**, counted before the first
@@ -226,7 +226,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    does: warnings shown, never a block, D7; every citation taken out, a template goes into reports). The writer names its page
    under `templates:` (not `snippets` or `pages`) and *Make the template page* creates it with the existing `POST /api/v1/pages`:
    `reference:` the notebook (any namespace: `references.namespaces` only feeds the Metadata view's picker), its `checklist`,
-   `private`, the revision note `assisted: studio-template` (D8), then the editor opens on it. **Not built:** snippets from a
+   `private`, the revision note `assisted: studio-template`, also on the `page.create` audit line (D8), then the editor opens on it; a writer with no grant there is told so. Sources that must be condensed while the profile has no `source-part` prompt are refused before any request (503). **Not built:** snippets from a
    notebook, Studio's notes kept between runs (each run condenses again), follow-up questions, writing Studio's text into a page.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),

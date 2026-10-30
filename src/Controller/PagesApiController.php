@@ -247,7 +247,9 @@ final class PagesApiController
         } catch (PageExistsException) {
             return ApiResponse::error(409, 'exists', 'A page already exists at this path; update it with PUT /api/v1/pages/{path}.', ['path' => $path]);
         }
-        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
+        // A page the assistant proposed (Studio's template, D8): its note says so, and so does the audit line
+        $assisted = self::assisted(self::note($fields));
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: $assisted !== [] ? ['assisted' => $assisted] : []);
 
         return $this->recordResponse($record, 201);
     }
@@ -751,6 +753,20 @@ final class PagesApiController
         }
 
         return $merged;
+    }
+
+    /**
+     * The assistant's prompt ids a note `assisted: a, b` names (the editor's own marking, D8), else none
+     *
+     * @return list<string>
+     */
+    private static function assisted(?string $note): array
+    {
+        if ($note === null || preg_match('/^assisted: ([a-z0-9][a-z0-9_-]{0,31}(?:, [a-z0-9][a-z0-9_-]{0,31})*)$/', $note, $m) !== 1) {
+            return [];
+        }
+
+        return array_values(array_unique(explode(', ', $m[1])));
     }
 
     /**

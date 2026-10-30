@@ -13,6 +13,6 @@ Answer each of the {count} questions about this article alone, one line each, nu
 
 Rules:
 - A few words or one short sentence per answer: it is a table cell. Numbers exactly as the article gives them (n, percentages, sensitivity, specificity, follow-up).
-- When the article does not say, write "not stated". Nothing from outside the article.
+- When the article does not say, write only a dash: –. Nothing from outside the article.
 - You may add the page in this exact form when the article has page markers: [@key, p. 12], with the article's key.
 - Write in {language}; keep technical terms in the language of the article when there is no exact equivalent.

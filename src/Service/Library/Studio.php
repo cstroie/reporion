@@ -120,7 +120,8 @@ final class Studio
      *
      * @return array{task: string, texts: list<array{key: ?string, path: string, title: string, text: string}>, page: string, whole: bool, requests: int}
      *
-     * @throws LibraryException INVALID (an unknown task, no source the caller may read), TOO_LARGE
+     * @throws LibraryException INVALID (an unknown task, no source the caller may read), TOO_LARGE, NO_TEXT (a check of an
+     *                          empty page), TOOL_MISSING (the sources must be condensed and the `source-part` prompt is missing)
      */
     public function plan(string $task, PageRecord $notebook, User $principal): array
     {
@@ -159,6 +160,13 @@ final class Studio
         }
         if ($requests > self::MAX_REQUESTS) {
             throw new LibraryException(LibraryException::TOO_LARGE);
+        }
+        // Condensing needs its prompt: known now, not after rows already asked
+        $condenses = $task === 'compare'
+            ? $requests > \count(array_filter($texts, static fn (array $t): bool => $t['text'] !== ''))
+            : ($task !== 'check' && !$whole);
+        if ($condenses && $this->actions->special($notebook->path, 'source-part') === null) {
+            throw new LibraryException(LibraryException::TOOL_MISSING);
         }
 
         return ['task' => $task, 'texts' => $texts, 'page' => $page, 'whole' => $whole, 'requests' => max(1, $requests)];
@@ -209,7 +217,7 @@ final class Studio
                 $answer = $call(fn (): array => $this->assistant->runStudio($action, $title, [['n' => 1] + $this->asSource($t, $text)], $language, $user, $request, '', $questions));
                 $rows[] = [$t['key'], self::cells(NotebookAsk::onlySent($answer, [(string) $t['key']])[0], \count($questions))];
             }
-            $result = self::table($questions, $rows);
+            $result = self::table($questions, $rows, $language);
             $dropped = 0;
         } else {
             if ($task === 'check') {
@@ -229,6 +237,8 @@ final class Studio
                 $answer = $call(fn (): array => $this->assistant->runStudio($action, $title, $sources, $language, $user, $request, $task === 'check' ? $plan['page'] : '', []));
                 // A template goes into reports: no citation in it at all
                 [$result, $dropped] = NotebookAsk::onlySent($answer, $task === 'template' ? [] : $sent);
+                // Taken out on purpose there, not as a source the model was not given
+                $dropped = $task === 'template' ? 0 : $dropped;
             }
         }
 
@@ -442,15 +452,18 @@ final class Studio
     }
 
     /**
-     * The comparison as a markdown table: a row per source, citing it, a column per question
+     * The comparison as a markdown table: a row per source, citing it, a column per question; the
+     * first column's heading in the page's `language` (Romanian when none)
      *
      * @param list<string>                              $questions
      * @param list<array{0: ?string, 1: list<string>}> $rows
      */
-    public static function table(array $questions, array $rows): string
+    public static function table(array $questions, array $rows, mixed $language = null): string
     {
         $head = array_map(static fn (string $q): string => str_replace('|', '/', $q), $questions);
-        $lines = ['| ' . t('studio.col_source') . ' | ' . implode(' | ', $head) . ' |', '|' . str_repeat(' --- |', \count($questions) + 1)];
+        // Page content: the heading in the page's language, as the References heading
+        $source = t(\is_string($language) && strtolower(substr(trim($language), 0, 2)) === 'en' ? 'studio.col_source_en' : 'studio.col_source_ro');
+        $lines = ['| ' . $source . ' | ' . implode(' | ', $head) . ' |', '|' . str_repeat(' --- |', \count($questions) + 1)];
         foreach ($rows as [$key, $cells]) {
             $lines[] = '| [@' . $key . '] | ' . implode(' | ', $cells) . ' |';
         }

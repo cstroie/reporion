@@ -173,7 +173,7 @@ final class LibraryAiController
         }
         $task = \is_string($fields['task'] ?? null) ? $fields['task'] : '';
         if (!isset(Studio::TASKS[$task]) || !\in_array($task, $this->studio->available($page->path), true)) {
-            return ApiResponse::error(422, 'unknown_task', t('library.ai.unknown_task'));
+            return ApiResponse::error(422, 'unknown_task', t('studio.unknown_task'));
         }
         $questions = [];
         if ($task === 'compare') {
@@ -189,6 +189,7 @@ final class LibraryAiController
             return match ($e->reason) {
                 LibraryException::TOO_LARGE => ApiResponse::error(413, 'too_long', t($task === 'check' ? 'studio.too_long_check' : 'studio.too_long', [(string) Studio::MAX_REQUESTS])),
                 LibraryException::NO_TEXT => ApiResponse::error(422, 'no_text', t('studio.no_page_text')),
+                LibraryException::TOOL_MISSING => ApiResponse::error(503, 'not_configured', t('studio.no_part_prompt')),
                 default => ApiResponse::error(422, 'no_sources', t('studio.no_sources')),
             };
         }

@@ -120,6 +120,18 @@ final class StudioTest extends HttpTestCase
         self::assertStringNotContainsString('filler sentence', $user, 'the long one as notes only');
     }
 
+    public function testSourcesToCondenseWithoutTheirPromptAreRefusedBeforeAnyRequest(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        $this->storage()->delete('ai:profiles:wiki:special:source-part', 'owner');
+
+        foreach (['overview', 'compare'] as $task) {
+            $response = $this->studio('writer', ['path' => 'wiki:two', 'task' => $task, 'questions' => 'Design']);
+            self::assertSame(503, $response->status, $task . ': ' . $response->body);
+        }
+        self::assertSame(0, $this->server->requests(), 'not even the short source\'s row');
+    }
+
     public function testTooManyRequestsAreRefusedBeforeAnyIsMade(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];
@@ -138,7 +150,7 @@ final class StudioTest extends HttpTestCase
 
         self::assertSame(2, $this->server->requests(), 'one row per source with text; the record with no file asks nothing');
         $lines = explode("\n", $data['result']);
-        self::assertSame('| Source | Design | Number of patients |', $lines[0]);
+        self::assertSame('| Sursă | Design | Number of patients |', $lines[0], 'the notebook is in Romanian');
         self::assertSame('| [@abel2020] | Prospective / cohort [@abel2020, p. 4] | 128 |', $lines[2], 'a citation of another source taken out, a | out of a cell');
         self::assertSame('| [@long2021] | Prospective / cohort | 128 |', $lines[3], 'a row cites only its own source');
         self::assertSame('| [@record2019] | – | – |', $lines[4]);
@@ -183,13 +195,15 @@ final class StudioTest extends HttpTestCase
         self::assertSame(['# Leziuni', 'Grad Fazekas | fazekas, grad', 'Număr de leziuni'], $template['checklist']);
         self::assertSame('wiki:notebook', $template['reference']);
         self::assertSame([], $template['problems']);
-        self::assertSame(1, $data['dropped']);
+        self::assertSame(0, $data['dropped'], 'a template\'s citations are taken out on purpose, not reported');
 
         // The writer makes the page with the existing endpoint (D8)
         $made = Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/pages', cookies: ['reporion' => $this->cookie('writer')], body: (string) json_encode([
             'path' => 'templates:mri:substanta-alba', 'meta' => ['visibility' => 'private', 'reference' => $template['reference'], 'checklist' => $template['checklist']], 'body' => $template['body'], 'note' => 'assisted: studio-template',
         ])));
         self::assertSame(201, $made->status, $made->body);
+        $audit = (string) file_get_contents((glob($this->dataRoot . '/audit/*.ndjson') ?: [''])[0]);
+        self::assertMatchesRegularExpression('/"page\.create".*"assisted":\["studio-template"\]/', $audit, 'the audit line says the assistant proposed it (D8)');
         $page = $this->storage()->read('templates:mri:substanta-alba');
         self::assertSame('wiki:notebook', $page->frontmatter['reference']);
         self::assertSame($template['checklist'], $page->frontmatter['checklist']);
@@ -237,7 +251,8 @@ final class StudioTest extends HttpTestCase
         self::assertSame(['A', 'B c'], Studio::questions("  A \n\n B   c\n"));
         self::assertSame(['A'], Studio::questions(['A', '', 3]));
         self::assertSame(['yes', 'two lines', '–'], Studio::cells("Intro\n1. yes\n**2.** two\nlines\n7. out of range", 3));
-        self::assertSame("| Source | A/B |\n| --- | --- |\n| [@k] | x |", Studio::table(['A|B'], [['k', ['x']]]));
+        self::assertSame("| Source | A/B |\n| --- | --- |\n| [@k] | x |", Studio::table(['A|B'], [['k', ['x']]], 'en'));
+        self::assertStringStartsWith('| Sursă |', Studio::table(['A'], [['k', ['x']]], null), 'a page with no language is Romanian');
         $this->expectException(LibraryException::class);
         Studio::questions([str_repeat('a', Studio::MAX_QUESTION + 1)]);
     }

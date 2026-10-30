@@ -119,7 +119,7 @@
           if (r.status === 201) { window.location.href = base + '/' + path + '/edit'; return; }
           create.disabled = false;
           return r.json().then(function (j) {
-            status.appendChild(notice('error', r.status === 409 ? s.tpl_exists : ((j && j.error && j.error.message) || s.failed)));
+            status.appendChild(notice('error', r.status === 409 ? s.tpl_exists : (r.status === 404 ? s.tpl_no_grant : ((j && j.error && j.error.message) || s.failed))));
           }, function () { status.appendChild(notice('error', s.failed)); });
         }, function () { create.disabled = false; status.appendChild(notice('error', s.failed)); });
       });
@@ -221,6 +221,7 @@
           questionsBox.querySelector('textarea').focus();
           return;
         }
+        if (questionsBox) questionsBox.hidden = true;
         run(task);
       });
     });
