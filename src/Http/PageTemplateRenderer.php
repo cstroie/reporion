@@ -15,6 +15,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Support\Citation;
 use Reporion\Support\Exams;
 use Reporion\Support\Feeds;
+use Reporion\Support\InternalLink;
 use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
@@ -161,6 +162,12 @@ final class PageTemplateRenderer
                 : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
         ] : null;
+        // Ask the notebook (docs/library.md, phase 5): a page that cites library sources, for an editor of it and of the library, with the prompt there
+        $vars['notebookAsk'] = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)
+            && $principal->canWrite($record->path) && $principal->canWrite($this->libraryNamespace)
+            && (InternalLink::citedKeys($record->body) !== [] || (\is_array($record->frontmatter['sources'] ?? null) && $record->frontmatter['sources'] !== []))
+            && $this->aiActions?->special($record->path, 'ask-notebook') !== null
+            ? ['path' => $record->path] : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

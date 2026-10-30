@@ -193,6 +193,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    notes fit) and analysed from the notes; beyond that it is refused before any request. Progress is streamed ("part k of n"). **Nothing is written into the source's body** (Ask the
    notebook would find the assistant's own text and cite the article for it): the answer is shown with Copy, and only the summary can be applied, to `summary`. The page's
    own Summarize button is not offered on a source (it refuses text over its limit). Profile: the one serving the source's own path, normally the fallback profile.
+   *Step 3 built 2026-10-30:* **Ask the notebook**, `POST /api/v1/notebook/ask` (`LibraryAiController::askNotebook()`, `Service\Library\NotebookAsk`): a panel on any page
+   that cites sources (or lists them in `sources:`), for an editor of the page and of the library; never a report or a page naming a patient. The sources are read
+   under the caller (invariant 6), not from the system-side citation records. **Adaptive:** the page and its sources go whole when they fit `library.context_tokens`;
+   otherwise passages (about 1200 characters, cut as `SourceChunks`, each with the page marker in force) are chosen by the question's words and those the
+   `notebook-terms` prompt adds in English and in the question's language (`AskExpansion::parse()`, `RecallTerms`), at most 4 a source, until the budget is full.
+   The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
+   given never renders as a valid citation; it is rendered by the server in the page's citation style. No follow-up turns yet (each question stands alone).
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),

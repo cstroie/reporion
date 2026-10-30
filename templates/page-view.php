@@ -129,6 +129,9 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <?php if (($librarySource ?? null) !== null): ?>
 <?php include __DIR__ . '/partials/library-source.php'; ?>
 <?php endif; ?>
+<?php if (($notebookAsk ?? null) !== null): ?>
+<?php include __DIR__ . '/partials/notebook-ask.php'; ?>
+<?php endif; ?>
 
 <div class="wk-docbody">
 <div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
