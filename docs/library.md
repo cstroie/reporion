@@ -2,7 +2,8 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **planned**; to be recorded as D58 when phase 1 starts. Nothing here is built.
+the assistant). Status: **phase 1 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline. The rest is
+planned.
 
 ## Owner's decisions (2026-10-30)
 
@@ -108,12 +109,14 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
 
 ## Phases
 
-1. **Ingest + identify (offline)**: `Storage\SourceStore`, `Service\Library\Extractor`,
+1. **Ingest + identify (offline)**, **built 2026-10-30**: `Storage\SourceStore`, `Service\Library\Extractor`,
    `Support\SourceText`, `Support\ArticleIds`, `Service\Library\Identify`, `Service\Library\Library`
    (dedupe, create); `POST /api/v1/library/uploads` (proposal), `POST /api/v1/library` (confirm),
    `GET /library/file/{pid}`; `bin/reporion library:add`; doctor checks the tools; integrity:verify
-   checks every `original.sha256`; trash:purge removes an original no page names. Fixtures are
-   synthetic articles written for the tests, never real papers.
+   checks every `original.sha256`. Fixtures are synthetic articles written for the tests, never real
+   papers. *As built:* an original no page names is not swept (as media); PHP-FPM's `post_max_size`
+   and `upload_max_filesize` must allow `library.max_mb`; the source page's title is frontmatter
+   `title` (the article's text has no `#` of its own).
 2. **Library view + metadata form + publishing guard** (library pages never `public`).
 3. **Citations + References section** (render fixtures), `@` picker, `Support\Citation`.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.

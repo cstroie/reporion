@@ -60,6 +60,8 @@ data/
 ├─ groups/{name}.json          named sets of grants + a radiologist flag (D47); accounts name them; never in the index
 ├─ media/                      shared media, addressed by content hash (D27)
 │  └─ 2026/8f2c41…e9.jpg
+├─ sources/                    library originals (PDF, DOCX…), addressed by content hash (docs/library.md, D58)
+│  └─ 9f/9f2c…e1.pdf
 ├─ journal/
 │  └─ 2026-09-22.ndjson        write-intent log for crash recovery
 ├─ audit/

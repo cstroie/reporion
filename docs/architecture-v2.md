@@ -47,6 +47,7 @@ data/
 ├─ snapshot/reporion.sqlite                 consistent copy for backup (§9); never opened by the app
 ├─ trash/{pid}/                             page.md + attic.zip of a deleted page
 ├─ media/{year}/{sha256}.{ext}              unchanged (D27)
+├─ sources/{ab}/{sha256}.{ext}              library originals, by content (docs/library.md, D58)
 ├─ users/, groups/                          unchanged (D36, D47)
 ├─ settings.yaml, site/, tags.yaml          unchanged
 ├─ journal/, audit/                         unchanged: append-only ndjson

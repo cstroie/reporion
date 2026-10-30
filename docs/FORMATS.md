@@ -564,6 +564,51 @@ revlog.json         {"v": 2, "pid": "…", "status": "draft|signed|archived", "a
 - `bin/reporion integrity:verify` reads zip, page file and rows against each other (codes in
   docs/architecture-storage-index.md and the command's `--help`).
 
+## 3o. A library source: `library:{key}` and `data/sources/` (2026-10-30, docs/library.md, D58)
+
+An article in the library is an ordinary page, `{library.namespace}:{key}` (default `library:`), made by
+`Service\Library\Library` (the web upload's confirm, `library:add`). Its key is the citation key
+(`Support\CitationKey`: the first author's family name and the year folded to `a-z0-9`, then `b`, `c` for
+the next ones; a letter, then letters, digits and hyphens). Frontmatter:
+
+```yaml
+title: A made-up study of test lesions      # the record's title (an override: the body has no `#`)
+visibility: private                         # never public (docs/library.md)
+tags: [grading, lesions]
+csl:                                        # the bibliographic record, CSL-JSON (Zotero, Mendeley, pandoc)
+  type: article-journal
+  title: A made-up study of test lesions
+  author: [{family: Nobody, given: Ann}]
+  issued: {date-parts: [[2024, 5]]}
+  container-title: Journal of Synthetic Imaging
+  volume: '3'
+  page: 11-14
+  DOI: 10.1234/jti.2024.0001
+original:                                   # the file it was read from; absent for a record with no file
+  sha256: 9f2c…e1
+  ext: pdf
+  bytes: 734512
+  name: nobody-2024.pdf                     # as uploaded
+  pages: 4
+  text: true                                # false: no text layer (a scan)
+```
+
+`csl` keeps only the fields `Library::cleanCsl()` knows: `type` (one of a short list), `title` (required),
+plain one-line strings for `container-title`, `container-title-short`, `volume`, `issue`, `page`,
+`publisher`, `publisher-place`, `edition`, `number`, `language`, `ISSN`, `ISBN`, `PMCID`, `note`, `genre`;
+`author` as `{family, given?}` or `{literal}` (at most 100); `issued.date-parts` `[[year, month?, day?]]`;
+`DOI` folded to lower case without `https://doi.org/`; `PMID` digits; `URL` http(s) only; `abstract` up to
+10 000 characters. The body is the article's text as `Support\SourceText` made it (paragraphs, `##`
+section headings, `<a id="p{n}"></a>` before each page of a PDF), then the article's own reference list
+under `## References` in a `text` fence, as printed. Nothing about it is in the index but what any page has
+(`meta_json` holds `csl` and `original`).
+
+**The original** is kept once by content: `data/sources/{first two hex}/{sha256}.{ext}`
+(`Storage::storeOriginal()`, temp file + link, never rewritten), backed up with `data/` (D44, D49).
+`integrity:verify` reports a page naming a missing original (`original_missing`) and a file that does not
+hash to its name (`original_changed`). An original no page names is harmless and is not swept yet (as
+media).
+
 ## 4. Share tokens
 
 *Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,
