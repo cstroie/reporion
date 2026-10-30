@@ -15,8 +15,10 @@ use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\ArticleIds;
+use Reporion\Support\Citation;
 use Reporion\Support\CitationKey;
 use Reporion\Support\Cnp;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\Slug;
 use Reporion\Support\SourceText;
 
@@ -143,14 +145,18 @@ final class Library
         $key = $this->keyFor($fields['key'] ?? null, $csl);
         $tags = self::cleanTags($fields['tags'] ?? []);
 
-        $json = $this->temp->take(self::BUCKET, $token);
+        // Read, not taken: a refusal below (a duplicate, a taken key) leaves the upload for another try
+        $json = $this->temp->peek(self::BUCKET, $token);
         $upload = $json !== null ? json_decode($json, true) : null;
-        $bytes = \is_array($upload) ? $this->temp->take(self::FILE_BUCKET, (string) ($upload['file'] ?? '')) : null;
+        $bytes = \is_array($upload) ? $this->temp->peek(self::FILE_BUCKET, (string) ($upload['file'] ?? '')) : null;
         if (!\is_array($upload) || $bytes === null) {
             throw new LibraryException(LibraryException::EXPIRED);
         }
+        $page = $this->create($bytes, (string) $upload['ext'], (string) $upload['name'], Extracted::fromArray((array) $upload['extracted']), $csl, $key, $tags, $principal, $actor);
+        $this->temp->take(self::BUCKET, $token);
+        $this->temp->take(self::FILE_BUCKET, (string) $upload['file']);
 
-        return $this->create($bytes, (string) $upload['ext'], (string) $upload['name'], Extracted::fromArray((array) $upload['extracted']), $csl, $key, $tags, $principal, $actor);
+        return $page;
     }
 
     /**
@@ -173,6 +179,74 @@ final class Library
     }
 
     /**
+     * A source's record corrected after the fact (the record card's Edit): the record cleaned as on
+     * confirm, the page's title with it, its tags when given; one new revision. A DOI or PMID
+     * another source holds is refused.
+     *
+     * @param array<string, mixed> $csl
+     * @param list<string>|null    $tags null: left as they are
+     *
+     * @throws LibraryException INVALID (not a source, no title), DUPLICATE (with the other's pid)
+     * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current revision
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function updateRecord(string $path, array $csl, ?array $tags, int $baseRev, User $principal, string $actor): PageRecord
+    {
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $csl = self::cleanCsl($csl);
+        $duplicate = $this->duplicateOf($csl, '', $principal, $page->pid);
+        if ($duplicate !== null && $duplicate['by'] !== 'title') {
+            throw new LibraryException(LibraryException::DUPLICATE, $duplicate['pid']);
+        }
+        $frontmatter = $page->frontmatter;
+        $frontmatter['title'] = $csl['title'];
+        $frontmatter['csl'] = $csl;
+        if ($tags !== null) {
+            $frontmatter['tags'] = self::cleanTags($tags);
+            if ($frontmatter['tags'] === []) {
+                unset($frontmatter['tags']);
+            }
+        }
+
+        return $this->storage->save($path, $frontmatter, $page->body, $baseRev, $actor, 'library: record');
+    }
+
+    /**
+     * The library as its view lists it: every source $principal may see, with what the table shows
+     *
+     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, ext: string, doi: string}>
+     */
+    public function entries(User $principal): array
+    {
+        $entries = [];
+        foreach ($this->index->listNamespaceMeta($this->namespace, $principal) as $row) {
+            $meta = $row['meta'];
+            if (!LibrarySource::isSource($meta)) {
+                continue;
+            }
+            $csl = \is_array($meta['csl'] ?? null) ? $meta['csl'] : [];
+            $journal = \is_string($csl['container-title'] ?? null) ? $csl['container-title'] : (\is_string($csl['publisher'] ?? null) ? $csl['publisher'] : '');
+            $entries[] = [
+                'pid' => $row['pid'],
+                'path' => $row['path'],
+                'key' => substr($row['path'], \strlen($this->namespace) + 1),
+                'title' => $row['title'] !== '' ? $row['title'] : (string) ($csl['title'] ?? ''),
+                'authors' => Citation::authorsShort($csl),
+                'year' => Citation::year($csl),
+                'journal' => $journal,
+                'tags' => array_values(array_filter(\is_array($meta['tags'] ?? null) ? $meta['tags'] : [], 'is_string')),
+                'ext' => \is_array($meta['original'] ?? null) ? (string) ($meta['original']['ext'] ?? '') : '',
+                'doi' => \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : '',
+            ];
+        }
+
+        return $entries;
+    }
+
+    /**
      * An article already in the library that $csl or the file's hash names: by the file, the DOI,
      * the PMID, else the folded title and year (the last only a hint, never a refusal)
      *
@@ -180,7 +254,7 @@ final class Library
      *
      * @return array{pid: string, path: string, title: string, by: string, has_original: bool}|null
      */
-    public function duplicateOf(array $csl, string $sha, User $principal): ?array
+    public function duplicateOf(array $csl, string $sha, User $principal, ?string $exceptPid = null): ?array
     {
         $doi = \is_string($csl['DOI'] ?? null) ? ArticleIds::normalizeDoi($csl['DOI']) : null;
         $pmid = \is_scalar($csl['PMID'] ?? null) ? (string) $csl['PMID'] : null;
@@ -188,11 +262,14 @@ final class Library
         $year = $csl['issued']['date-parts'][0][0] ?? null;
         $byTitle = null;
         foreach ($this->index->listNamespaceMeta($this->namespace, $principal) as $row) {
+            if ($row['pid'] === $exceptPid) {
+                continue;
+            }
             $meta = $row['meta'];
             $theirs = \is_array($meta['csl'] ?? null) ? $meta['csl'] : [];
             $hasOriginal = \is_array($meta['original'] ?? null);
             $hit = static fn (string $by): array => ['pid' => $row['pid'], 'path' => $row['path'], 'title' => $row['title'], 'by' => $by, 'has_original' => $hasOriginal];
-            if ($hasOriginal && ($meta['original']['sha256'] ?? null) === $sha) {
+            if ($sha !== '' && $hasOriginal && ($meta['original']['sha256'] ?? null) === $sha) {
                 return $hit('file');
             }
             if ($doi !== null && \is_string($theirs['DOI'] ?? null) && ArticleIds::normalizeDoi($theirs['DOI']) === $doi) {

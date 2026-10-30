@@ -73,6 +73,21 @@ final class TempUploads
         return $bytes === false || !$fresh ? null : $bytes;
     }
 
+    /** The bytes stored under $token, left in place (a step that may still refuse), or null as take() */
+    public function peek(string $bucket, string $token): ?string
+    {
+        if (preg_match('/^[0-9a-f]{32}$/', $token) !== 1) {
+            return null;
+        }
+        $file = $this->dir($bucket) . '/' . $token;
+        if (!is_file($file) || (int) filemtime($file) < time() - self::LIFETIME) {
+            return null;
+        }
+        $bytes = @file_get_contents($file);
+
+        return $bytes === false ? null : $bytes;
+    }
+
     private function dir(string $bucket): string
     {
         if (preg_match('/^[a-z0-9-]{1,32}$/', $bucket) !== 1) {

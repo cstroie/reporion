@@ -191,6 +191,60 @@ final class LibraryTest extends StorageTestCase
         Library::cleanCsl(['author' => [['family' => 'Nobody']]]);
     }
 
+    public function testARefusedConfirmLeavesTheUploadForAnotherTry(): void
+    {
+        $this->library->add("# Something else\n\n© 2024\n", 'a.md', self::owner(), 'owner', ['key' => 'taken2024']);
+        $proposal = $this->library->upload(self::ARTICLE, 'study.md', self::owner());
+        try {
+            $this->library->confirm($proposal['token'], ['csl' => $proposal['csl'], 'key' => 'taken2024'], self::owner(), 'owner');
+            self::fail('no exception');
+        } catch (LibraryException $e) {
+            self::assertSame(LibraryException::DUPLICATE, $e->reason);
+        }
+
+        $page = $this->library->confirm($proposal['token'], ['csl' => $proposal['csl'], 'key' => 'study2024'], self::owner(), 'owner');
+        self::assertSame('library:study2024', $page->path);
+    }
+
+    public function testARecordIsCorrectedAsANewRevisionAndKeepsItsDoiToItself(): void
+    {
+        [$first] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        [$second] = $this->library->add("# Another made-up study\n\n© 2023\n", 'b.md', self::owner(), 'owner');
+
+        $csl = $first->frontmatter['csl'];
+        $csl['title'] = 'A corrected title';
+        $csl['author'] = [['family' => 'Nobody', 'given' => 'Ann']];
+        $saved = $this->library->updateRecord($first->path, $csl, ['Corrected'], 1, self::owner(), 'owner');
+
+        self::assertSame(2, $saved->rev);
+        self::assertSame('A corrected title', $saved->frontmatter['title']);
+        self::assertSame(['corrected'], $saved->frontmatter['tags']);
+        self::assertSame($first->body, $saved->body);
+
+        $other = $second->frontmatter['csl'];
+        $other['DOI'] = '10.1234/JTI.2024.0001';
+        try {
+            $this->library->updateRecord($second->path, $other, null, 1, self::owner(), 'owner');
+            self::fail('no exception');
+        } catch (LibraryException $e) {
+            self::assertSame([LibraryException::DUPLICATE, $first->pid], [$e->reason, $e->pid]);
+        }
+    }
+
+    public function testEntriesListTheSourcesWithWhatTheTableShows(): void
+    {
+        $csl = ['title' => 'A made-up study of test lesions', 'author' => [['family' => 'Nobody', 'given' => 'Ann']], 'container-title' => 'Journal of Synthetic Imaging', 'issued' => ['date-parts' => [[2024]]]];
+        $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner', ['csl' => $csl, 'tags' => ['grading']]);
+        $this->storage->create('library:about', ['title' => 'About the library'], "Text.\n", 'owner');
+
+        $entries = $this->library->entries(self::owner());
+
+        self::assertCount(1, $entries, 'a page in the namespace that is no source is not listed');
+        self::assertSame(['nobody2024', 'Nobody A', 2024, 'Journal of Synthetic Imaging', ['grading'], 'md'], [
+            $entries[0]['key'], $entries[0]['authors'], $entries[0]['year'], $entries[0]['journal'], $entries[0]['tags'], $entries[0]['ext'],
+        ]);
+    }
+
     public function testOnlyAnEditorOfTheLibraryMayAdd(): void
     {
         self::assertTrue($this->library->canAdd(self::owner()));
