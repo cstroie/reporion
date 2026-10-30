@@ -155,7 +155,7 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
     return '<li><a href="' . htmlspecialchars($basePath, ENT_QUOTES) . '/' . htmlspecialchars($link['path'], ENT_QUOTES) . '">' . htmlspecialchars($link['title'] !== '' ? $link['title'] : $link['path'], ENT_QUOTES) . '</a>'
         . '<span class="wk-mono wk-dim">' . htmlspecialchars(trim($when . ($kinds !== '' ? ' · ' . $kinds : ''), ' ·'), ENT_QUOTES) . '</span></li>';
 }; ?>
-<section class="wk-backlinks"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?><?php if ($backlinks !== []): ?> <span class="wk-dim">(<?= \count($backlinks) ?>)</span><?php endif; ?></h2>
+<section class="wk-backlinks" id="backlinks"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?><?php if ($backlinks !== []): ?> <span class="wk-dim">(<?= \count($backlinks) ?>)</span><?php endif; ?></h2>
 <?php if ($backlinks !== []): ?>
 <ul class="wk-backlink-list">
 <?php foreach (\array_slice($backlinks, 0, $backlinksShown) as $link): ?>

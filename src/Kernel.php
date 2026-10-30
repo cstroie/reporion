@@ -450,7 +450,7 @@ final class Kernel
 
         // Admin → Tags' dictionary; its synonyms are D28's search expansion
         $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt');
-        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...), (string) $config['paths']['state'], (string) $config['paths']['vectors']);
+        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...), (string) $config['paths']['state'], (string) $config['paths']['vectors'], self::libraryNamespace($config));
         $storage = new FileTree((string) $config['paths']['data'], $index, (string) $config['paths']['state']);
         // A page on disk the index lacks is put right when a signed-in lookup misses it (FileTree::adopt())
         $index->onMiss($storage->adopt(...));

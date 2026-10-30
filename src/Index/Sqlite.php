@@ -60,7 +60,7 @@ final class Sqlite implements IndexInterface
      * @param ?string $statePath data/reporion.sqlite; null: beside $databasePath (D54)
      * @param ?string $vectorsPath data/vectors.sqlite; null: beside $databasePath
      */
-    public function __construct(string $databasePath, string $migrationsDir, ?Closure $synonymGroups = null, ?string $statePath = null, ?string $vectorsPath = null)
+    public function __construct(string $databasePath, string $migrationsDir, ?Closure $synonymGroups = null, ?string $statePath = null, ?string $vectorsPath = null, private readonly string $libraryNamespace = 'library')
     {
         $this->synonymGroups = $synonymGroups;
         $this->pdo = Databases::beside($databasePath, $migrationsDir, $statePath, $vectorsPath)->connect();
@@ -1253,8 +1253,8 @@ final class Sqlite implements IndexInterface
         $this->replaceChildRows('page_tags', 'tag', $snapshot->pid, $tags);
         $this->replaceExams($snapshot->pid, $exams);
         $this->replaceLinks($snapshot->pid, 'prior', $priors);
-        // A text page (D40) shows no links, so it has none to index
-        $this->replaceLinks($snapshot->pid, 'link', BodyFormat::isText($fm) ? [] : InternalLink::extract($snapshot->body));
+        // A text page (D40) shows no links, so it has none to index; a `[@key]` citation is a link to the library page (its backlinks are "cited by")
+        $this->replaceLinks($snapshot->pid, 'link', BodyFormat::isText($fm) ? [] : [...InternalLink::extract($snapshot->body), ...array_map(fn (string $key): string => $this->libraryNamespace . ':' . $key, InternalLink::citedKeys($snapshot->body))]);
         $this->replaceLinks($snapshot->pid, 'media', array_map(static fn (string $file): string => 'media:' . $file, $snapshot->media));
         // Links written before this page existed (or before it moved here) now resolve
         $this->pdo->prepare('UPDATE links SET dst_pid = ? WHERE dst_path = ? AND dst_pid IS NULL')

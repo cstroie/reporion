@@ -48,4 +48,10 @@ final class InternalLinkTest extends TestCase
 
         self::assertSame(['reports:mri:a', 'site:home'], InternalLink::extract($body));
     }
+
+    public function testCitedKeysAreEveryKeyOfEveryCitation(): void
+    {
+        self::assertSame(['a-1', 'bb', 'c2'], InternalLink::citedKeys("See [@a-1, p. 2] and [@bb; @c2, ch. 3] and [@a-1]. Mail me@host.test, [x](y), [@Bad Key]."));
+        self::assertSame([], InternalLink::citedKeys('No citation here [1] [@]'));
+    }
 }

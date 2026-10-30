@@ -15,7 +15,7 @@
 
 declare(strict_types=1);
 
-/** @var list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, ext: string, doi: string}> $entries */
+/** @var list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string}> $entries */
 /** @var array<string, int> $tagCounts */
 /** @var string $tag */
 /** @var string $sort */
@@ -92,13 +92,14 @@ $total = \count($entries);
 <?php endif; ?>
 </div>
 <table class="table table-cards table-cards-compact wk-lib-table">
-<thead><tr><th><?= $e(t('library.col_article')) ?></th><th><?= $e(t('library.col_year')) ?></th><th><?= $e(t('library.col_journal')) ?></th><th><?= $e(t('library.col_tags')) ?></th></tr></thead>
+<thead><tr><th><?= $e(t('library.col_article')) ?></th><th><?= $e(t('library.col_year')) ?></th><th><?= $e(t('library.col_journal')) ?></th><th><?= $e(t('library.col_cited')) ?></th><th><?= $e(t('library.col_tags')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($entries as $entry): ?>
 <tr data-lib-row>
 <td class="wk-card-head"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['authors'] !== ''): ?><span class="wk-lib-authors wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?></td>
 <td class="wk-mono"><?= $entry['year'] !== null ? (int) $entry['year'] : '' ?></td>
 <td class="wk-dim"><?= $e($entry['journal']) ?></td>
+<td class="wk-mono"><?= $entry['cited'] > 0 ? '<a href="' . $e($basePath . '/' . $entry['path']) . '#backlinks" title="' . $e(t('library.cited_title')) . '">' . (int) $entry['cited'] . '</a>' : '' ?></td>
 <td><?php foreach ($entry['tags'] as $entryTag): ?><a class="wk-chip" href="<?= $e($link(['tag' => $entryTag])) ?>"><?= $e($entryTag) ?></a> <?php endforeach; ?><?php if ($entry['ext'] !== ''): ?><a class="wk-chip" href="<?= $e($basePath . '/library/file/' . $entry['pid']) ?>" title="<?= $e(t('library.original')) ?>"><i class="ph ph-file" aria-hidden="true"></i><?= $e($entry['ext']) ?></a><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>

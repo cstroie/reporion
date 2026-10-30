@@ -80,4 +80,25 @@ final class InternalLink
 
         return array_keys($paths);
     }
+
+    /**
+     * Distinct keys cited in a markdown body, `[@key]`, `[@key, p. 2]`, `[@a; @b]` (docs/library.md),
+     * for the index: the sources a page cites. A scan, as extract(): a citation in a code span counts.
+     *
+     * @return list<string>
+     */
+    public static function citedKeys(string $body): array
+    {
+        preg_match_all('/\[\s*@[a-z][a-z0-9-]{1,62}(?:\s*,[^\];\[]*)?\s*(?:;\s*@[a-z][a-z0-9-]{1,62}(?:\s*,[^\];\[]*)?\s*)*\]/', $body, $blocks);
+        $keys = [];
+        foreach ($blocks[0] as $block) {
+            if (preg_match_all('/(?:\[|;)\s*@([a-z][a-z0-9-]{1,62})/', $block, $m) > 0) {
+                foreach ($m[1] as $key) {
+                    $keys[$key] = true;
+                }
+            }
+        }
+
+        return array_keys($keys);
+    }
 }

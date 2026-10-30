@@ -72,7 +72,7 @@ final class Application
 
         $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $indexAndStorage = static function () use ($config, $rootDir): array {
-            $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
+            $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors'], Kernel::libraryNamespace($config));
             $storage = new FileTree((string) $config['paths']['data'], $index, (string) $config['paths']['state']);
             // A page on disk the index lacks is put right when a signed-in lookup misses it (FileTree::adopt())
             $index->onMiss($storage->adopt(...));

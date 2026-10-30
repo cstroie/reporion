@@ -238,6 +238,7 @@ final class Library
                 'year' => Citation::year($csl),
                 'journal' => $journal,
                 'tags' => array_values(array_filter(\is_array($meta['tags'] ?? null) ? $meta['tags'] : [], 'is_string')),
+                'cited' => \count($this->index->backlinks($row['pid'], $principal)),
                 'ext' => \is_array($meta['original'] ?? null) ? (string) ($meta['original']['ext'] ?? '') : '',
                 'doi' => \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : '',
             ];

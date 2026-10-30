@@ -240,6 +240,9 @@ final class LibraryTest extends HttpTestCase
         self::assertStringNotContainsString('Grade 3 was the most common', $public->body, 'the source\'s text stays private');
         self::assertSame(404, $this->call(null, 'GET', '/library:' . $key)->status);
 
+        // The library lists how many pages cite each source (the citation is a link in the index)
+        self::assertMatchesRegularExpression('~<td class="wk-mono"><a href="/library:' . $key . '#backlinks"[^>]*>2</a></td>~', $this->call('owner', 'GET', '/library')->body);
+
         // The editor's preview numbers them the same way
         $preview = json_decode($this->call('other', 'POST', '/api/v1/render', ['markdown' => "A [@{$key}].", 'citation_style' => 'apa'])->body, true);
         self::assertStringContainsString('wk-reflist-apa', $preview['html']);

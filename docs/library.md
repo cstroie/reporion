@@ -155,9 +155,9 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    (a key no source has). *As built:* reference text is plain (no italics); the citation render check is
    `tests/Render/RenderCitationsTest` (a fixture file cannot carry a source) and the exports'
    `tests/Plugin/CitationExportsTest` (PDF, ODT, EPUB, groff keep the numbers and the list); reading
-   30 sources of 140 KB for one page view took about 10 ms. **Not built (next, with the index):** the
-   *cited by* column and *notebooks citing it* (backlinks need `[@key]` in the links table: an index
-   change, to ask first), `page:move` fixups for a renamed key.
+   30 sources of 140 KB for one page view took about 10 ms. The index records a citation as a link to `{library}:{key}` (`InternalLink::citedKeys()`, no schema change: the
+   existing `links` table), so a source's backlinks are the pages citing it and `/library` has a *Cited by* count.
+   **Not built:** `page:move` fixups for a renamed key.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
