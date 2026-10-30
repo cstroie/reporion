@@ -508,7 +508,7 @@ final class Kernel
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
-        $moves = new PageMoves($storage, $audit);
+        $moves = new PageMoves($storage, $audit, self::libraryNamespace($config));
         $feeds = new FeedController(
             $index,
             array_values((array) ($config['feeds']['namespaces'] ?? [])),

@@ -12,6 +12,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\Request;
 use Reporion\Storage\FileTree;
+use Reporion\Support\CitationKey;
 use Reporion\Storage\PageRecord;
 use RuntimeException;
 
@@ -32,6 +33,8 @@ final class PageMoves
     public function __construct(
         private readonly FileTree $storage,
         private readonly AuditLog $audit,
+        // Where `[@key]` citations find their sources: a library page renamed is re-cited (docs/library.md)
+        private readonly string $libraryNamespace = 'library',
     ) {
     }
 
@@ -122,6 +125,7 @@ final class PageMoves
         $fixed = [];
         $skippedSigned = 0;
         $skipped = 0;
+        $keys = $this->renamedKeys($map);
         foreach ($this->storage->allPaths() as $path) {
             if (\in_array($path, $map, true)) {
                 continue;
@@ -132,7 +136,7 @@ final class PageMoves
                 ++$skipped;
                 continue;
             }
-            $body = self::rewriteMany($page->body, $map);
+            $body = self::rewriteCitations(self::rewriteMany($page->body, $map), $keys);
             $frontmatter = self::rewriteReferences($page->frontmatter, $map);
             if ($body === $page->body && $frontmatter === $page->frontmatter) {
                 continue;
@@ -154,6 +158,54 @@ final class PageMoves
         }
 
         return ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped];
+    }
+
+    /**
+     * The citation keys a move renames: a page directly in the library namespace moved to another
+     * name directly in it (its key is its slug, docs/library.md). A move out of the library, or
+     * to a name no key can have, renames nothing: the citations stay as written and show as unknown.
+     *
+     * @param array<string, string> $map old path => new path
+     *
+     * @return array<string, string> old key => new key
+     */
+    private function renamedKeys(array $map): array
+    {
+        $prefix = $this->libraryNamespace . ':';
+        $keys = [];
+        foreach ($map as $from => $to) {
+            $old = substr((string) $from, \strlen($prefix));
+            $new = substr($to, \strlen($prefix));
+            if (str_starts_with((string) $from, $prefix) && str_starts_with($to, $prefix) && CitationKey::isValid($old) && CitationKey::isValid($new) && $old !== $new) {
+                $keys[$old] = $new;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * $body with the renamed keys re-cited: `[@old]`, `[@old, p. 2]`, `[@a; @old]` (only inside a citation)
+     *
+     * @param array<string, string> $keys old key => new key
+     */
+    public static function rewriteCitations(string $body, array $keys): string
+    {
+        if ($keys === []) {
+            return $body;
+        }
+        $key = '[a-z][a-z0-9-]{1,62}';
+        $item = '\\s*@' . $key . '(?:\\s*,[^\\];\\[]*)?\\s*';
+
+        return (string) preg_replace_callback(
+            '/\\[' . $item . '(?:;' . $item . ')*\\](?![(\\[])/',
+            static fn (array $block): string => (string) preg_replace_callback(
+                '/(?<=[\\[;\\s])@(' . $key . ')(?![a-z0-9-])/',
+                static fn (array $m): string => '@' . ($keys[$m[1]] ?? $m[1]),
+                $block[0]
+            ),
+            $body
+        );
     }
 
     /** $body with every markdown link to $from pointed at $to, in the form it was written */

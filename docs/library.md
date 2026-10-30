@@ -87,7 +87,7 @@ visibility screen say so first.
 - A reader who may not see a cited library page (an anonymous reader of a public notebook) gets the
   reference printed from its record (bibliographic facts are public; a DOI as a `doi.org` link)
   without a link to the library page: its text and original stay private (owner, 2026-10-30).
-- `page:move` fixups learn citations; a key never changes by itself.
+- `page:move` fixups learn citations (built); a key never changes by itself.
 - Export a notebook's or the library's bibliography as BibTeX, RIS, CSL-JSON or the formatted list;
   import BibTeX/RIS/CSL-JSON (a Mendeley or Zotero export) as records with no original, matched to a
   later upload by DOI.
@@ -157,7 +157,9 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `tests/Plugin/CitationExportsTest` (PDF, ODT, EPUB, groff keep the numbers and the list); reading
    30 sources of 140 KB for one page view took about 10 ms. The index records a citation as a link to `{library}:{key}` (`InternalLink::citedKeys()`, no schema change: the
    existing `links` table), so a source's backlinks are the pages citing it and `/library` has a *Cited by* count.
-   **Not built:** `page:move` fixups for a renamed key.
+   A library page renamed (`page:move`, directly in the library to another valid key) re-cites its
+   citations in unsigned pages (`PageMoves::rewriteCitations()`; a signed page keeps the old key, shown
+   as unknown, like a link). A page moved out of the library is not re-cited.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.

@@ -210,7 +210,7 @@ final class Application
         $app->register('page:move', PageMoveCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 
-            return new PageMoveCommand(new PageMoves($storage, $audit()));
+            return new PageMoveCommand(new PageMoves($storage, $audit(), Kernel::libraryNamespace($config)));
         });
         $app->register('user:create', UserCreateCommand::class, static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data']), new FlatFileGroupStore((string) $config['paths']['data'])));
