@@ -182,7 +182,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    replaces what was read from the file, the abstract and MeSH terms (as proposed tags) come with PubMed; the proposal says what was done
    (`lookup`: `crossref`, `pubmed`, `crossref+pubmed`, `none`, `failed`) and the form asks the writer to check it is the right article (D8). A failure
    leaves the proposal as read. PubMed's XML is parsed with no network and no entity substitution (a declared entity is refused). `library:add
-   --dry-run` sends nothing. Not built: lookups for an imported record, "find the DOI by title", the assistant reading page 1 into the record.
+   --dry-run` sends nothing; `doctor` warns when lookups are on and PHP cannot open an https address (`allow_url_fopen`, openssl). One upload may cost up to three requests of 5 s; PHP-FPM needs `allow_url_fopen`. Not built: lookups for an imported record, "find the DOI by title", the assistant reading page 1 into the record.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from

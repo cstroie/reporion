@@ -113,7 +113,7 @@ final class Lookup
             }
         }
 
-        return ['csl' => $csl, 'tags' => []];
+        return ['csl' => self::filled($csl), 'tags' => []];
     }
 
     /**
@@ -186,7 +186,19 @@ final class Lookup
             $mesh[] = trim($descriptor->textContent);
         }
 
-        return ['csl' => $csl, 'tags' => $mesh];
+        return ['csl' => self::filled($csl), 'tags' => $mesh];
+    }
+
+    /**
+     * Only what the service said: an empty field would replace a good one read from the file
+     *
+     * @param array<string, mixed> $csl
+     *
+     * @return array<string, mixed>
+     */
+    private static function filled(array $csl): array
+    {
+        return array_filter($csl, static fn (mixed $v): bool => $v !== '' && $v !== []);
     }
 
     /**

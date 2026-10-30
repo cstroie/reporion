@@ -183,6 +183,42 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * The library's export (GET /library/export, bin/reporion library:export) lists through
+     * Library::records(), which reads listNamespaceMeta(): a caller gets the sources the index
+     * predicate shows them, and naming a key cannot reach one it hides (docs/library.md)
+     */
+    public function testTheLibraryRecordsAreWhatTheCallerMayRead(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $source = static fn (string $title): array => ['title' => $title, 'csl' => ['title' => $title], 'tags' => ['t']];
+        $index->index($this->snapshot('l-a', 'library:a', $source('A'), '', ['visibility' => 'private']));
+        $index->index($this->snapshot('l-b', 'library:b', $source('B'), '', ['visibility' => 'private']));
+        $index->index($this->snapshot('l-note', 'library:note', ['title' => 'Not a source'], 'text', ['visibility' => 'private']));
+        $index = new Sqlite($path, $this->migrationsDir);
+        $dir = sys_get_temp_dir() . '/reporion-vm-library-' . bin2hex(random_bytes(4));
+        mkdir($dir . '/tmp', 0775, true);
+        $library = new \Reporion\Service\Library\Library(new \Reporion\Storage\FileTree($dir, $index), $index, new \Reporion\Service\Library\Extractor($dir . '/tmp'), new \Reporion\Service\TempUploads($dir));
+        $keys = static fn (array $records): array => array_column($records, 'key');
+
+        try {
+            $reader = new User('reader', 'x', false, [new Grant('library', GrantRole::Viewer)], true, 'now', 'now');
+            $writer = new User('writer', 'x', false, [new Grant('library', GrantRole::Editor)], true, 'now', 'now');
+            $other = new User('other', 'x', false, [new Grant('wiki', GrantRole::Editor)], true, 'now', 'now');
+
+            foreach ([$this->owner(), $reader, $writer] as $principal) {
+                self::assertSame(['a', 'b'], $keys($library->records($principal)), $principal->username . ': every source, and the plain page is no source');
+                self::assertSame(['b'], $keys($library->records($principal, ['b'])));
+            }
+            self::assertSame([], $library->records($other), 'a grant elsewhere reads no source');
+            self::assertSame([], $library->records($other, ['a']), 'a key cannot name what the caller may not read');
+            self::assertSame([], $library->records($this->editorWithGrant(), ['a']), 'a report grant is no library grant');
+            self::assertSame([], $index->listNamespaceMeta('library', null), 'anonymous: nothing');
+        } finally {
+            exec('rm -rf ' . escapeshellarg($dir));
+        }
+    }
+
+    /**
      * listNamespaceYears() applies the same visibility predicate as
      * listNamespace(), inside the aggregate before GROUP BY: same shape as
      * testSubnamespacesOfMioveniForAnEditorWithNoGrantThereOnlyCountsPublic():

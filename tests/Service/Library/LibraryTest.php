@@ -392,4 +392,17 @@ BIB;
 
         self::assertNull($this->library->upload(self::ARTICLE, 'study.md', self::owner())['lookup'], 'off: null');
     }
+
+    public function testALookupWithNoTitleKeepsTheTitleReadFromTheFile(): void
+    {
+        $library = $this->withLookup(static fn (string $url): ?string => str_contains($url, 'crossref')
+            ? '{"message":{"type":"journal-article","title":[],"container-title":["J Synth"],"author":[]}}'
+            : '{"esearchresult":{"idlist":[]}}');
+
+        $proposal = $library->upload(self::ARTICLE, 'study.md', self::owner());
+
+        self::assertSame('crossref', $proposal['lookup']);
+        self::assertSame('A made-up study of test lesions', $proposal['csl']['title']);
+        self::assertSame('J Synth', $proposal['csl']['container-title']);
+    }
 }

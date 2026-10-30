@@ -75,15 +75,20 @@ final class LibraryImportExportCommandTest extends StorageTestCase
     {
         $this->exec($this->import, $this->dataRoot . '/refs.bib');
 
-        [$exit, $out] = $this->exec($this->export, '--format=ris');
+        [$exit, $out, $err] = $this->exec($this->export, '--format=ris');
         self::assertSame(0, $exit);
-        self::assertStringStartsWith('Exporting 1 reference(s) as ris', $out);
-        self::assertStringContainsString('TY  - JOUR', $out);
+        self::assertStringStartsWith('TY  - JOUR', $out, 'stdout is the document and nothing else');
+        self::assertStringContainsString('Exporting 1 reference(s) as ris', $err);
+        $json = json_decode($this->exec($this->export, '--format=csl')[1], true);
+        self::assertSame('abel2020', $json[0]['id'], 'a redirected stdout is valid JSON');
+        self::assertSame('@article{abel2020,', substr($this->exec($this->export)[1], 0, 18));
         self::assertStringContainsString('Abel, Z. (2020). A made-up study.', $this->exec($this->export, '--format=text', '--style=apa')[1]);
-        self::assertStringContainsString('Exporting 0 reference(s)', $this->exec($this->export, '--tag=none')[1]);
+        self::assertStringContainsString('Exporting 0 reference(s)', $this->exec($this->export, '--tag=none')[2]);
 
         $to = $this->dataRoot . '/out.bib';
-        self::assertSame(0, $this->exec($this->export, '--to=' . $to)[0]);
+        [$exit, $out] = $this->exec($this->export, '--to=' . $to);
+        self::assertSame(0, $exit);
+        self::assertStringStartsWith('Exporting 1 reference(s) as bibtex to ', $out, 'with --to the first stdout line says what is done');
         self::assertStringContainsString('@article{abel2020,', (string) file_get_contents($to));
         self::assertSame(1, $this->exec($this->export, '--to=' . $to)[0], 'a file that is there is not overwritten');
         self::assertSame(1, $this->exec($this->export, '--format=pdf')[0]);

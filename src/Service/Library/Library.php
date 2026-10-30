@@ -469,6 +469,11 @@ final class Library
         $skipped = [];
         foreach ($entries as $entry) {
             $label = \is_string($entry['csl']['title'] ?? null) ? mb_substr($entry['csl']['title'], 0, 200) : '';
+            // The file's key may become the page's path: a CNP there is a patient's too
+            if (self::holdsPatientData($entry['key'])) {
+                $skipped[] = ['title' => '', 'reason' => LibraryException::PATIENT_DATA];
+                continue;
+            }
             try {
                 $csl = self::cleanCsl($entry['csl']);
             } catch (LibraryException $e) {

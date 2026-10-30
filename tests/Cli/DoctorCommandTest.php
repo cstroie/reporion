@@ -75,6 +75,19 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('[WARN] Library can read uploaded files: not PDF (install poppler-utils); Word, OpenDocument, RTF, HTML and EPUB (install pandoc); .doc and office slides and sheets (install LibreOffice)', $output);
     }
 
+    public function testTheLibraryLookupIsReportedOffOrOn(): void
+    {
+        $this->createOwnerAccount();
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('[PASS] Library online lookups (CrossRef, PubMed): off', $output);
+
+        $config = $this->config();
+        $config['library']['lookup'] = true;
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
+        self::assertSame(0, $exitCode, 'never a failure');
+        self::assertMatchesRegularExpression('/\[(PASS|WARN)\] Library online lookups \(CrossRef, PubMed\): on/', $output);
+    }
+
     public function testAMissingOrDamagedStateDatabaseBesidePagesFails(): void
     {
         $this->createOwnerAccount();

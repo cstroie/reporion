@@ -90,6 +90,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkStateDatabase(),
             $this->checkRsyncBackup(),
             $this->checkLibraryTools(),
+            $this->checkLibraryLookup(),
         ];
 
         $failed = false;
@@ -698,6 +699,23 @@ final class DoctorCommand implements CommandInterface
         }
 
         return CheckResult::pass($label, $found['pdftohtml'] ? 'every type' : 'every type (no pdftohtml: titles are guessed from the text only)');
+    }
+
+    /** The online lookups (Admin → Settings → Library) need PHP to open an https address; without it every lookup only says it could not be reached */
+    private function checkLibraryLookup(): CheckResult
+    {
+        $label = 'Library online lookups (CrossRef, PubMed)';
+        if (($this->config['library']['lookup'] ?? false) !== true) {
+            return CheckResult::pass($label, 'off');
+        }
+        if (!filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+            return CheckResult::warn($label, 'on, but PHP\'s allow_url_fopen is off: no lookup can be made');
+        }
+        if (!\in_array('https', stream_get_wrappers(), true)) {
+            return CheckResult::warn($label, 'on, but PHP has no https support (the openssl extension): no lookup can be made');
+        }
+
+        return CheckResult::pass($label, 'on');
     }
 
     /**

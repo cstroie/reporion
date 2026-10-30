@@ -259,6 +259,18 @@ final class LibraryTest extends HttpTestCase
         self::assertSame('none', json_decode($this->upload('editor', $article, 'b.md')->body, true)['lookup']);
     }
 
+    public function testTickingTheLookupInAdminKeepsTheOtherLibrarySettingsOfConf(): void
+    {
+        $this->config['library'] = ['max_mb' => 1, 'tools' => ['pandoc' => '/usr/bin/pandoc']];
+        $saved = Kernel::boot($this->config)->handle(new Request('POST', '/admin/settings/library', cookies: ['reporion' => $this->cookie('owner')], body: 'library_lookup=1'));
+        self::assertSame(302, $saved->status);
+
+        // The saved switch is read together with conf's: the size limit and the tool paths are still there
+        $article = "# A made-up study with no identifier\n\nText only.\n";
+        self::assertSame('none', json_decode($this->upload('editor', $article, 'c.md')->body, true)['lookup']);
+        self::assertSame(413, $this->upload('editor', str_repeat('a', 1024 * 1024 + 1), 'big.txt')->status);
+    }
+
     public function testAnEditorImportsAReferenceManagersExportAndOthersCannot(): void
     {
         $bib = "@article{Abel2020, author = {Abel, Zed}, title = {Imported made-up study}, journal = {J Synth}, year = {2020}, doi = {10.9999/jsi.2020.0001}}\n@book{bad, title = {   }}\n";

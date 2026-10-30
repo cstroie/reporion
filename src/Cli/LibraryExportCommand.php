@@ -34,7 +34,7 @@ final class LibraryExportCommand implements CommandInterface
                 '--tag=<tag>' => 'only the sources with this tag',
                 '--to=<file>' => 'write to this file instead of the output (refused when it exists)',
             ],
-            details: 'Reads the index and the pages; changes nothing. Without --to the references follow the first line, which says what is exported.',
+            details: 'Reads the index and the pages; changes nothing. Without --to the references are all of stdout (redirect it to a file); what is done is said on stderr.',
         );
     }
 
@@ -57,8 +57,9 @@ final class LibraryExportCommand implements CommandInterface
         }
         $records = $this->library->records(new User('cli', '', true, [], true, 'now', 'now'), null, ($options['tag'] ?? '') !== '' ? $options['tag'] : null);
         $text = Bibliography::write($format, $records, Citation::style($options['style'] ?? null));
-        $output->line('Exporting ' . \count($records) . ' reference(s) as ' . $format . (isset($options['to']) ? ' to ' . $options['to'] : ''));
+        $what = 'Exporting ' . \count($records) . ' reference(s) as ' . $format . (isset($options['to']) ? ' to ' . $options['to'] : '');
         if (isset($options['to'])) {
+            $output->line($what);
             if (file_exists($options['to']) || @file_put_contents($options['to'], $text) === false) {
                 $output->error('Cannot write ' . $options['to'] . ' (it exists, or is not writable)');
 
@@ -67,7 +68,9 @@ final class LibraryExportCommand implements CommandInterface
 
             return 0;
         }
-        $output->line(rtrim($text));
+        // The references are all of stdout, so that `> refs.json` is a valid file: what is done goes to stderr
+        $output->error($what);
+        $output->write($text);
 
         return 0;
     }
