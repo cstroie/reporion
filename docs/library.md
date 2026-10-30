@@ -161,6 +161,10 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    citations in unsigned pages (`PageMoves::rewriteCitations()`; a signed page keeps the old key, shown
    as unknown, like a link). A page moved out of the library is not re-cited.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
+   *Step 1 built 2026-10-30:* the pure formats, `Support\Bibtex`, `Ris`, `CslJson` and `Bibliography` (format told from the content): BibTeX read with
+   `@string`/`@comment`, braced and quoted values, `#` joins, LaTeX accents decoded (Romanian `\c{s}` → ș), `{{Body}}` names as literals;
+   RIS with BOM/CRLF, repeated `AU`, `SP`/`EP`, `PY  - 2019///`; CSL-JSON as a list, an item or `{items}`; each written back (UTF-8, escaped).
+   An entry is `{key, csl, tags}`; the key is the file's, checked by the importer.
 5. **Per-source assistant + Ask the notebook.**
 6. **Studio** + the template generator.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
