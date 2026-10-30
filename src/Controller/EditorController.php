@@ -294,7 +294,9 @@ final class EditorController
         // D16: public only with the acknowledgement, which only the Metadata view asks for
         if (($frontmatter['visibility'] ?? null) === 'public') {
             if (LibrarySource::isSource($frontmatter)) {
-                return $this->renderNew($request, $path, $document ?? '', t('library.err_public'), $principal);
+                return $this->isRawMode($request, [])
+                    ? $this->renderNew($request, $path, $document, t('library.err_public'), $principal)
+                    : $this->renderNewCurated($request, $path, $body, $frontmatter, t('library.err_public'), $principal, carried: isset($carried));
             }
             if ($this->isRawMode($request, [])) {
                 return $this->renderNew($request, $path, $document ?? '', t('vis.err_raw_public'), $principal);
