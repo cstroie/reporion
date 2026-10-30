@@ -36,7 +36,9 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <p class="wk-dim wk-text-xs wk-mono wk-lib-ids">
 <?php if ($doi !== ''): ?><a href="https://doi.org/<?= $e($doi) ?>" rel="noopener noreferrer" target="_blank">doi:<?= $e($doi) ?></a><?php endif; ?>
 <?php if ($pmid !== ''): ?> <a href="https://pubmed.ncbi.nlm.nih.gov/<?= $e($pmid) ?>/" rel="noopener noreferrer" target="_blank">PMID <?= $e($pmid) ?></a><?php endif; ?>
-<?php if ($source['original'] !== null): ?> <?= $e(t('library.original_info', [strtoupper($source['original']['ext']), (string) $source['original']['pages'], (string) max(1, (int) round($source['original']['bytes'] / 1024))])) ?><?php endif; ?>
+<?php if ($source['original'] !== null): ?> <?= $e($source['original']['ext'] === 'pdf' && $source['original']['pages'] > 0
+    ? t('library.original_info_pages', [strtoupper($source['original']['ext']), (string) $source['original']['pages'], (string) max(1, (int) round($source['original']['bytes'] / 1024))])
+    : t('library.original_info', [strtoupper($source['original']['ext']), (string) max(1, (int) round($source['original']['bytes'] / 1024))])) ?><?php endif; ?>
 </p>
 <?php endif; ?>
 <?php if ($source['canEdit']): ?>

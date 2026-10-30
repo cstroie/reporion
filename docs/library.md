@@ -2,8 +2,8 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **phase 1 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline. The rest is
-planned.
+the assistant). Status: **phases 1 and 2 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
+library view, the upload form and a source's card. The rest is planned.
 
 ## Owner's decisions (2026-10-30)
 
@@ -127,7 +127,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `title` (the article's text has no `#` of its own); the never-public guard came forward from
    phase 2. For phase 2's form: `confirm()` uses the token up before the duplicate check in
    `create()`, so a 409 there means uploading again; check first when the form is built.
-2. **Library view + metadata form + publishing guard** (library pages never `public`).
+2. **Library view + metadata form**, **built 2026-10-30** (the publishing guard came with phase 1):
+   `GET /library` (`templates/library.php`), the upload's proposed records corrected in a form
+   (`partials/library-record-form.php`, `assets/js/library.js`), a source's card on its page
+   (`partials/library-source.php`: the reference in Vancouver, `Support\Citation`; open the original;
+   copy the reference; Edit record, `PUT /api/v1/library/{pid}/record`), the quick-nav's *Library*.
+   *As built:* sorted by author, year or title and filtered by one tag (links) or by text (in the
+   browser); no year/journal/author facets yet, no *notebooks citing it* column (that needs phase 3's
+   citations). `/library` is the view's address, so a page named `library` is reached only by its
+   edit and history URLs; the quick-nav link shows to a reader of the `library` namespace (not of a
+   renamed `library.namespace`). A confirm that is refused (a duplicate, a taken key) keeps the
+   upload for another try (`TempUploads::peek()`).
 3. **Citations + References section** (render fixtures), `@` picker, `Support\Citation`.
 4. **Online lookup** (CrossRef, PubMed, opt-in) + BibTeX/RIS/CSL-JSON import and export.
 5. **Per-source assistant + Ask the notebook.**

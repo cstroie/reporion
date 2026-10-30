@@ -15,8 +15,8 @@ declare(strict_types=1);
 /** @var string $libraryFormMode */
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $adding = $libraryFormMode === 'add';
-$field = static function (string $name, string $key, string $type = 'text', bool $help = false, string $extra = '') use ($e): string {
-    return '<div class="field"><label>' . $e(t('library.f_' . $key))
+$field = static function (string $name, string $key, string $type = 'text', bool $help = false, string $extra = '', string $class = '') use ($e): string {
+    return '<div class="field' . ($class !== '' ? ' ' . $class : '') . '"><label>' . $e(t('library.f_' . $key))
         . '<input class="input" type="' . $type . '" name="' . $name . '" placeholder="' . $e(t('library.f_' . $key . '_hint')) . '"' . $extra . '>'
         . ($help ? '<small>' . $e(t('library.f_' . $key . '_help')) . '</small>' : '') . '</label></div>';
 };
@@ -28,21 +28,21 @@ $field = static function (string $name, string $key, string $type = 'text', bool
 <textarea class="input" name="authors" rows="3" placeholder="<?= $e(t('library.f_authors_hint')) ?>"></textarea>
 <small><?= $e(t('library.f_authors_help')) ?></small></label></div>
 <div class="wk-lib-grid">
-<div class="field"><label><?= $e(t('library.f_type')) ?>
+<div class="field wk-lib-wide"><label><?= $e(t('library.f_type')) ?>
 <select class="input" name="type">
 <?php foreach (['article-journal', 'book', 'chapter', 'paper-conference', 'report', 'thesis', 'webpage', 'manuscript', 'standard', 'dataset'] as $type): ?>
 <option value="<?= $e($type) ?>"><?= $e(t('library.type_' . $type)) ?></option>
 <?php endforeach; ?>
 </select></label></div>
 <?= $field('year', 'year', 'text', false, ' inputmode="numeric" maxlength="4" pattern="[0-9]{4}"') ?>
-<?= $field('container-title', 'journal') ?>
+<?= $field('container-title', 'journal', 'text', false, '', 'wk-lib-wide') ?>
 <?= $field('volume', 'volume') ?>
 <?= $field('issue', 'issue') ?>
 <?= $field('page', 'pages') ?>
-<?= $field('DOI', 'doi') ?>
+<?= $field('DOI', 'doi', 'text', false, '', 'wk-lib-wide') ?>
 <?= $field('PMID', 'pmid', 'text', false, ' inputmode="numeric"') ?>
 </div>
-<div class="wk-lib-grid">
+<div class="wk-lib-pair">
 <?php if ($adding): ?>
 <?= $field('key', 'key', 'text', true, ' maxlength="63" pattern="[a-z][a-z0-9\-]{1,62}" autocapitalize="off" spellcheck="false"') ?>
 <?php endif; ?>

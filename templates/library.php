@@ -96,7 +96,7 @@ $total = \count($entries);
 <tbody>
 <?php foreach ($entries as $entry): ?>
 <tr data-lib-row>
-<td class="wk-card-head"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['authors'] !== ''): ?><br><span class="wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?></td>
+<td class="wk-card-head"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['authors'] !== ''): ?><span class="wk-lib-authors wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?></td>
 <td class="wk-mono"><?= $entry['year'] !== null ? (int) $entry['year'] : '' ?></td>
 <td class="wk-dim"><?= $e($entry['journal']) ?></td>
 <td><?php foreach ($entry['tags'] as $entryTag): ?><a class="wk-chip" href="<?= $e($link(['tag' => $entryTag])) ?>"><?= $e($entryTag) ?></a> <?php endforeach; ?><?php if ($entry['ext'] !== ''): ?><a class="wk-chip" href="<?= $e($basePath . '/library/file/' . $entry['pid']) ?>" title="<?= $e(t('library.original')) ?>"><i class="ph ph-file" aria-hidden="true"></i><?= $e($entry['ext']) ?></a><?php endif; ?></td>

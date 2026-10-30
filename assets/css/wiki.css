@@ -2246,7 +2246,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-lib-form { margin-top: var(--space-3); }
 .wk-lib-form .field > label { display: flex; flex-direction: column; gap: var(--space-2); }
 .wk-lib-form textarea { resize: vertical; }
-.wk-lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); gap: 0 var(--space-4); }
+.wk-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, 100%), 1fr)); gap: 0 var(--space-4); }
+@media (min-width: 40rem) { .wk-lib-grid > .wk-lib-wide { grid-column: span 2; } }
+.wk-lib-authors { display: block; }
+.wk-lib-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: 0 var(--space-4); }
 .wk-lib-form footer { justify-content: flex-end; margin-top: var(--space-3); }
 .wk-lib-preview { margin: 0 0 var(--space-4); }
 .wk-lib-preview summary { cursor: pointer; color: var(--color-dim); font-size: var(--text-sm); }
