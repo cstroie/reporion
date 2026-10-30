@@ -12,8 +12,10 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\References;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
+use Reporion\Support\Citation;
 use Reporion\Support\Exams;
 use Reporion\Support\Feeds;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
@@ -134,6 +136,20 @@ final class PageTemplateRenderer
         $vars['similarStale'] = $vector === false;
         // A normal report: a note in place of the list, nothing fetched
         $vars['similarExcluded'] = $vector !== null && $this->similarExcluded !== null ? ($this->similarExcluded)($record->pid) : null;
+        // A library source (docs/library.md): its reference, its original, its record to correct
+        $vars['librarySource'] = LibrarySource::isSource($record->frontmatter) ? [
+            'pid' => $record->pid,
+            'rev' => $record->rev,
+            'citation' => Citation::vancouver(\is_array($record->frontmatter['csl'] ?? null) ? $record->frontmatter['csl'] : ['title' => $title]),
+            'csl' => \is_array($record->frontmatter['csl'] ?? null) ? $record->frontmatter['csl'] : [],
+            'tags' => array_values(array_filter((array) ($record->frontmatter['tags'] ?? []), 'is_string')),
+            'original' => \is_array($record->frontmatter['original'] ?? null) ? [
+                'ext' => (string) ($record->frontmatter['original']['ext'] ?? ''),
+                'pages' => (int) ($record->frontmatter['original']['pages'] ?? 0),
+                'bytes' => (int) ($record->frontmatter['original']['bytes'] ?? 0),
+            ] : null,
+            'canEdit' => $currentRev === null && $principal->canWrite($record->path),
+        ] : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

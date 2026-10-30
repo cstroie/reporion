@@ -114,6 +114,61 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('edited text', $refused->body);
     }
 
+    public function testTheLibraryViewListsWhatTheCallerMaySeeAndOffersTheUploadToAnEditor(): void
+    {
+        $this->add('editor', self::ARTICLE, 'study.md', ['grading']);
+        $this->add('editor', "# Another made-up study of lesions\n\n© 2023\n", 'b.md', ['other']);
+
+        $editor = $this->call('editor', 'GET', '/library');
+        self::assertSame(200, $editor->status);
+        self::assertStringContainsString('data-island="library-add"', $editor->body);
+        self::assertStringContainsString('A made-up study of test lesions', $editor->body);
+        self::assertStringContainsString('Another made-up study of lesions', $editor->body);
+
+        $reader = $this->call('reader', 'GET', '/library?tag=grading&sort=year');
+        self::assertSame(200, $reader->status);
+        self::assertStringNotContainsString('data-island="library-add"', $reader->body, 'a viewer reads, never adds');
+        self::assertStringContainsString('A made-up study of test lesions', $reader->body);
+        self::assertStringNotContainsString('Another made-up study of lesions', $reader->body, 'filtered by its tag');
+
+        $other = $this->call('other', 'GET', '/library');
+        self::assertSame(200, $other->status);
+        self::assertStringNotContainsString('made-up study', $other->body, 'no grant on the library: nothing in it');
+        self::assertSame(404, $this->call(null, 'GET', '/library')->status);
+    }
+
+    public function testASourcePageShowsItsReferenceAndAWriterCorrectsItsRecord(): void
+    {
+        $page = $this->add('editor', self::ARTICLE, 'study.md');
+
+        $view = $this->call('reader', 'GET', '/' . $page['path']);
+        self::assertSame(200, $view->status);
+        self::assertStringContainsString('data-island="library-record"', $view->body);
+        self::assertStringContainsString('A made-up study of test lesions. 2024. doi:10.1234/jti.2024.0001', html_entity_decode($view->body, ENT_QUOTES));
+        self::assertStringNotContainsString('data-lib-edit', $view->body, 'a viewer cannot edit the record');
+        self::assertStringContainsString('data-lib-edit', $this->call('editor', 'GET', '/' . $page['path'])->body);
+
+        $csl = ['title' => 'A corrected title', 'author' => [['family' => 'Nobody', 'given' => 'Ann']], 'issued' => ['date-parts' => [[2024]]]];
+        self::assertSame(404, $this->call('reader', 'PUT', '/api/v1/library/' . $page['pid'] . '/record', ['csl' => $csl, 'base_rev' => 1])->status);
+        $saved = $this->call('editor', 'PUT', '/api/v1/library/' . $page['pid'] . '/record', ['csl' => $csl, 'base_rev' => 1, 'tags' => ['grading']]);
+        self::assertSame(200, $saved->status);
+        self::assertSame(2, json_decode($saved->body, true)['rev']);
+        self::assertSame(409, $this->call('editor', 'PUT', '/api/v1/library/' . $page['pid'] . '/record', ['csl' => $csl, 'base_rev' => 1])->status, 'a stale revision');
+        self::assertStringContainsString('Nobody A. A corrected title. 2024.', html_entity_decode($this->call('reader', 'GET', '/' . $page['path'])->body, ENT_QUOTES));
+    }
+
+    /**
+     * @param list<string> $tags
+     *
+     * @return array<string, mixed> the confirmed page
+     */
+    private function add(string $user, string $bytes, string $name, array $tags = []): array
+    {
+        $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);
+
+        return json_decode($this->call($user, 'POST', '/api/v1/library', ['token' => $proposal['token'], 'csl' => $proposal['csl'], 'tags' => $tags])->body, true);
+    }
+
     private function upload(?string $user, string $bytes, string $name): Response
     {
         return Kernel::boot($this->config)->handle(new Request(
@@ -130,7 +185,9 @@ final class LibraryTest extends HttpTestCase
     {
         $cookies = $user !== null ? ['reporion' => $this->cookie($user)] : [];
 
-        return Kernel::boot($this->config)->handle(new Request($method, $url, cookies: $cookies, body: $body !== [] ? (string) json_encode($body) : ''));
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        return Kernel::boot($this->config)->handle(new Request($method, (string) parse_url($url, PHP_URL_PATH), query: array_map('strval', $query), cookies: $cookies, body: $body !== [] ? (string) json_encode($body) : ''));
     }
 
     private function cookie(string $user): string

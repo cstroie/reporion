@@ -9,15 +9,15 @@ namespace Reporion\Http;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Snippets;
-use Reporion\Support\Templates;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Templates;
 
 /**
  * The quick-navigation list (2026-10-01): one list, read by the top nav's
  * pin menu and the palette's empty state, so the two never
  * drift apart. Three groups
  *
- * - fixed: home, the account's own pages and the notes app (D55), the root
+ * - fixed: home, the account's own pages and the notes app (D55), the library (for a reader of it), the root
  *   namespace and Ask the archive when it is there (D53);
  * - pinned: the account's own pins (Auth\Pins), in the order pinned;
  * - views: the account's saved views (Auth\SavedViews), named searches;
@@ -59,6 +59,8 @@ final class QuickNav
             ...($own !== null ? [['href' => '/notes', 'label' => t('quick.notes'), 'icon' => 'note-pencil']] : []),
             ['href' => '/:', 'label' => t('quick.root'), 'icon' => 'tree-structure'],
             ...($askable ? [['href' => '/ask', 'label' => t('quick.ask'), 'icon' => 'chats-circle']] : []),
+            // The library (docs/library.md), for whoever may read it
+            ...($principal->canRead('library') ? [['href' => '/library', 'label' => t('quick.library'), 'icon' => 'books']] : []),
         ];
 
         // Each namespace's `priority` (low|medium|high, its description page's

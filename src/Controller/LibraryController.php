@@ -10,10 +10,14 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\LibraryException;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Storage\FileTree;
 
@@ -24,6 +28,9 @@ use Reporion\Storage\FileTree;
  * answered with the proposed record and a token; nothing kept but the temporary upload.
  * POST /api/v1/library {token, csl, key?, tags?}: the confirmed record, made a library page.
  * GET /library/file/{pid}: a source's original, to a signed-in caller who may see its page.
+ * GET /library: the library's view (phase 2): every source the caller may see, filtered by a tag,
+ * sorted by author, year or title, with the upload form for an editor.
+ * PUT /api/v1/library/{pid}/record {csl, base_rev, tags?}: a source's record corrected.
  *
  * An editor of the library's namespace adds; anyone else gets 404 (invariant 9).
  */
@@ -43,6 +50,71 @@ final class LibraryController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
     ) {
+    }
+
+    /** The orders the view offers; the first is the default */
+    public const SORTS = ['author', 'year', 'title'];
+
+    public function index(Request $request, ?User $principal): Response
+    {
+        if ($principal === null) {
+            throw new PageNotFoundException();
+        }
+        $entries = $this->library->entries($principal);
+        $counts = [];
+        foreach ($entries as $entry) {
+            foreach ($entry['tags'] as $tag) {
+                $counts[$tag] = ($counts[$tag] ?? 0) + 1;
+            }
+        }
+        ksort($counts);
+        $tag = (string) ($request->query['tag'] ?? '');
+        if ($tag !== '') {
+            $entries = array_values(array_filter($entries, static fn (array $e): bool => \in_array($tag, $e['tags'], true)));
+        }
+        $sort = \in_array($request->query['sort'] ?? null, self::SORTS, true) ? (string) $request->query['sort'] : self::SORTS[0];
+        usort($entries, static fn (array $a, array $b): int => match ($sort) {
+            'year' => [$b['year'] ?? 0, mb_strtolower($a['authors'])] <=> [$a['year'] ?? 0, mb_strtolower($b['authors'])],
+            'title' => strcoll(mb_strtolower($a['title']), mb_strtolower($b['title'])),
+            default => [mb_strtolower($a['authors'] !== '' ? $a['authors'] : $a['title']), $a['year'] ?? 0] <=> [mb_strtolower($b['authors'] !== '' ? $b['authors'] : $b['title']), $b['year'] ?? 0],
+        });
+
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/library.php', [
+            'entries' => $entries,
+            'tagCounts' => $counts,
+            'tag' => $tag,
+            'sort' => $sort,
+            'canAdd' => $this->library->canAdd($principal),
+            'namespace' => $this->library->namespace(),
+            'maxMb' => intdiv($this->library->maxBytes(), 1024 * 1024),
+            'extensions' => array_keys(Extractor::TYPES),
+            'basePath' => $request->basePath,
+        ] + ChromeVars::shell($request, $principal, $this->index, $this->library->namespace()), t('library.title')));
+    }
+
+    public function record(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || !$principal->canWrite((string) $row['path'])) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        if (!\is_array($fields['csl'] ?? null) || !\is_int($fields['base_rev'] ?? null)) {
+            return ApiResponse::error(422, 'invalid_body', '"csl" (object) and "base_rev" (integer) are required.');
+        }
+        $tags = \is_array($fields['tags'] ?? null) ? array_values(array_filter($fields['tags'], 'is_string')) : null;
+        try {
+            $page = $this->library->updateRecord((string) $row['path'], $fields['csl'], $tags, $fields['base_rev'], $principal, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $page->rev);
+
+        return ApiResponse::json(['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev]);
     }
 
     public function upload(Request $request, ?User $principal): Response
