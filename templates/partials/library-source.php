@@ -9,7 +9,8 @@
  *
  * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
  * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool,
- * cites: ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int}} $librarySource;
+ * cites: ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int},
+ * saved: list<array{prompt: string, path: string, at: string, provider: string, stale: bool, html: string}>} $librarySource;
  * string $basePath
  */
 
@@ -45,6 +46,14 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
     : t('library.original_info', [strtoupper($source['original']['ext']), (string) max(1, (int) round($source['original']['bytes'] / 1024))])) ?><?php endif; ?>
 </p>
 <?php endif; ?>
+<?php
+$savedAnalyses = $source['saved'] ?? [];
+$savedLabels = [];
+foreach (\Reporion\Service\Library\SourceAnalysis::TASKS as $savedTask => $savedPrompt) {
+    $savedLabels[$savedPrompt] = t('library.ai.' . $savedTask);
+}
+include __DIR__ . '/saved-analyses.php';
+?>
 <?php if (($source['cites'] ?? null) !== null): ?>
 <details class="wk-lib-cites">
 <summary class="wk-dim wk-text-sm"><i class="ph ph-list-numbers" aria-hidden="true"></i> <?= $e(t('library.cites', [(string) \count($source['cites']['entries']), (string) $source['cites']['found']])) ?></summary>
@@ -92,7 +101,7 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
     'rev' => $source['rev'],
     'strings' => [
         'working' => t('library.ai.working'), 'progress' => t('library.ai.progress'), 'failed' => t('library.ai.failed'), 'note' => t('library.ai.note'),
-        'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'use_summary' => t('library.ai.use_summary'),
+        'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'use_summary' => t('library.ai.use_summary'), 'saved' => t('library.saved.as'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </div>

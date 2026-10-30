@@ -103,6 +103,25 @@ final class StudioTest extends HttpTestCase
         self::assertStringContainsString('in Romanian', $user);
     }
 
+    public function testEachStudioTextIsKeptBesideTheNotebookAndListedInItsPanel(): void
+    {
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'overview']));
+
+        self::assertSame('wiki:notebook:studio-overview', $data['saved']['path']);
+        $kept = $this->storage()->read('wiki:notebook:studio-overview');
+        self::assertSame('ro', $kept->frontmatter['language'], 'it reads as the notebook reads');
+        self::assertSame('studio-overview', $kept->frontmatter['analysis']['prompt']);
+
+        $html = Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook', cookies: ['reporion' => $this->cookie('writer')]))->body;
+        self::assertStringContainsString('data-saved-prompt="studio-overview"', $html);
+
+        // A kept text that cites sources is no notebook of its own: no Studio, no Ask there
+        $this->storage()->save('wiki:notebook:studio-overview', $kept->frontmatter, "Graded [@abel2020].\n", $kept->rev, 'writer');
+        $own = Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook:studio-overview', cookies: ['reporion' => $this->cookie('writer')]))->body;
+        self::assertStringNotContainsString('data-island="notebook-studio"', $own);
+        self::assertSame(404, $this->studio('writer', ['path' => 'wiki:notebook:studio-overview', 'task' => 'overview'])->status);
+    }
+
     public function testALargeNotebookIsCondensedSourceBySourceAndKeepsTheKeys(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];

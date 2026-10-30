@@ -258,6 +258,8 @@ final class PageController
         // A page and a namespace of the same name are a file and a directory (D54): the pages under it stay
         $this->storage->delete($path, $principal->username);
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
+        // Except the assistant's saved analyses of it: they go with it (Service\Library\Analyses)
+        (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
 
         // Land on the parent namespace index: the page just vanished from
         // its listing (Storage::delete() removes it from the index as part

@@ -9,7 +9,9 @@
  * by the server in the page's citation style, with Copy; nothing is saved. The template is made a
  * page by the writer (POST /api/v1/pages, its `reference` this notebook, D8).
  *
- * Variables in scope: array{path: string, tasks: list<string>, slug: string} $notebookStudio; string $basePath;
+ * Each text is also kept beside the notebook as `{notebook}:studio-{task}` (Service\Library\Analyses) and listed here.
+ *
+ * Variables in scope: array{path: string, tasks: list<string>, slug: string, saved: list<array<string, mixed>>} $notebookStudio; string $basePath;
  * array<string, mixed> $frontmatter
  */
 
@@ -37,6 +39,14 @@ $tasks = $notebookStudio['tasks'];
 </div>
 <?php endif; ?>
 <div class="wk-notebook-out" data-studio-out aria-live="polite" hidden></div>
+<?php
+$savedAnalyses = $notebookStudio['saved'] ?? [];
+$savedLabels = [];
+foreach (\Reporion\Service\Library\Studio::TASKS as $savedTask => $savedPrompt) {
+    $savedLabels[$savedPrompt] = t('studio.' . $savedTask);
+}
+include __DIR__ . '/saved-analyses.php';
+?>
 <script type="application/json"><?= json_encode([
     'basePath' => $basePath,
     'path' => $notebookStudio['path'],
@@ -50,7 +60,7 @@ $tasks = $notebookStudio['tasks'];
         'questions_needed' => t('studio.questions_needed'),
         'tpl_path' => t('studio.tpl_path'), 'tpl_path_help' => t('studio.tpl_path_help'), 'tpl_create' => t('studio.tpl_create'),
         'tpl_bad_path' => t('studio.tpl_bad_path'), 'tpl_checklist' => t('studio.tpl_checklist'), 'tpl_problems' => t('studio.tpl_problems'),
-        'tpl_exists' => t('studio.tpl_exists'), 'tpl_no_grant' => t('studio.tpl_no_grant'), 'tpl_note' => t('studio.tpl_note'),
+        'saved' => t('library.saved.as'), 'tpl_exists' => t('studio.tpl_exists'), 'tpl_no_grant' => t('studio.tpl_no_grant'), 'tpl_note' => t('studio.tpl_note'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>

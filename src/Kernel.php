@@ -125,6 +125,7 @@ use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
+use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\PassageSearch;
 use Reporion\Service\Library\WebClip;
@@ -513,11 +514,11 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config));
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index));
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
-        $moves = new PageMoves($storage, $audit, self::libraryNamespace($config));
+        $moves = new PageMoves($storage, $audit, self::libraryNamespace($config), new Analyses($storage, $index));
         $feeds = new FeedController(
             $index,
             array_values((array) ($config['feeds']['namespaces'] ?? [])),
@@ -636,6 +637,8 @@ final class Kernel
             self::libraryNamespace($config),
             $storage,
             $index,
+            new Analyses($storage, $index),
+            $audit,
         );
         $ai = new AiController(
             $aiConfig,

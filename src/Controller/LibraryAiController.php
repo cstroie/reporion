@@ -16,7 +16,10 @@ use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
+use Reporion\Audit\AuditLog;
+use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\NotebookAsk;
+use Reporion\Storage\PageRecord;
 use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\Library\Studio;
 use Reporion\Http\TemplateLintText;
@@ -60,7 +63,38 @@ final class LibraryAiController
         private readonly string $libraryNamespace,
         private readonly FileTree $storage,
         private readonly IndexInterface $index,
+        private readonly ?Analyses $analyses = null,
+        private readonly ?AuditLog $audit = null,
     ) {
+    }
+
+    /**
+     * The result kept as the page's analysis named by its prompt (Service\Library\Analyses: the
+     * owner's decision, 2026-10-31), the writer's revision, audited as theirs with the prompt as
+     * `assisted`; a failure to keep it is said, never the end of the answer
+     *
+     * @param array<string, mixed> $extra
+     *
+     * @return ?array{path: string, href: string, created: bool}
+     */
+    private function keep(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, ?Request $request, array $extra = []): ?array
+    {
+        if ($this->analyses === null || trim($text) === '') {
+            return null;
+        }
+        try {
+            $saved = $this->analyses->save($of, $prompt, $label, $text, $by, $provider, $extra);
+        } catch (\Throwable $e) {
+            error_log(\sprintf('reporion: analysis not kept: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+
+            return null;
+        }
+        if ($saved === null) {
+            return null;
+        }
+        $this->audit?->record($saved['created'] ? 'page.create' : 'page.save', $by->username, $request, $saved['pid'], $saved['path'], $saved['rev'], extra: ['assisted' => [$prompt]]);
+
+        return ['path' => $saved['path'], 'href' => ($request?->basePath ?? '') . '/' . $saved['path'], 'created' => $saved['created']];
     }
 
     public function analyze(Request $request, string $pid, ?User $principal): Response
@@ -92,7 +126,11 @@ final class LibraryAiController
         }
         // Every request has the Assistant's retries: room for all of them
         $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60;
-        $run = fn (\Closure $progress): array => $this->analysis->run($task, $page, $principal, $request, $progress);
+        $run = function (\Closure $progress) use ($task, $page, $principal, $request): array {
+            $done = $this->analysis->run($task, $page, $principal, $request, $progress);
+
+            return $done + ['saved' => $this->keep($page, SourceAnalysis::TASKS[$task], t('library.ai.' . $task), $done['result'], $principal, $done['provider'], $request)];
+        };
 
         if (($fields['stream'] ?? false) !== true) {
             @set_time_limit($seconds);
@@ -195,7 +233,7 @@ final class LibraryAiController
         }
         $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60;
         $basePath = $request->basePath;
-        $run = function (\Closure $progress) use ($plan, $page, $principal, $request, $questions, $basePath): array {
+        $run = function (\Closure $progress) use ($task, $plan, $page, $principal, $request, $questions, $basePath): array {
             $done = $this->studio->run($plan, $page, $principal, $request, $questions, $progress);
             foreach ($done['sources'] as $i => $source) {
                 $done['sources'][$i]['href'] = $basePath . '/' . $source['path'];
@@ -204,6 +242,11 @@ final class LibraryAiController
                 $done['template']['problems'] = array_map(static fn (array $p): string => TemplateLintText::message($p), $done['template']['problems']);
                 $done['template']['reference'] = $page->path;
             }
+            // Kept beside the notebook, reading as it reads (its language, its citation style)
+            $done['saved'] = $this->keep($page, Studio::TASKS[$task], t('studio.' . $task), $done['result'], $principal, $done['provider'], $request, [
+                'language' => $page->frontmatter['language'] ?? null,
+                'citation_style' => $page->frontmatter['citation_style'] ?? null,
+            ]);
 
             return $done;
         };
@@ -256,6 +299,7 @@ final class LibraryAiController
             return null;
         }
 
-        return isset($page->frontmatter['patient']) || ReportPath::isReport($page->path) ? null : $page;
+        // A saved analysis is no notebook of its own
+        return isset($page->frontmatter['patient']) || ReportPath::isReport($page->path) || Analyses::isAnalysis($page->frontmatter) ? null : $page;
     }
 }

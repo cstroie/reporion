@@ -440,6 +440,18 @@
     return line.length > 160 ? line.slice(0, 159).replace(/\s+\S*$/, '') + '…' : line;
   }
 
+  // Where the result was kept (Service\Library\Analyses): "Kept as <its page>"
+  function keptAs(saved, label) {
+    var p = el('p', 'wk-dim wk-text-xs');
+    var parts = (label || '%s').split('%s');
+    p.appendChild(document.createTextNode(parts[0]));
+    var a = el('a', '', saved.path);
+    a.href = saved.href;
+    p.appendChild(a);
+    p.appendChild(document.createTextNode(parts[1] || ''));
+    return p;
+  }
+
   function mountAi(box) {
     var cfg = config(box);
     var s = cfg.strings || {};
@@ -465,6 +477,7 @@
       var meta = [data.provider || '', ((data.ms || 0) / 1000).toFixed(1) + ' s'].concat(data.requests > 1 ? [data.requests + ' ×'] : []).filter(Boolean).join(' · ');
       out.appendChild(el('p', 'wk-dim wk-text-xs wk-mono', meta));
       out.appendChild(el('p', 'wk-dim wk-text-sm', s.note));
+      if (data.saved) out.appendChild(keptAs(data.saved, s.saved));
       var row = el('div', 'wk-actions');
       var copy = el('button', 'btn btn-secondary btn-sm', s.copy);
       copy.type = 'button';

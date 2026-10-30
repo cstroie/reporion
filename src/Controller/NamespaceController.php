@@ -135,6 +135,8 @@ final class NamespaceController
                     $page = $this->storage->read($path);
                     $this->storage->delete($path, $principal->username);
                     $this->audit->record('page.delete', $principal->username, $request, $page->pid, $page->path, $page->rev);
+                    // The assistant's saved analyses of it go with it (Service\Library\Analyses)
+                    (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
                     ++$deleted;
                 } catch (InvalidArgumentException | PageNotFoundException | RuntimeException) {
                     // Pages under it, gone meanwhile, or a write that failed: counted, and the

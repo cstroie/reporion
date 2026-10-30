@@ -485,6 +485,8 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
+        // The assistant's saved analyses of it go with it (Service\Library\Analyses)
+        (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
         if ($purge) {
             $this->storage->purge($deleted->pid, $principal->username, includeSigned: true);
             $this->audit->record('page.purge', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev, extra: ['signed' => $deleted->meta['signatures'] !== []]);

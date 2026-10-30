@@ -49,6 +49,8 @@ final class PageTemplateRenderer
         private readonly ?\Closure $similarExcluded = null,
         // Where `[@key]` citations find their sources (docs/library.md)
         private readonly string $libraryNamespace = 'library',
+        // The assistant's saved analyses of a source and Studio texts of a notebook (2026-10-31)
+        private readonly ?\Reporion\Service\Library\Analyses $analyses = null,
     ) {
     }
 
@@ -163,9 +165,12 @@ final class PageTemplateRenderer
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
             // What it cites (phase 7): its reference list against the records the caller reads (the index only)
             'cites' => $this->cites($record, $principal),
+            // What the assistant made of it before, kept beside it, for any reader of the source
+            'saved' => $currentRev === null ? $this->rendered($this->analyses?->shown($record, $principal, array_values(\Reporion\Service\Library\SourceAnalysis::TASKS)) ?? [], [], $request->basePath, $principal) : [],
         ] : null;
         // Ask the notebook (docs/library.md, phase 5): a page that cites library sources, for an editor of it and of the library, with the prompt there
         $notebook = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)
+            && !\Reporion\Service\Library\Analyses::isAnalysis($record->frontmatter)
             && $principal->canWrite($record->path) && $principal->canWrite($this->libraryNamespace)
             && (InternalLink::citedKeys($record->body) !== [] || (\is_array($record->frontmatter['sources'] ?? null) && $record->frontmatter['sources'] !== []));
         $vars['notebookAsk'] = $notebook && $this->aiActions?->special($record->path, 'ask-notebook') !== null ? ['path' => $record->path] : null;
@@ -173,7 +178,8 @@ final class PageTemplateRenderer
         $studioTasks = $notebook && $this->aiActions !== null
             ? array_values(array_filter(array_keys(\Reporion\Service\Library\Studio::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\Studio::TASKS[$task]) !== null))
             : [];
-        $vars['notebookStudio'] = $studioTasks !== [] ? ['path' => $record->path, 'tasks' => $studioTasks, 'slug' => substr($record->path, (int) strrpos($record->path, ':') + 1)] : null;
+        $vars['notebookStudio'] = $studioTasks !== [] ? ['path' => $record->path, 'tasks' => $studioTasks, 'slug' => substr($record->path, (int) strrpos($record->path, ':') + 1),
+            'saved' => $this->rendered($this->analyses?->shown($record, $principal, array_values(\Reporion\Service\Library\Studio::TASKS)) ?? [], $record->frontmatter, $request->basePath, $principal)] : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
@@ -229,5 +235,26 @@ final class PageTemplateRenderer
         $matched = \Reporion\Support\ReferenceList::match($entries, $records);
 
         return ['entries' => $matched, 'found' => \count(array_filter($matched, static fn (array $e): bool => $e['match'] !== null))];
+    }
+
+    /**
+     * Saved analyses with their text rendered by the one renderer (invariant 4), in the citation
+     * style and language of the page they belong to; their headings' ids dropped, as the
+     * References panel's, so they never collide with the page's own anchors
+     *
+     * @param list<array{prompt: string, path: string, text: string, at: string, provider: string, stale: bool}> $saved
+     * @param array<string, mixed> $frontmatter the page's
+     *
+     * @return list<array{prompt: string, path: string, text: string, at: string, provider: string, stale: bool, html: string}>
+     */
+    private function rendered(array $saved, array $frontmatter, string $basePath, ?User $principal): array
+    {
+        $style = array_intersect_key($frontmatter, ['citation_style' => true, 'language' => true]);
+        foreach ($saved as $i => $item) {
+            $html = $this->render->body($item['text'], $style, $basePath, citeLinks: $principal !== null && $principal->canRead($this->libraryNamespace))->html;
+            $saved[$i]['html'] = (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $html);
+        }
+
+        return $saved;
     }
 }

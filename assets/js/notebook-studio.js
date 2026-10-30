@@ -137,6 +137,16 @@
       var markdown = data.template ? data.template.body : data.result;
       out.appendChild(rendered(markdown, 'wk-notebook-answer'));
       if (data.dropped > 0) out.appendChild(notice('info', (s.dropped || '%s').replace('%s', data.dropped)));
+      if (data.saved) {
+        var kept = el('p', 'wk-dim wk-text-xs');
+        var parts = (s.saved || '%s').split('%s');
+        kept.appendChild(document.createTextNode(parts[0]));
+        var link = el('a', '', data.saved.path);
+        link.href = data.saved.href;
+        kept.appendChild(link);
+        kept.appendChild(document.createTextNode(parts[1] || ''));
+        out.appendChild(kept);
+      }
       var row = el('div', 'wk-actions');
       row.appendChild(copyButton(s.copy, s.copied, data.result));
       out.appendChild(row);

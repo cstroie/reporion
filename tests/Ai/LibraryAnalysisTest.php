@@ -71,6 +71,80 @@ final class LibraryAnalysisTest extends HttpTestCase
         return Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/library/' . $this->pid($path) . '/analyze', cookies: $cookies, body: (string) json_encode($body)));
     }
 
+    public function testEachAnalysisIsKeptBesideItsSourceAndShownWhenItIsOpenedAgain(): void
+    {
+        $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'points'])->body, true)['data'];
+
+        self::assertSame(['path' => 'library:short2024:source-points', 'href' => '/library:short2024:source-points', 'created' => true], $data['saved']);
+        $kept = $this->storage()->read('library:short2024:source-points');
+        self::assertSame("Concluzie: fără leziuni.\n", $kept->body);
+        self::assertSame('Key points: A made-up study', $kept->frontmatter['title']);
+        self::assertSame('private', $kept->visibility);
+        self::assertSame(['source-points', $this->pid('library:short2024')], [$kept->frontmatter['analysis']['prompt'], $kept->frontmatter['analysis']['of']]);
+        $revlog = $kept->revlog;
+        self::assertSame('assisted: source-points', end($revlog)['note'] ?? null);
+        self::assertStringContainsString('"assisted":["source-points"]', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+
+        // Run again: a new revision of the same page
+        self::assertFalse(json_decode($this->analyze('editor', 'library:short2024', ['task' => 'points'])->body, true)['data']['saved']['created']);
+        self::assertSame(2, $this->storage()->read('library:short2024:source-points')->rev);
+
+        // Reopened, by any reader of the source
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('reader');
+        $view = Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => $cookie]))->body;
+        self::assertStringContainsString('data-saved-prompt="source-points"', $view);
+        self::assertStringContainsString('<p>Concluzie: fără leziuni.</p>', $view, 'rendered by the server');
+        self::assertStringNotContainsString('older text', $view);
+
+        // The source's text changes: the analysis is from an older one
+        $source = $this->storage()->read('library:short2024');
+        $this->storage()->save('library:short2024', $source->frontmatter, $source->body . "\nA new line.\n", $source->rev, 'owner');
+        self::assertStringContainsString('older text', Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => $cookie]))->body);
+    }
+
+    public function testAPageThereThatIsNoAnalysisIsNeverWrittenOver(): void
+    {
+        $this->storage()->create('library:short2024:source-points', ['title' => 'Mine', 'visibility' => 'private'], "My own notes.\n", 'owner');
+
+        $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'points'])->body, true)['data'];
+
+        self::assertNull($data['saved']);
+        self::assertSame('Concluzie: fără leziuni.', $data['result'], 'the answer is shown all the same');
+        self::assertSame("My own notes.\n", $this->storage()->read('library:short2024:source-points')->body);
+    }
+
+    public function testTheAnalysesMoveAndGoToTheTrashWithTheirSource(): void
+    {
+        $this->analyze('editor', 'library:short2024', ['task' => 'points']);
+        $this->analyze('editor', 'library:short2024', ['task' => 'summary']);
+        $storage = $this->storage();
+        $moves = new \Reporion\Service\PageMoves($storage, new \Reporion\Audit\AuditLog($this->dataRoot . '/audit'), 'library', new \Reporion\Service\Library\Analyses($storage));
+
+        $moves->move('library:short2024', 'library:nobody2024', 'owner');
+
+        self::assertSame("Concluzie: fără leziuni.\n", $storage->read('library:nobody2024:source-points')->body);
+        self::assertSame('library:nobody2024:summary', $storage->read('library:nobody2024:summary')->path);
+        self::assertSame([], iterator_to_array((function () use ($storage) {
+            foreach ($storage->allPaths() as $p) {
+                if (str_starts_with($p, 'library:short2024')) {
+                    yield $p;
+                }
+            }
+        })(), false), 'nothing left under the old key');
+
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+        $deleted = Kernel::boot($this->config)->handle(new Request('DELETE', '/api/v1/pages/library:nobody2024', cookies: ['reporion' => $cookie]));
+        self::assertSame(200, $deleted->status, $deleted->body);
+        foreach (['library:nobody2024:source-points', 'library:nobody2024:summary'] as $path) {
+            try {
+                $storage->read($path);
+                self::fail($path . ' went to the trash with its source');
+            } catch (\Reporion\Exception\PageNotFoundException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     public function testASourceThatFitsIsOneRequestAboutItsTextWithoutItsReferenceList(): void
     {
         $response = $this->analyze('editor', 'library:short2024', ['task' => 'points']);

@@ -35,7 +35,33 @@ final class PageMoves
         private readonly AuditLog $audit,
         // Where `[@key]` citations find their sources: a library page renamed is re-cited (docs/library.md)
         private readonly string $libraryNamespace = 'library',
+        // The assistant's saved analyses move with the page they belong to (2026-10-31)
+        private readonly ?\Reporion\Service\Library\Analyses $analyses = null,
     ) {
+    }
+
+    /**
+     * The saved analyses under $from moved under $to, after their page: each as it was named
+     * (`{page}:{prompt}`); one whose new path is taken stays where it was
+     *
+     * @param list<string> $children Analyses::under($from), read before the page moved
+     *
+     * @return array<string, string> old path => new path, for the link fixups
+     */
+    private function moveAnalyses(array $children, string $from, string $to, string $actor, ?Request $request): array
+    {
+        $map = [];
+        foreach ($children as $child) {
+            try {
+                $record = $this->storage->move($child, $to . substr($child, \strlen($from)), $actor);
+                $map[$child] = $record->path;
+                $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: ['from_hash' => AuditLog::pathHash($child), 'with' => 'analysis']);
+            } catch (InvalidArgumentException|PageNotFoundException) {
+                // Its new path is taken: left where it was, still readable
+            }
+        }
+
+        return $map;
     }
 
     /**
@@ -46,8 +72,10 @@ final class PageMoves
      */
     public function move(string $from, string $to, string $actor, ?Request $request = null): array
     {
+        $children = $this->analyses?->under($from) ?? [];
         $moved = $this->storage->move($from, $to, $actor);
-        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $this->relink([$from => $moved->path], $actor, 'link to moved page');
+        $along = $this->moveAnalyses($children, $from, $moved->path, $actor, $request);
+        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $this->relink([$from => $moved->path] + $along, $actor, 'link to moved page');
 
         $this->audit->record('page.move', $actor, $request, $moved->pid, $moved->path, $moved->rev, extra: [
             'from_hash' => AuditLog::pathHash($from),
@@ -81,6 +109,7 @@ final class PageMoves
         $moved = [];
         $failed = [];
         foreach ($moves as $from => $to) {
+            $children = $this->analyses?->under((string) $from) ?? [];
             try {
                 $record = $this->storage->move((string) $from, $to, $actor);
             } catch (InvalidArgumentException|PageNotFoundException $e) {
@@ -88,6 +117,7 @@ final class PageMoves
                 continue;
             }
             $done[(string) $from] = $record->path;
+            $done += $this->moveAnalyses($children, (string) $from, $record->path, $actor, $request);
             $moved[(string) $from] = $record;
         }
 
