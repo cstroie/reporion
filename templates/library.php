@@ -10,7 +10,7 @@
  *
  * Variables in scope: list<array{pid, path, key, title, authors, year, journal, tags, ext, doi}> $entries;
  * array<string, int> $tagCounts; string $tag, $sort, $namespace, $basePath; bool $canAdd; int $maxMb;
- * list<string> $extensions
+ * list<string> $extensions; bool $webClip (the Add panel takes an address, phase 7)
  */
 
 declare(strict_types=1);
@@ -24,6 +24,7 @@ declare(strict_types=1);
 /** @var bool $canAdd */
 /** @var int $maxMb */
 /** @var list<string> $extensions */
+$webClip = ($webClip ?? false) === true;
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $link = static function (array $query) use ($basePath, $tag, $sort): string {
     $query += ['tag' => $tag, 'sort' => $sort];
@@ -52,6 +53,13 @@ $total = \count($entries);
 <small><?= $e(t('library.drop_help', [(string) $maxMb])) ?></small>
 <input type="file" multiple accept="<?= $e(implode(',', array_map(static fn (string $x): string => '.' . $x, [...$extensions, ...\Reporion\Controller\LibraryController::IMPORT_EXTENSIONS]))) ?>" data-lib-files>
 </label>
+<?php if ($webClip): ?>
+<form class="wk-lib-clip" data-lib-clip>
+<div class="field"><label><?= $e(t('library.clip')) ?>
+<span class="group"><input class="input" type="url" name="url" maxlength="2000" required placeholder="<?= $e(t('library.clip_hint')) ?>" autocapitalize="off" spellcheck="false"><button class="btn btn-secondary" type="submit"><i class="ph ph-globe" aria-hidden="true"></i><?= $e(t('library.clip_go')) ?></button></span>
+<small><?= $e(t('library.clip_help')) ?></small></label></div>
+</form>
+<?php endif; ?>
 <div class="wk-lib-queue" data-lib-queue></div>
 <template data-lib-form-template><?php $libraryFormMode = 'add'; include __DIR__ . '/partials/library-record-form.php'; ?></template>
 <script type="application/json"><?= json_encode([
@@ -64,7 +72,7 @@ $total = \count($entries);
         'failed' => t('library.failed'), 'too_large' => t('library.err_too_large', [(string) $maxMb]), 'unsupported' => t('library.err_unsupported'),
         'lookup_done' => t('library.lookup_done'), 'lookup_none' => t('library.lookup_none'), 'lookup_failed' => t('library.lookup_failed'), 'importing' => t('library.importing'), 'imported' => t('library.imported'), 'attach' => t('library.attach'),
         'duplicate' => t('library.duplicate'), 'duplicate_title' => t('library.duplicate_title'), 'discarded' => t('library.discarded'),
-        'pages' => t('library.pages'), 'title_needed' => t('library.title_needed'),
+        'pages' => t('library.pages'), 'title_needed' => t('library.title_needed'), 'clipping' => t('library.clipping'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </section>

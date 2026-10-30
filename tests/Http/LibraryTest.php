@@ -201,6 +201,46 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(2, $storage->read('wiki:notebook')->rev);
     }
 
+    public function testWebClipIsOffUntilTurnedOnAndRefusesALocalAddress(): void
+    {
+        self::assertSame(404, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'https://example.org/'])->status, 'off by default');
+        self::assertStringNotContainsString('data-lib-clip', $this->call('editor', 'GET', '/library')->body);
+
+        $this->config['library']['web_clip'] = true;
+        self::assertStringContainsString('data-lib-clip', $this->call('editor', 'GET', '/library')->body);
+        self::assertSame(404, $this->call('reader', 'POST', '/api/v1/library/clip', ['url' => 'https://example.org/'])->status, 'a reader adds nothing');
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'ftp://example.org/'])->status);
+        $local = $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'http://127.0.0.1/']);
+        self::assertSame([422, 'invalid'], [$local->status, json_decode($local->body, true)['error']['code']], 'a local address is never fetched');
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'http://[::ffff:10.0.0.1]/'])->status);
+    }
+
+    public function testAClippedPageIsProposedWithItsAddressAndTheDay(): void
+    {
+        $config = $this->config;
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, $index);
+        $clip = new \Reporion\Service\Library\WebClip(
+            1024 * 1024,
+            static fn (string $host): array => ['93.184.216.34'],
+            static fn (string $url, string $address, string $host, int $max): array => ['status' => 200, 'headers' => ['Content-Type: text/plain'], 'body' => "A made-up guideline on test lesions\n\nGrade them from 0 to 3.\n"],
+        );
+        $controller = new \Reporion\Controller\LibraryController(Kernel::library($config, $storage, $index), $storage, $index, new \Reporion\Audit\AuditLog($this->dataRoot . '/audit'), null, $clip);
+        $editor = (new FlatFileUserStore($this->dataRoot))->find('editor');
+
+        $response = $controller->clip(new Request('POST', '/api/v1/library/clip', body: (string) json_encode(['url' => 'https://guidelines.example/lesions?x=1'])), $editor);
+
+        self::assertSame(201, $response->status, $response->body);
+        $proposal = json_decode($response->body, true);
+        self::assertSame('A made-up guideline on test lesions', $proposal['csl']['title']);
+        self::assertSame('https://guidelines.example/lesions?x=1', $proposal['csl']['URL']);
+        self::assertSame([[(int) date('Y'), (int) date('n'), (int) date('j')]], $proposal['csl']['accessed']['date-parts']);
+        self::assertSame('txt', $proposal['ext']);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"host":"guidelines.example"', $audit);
+        self::assertStringNotContainsString('lesions?x=1', $audit, 'the host only, never the path');
+    }
+
     public function testAnUnlistedSourceIsRefusedSoNoAnonymousLinkReadsIt(): void
     {
         $page = $this->add('editor', self::ARTICLE, 'study.md');

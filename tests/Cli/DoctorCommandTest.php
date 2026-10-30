@@ -79,13 +79,13 @@ final class DoctorCommandTest extends TestCase
     {
         $this->createOwnerAccount();
         [, $output] = $this->runCommand(new DoctorCommand($this->config()));
-        self::assertStringContainsString('[PASS] Library online lookups (CrossRef, PubMed): off', $output);
+        self::assertStringContainsString('[PASS] Library online lookups (CrossRef, PubMed) and web clip: off', $output);
 
         $config = $this->config();
         $config['library']['lookup'] = true;
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
         self::assertSame(0, $exitCode, 'never a failure');
-        self::assertMatchesRegularExpression('/\[(PASS|WARN)\] Library online lookups \(CrossRef, PubMed\): on/', $output);
+        self::assertMatchesRegularExpression('/\[(PASS|WARN)\] Library online lookups \(CrossRef, PubMed\) and web clip: lookups on/', $output);
     }
 
     public function testAMissingOrDamagedStateDatabaseBesidePagesFails(): void

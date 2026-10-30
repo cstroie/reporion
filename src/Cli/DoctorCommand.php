@@ -704,18 +704,20 @@ final class DoctorCommand implements CommandInterface
     /** The online lookups (Admin → Settings → Library) need PHP to open an https address; without it every lookup only says it could not be reached */
     private function checkLibraryLookup(): CheckResult
     {
-        $label = 'Library online lookups (CrossRef, PubMed)';
-        if (($this->config['library']['lookup'] ?? false) !== true) {
+        $label = 'Library online lookups (CrossRef, PubMed) and web clip';
+        $on = array_keys(array_filter(['lookups' => $this->config['library']['lookup'] ?? false, 'web clip' => $this->config['library']['web_clip'] ?? false], static fn (mixed $v): bool => $v === true));
+        if ($on === []) {
             return CheckResult::pass($label, 'off');
         }
+        $what = implode(' and ', $on) . ' on';
         if (!filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
-            return CheckResult::warn($label, 'on, but PHP\'s allow_url_fopen is off: no lookup can be made');
+            return CheckResult::warn($label, $what . ', but PHP\'s allow_url_fopen is off: nothing can be fetched');
         }
         if (!\in_array('https', stream_get_wrappers(), true)) {
-            return CheckResult::warn($label, 'on, but PHP has no https support (the openssl extension): no lookup can be made');
+            return CheckResult::warn($label, $what . ', but PHP has no https support (the openssl extension): nothing can be fetched');
         }
 
-        return CheckResult::pass($label, 'on');
+        return CheckResult::pass($label, $what);
     }
 
     /**

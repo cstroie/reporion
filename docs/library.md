@@ -2,9 +2,9 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **phases 1–6 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
+the assistant). Status: **phases 1–7 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
 library view, the upload form and a source's card; `[@key]` citations and the References section; import, export and
-lookups; the assistant on a source and Ask the notebook; Studio and the template generator. Phases 7 and 8 are planned.
+lookups; the assistant on a source and Ask the notebook; Studio and the template generator; passage vectors, what a paper cites, highlights and web clip. Phase 8 is planned.
 
 ## Owner's decisions (2026-10-30)
 
@@ -231,7 +231,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),
    web clip by URL (opt-in).
-   *Step 1 built 2026-10-30 (schema change approved by the owner the same day):* `passage_vectors` in `vectors.sqlite`
+   **Built 2026-10-30, four steps.** *Step 1 (schema change approved by the owner the same day):* `passage_vectors` in `vectors.sqlite`
    (`migrations/vectors/002_passage_vectors.sql`, architecture-storage-index.md §6): each library source cut by
    `Support\SourcePassages` (the one cutter, used by the indexer and the query alike; a marker-only part dropped, a short tail
    joined to the passage before), de-identified (`Context::passageEmbeddingText()`) and embedded by `index:vectors` after the
@@ -256,6 +256,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    quote stands in the source (whitespace folded, the extracted text's escapes undone), none when it is not found (a quote cut with
    "…" at 300 characters is looked for without it). Never into a report, a page naming a patient, a library source or a signed page.
    No assistant. *Not built:* highlight colours, a list of a source's highlights apart from its comments.
+   *Step 4 built 2026-10-30:* **Web clip**, opt-in (Admin → Settings → Library, `library.web_clip`, off by default): the Add panel
+   takes an address, `POST /api/v1/library/clip` fetches it (`Service\Library\WebClip`) and the upload's own reading and proposal
+   follow (the same patient guard, duplicates and lookups), with `URL`, `accessed` and, for a page with no DOI, `type: webpage`.
+   The fetch is guarded as a server-side request forgery would be: http on 80 or https on 443 only, no user info, every address the
+   host resolves to public (not loopback, private, link-local, CGNAT, multicast, reserved, documentation, ULA or IPv4-mapped), the
+   connection made to the address checked (the URL holds the IP; the Host header and TLS's peer name and SNI the host, the
+   certificate verified against it), so a DNS answer that changes between check and connection cannot redirect it; redirects
+   handled here, at most 3, each checked again; no proxy; 15 s; the library's size limit read as it streams; HTML, PDF or plain
+   text. At most 30 an hour a writer; audited with the host only. Only the address typed leaves the box. PHP-FPM needs
+   `allow_url_fopen` (doctor warns, as for lookups). *Not built:* a page's own `<title>`, author and date metadata read into the
+   record (the text's first line is the title, as for an upload), pages that need JavaScript to show their text.
 8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
 
 ## Long sources

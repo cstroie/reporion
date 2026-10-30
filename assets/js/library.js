@@ -194,11 +194,39 @@
       next();
     }
 
+    // Web clip (phase 7, when an owner turned it on): an address, fetched and read by the server
+    var clipForm = box.querySelector('[data-lib-clip]');
+    if (clipForm) {
+      clipForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var url = clipForm.elements.url.value.trim();
+        if (!url) { clipForm.elements.url.focus(); return; }
+        var slot = card({ name: url, size: 0 });
+        slot.meta.textContent = '';
+        say(slot, 'info', s.clipping);
+        waiting.push({ clip: url, slot: slot });
+        clipForm.elements.url.value = '';
+        next();
+      });
+    }
+
     // One file at a time: the server reads each with external programs
     function next() {
       if (running || !waiting.length) return;
       running = true;
       var job = waiting.shift();
+      if (job.clip) {
+        api(base + '/api/v1/library/clip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: job.clip }) }).then(function (result) {
+          if (result.status === 201) propose(job.slot, result.json);
+          else say(job.slot, 'error', errorOf(result, s.failed));
+        }, function () {
+          say(job.slot, 'error', s.failed);
+        }).then(function () {
+          running = false;
+          next();
+        });
+        return;
+      }
       if (job.records) {
         api(base + '/api/v1/library/import', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: job.file }).then(function (result) {
           if (result.status === 200 || result.status === 201) {

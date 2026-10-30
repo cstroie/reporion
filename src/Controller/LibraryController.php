@@ -20,6 +20,8 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\Library;
+use Reporion\Service\Library\WebClip;
+use Reporion\Http\Throttle;
 use Reporion\Storage\FileTree;
 use Reporion\Support\Bibliography;
 use Reporion\Support\Citation;
@@ -54,8 +56,13 @@ final class LibraryController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly ?Highlights $highlights = null,
+        private readonly ?WebClip $clip = null,
+        private readonly ?Throttle $throttle = null,
     ) {
     }
+
+    /** Web clips a writer may make in an hour */
+    public const CLIPS_PER_HOUR = 30;
 
     /** The exports of a reference manager the upload takes as records with no file */
     public const IMPORT_EXTENSIONS = ['bib', 'ris', 'json'];
@@ -96,6 +103,7 @@ final class LibraryController
             'namespace' => $this->library->namespace(),
             'maxMb' => intdiv($this->library->maxBytes(), 1024 * 1024),
             'extensions' => array_keys(Extractor::TYPES),
+            'webClip' => $this->clip !== null,
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, $this->library->namespace()), t('library.title')));
     }
@@ -149,6 +157,48 @@ final class LibraryController
         $this->audit->record('page.save', $principal->username, $request, (string) ($row['pid'] ?? ''), $sent['path'], $sent['rev'], extra: ['highlight_from' => $pid]);
 
         return ApiResponse::json(['path' => $sent['path'], 'rev' => $sent['rev'], 'page' => $sent['page'], 'href' => $request->basePath . '/' . $sent['path']]);
+    }
+
+    /**
+     * POST /api/v1/library/clip {url}: a web page, PDF or text file fetched by its address
+     * (Service\Library\WebClip, phase 7, opt-in `library.web_clip`) and read as an upload: the same
+     * proposal, with the address and the day as `URL` and `accessed`; nothing is kept until the
+     * writer confirms it. Off: 404, as for anyone who may not add.
+     */
+    public function clip(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || $this->clip === null || !$this->library->canAdd($principal)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $url = $request->json()['url'] ?? null;
+        if (!\is_string($url) || WebClip::parse(trim($url)) === null) {
+            return ApiResponse::error(422, 'invalid', t('library.clip_bad_url'));
+        }
+        if ($this->throttle !== null && $this->throttle->hit('clip:' . $principal->username, 3600) > self::CLIPS_PER_HOUR) {
+            return ApiResponse::error(429, 'throttled', t('library.clip_throttled', [(string) self::CLIPS_PER_HOUR]));
+        }
+        @set_time_limit(WebClip::TIMEOUT * (WebClip::MAX_REDIRECTS + 1) + 60);
+        try {
+            $fetched = $this->clip->fetch(trim($url));
+            $proposal = $this->library->upload($fetched['bytes'], 'clip.' . $fetched['ext'], $principal);
+        } catch (LibraryException $e) {
+            $clipOwn = [LibraryException::INVALID => [422, 'clip_refused'], LibraryException::FAILED => [502, 'clip_failed'], LibraryException::UNSUPPORTED => [415, 'clip_unsupported'], LibraryException::TIMEOUT => [504, 'clip_failed']];
+            // Before anything was fetched or read, the clip's own words; after, the upload's
+            if (!isset($fetched) && isset($clipOwn[$e->reason])) {
+                return ApiResponse::error($clipOwn[$e->reason][0], $e->reason, t('library.' . $clipOwn[$e->reason][1]));
+            }
+
+            return $this->failure($e, $principal);
+        }
+        $proposal['csl']['URL'] = $fetched['url'];
+        $proposal['csl']['accessed'] = ['date-parts' => [[(int) date('Y'), (int) date('n'), (int) date('j')]]];
+        if ($fetched['ext'] === 'html' && !isset($proposal['csl']['DOI'])) {
+            $proposal['csl']['type'] = 'webpage';
+        }
+        // The host only: an address's path or query may say anything
+        $this->audit->record('library.clip', $principal->username, $request, null, null, null, extra: ['host' => $fetched['host'], 'ext' => $fetched['ext'], 'bytes' => \strlen($fetched['bytes'])]);
+
+        return ApiResponse::json($proposal, 201);
     }
 
     public function upload(Request $request, ?User $principal): Response

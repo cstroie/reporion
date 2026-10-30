@@ -57,6 +57,8 @@ final class InstanceSettings
         'editor.save_stays_open' => 'bool',
         // Library lookups (docs/library.md, phase 4): a DOI or PMID sent to CrossRef and PubMed to complete a record; off unless an owner turns it on
         'library.lookup' => 'bool',
+        // Web clip (docs/library.md, phase 7): the server fetches a web page by the address a writer types; off unless an owner turns it on
+        'library.web_clip' => 'bool',
         // What one assistant request about the library may hold (docs/library.md, phase 5): the model's context, in tokens
         'library.context_tokens' => 'context_tokens',
         // Owner-only debug panels in a page's footer (the new-report form's raw findscu exchange); off unless an owner turns them on
