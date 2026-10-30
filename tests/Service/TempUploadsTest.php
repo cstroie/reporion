@@ -24,6 +24,20 @@ final class TempUploadsTest extends StorageTestCase
         self::assertSame([], glob($this->dataRoot . '/tmp/dicom/*.part') ?: [], 'no half-written file is left');
     }
 
+    public function testPeekLeavesTheFileForTake(): void
+    {
+        $uploads = new TempUploads($this->dataRoot);
+        $token = $uploads->put('library', 'bytes');
+
+        self::assertSame('bytes', $uploads->peek('library', $token));
+        self::assertSame('bytes', $uploads->peek('library', $token));
+        self::assertSame('bytes', $uploads->take('library', $token));
+        self::assertNull($uploads->peek('library', $token));
+        self::assertNull($uploads->peek('library', 'not-a-token'));
+        touch($this->dataRoot . '/tmp/library/' . ($old = $uploads->put('library', 'old')), time() - TempUploads::LIFETIME - 10);
+        self::assertNull($uploads->peek('library', $old), 'expired');
+    }
+
     public function testAnOldFileIsNotGivenAndIsSweptOnTheNextPut(): void
     {
         $uploads = new TempUploads($this->dataRoot);
