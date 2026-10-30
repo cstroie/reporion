@@ -21,6 +21,8 @@ library view, the upload form and a source's card; `[@key]` citations and the Re
 | Citations a reader may not follow | Printed from the record, no link to the library page |
 | Long sources | Adaptive: whole when they fit `library.context_tokens` (32 000), else map-reduced by section |
 | Starred / read marks | None |
+| External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
+| Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
 | Where it is built | `feat/library` branch in a worktree, full suite by the owner before merging |
 
 ## Words
