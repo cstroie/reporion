@@ -45,7 +45,43 @@ final class Requirements
             $this->openBasedir(),
             $this->folders(),
             $this->assetsLink(),
+            ...$this->software(),
         ];
+    }
+
+    /**
+     * Optional software, one line a feature (D43 amended 2026-10-31): what each reads or makes, found
+     * or not, with the Debian/Ubuntu packages that bring it. A warning at most, never a stop:
+     * Reporion runs without any of it; `bin/reporion doctor` says the same later.
+     *
+     * feature => [programs (any found is enough, all for `all`), packages, all?]
+     */
+    public const SOFTWARE = [
+        'pdf' => [['pdftotext', 'pdfinfo', 'pdftohtml', 'pdftoppm'], 'poppler-utils', true],
+        'pandoc' => [['pandoc'], 'pandoc', true],
+        'office' => [['soffice'], 'libreoffice-writer libreoffice-calc libreoffice-impress', true],
+        'oldoffice' => [['antiword', 'catdoc', 'xls2csv', 'catppt'], 'antiword catdoc', true],
+        'ocr' => [['tesseract', 'tessdata:ron', 'tessdata:eng'], 'tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng', true],
+        'audio' => [['ffmpeg'], 'ffmpeg', true],
+        'backup' => [['rsync', 'ssh'], 'rsync openssh-client', true],
+        'groff' => [['groff'], 'groff', true],
+        'dicom' => [['findscu'], 'dcmtk', true],
+    ];
+
+    /** @return list<Check> */
+    public function software(): array
+    {
+        $checks = [];
+        foreach (self::SOFTWARE as $feature => [$programs, $packages, $all]) {
+            $label = t('install.req.sw.' . $feature);
+            $missing = array_values(array_filter($programs, fn (string $p): bool => !$this->env->found($p)));
+            $ok = $all ? $missing === [] : \count($missing) < \count($programs);
+            $checks[] = $ok
+                ? Check::pass($label, t('install.req.sw.' . $feature . '_what'))
+                : Check::warn($label, t('install.req.sw.optional', [t('install.req.sw.' . $feature . '_what'), implode(', ', array_map(static fn (string $p): string => str_replace('tessdata:', 'tesseract data ', $p), $missing))]), 'sudo apt install ' . $packages);
+        }
+
+        return $checks;
     }
 
     public function phpVersion(): Check

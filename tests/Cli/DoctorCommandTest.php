@@ -67,12 +67,12 @@ final class DoctorCommandTest extends TestCase
     {
         $this->createOwnerAccount();
         $config = $this->config();
-        $config['library']['tools'] = ['pdftotext' => '/nonexistent/pdftotext', 'pandoc' => '/nonexistent/pandoc', 'soffice' => '/nonexistent/soffice', 'tesseract' => '/nonexistent/tesseract', 'pdftoppm' => '/nonexistent/pdftoppm'];
+        $config['library']['tools'] = ['pdftotext' => '/nonexistent/pdftotext', 'pandoc' => '/nonexistent/pandoc', 'soffice' => '/nonexistent/soffice', 'tesseract' => '/nonexistent/tesseract', 'pdftoppm' => '/nonexistent/pdftoppm', 'antiword' => '/nonexistent/antiword', 'catdoc' => '/nonexistent/catdoc', 'xls2csv' => '/nonexistent/xls2csv', 'catppt' => '/nonexistent/catppt'];
 
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
 
         self::assertSame(0, $exitCode);
-        self::assertStringContainsString('[WARN] Library can read uploaded files: not PDF (install poppler-utils); Word, OpenDocument, RTF, HTML and EPUB (install pandoc); .doc and office slides and sheets (install LibreOffice); scanned PDFs (install tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng and poppler-utils)', $output);
+        self::assertStringContainsString('[WARN] Library can read uploaded files: not PDF (install poppler-utils); Word, OpenDocument, RTF, HTML and EPUB (install pandoc); .doc and office slides and sheets (install LibreOffice, or antiword and catdoc for .doc, .xls and .ppt as text); scanned PDFs (install tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng and poppler-utils)', $output);
     }
 
     public function testTheLibraryLookupIsReportedOffOrOn(): void

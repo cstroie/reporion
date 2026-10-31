@@ -15,7 +15,8 @@ use Reporion\Support\SourceText;
  * list in a private temporary directory, with a timeout, its stderr discarded (as groff, D42):
  * txt/md as they are; pdf through pdftotext, pdfinfo and pdftohtml (page 1's font sizes for the
  * title); docx/odt/rtf/html/epub through pandoc; doc/ppt/pptx/xls/xlsx/odp through LibreOffice
- * first (doc to docx, the others to pdf). A PDF with no text layer (a scan) is read by OCR (docs/
+ * first (doc to docx, the others to pdf), or without it an old .doc by antiword or catdoc, .xls by
+ * xls2csv and .ppt by catppt, as text. A PDF with no text layer (a scan) is read by OCR (docs/
  * library.md, phase 8): each page rendered by pdftoppm and read by tesseract (Romanian and
  * English), a page at a time with its own timeout; a scan longer than OCR_MAX_PAGES is refused
  * whole (never part of it kept: the rest could not be checked for patient data), and so is one
@@ -31,7 +32,13 @@ final class Extractor
     ];
 
     /** The programs used, by name; each may be set to a full path */
-    public const TOOLS = ['pdftotext', 'pdfinfo', 'pdftohtml', 'pandoc', 'soffice', 'pdftoppm', 'tesseract'];
+    public const TOOLS = ['pdftotext', 'pdfinfo', 'pdftohtml', 'pandoc', 'soffice', 'pdftoppm', 'tesseract', 'antiword', 'catdoc', 'xls2csv', 'catppt'];
+
+    /**
+     * Without LibreOffice, the old binary Office files are read as text by these (the catdoc and
+     * antiword packages): the text only, no layout, so no title from font sizes
+     */
+    private const LIGHT = ['doc' => [['antiword', '-m', 'UTF-8.txt', '-w', '0'], ['catdoc', '-d', 'utf-8', '-w']], 'xls' => [['xls2csv', '-d', 'utf-8']], 'ppt' => [['catppt', '-d', 'utf-8']]];
 
     /** The most pages a scan may have to be read by OCR */
     public const OCR_MAX_PAGES = 30;
@@ -90,7 +97,16 @@ final class Extractor
             $in = $dir . '/in.' . $ext;
             file_put_contents($in, $bytes);
             if ($type === 'office') {
-                [$in, $ext] = $this->convertOffice($dir, $in, $ext);
+                try {
+                    [$in, $ext] = $this->convertOffice($dir, $in, $ext);
+                } catch (LibraryException $e) {
+                    // No LibreOffice: an old .doc, .xls or .ppt read as text by antiword or catdoc
+                    if ($e->reason !== LibraryException::TOOL_MISSING || !isset(self::LIGHT[$ext])) {
+                        throw $e;
+                    }
+
+                    return $this->fromText($this->light($in, $ext), false);
+                }
                 $type = $ext === 'pdf' ? 'pdf' : 'pandoc';
             }
 
@@ -105,7 +121,13 @@ final class Extractor
     {
         $found = [];
         foreach ($this->tools as $name => $program) {
-            $args = \in_array($name, ['soffice', 'pandoc', 'tesseract'], true) ? [$program, '--version'] : [$program, '-v'];
+            $args = match (true) {
+                \in_array($name, ['soffice', 'pandoc', 'tesseract'], true) => [$program, '--version'],
+                // antiword answers its usage, catdoc's tools -V
+                $name === 'antiword' => [$program],
+                \in_array($name, ['catdoc', 'xls2csv', 'catppt'], true) => [$program, '-V'],
+                default => [$program, '-v'],
+            };
             [$exit] = $this->run($args, 20);
             $found[$name] = $exit >= 0 && $exit !== 127;
         }
@@ -228,6 +250,32 @@ final class Extractor
         $clean = SourceText::fromMarkdown($markdown);
 
         return new Extracted($clean['body'], $clean['references'], 1, trim($markdown) !== '', substr($markdown, 0, self::HEAD_BYTES));
+    }
+
+    /**
+     * An old binary Office file's text by the first of LIGHT's programs that runs
+     *
+     * @throws LibraryException TOOL_MISSING when none does, TIMEOUT, FAILED
+     */
+    private function light(string $in, string $ext): string
+    {
+        $ran = false;
+        foreach (self::LIGHT[$ext] as $argv) {
+            $argv[0] = $this->tools[$argv[0]];
+            [$exit, $text] = $this->run([...$argv, $in], $this->timeout);
+            if ($exit === -1 || $exit === 127) {
+                continue;
+            }
+            if ($exit === -2) {
+                throw new LibraryException(LibraryException::TIMEOUT);
+            }
+            $ran = true;
+            // antiword refuses a Word older than 6 that catdoc reads: the next one tries
+            if ($exit === 0 && trim($text) !== '') {
+                return self::utf8($text);
+            }
+        }
+        throw new LibraryException($ran ? LibraryException::FAILED : LibraryException::TOOL_MISSING);
     }
 
     /** @return array{0: string, 1: string} the converted file and its extension */

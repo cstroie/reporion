@@ -692,7 +692,11 @@ final class DoctorCommand implements CommandInterface
             $cannot[] = 'Word, OpenDocument, RTF, HTML and EPUB (install pandoc)';
         }
         if (!$found['soffice']) {
-            $cannot[] = '.doc and office slides and sheets (install LibreOffice)';
+            // antiword / catdoc read the old binary files as text when LibreOffice is not there
+            $light = array_keys(array_filter(['.doc' => $found['antiword'] || $found['catdoc'], '.xls' => $found['xls2csv'], '.ppt' => $found['catppt']]));
+            $cannot[] = $light === []
+                ? '.doc and office slides and sheets (install LibreOffice, or antiword and catdoc for .doc, .xls and .ppt as text)'
+                : 'office slides and sheets but ' . implode(', ', $light) . ' as text (install LibreOffice)';
         }
         // Scans (phase 8): rendered by pdftoppm, read by tesseract in Romanian and English
         $extractor = new Extractor(sys_get_temp_dir(), $tools);

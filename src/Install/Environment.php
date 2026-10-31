@@ -33,7 +33,52 @@ final class Environment
         public readonly string $webUser,
         public readonly string $sapi,
         public readonly string $serverSoftware,
+        // The optional programs found (Requirements::software()): name => found; `tessdata:{lang}` for tesseract's language data
+        public readonly array $programs = [],
     ) {
+    }
+
+    /** The programs the optional features use, looked up as files on PATH: nothing is run */
+    public const PROGRAMS = ['pdftotext', 'pdfinfo', 'pdftohtml', 'pdftoppm', 'pandoc', 'soffice', 'antiword', 'catdoc', 'xls2csv', 'catppt', 'tesseract', 'ffmpeg', 'rsync', 'ssh', 'groff', 'findscu'];
+
+    /** Where Debian and others keep tesseract's language data */
+    private const TESSDATA = ['/usr/share/tesseract-ocr/*/tessdata', '/usr/share/tessdata', '/usr/local/share/tessdata'];
+
+    public function found(string $program): bool
+    {
+        return ($this->programs[$program] ?? false) === true;
+    }
+
+    /** @return array<string, bool> */
+    private static function programs(): array
+    {
+        $dirs = array_unique(array_filter(array_merge(
+            explode(':', (string) getenv('PATH')),
+            // PHP-FPM's PATH is often short: the usual places too
+            ['/usr/local/bin', '/usr/bin', '/bin', '/usr/local/sbin', '/usr/sbin', '/usr/lib/libreoffice/program', '/opt/libreoffice/program'],
+        )));
+        $found = [];
+        foreach (self::PROGRAMS as $program) {
+            $found[$program] = false;
+            foreach ($dirs as $dir) {
+                // open_basedir may hide a directory: a warning silenced, the program then not found
+                if (@is_file($dir . '/' . $program) && @is_executable($dir . '/' . $program)) {
+                    $found[$program] = true;
+                    break;
+                }
+            }
+        }
+        foreach (['ron', 'eng'] as $lang) {
+            $found['tessdata:' . $lang] = false;
+            foreach (self::TESSDATA as $pattern) {
+                if ((@glob($pattern . '/' . $lang . '.traineddata') ?: []) !== []) {
+                    $found['tessdata:' . $lang] = true;
+                    break;
+                }
+            }
+        }
+
+        return $found;
     }
 
     public static function current(): self
@@ -54,6 +99,7 @@ final class Environment
             self::webUser(),
             PHP_SAPI,
             (string) ($_SERVER['SERVER_SOFTWARE'] ?? ''),
+            self::programs(),
         );
     }
 

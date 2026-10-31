@@ -102,6 +102,31 @@ final class ExtractorTest extends TestCase
         ], Extractor::parseLayout($xml));
     }
 
+    public function testWithoutLibreOfficeAnOldDocIsReadByAntiwordElseCatdoc(): void
+    {
+        $ran = [];
+        $runner = static function (array $argv, int $timeout, array $env) use (&$ran): array {
+            $ran[] = basename($argv[0]);
+
+            return match (basename($argv[0])) {
+                'soffice' => [127, ''],
+                // A Word older than 6: antiword refuses it, catdoc reads it
+                'antiword' => [1, ''],
+                'catdoc' => [0, "A made-up study of test lesions in Word 97.\n\nGrade 3 was the most common."],
+                default => [1, ''],
+            };
+        };
+
+        $x = (new Extractor($this->tmp, runner: $runner))->extract("\xD0\xCF\x11\xE0", 'doc');
+
+        self::assertSame(['soffice', 'antiword', 'catdoc'], $ran, 'LibreOffice first, then antiword, then catdoc when antiword refuses it');
+        self::assertStringContainsString('Grade 3 was the most common.', $x->body);
+        self::assertTrue($x->hasText);
+
+        $this->expectExceptionObject(new LibraryException(LibraryException::TOOL_MISSING));
+        (new Extractor($this->tmp, runner: static fn (array $argv, int $timeout, array $env): array => [127, '']))->extract('PK', 'pptx');
+    }
+
     public function testExtensionsAreKnownCaseFolded(): void
     {
         self::assertSame('pdf', Extractor::extensionOf('Paper.PDF'));

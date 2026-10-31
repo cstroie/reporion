@@ -314,6 +314,29 @@ final class InstallerTest extends TestCase
         self::assertSame(Check::PASS, $requirements->dataDirectory()->status);
     }
 
+    public function testOptionalSoftwareIsSuggestedWithItsPackagesAndNeverStopsTheInstall(): void
+    {
+        $found = array_fill_keys(Environment::PROGRAMS, true);
+        $found['tesseract'] = false;
+        $found['tessdata:ron'] = false;
+        $found['tessdata:eng'] = true;
+        $found['antiword'] = false;
+        $env = new Environment(80112, '8.1.12', [], true, null, null, [], 'www-data', 'fpm-fcgi', 'lighttpd/1.4.63', $found);
+
+        $checks = [];
+        foreach ((new Requirements($this->root, $env))->software() as $check) {
+            $checks[$check->label] = $check;
+        }
+
+        self::assertSame(Check::PASS, $checks['PDF reading (poppler)']->status);
+        self::assertSame(Check::WARN, $checks['OCR (tesseract)']->status);
+        self::assertSame('sudo apt install tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng', $checks['OCR (tesseract)']->fix);
+        self::assertStringContainsString('not found: tesseract, tesseract data ron', $checks['OCR (tesseract)']->detail);
+        self::assertSame('sudo apt install antiword catdoc', $checks['antiword and catdoc']->fix);
+        self::assertFalse(Check::anyFailed(array_values($checks)), 'optional: a warning at most');
+        self::assertCount(\count(Requirements::SOFTWARE), $checks);
+    }
+
     public function testBytesReadsPhpIniShorthand(): void
     {
         self::assertSame(256 * 1024 * 1024, Requirements::bytes('256M'));
