@@ -2,9 +2,9 @@
 
 A reference library for the team, after Mendeley (an article recognised and kept once, a
 bibliography built while writing) and NotebookLM (a subject's sources read, asked and condensed by
-the assistant). Status: **phases 1–7 built** (2026-10-30, D58, `feat/library`): ingest and identify, offline; the
+the assistant). Status: **phases 1–8 built** (2026-10-31, D58, `feat/library`): ingest and identify, offline; the
 library view, the upload form and a source's card; `[@key]` citations and the References section; import, export and
-lookups; the assistant on a source and Ask the notebook; Studio and the template generator; passage vectors, what a paper cites, highlights and web clip. Phase 8 is planned.
+lookups; the assistant on a source and Ask the notebook; Studio and the template generator; passage vectors, what a paper cites, highlights and web clip; OCR for scans, flashcards and the audio overview.
 
 ## Owner's decisions (2026-10-30)
 
@@ -50,7 +50,9 @@ History (attic), search, tags, the visibility predicate (invariant 6), trash, ba
    the file goes to `data/tmp/` (`TempUploads`), never further, until confirmed.
 2. **Extract**, every tool run as an argument list (no shell, private temp dir, timeout: as groff,
    D42): txt/md as is; pdf `pdftotext` (+ `pdftohtml -xml` for font sizes → headings, title);
-   docx/odt/rtf/html/epub `pandoc → gfm`; doc/ppt/xls `soffice --convert-to` first. A PDF with no text
+   docx/odt/rtf/html/epub `pandoc → gfm`; doc/ppt/xls `soffice --convert-to` first; without LibreOffice an old
+   .doc is read as text by `antiword` or `catdoc`, .xls by `xls2csv`, .ppt by `catppt` (text only, no layout,
+   so no title from font sizes; `doctor` and the installer's Requirements step say which are there). A PDF with no text
    layer is a scan: kept, flagged.
 3. **Clean** (`Support\SourceText`, pure, no AI): rejoin hyphenation and wrapped lines, drop repeated
    headers/footers and page numbers, fix ligatures, find headings, the abstract and the references
