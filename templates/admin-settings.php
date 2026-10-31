@@ -160,6 +160,9 @@ Apache:
 <label class="radio"><input type="checkbox" name="<?= $field('library.web_clip') ?>" value="1"<?= $checked('library.web_clip') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_web_clip')) ?><?= $source('library.web_clip') ?><small><?= $e(t('admin.settings.library_web_clip_help')) ?></small></span></label>
 </p>
 <div class="wk-form-grid">
+<label><?= $e(t('admin.settings.library_language')) ?><?= $source('library.language') ?><select class="input" name="<?= $field('library.language') ?>">
+<?php foreach (\Reporion\Service\Ai\Context::LANGUAGES as $code => $name): ?><option value="<?= $e($code) ?>"<?= ($values['library.language'] ?? 'ro') === $code ? ' selected' : '' ?>><?= $e($name) ?></option><?php endforeach; ?>
+</select><small><?= $e(t('admin.settings.library_language_help')) ?></small></label>
 <label><?= $e(t('admin.settings.library_tokens')) ?><?= $source('library.context_tokens') ?><input class="input" type="number" min="4000" max="2000000" step="1000" name="<?= $field('library.context_tokens') ?>" value="<?= (int) ($values['library.context_tokens'] ?? 32000) ?>" placeholder="<?= $e(t('admin.settings.library_tokens_hint')) ?>"><small><?= $e(t('admin.settings.library_tokens_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>

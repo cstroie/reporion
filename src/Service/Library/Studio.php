@@ -75,6 +75,8 @@ final class Studio
         private readonly Assistant $assistant,
         private readonly NotebookAsk $notebooks,
         private readonly int $contextTokens,
+        // The table's heading for a notebook with no `language` (`library.language`)
+        private readonly string $defaultLanguage = 'ro',
     ) {
     }
 
@@ -221,7 +223,7 @@ final class Studio
                 $answer = $call(fn (): array => $this->assistant->runStudio($action, $title, [['n' => 1] + $this->asSource($t, $text)], $language, $user, $request, '', $questions));
                 $rows[] = [$t['key'], self::cells(NotebookAsk::onlySent($answer, [(string) $t['key']])[0], \count($questions))];
             }
-            $result = self::table($questions, $rows, $language);
+            $result = self::table($questions, $rows, \is_string($language) && $language !== '' ? $language : $this->defaultLanguage);
             $dropped = 0;
         } else {
             if ($task === 'check') {

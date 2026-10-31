@@ -137,6 +137,12 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_context_tokens' => '128000']))->status);
         self::assertStringContainsString('context_tokens: 128000', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_context_tokens' => '100']))->status, 'below 4000');
+
+        // The library's language, Romanian unless chosen
+        self::assertStringContainsString('<option value="ro" selected>Romanian</option>', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'en']))->status);
+        self::assertStringContainsString('language: en', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'xx']))->status, 'a language the assistant does not know');
     }
 
     public function testTheReportsSectionIsSaved(): void

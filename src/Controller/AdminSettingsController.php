@@ -41,7 +41,7 @@ final class AdminSettingsController
         'mcp' => ['mcp.access', 'mcp.write_anywhere', 'mcp.reports', 'mcp.gate'],
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'editor' => ['editor.save_stays_open'],
-        'library' => ['library.lookup', 'library.web_clip', 'library.context_tokens'],
+        'library' => ['library.lookup', 'library.web_clip', 'library.context_tokens', 'library.language'],
         'debug' => ['debug.panels'],
         'reports' => ['reports.modality_namespaces', 'references.namespaces'],
         'backup' => ['backup.enabled', 'backup.transport', 'backup.module', 'backup.password_file', 'backup.host', 'backup.port', 'backup.user', 'backup.remote_dir', 'backup.ssh_key', 'backup.bwlimit', 'backup.include_conf', 'backup.keep', 'backup.interval_hours'],

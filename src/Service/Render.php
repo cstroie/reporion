@@ -59,8 +59,11 @@ final class Render
      * @param ?CitationSource $citations where `[@key]` finds its record (docs/library.md); none:
      *                                   a citation is shown as typed
      */
-    public function __construct(private readonly ?CitationSource $citations = null)
-    {
+    public function __construct(
+        private readonly ?CitationSource $citations = null,
+        // The References heading's language for a page with no `language` (`library.language`)
+        private readonly string $defaultLanguage = 'ro',
+    ) {
         $environment = new Environment([
             'html_input' => HtmlFilter::ESCAPE,
             'allow_unsafe_links' => false,
@@ -239,7 +242,7 @@ final class Render
             uksort($entries, static fn (string $a, string $b): int => $numbers[$a] <=> $numbers[$b]);
         }
         $tag = $style === 'apa' ? 'ul' : 'ol';
-        $html = '<div class="wk-references"><h2 id="references">' . htmlspecialchars(t(strtolower(substr(trim($language), 0, 2)) === 'en' ? 'library.references_en' : 'library.references_ro'), ENT_QUOTES) . '</h2>'
+        $html = '<div class="wk-references"><h2 id="references">' . htmlspecialchars(t(strtolower(substr(trim($language !== '' ? $language : $this->defaultLanguage), 0, 2)) === 'en' ? 'library.references_en' : 'library.references_ro'), ENT_QUOTES) . '</h2>'
             . '<' . $tag . ' class="wk-reflist wk-reflist-' . $style . '">' . implode('', $entries) . '</' . $tag . '></div>' . "\n";
 
         return [$html, array_keys($unknown)];

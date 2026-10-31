@@ -392,6 +392,8 @@ return [
     'admin.settings.library' => 'Library',
     'admin.settings.library_lookup' => 'Complete a record from CrossRef and PubMed',
     'admin.settings.library_lookup_help' => 'When a document\'s DOI or PMID is found, it is sent to api.crossref.org and eutils.ncbi.nlm.nih.gov to fill the article\'s record (authors, journal, year, abstract, MeSH terms as tags). Only the identifier is sent: never the text, a title or the file name. The writer still corrects the record before it is added. Off by default.',
+    'admin.settings.library_language' => 'Language',
+    'admin.settings.library_language_help' => 'What the assistant writes in about the library (analyses, Ask the notebook, Studio, the audio overview\'s script) and the References heading, for a notebook or source with no language of its own (frontmatter language: en, ro…).',
     'admin.settings.library_web_clip' => 'Clip a web page by its address',
     'admin.settings.library_web_clip_help' => 'The library\'s Add panel takes an address: the server fetches the page, PDF or text file (http on port 80 or https on 443, public addresses only, at most three redirects, 15 seconds, the library\'s size limit) and proposes its record as for an upload. Only the address typed leaves the box. Needs allow_url_fopen. Off by default.',
     'admin.settings.library_tokens' => 'Assistant context for the library, in tokens',

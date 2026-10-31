@@ -86,6 +86,8 @@ final class Context
         private readonly ?TagDictionary $tags = null,
         /** {recall}: passages for one line (Service\Recall, D50) */
         private readonly ?Examples $recall = null,
+        // The library's language for a notebook or source with no `language` of its own (Admin → Settings → Library)
+        private readonly string $libraryLanguage = 'ro',
     ) {
     }
 
@@ -444,10 +446,18 @@ final class Context
         return $text;
     }
 
-    /** The languages a notebook or source may be answered in (frontmatter `language`), by their two-letter code */
-    private const LANGUAGES = ['ro' => 'Romanian', 'en' => 'English', 'fr' => 'French', 'de' => 'German', 'es' => 'Spanish', 'it' => 'Italian', 'hu' => 'Hungarian'];
+    /** The languages a notebook or source may be answered in (frontmatter `language`, `library.language`), by their two-letter code */
+    public const LANGUAGES = ['ro' => 'Romanian', 'en' => 'English', 'fr' => 'French', 'de' => 'German', 'es' => 'Spanish', 'it' => 'Italian', 'hu' => 'Hungarian'];
 
     /** The name of a page's `language` for {language}; Romanian, the owner's default (docs/library.md), for none or an unknown one */
+    /** {language} for $code: the page's own, else the library's (`library.language`), else Romanian */
+    public function language(mixed $code): string
+    {
+        $code = \is_string($code) && trim($code) !== '' ? $code : $this->libraryLanguage;
+
+        return self::languageName($code);
+    }
+
     public static function languageName(mixed $code): string
     {
         $code = \is_string($code) ? strtolower(substr(trim($code), 0, 2)) : '';
@@ -481,7 +491,7 @@ final class Context
             'citation' => $redactor->redact(Citation::vancouver($csl)),
             'part' => $part,
             'words' => (string) $words,
-            'language' => self::languageName($language ?? $page->frontmatter['language'] ?? null),
+            'language' => $this->language($language ?? $page->frontmatter['language'] ?? null),
             'current_date' => date('Y-m-d'),
             'action' => $action->id,
         ];
@@ -512,7 +522,7 @@ final class Context
         $vars = [
             'question' => self::escape($this->safeQuestion($question)),
             'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
-            'language' => self::languageName($language),
+            'language' => $this->language($language),
             'current_date' => date('Y-m-d'),
             'action' => $action->id,
         ];
@@ -550,7 +560,7 @@ final class Context
             'page' => self::escape(trim(Redactor::scrubContacts($redactor->redact($page)))),
             'questions' => implode("\n", $numbered),
             'count' => (string) \count($numbered),
-            'language' => self::languageName($language),
+            'language' => $this->language($language),
             'current_date' => date('Y-m-d'),
             'action' => $action->id,
         ];
@@ -601,7 +611,7 @@ final class Context
     public function notebookTerms(Action $action, string $question): Prompt
     {
         $redactor = new Redactor();
-        $vars = ['question' => self::escape($this->safeQuestion($question)), 'language' => self::LANGUAGES['ro'], 'current_date' => date('Y-m-d'), 'action' => $action->id];
+        $vars = ['question' => self::escape($this->safeQuestion($question)), 'language' => $this->language(null), 'current_date' => date('Y-m-d'), 'action' => $action->id];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {

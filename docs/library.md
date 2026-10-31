@@ -16,7 +16,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Who adds and runs the assistant | **Any editor** with a grant on `library` (and on the notebook's namespace); not tied to the radiologist flag |
 | Online lookups | **Opt-in** (`library.lookup`, off by default): CrossRef and PubMed get a DOI, a PMID or title words only, never page text |
 | Citation styles | **Vancouver** (default), **APA**, **AMA**, hand-written (`Support\Citation`), no CSL engine dependency |
-| Output language | **Per notebook**: the notebook's frontmatter `language` (as EPUB's, D57), default `ro`; quotes stay in the source's language |
+| Output language | **Per notebook**: the notebook's frontmatter `language` (as EPUB's, D57); without one, the library's language, Admin → Settings → Library (`library.language`, default `ro`; owner, 2026-10-31); quotes stay in the source's language |
 | Scanned PDFs | Rare; read by OCR (tesseract, Romanian and English) since phase 8, at most 30 pages, held to a stricter patient guard |
 | Size | 50 MB per file (`library.max_mb`) |
 | Citations a reader may not follow | Printed from the record, no link to the library page |
@@ -25,6 +25,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
 | Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
 | Keeping the assistant's results | **Automatically** (owner, 2026-10-31): each analysis of a source and each Studio text is kept as a page beside its page, named by its prompt (`library:{key}:source-points`, `{notebook}:studio-overview`), shown when the source or notebook is opened again; they move and go to the trash with it |
+| Where the audio overview's files go | `data/sources/`, beside the library's originals (owner, 2026-10-31: fine for now); each run keeps its own file, trash and purge leave them |
 | Where it is built | `feat/library` branch in a worktree, full suite by the owner before merging |
 
 ## Words

@@ -204,10 +204,23 @@ final class Kernel
         'feeds' => ['namespaces' => []],
         'references' => ['namespaces' => ['radiology']],
         // The library (docs/library.md): its namespace, the largest file taken, the programs that read files
-        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => [], 'lookup' => false, 'web_clip' => false, 'context_tokens' => 32000],
+        'library' => ['namespace' => 'library', 'max_mb' => 50, 'tools' => [], 'lookup' => false, 'web_clip' => false, 'context_tokens' => 32000, 'language' => 'ro'],
         'sites' => [],
         'plugins' => ['enabled' => []],
     ];
+
+    /**
+     * The library's language (Admin → Settings → Library, `library.language`): what the assistant
+     * writes in and the References heading reads, for a notebook or source with no `language`
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function libraryLanguage(array $config): string
+    {
+        $code = \is_array($config['library'] ?? null) ? ($config['library']['language'] ?? null) : null;
+
+        return \is_string($code) && isset(AiContext::LANGUAGES[$code]) ? $code : 'ro';
+    }
 
     /**
      * The library's namespace (`library.namespace`, default `library`)
@@ -334,7 +347,7 @@ final class Kernel
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/resources/synonyms.txt');
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags, new Recall($index, $storage)), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags, new Recall($index, $storage), self::libraryLanguage($config)), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
     }
 
     /**
@@ -490,7 +503,7 @@ final class Kernel
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         // Failed sign-ins, bearer tokens, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $throttle = new Throttle((string) $config['paths']['data'] . '/tmp/throttle.json');
-        $render = new Render(new Citations($storage, self::libraryNamespace($config)));
+        $render = new Render(new Citations($storage, self::libraryNamespace($config)), self::libraryLanguage($config));
         $session = new Session(
             (string) $config['auth']['session_secret'],
             (string) $config['auth']['session_name'],
@@ -635,7 +648,7 @@ final class Kernel
             $assistant,
             new SourceAnalysis($aiActions, $assistant, $libraryTokens),
             $notebookAsk,
-            new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens),
+            new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens, self::libraryLanguage($config)),
             self::libraryNamespace($config),
             $storage,
             $index,

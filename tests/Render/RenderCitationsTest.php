@@ -32,6 +32,25 @@ final class RenderCitationsTest extends TestCase
         });
     }
 
+    public function testTheReferencesHeadingFollowsTheLibrarysLanguageWhenThePageHasNone(): void
+    {
+        $source = new class implements CitationSource {
+            public function record(string $key): ?array
+            {
+                return ['type' => 'article-journal', 'title' => 'A study', 'issued' => ['date-parts' => [[2024]]]];
+            }
+
+            public function path(string $key): string
+            {
+                return 'library:' . $key;
+            }
+        };
+
+        self::assertStringContainsString('<h2 id="references">References</h2>', (new Render($source, 'en'))->toHtml('A [@nobody2024].')->html);
+        self::assertStringContainsString('<h2 id="references">Bibliografie</h2>', (new Render($source, 'en'))->toHtml('A [@nobody2024].', language: 'ro')->html, 'the page\'s own wins');
+        self::assertStringContainsString('<h2 id="references">Bibliografie</h2>', (new Render($source))->toHtml('A [@nobody2024].')->html);
+    }
+
     public function testNumberedByFirstCitationWithTheReferencesBelow(): void
     {
         $html = self::render()->toHtml("A [@nobody2024] and [@abel2020] and again [@nobody2024].")->html;

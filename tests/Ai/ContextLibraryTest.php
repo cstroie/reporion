@@ -104,6 +104,16 @@ MD;
         self::assertSame('Romanian', Context::languageName('xx'));
     }
 
+    public function testAPageWithNoLanguageTakesTheLibrarysFromAdmin(): void
+    {
+        $english = new Context($this->storage, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'), libraryLanguage: 'en');
+
+        self::assertSame('English', $english->language(null));
+        self::assertSame('English', $english->language(''));
+        self::assertSame('Romanian', $english->language('ro'), 'the page\'s own wins');
+        self::assertSame('Romanian', $this->context->language(null), 'Romanian unless Admin says otherwise');
+    }
+
     public function testTheNotebooksSourcesCarryTheirKeyAndPageAndTheQuestionIsMadeSafe(): void
     {
         $prompt = $this->context->notebook($this->action('{sources}||{question}||{language}'), 'Ce spune studiul? Contact a@b.test', [

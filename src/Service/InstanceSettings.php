@@ -59,6 +59,8 @@ final class InstanceSettings
         'library.lookup' => 'bool',
         // Web clip (docs/library.md, phase 7): the server fetches a web page by the address a writer types; off unless an owner turns it on
         'library.web_clip' => 'bool',
+        // The library's language for a notebook or source with no `language` of its own: the assistant's answers, the References heading
+        'library.language' => 'library_language',
         // What one assistant request about the library may hold (docs/library.md, phase 5): the model's context, in tokens
         'library.context_tokens' => 'context_tokens',
         // Owner-only debug panels in a page's footer (the new-report form's raw findscu exchange); off unless an owner turns them on
@@ -414,6 +416,7 @@ final class InstanceSettings
             'path' => preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $text) === 1 ? $text : $fail(),
             'timezone' => self::isTimezone($text) ? $text : $fail(),
             'bool' => \in_array($raw, [true, '1', 'on', 'yes'], true),
+            'library_language' => $text === '' ? 'ro' : (isset(\Reporion\Service\Ai\Context::LANGUAGES[$text]) ? $text : $fail()),
             'context_tokens' => $text === '' ? 32000 : (ctype_digit($text) && (int) $text >= 4000 && (int) $text <= 2_000_000 ? (int) $text : $fail()),
             'days' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 3650 ? (int) $text : $fail(),
             'bytes' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 512 ? (int) $text * 1024 * 1024 : $fail(),

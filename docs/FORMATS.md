@@ -187,6 +187,7 @@ library:
   context_tokens: 32000            # what one assistant request about the library may hold (phase 5; 4000–2000000)
   lookup: false                    # true: a DOI or PMID found in an upload is sent to CrossRef and PubMed to complete the record; never text (docs/library.md, 2026-10-30)
   web_clip: false                  # true: the library's Add panel takes an address; the server fetches it (public addresses only, docs/library.md phase 7)
+  language: ro                     # the library's language: the assistant's answers and the References heading for a notebook or source with no `language` (ro, en, fr, de, es, it, hu)
 debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)
 backup:                              # the periodic rsync backup (D49), edited in Admin → Settings → Backup
