@@ -176,6 +176,11 @@ at most 45 s a page and 30 pages, so the worst case is about 30 × 55 s ≈ 28 m
 accepts (a long scan is better added with `sudo -u www-data bin/reporion library:add`, which has no web timeout). tesseract
 runs single-threaded (`OMP_THREAD_LIMIT=1`), so one OCR takes one core.
 
+**The audio overview is longer still** (docs/library.md, phase 8): Studio's script (up to 16 chat requests), then up to 60
+speech requests, one a turn, each with the AI server's time limit, then ffmpeg's encoding (at most 3 minutes). A normal
+overview is 20–40 turns of a few seconds each with a local speech server. Set the time limits for what the owner accepts;
+progress is streamed (`server.stream-response-body = 2`). The joined WAV is held in memory before encoding (about 3 MB a minute).
+
 ## The groff plugin
 
 `plugins/groff` (D42) typesets an ordinary Markdown page (never a report) with **groff**. Install the full package, not

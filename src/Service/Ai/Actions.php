@@ -69,8 +69,8 @@ final class Actions
      * and the words a report would use for it; lite). No page, no button.
      * These ids and `special` itself cannot be rail actions.
      */
-    /** The library's (docs/library.md, phases 5 and 6): one analysis of a source each, the condensing of one part of a long source, Ask the notebook and its search words, and Studio's texts of a notebook */
-    public const LIBRARY = ['source-part', 'source-points', 'source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template'];
+    /** The library's (docs/library.md, phases 5 and 6): one analysis of a source each, the condensing of one part of a long source, Ask the notebook and its search words, Studio's texts of a notebook, and flashcards (phase 8) */
+    public const LIBRARY = ['source-part', 'source-points', 'source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template', 'source-flashcards', 'studio-flashcards', 'studio-audio'];
 
     public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', ...self::LIBRARY];
 

@@ -291,6 +291,22 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    dot inside allowed) are refused, an ISBN said so aside. The original is flagged `ocr: true`; no title from a scan's layout.
    `doctor` warns when tesseract or its `ron`/`eng` data is missing. The owner installs `tesseract-ocr tesseract-ocr-ron
    tesseract-ocr-eng`.
+   *Step 2 built 2026-10-31:* **Flashcards.** A source's *Flashcards* analysis (`source-flashcards`) and Studio's (`studio-flashcards`,
+   each card citing its source), written `Q:` / `A:` and kept like every analysis; a kept flashcards page has *Download for Anki*
+   (`GET /library/flashcards/{pid}`, `Support\Flashcards`): the text file Anki imports (File → Import, note type Basic), fields
+   HTML-escaped, a citation printed `(Author year, p. N)` from the record, tagged `reporion` and the page's name. *Not built:* an
+   `.apkg` package, spaced repetition inside Reporion.
+   *Step 3 built 2026-10-31:* **Audio overview.** A Studio task (`studio-audio`, shown only when Admin → AI → Audio overview names a
+   speech server, model and two voices): the assistant writes a two-voice script (`A:` / `B:`, 20–40 turns, the notebook's language),
+   `Support\AudioScript` joins a host's consecutive lines and cuts a turn over 3000 characters at its sentences (at most 60 turns,
+   the rest left out and said), every line is made safe (`Context::speechText()`: de-identified, citations and markdown out, the
+   final guard) before the first is sent, each turn is read by the speech model (`Service\Ai\Speaker`: that server's OpenAI-compatible
+   `POST /audio/speech`, WAV, its own egress rule, no failover), the WAVs are joined under one header with a short silence
+   (`Support\Wav`: one PCM format or refused) and encoded to MP3 by ffmpeg when it is there (`library.tools.ffmpeg`), else kept as WAV.
+   The file goes with the library's originals (`Storage::storeOriginal()`), recorded as `audio` on the kept script page
+   (`{notebook}:studio-audio`), played from the Studio panel and the kept list (`GET /library/audio/{pid}`, `Range` for seeking).
+   Progress is streamed for both the script and the reading. A failure to read it keeps the script and says why. *Not built:*
+   per-voice language checks (the owner picks voices that speak the notebook's language), an audio overview of a single source.
 
 ## Long sources
 

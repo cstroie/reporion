@@ -135,6 +135,26 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 </form>
 </div>
 
+<?php /* Phase 8: the audio overview's speech model: an OpenAI-compatible /audio/speech on one of the servers below; its own form, it saves ai.speech_* alone */ ?>
+<div class="wk-panel" id="speech">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.speech')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.speech_lede')) ?></p></hgroup></header>
+<?= $notice('speech') ?>
+<form data-busy action="<?= $b ?>/admin/ai/speech" method="post">
+<div class="wk-ai-grid">
+<div class="field"><label for="ai-speech-server"><?= $e(t('admin.ai.speech_server')) ?>
+<select class="input" id="ai-speech-server" name="ai_speech_server">
+<option value=""<?= ($speechServer ?? 0) === 0 ? ' selected' : '' ?>><?= $e(t('admin.ai.speech_none')) ?></option>
+<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($speechServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select><small><?= $e(t('admin.ai.speech_server_help')) ?></small></label></div>
+<div class="field"><label for="ai-speech-model"><?= $e(t('admin.ai.speech_model')) ?>
+<input class="input" id="ai-speech-model" type="text" name="ai_speech_model" value="<?= $e((string) ($speechModel ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_model_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_model_help')) ?></small></label></div>
+<div class="field"><label for="ai-speech-voices"><?= $e(t('admin.ai.speech_voices')) ?>
+<input class="input" id="ai-speech-voices" type="text" name="ai_speech_voices" value="<?= $e((string) ($speechVoices ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_voices_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_voices_help')) ?></small></label></div>
+</div>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
+</form>
+</div>
+
 <div class="wk-panel" id="servers">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.servers')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.servers_help')) ?></p></hgroup></header>
 <?= $notice('servers') ?>

@@ -135,6 +135,16 @@
       (data.notices || []).forEach(function (n) { out.appendChild(notice('info', n)); });
       if (!data.result) return;
       var markdown = data.template ? data.template.body : data.result;
+      // The audio overview: its player first, the script under it
+      if (data.audio) {
+        var player = el('audio');
+        player.controls = true;
+        player.preload = 'metadata';
+        player.src = data.audio.href;
+        var line = el('p', 'wk-saved-audio');
+        line.appendChild(player);
+        out.appendChild(line);
+      }
       out.appendChild(rendered(markdown, 'wk-notebook-answer'));
       if (data.dropped > 0) out.appendChild(notice('info', (s.dropped || '%s').replace('%s', data.dropped)));
       if (data.saved) {
@@ -200,6 +210,9 @@
           if (m[1] === 'progress') {
             out.textContent = '';
             out.appendChild(notice('info', data.steps > 1 ? (s.progress || '%s / %s').replace('%s', data.step).replace('%s', data.steps) : s.working));
+          } else if (m[1] === 'speaking') {
+            out.textContent = '';
+            out.appendChild(notice('info', (s.speaking || '%s / %s').replace('%s', data.step).replace('%s', data.steps)));
           } else if (m[1] === 'done') {
             finished = true;
             show(data);

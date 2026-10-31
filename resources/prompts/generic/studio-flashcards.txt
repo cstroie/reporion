@@ -1,0 +1,16 @@
+Make flashcards for learning the subject of the notebook "{title}" from the scientific articles it cites: one question on the front, its answer on the back. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write 15 to 40 cards, in exactly this form, a blank line between cards:
+
+Q: the question
+A: the answer [@key, p. 12]
+
+Rules:
+- One fact a card: a definition, an imaging sign, a threshold, a classification step, a differential point, a pitfall, a recommendation. The question must be answerable without the sources in front of you.
+- Answers short: a few words or one sentence. Figures exactly as the sources give them.
+- Only what the sources say. End each answer with its source in this exact form: [@key] or [@key, p. 12]. Use only the keys that appear in the sources above.
+- Write in {language}; keep technical terms in the language of the source when there is no exact equivalent.
+- Answer with the cards only.

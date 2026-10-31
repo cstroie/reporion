@@ -141,7 +141,7 @@ final class Analyses
      *
      * @param list<string> $order the prompts, in the order the card shows them
      *
-     * @return list<array{prompt: string, path: string, text: string, at: string, provider: string, stale: bool}>
+     * @return list<array{prompt: string, pid: string, path: string, text: string, at: string, provider: string, stale: bool, audio: ?array{ext: string, seconds: int}}>
      */
     public function shown(PageRecord $page, ?User $principal, array $order): array
     {
@@ -161,12 +161,16 @@ final class Analyses
             }
             $found[$analysis['prompt']] = [
                 'prompt' => $analysis['prompt'],
+                'pid' => $record->pid,
                 'path' => $record->path,
                 'text' => $record->body,
                 'at' => \is_string($analysis['at'] ?? null) ? $analysis['at'] : '',
                 'provider' => \is_string($analysis['provider'] ?? null) ? $analysis['provider'] : '',
                 // Made from an older text of the page
                 'stale' => ($analysis['of_sha'] ?? null) !== self::textSha($page),
+                // The audio overview's file (phase 8): its type and length
+                'audio' => \is_array($record->frontmatter['audio'] ?? null) && \is_string($record->frontmatter['audio']['ext'] ?? null)
+                    ? ['ext' => $record->frontmatter['audio']['ext'], 'seconds' => (int) ($record->frontmatter['audio']['seconds'] ?? 0)] : null,
             ];
         }
         $out = [];

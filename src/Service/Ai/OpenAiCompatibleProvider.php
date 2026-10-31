@@ -154,6 +154,33 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         return array_values($vectors);
     }
 
+    /** The most audio one speech request may return */
+    private const SPEECH_MAX_BYTES = 50 * 1024 * 1024;
+
+    /**
+     * $text spoken by $model in $voice (`POST /audio/speech`, OpenAI's shape: the audio itself in
+     * the body), the server's own address, key, time limit and egress rule (docs/library.md,
+     * phase 8). Only text Context has made safe is given to it.
+     *
+     * @throws AiException timeout, unreachable, the server's refusal, or an answer that is no audio
+     */
+    public function speech(string $text, string $model, string $voice, string $format = 'wav'): string
+    {
+        $body = ['model' => $model, 'input' => $text, 'response_format' => $format] + ($voice !== '' ? ['voice' => $voice] : []);
+        $handle = $this->open('POST', '/audio/speech', (string) json_encode($body, JSON_UNESCAPED_UNICODE));
+        $audio = (string) stream_get_contents($handle, self::SPEECH_MAX_BYTES + 1);
+        $meta = stream_get_meta_data($handle);
+        fclose($handle);
+        if (($meta['timed_out'] ?? false) === true) {
+            throw new AiException('timeout', 'The AI server took too long');
+        }
+        if ($audio === '' || \strlen($audio) > self::SPEECH_MAX_BYTES) {
+            throw new AiException('provider_error', 'The AI server did not answer with audio');
+        }
+
+        return $audio;
+    }
+
     public function describe(string $tier = AiConfig::DEFAULT_TIER): string
     {
         return (string) parse_url($this->config->endpoint, PHP_URL_HOST) . ' · ' . $this->config->modelFor($tier);

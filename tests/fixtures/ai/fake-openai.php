@@ -60,6 +60,18 @@ if ($path === '/v1/embeddings') {
 
     return;
 }
+if ($path === '/v1/audio/speech') {
+    // The audio overview (phase 8): a tenth of a second of silence as 16-bit mono WAV at 8 kHz; each request
+    // logged, one JSON line each, beside the log; voice "stereo" answers in another format (joining must refuse it)
+    $request = json_decode($body, true);
+    file_put_contents($log . '.speech', json_encode($request, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
+    $channels = ($request['voice'] ?? '') === 'stereo' ? 2 : 1;
+    $pcm = str_repeat("\0\0", 800 * $channels);
+    header('Content-Type: audio/wav');
+    echo 'RIFF' . pack('V', 36 + strlen($pcm)) . 'WAVE' . 'fmt ' . pack('VvvVVvv', 16, 1, $channels, 8000, 8000 * 2 * $channels, 2 * $channels, 16) . 'data' . pack('V', strlen($pcm)) . $pcm;
+
+    return;
+}
 if ($path !== '/v1/chat/completions') {
     http_response_code(404);
 
@@ -121,8 +133,14 @@ if (str_contains($sent, 'STUDIO-ROW')) {
     $model = 'studio-row';
 } elseif (str_contains($sent, 'STUDIO-TEMPLATE')) {
     $model = 'studio-template';
+} elseif (str_contains($sent, 'STUDIO-CARDS')) {
+    $model = 'studio-cards';
+} elseif (str_contains($sent, 'STUDIO-AUDIO')) {
+    $model = 'studio-audio';
 }
 $chunks = match ($model) {
+    'studio-audio' => ["A: Today, white matter lesions.\n", "B: How are they **graded** [@abel2020]?\n", "B: And in whom?\n", "A: From 0 to 3, in 128 patients.\n"],
+    'studio-cards' => ["Q: What grades does Fazekas give?\nA: 0 to 3 [@abel2020, p. 4]\n\n", "Q: Where?\nA: Deep white matter.\n"],
     'studio-row' => ["1. Prospective | cohort [@abel2020, p. 4] [@ghost2000]\n", "2. 128\n"],
     'studio-template' => ["```markdown\n# Art: Substanța albă\n## IRM cerebral\n### Tehnica\nSecvențe [T2 / FLAIR] [@abel2020].\n```\n", "=== checklist ===\n", "# Leziuni\n- Grad Fazekas | fazekas, grad\n", "Număr de leziuni\n"],
     'tags' => ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.'],

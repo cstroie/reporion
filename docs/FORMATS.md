@@ -214,6 +214,9 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   profile_map: {}                    # {namespace: profile}, e.g. {reports:mri: mri} (D47, Admin → AI routing table, 2026-10-14: rows of namespace + profile, saved as these four settings)
   embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
   embed_model: 'nomic-embed-text'    # its model name: one for the instance, not one per server
+  speech_server: 2                   # the audio overview (docs/library.md, phase 8): a server slot with an OpenAI-compatible /audio/speech; blank: no audio overview
+  speech_model: 'kokoro'             # its speech model's name
+  speech_voices: 'af_heart, am_michael'  # two voices: the first host, the second (they must speak the notebook's language)
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5
   embed_common_min: 5                # a conclusion this many reports share word for word is a stock one, left out; 0: off; null or absent: 5
   servers:                           # up to six OpenAI-compatible servers (phase 33a)
@@ -629,6 +632,8 @@ analysis:
   provider: "server · model"
   at: 2026-10-31T09:12:00+02:00
 ```
+
+An audio overview's kept page (`{notebook}:studio-audio`, phase 8) also carries `audio: {sha256, ext: mp3|wav, bytes, seconds, turns}`: the file is kept with the library's originals in `data/sources/{ab}/{sha256}.{ext}` (`Storage::storeOriginal()`, so it is backed up with `data/`) and served by `GET /library/audio/{pid}` under the page's visibility. It is not an `original`, so the page is never taken for a source.
 
 A page with `analysis` is no source and no notebook (no Ask, no Studio of its own); a run again is its next revision; it moves and goes to the trash with the page it is about (`Service\Library\Analyses`). A page at that path without `analysis` is never written over.
 ## 4. Share tokens

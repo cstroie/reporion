@@ -54,6 +54,10 @@ final class Studio
         'compare' => 'studio-compare',
         'check' => 'studio-check',
         'template' => 'studio-template',
+        // Phase 8: cards for learning the subject, kept and downloadable for Anki
+        'flashcards' => 'studio-flashcards',
+        // Phase 8: a two-voice script, read aloud by the speech model (AudioOverview); offered only when one is set
+        'audio' => 'studio-audio',
     ];
 
     /** The most requests one run may make */

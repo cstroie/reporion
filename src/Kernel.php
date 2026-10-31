@@ -78,6 +78,7 @@ use Reporion\Service\Ai\CommitNote;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\Embedder;
+use Reporion\Service\Ai\Speaker;
 use Reporion\Service\Ai\FailoverProvider;
 use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
@@ -126,6 +127,7 @@ use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Service\Library\Analyses;
+use Reporion\Service\Library\AudioOverview;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\PassageSearch;
 use Reporion\Service\Library\WebClip;
@@ -514,7 +516,7 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index));
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
@@ -639,6 +641,10 @@ final class Kernel
             $index,
             new Analyses($storage, $index),
             $audit,
+            // Phase 8: the audio overview, when Admin → AI names a speech model
+            ($speaker = Speaker::fromConfig($config)) !== null
+                ? new AudioOverview($speaker, $assistant, (string) $config['paths']['data'] . '/tmp', \is_string($config['library']['tools']['ffmpeg'] ?? null) ? $config['library']['tools']['ffmpeg'] : 'ffmpeg')
+                : null,
         );
         $ai = new AiController(
             $aiConfig,
@@ -762,6 +768,10 @@ final class Kernel
             => $libraryController->export($request, $session->principal($request)));
         $router->put('/api/v1/library/{pid:[0-9A-Z]+}/record', static fn (Request $request, array $params): Response
             => $libraryController->record($request, $params['pid'], $session->principal($request)));
+        $router->get('/library/audio/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $libraryController->audio($request, $params['pid'], $session->principal($request)));
+        $router->get('/library/flashcards/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $libraryController->flashcards($request, $params['pid'], $session->principal($request)));
         $router->get('/library/file/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->original($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
@@ -853,6 +863,8 @@ final class Kernel
             => $adminAi->save($request, 'server', $session->principal($request)));
         $router->post('/admin/ai/similar', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'similar', $session->principal($request)));
+        $router->post('/admin/ai/speech', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'speech', $session->principal($request)));
         $router->post('/admin/ai/prompts', static fn (Request $request, array $params): Response
             => $adminAi->installPrompts($request, $session->principal($request)));
         $router->post('/admin/ai/servers', static fn (Request $request, array $params): Response

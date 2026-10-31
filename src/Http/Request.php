@@ -43,6 +43,8 @@ final class Request
         public readonly string $forwardedFor = '',
         // The Host header as sent: only for links the caller itself follows (the MCP icons when site.base_url is empty); never an issuer
         public readonly string $host = '',
+        // The Range header as sent (`bytes=a-b`): an audio overview's player seeking (docs/library.md, phase 8)
+        public readonly string $range = '',
     ) {
     }
 
@@ -69,6 +71,7 @@ final class Request
             authorization: (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
             forwardedFor: (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''),
             host: (string) ($_SERVER['HTTP_HOST'] ?? ''),
+            range: substr((string) ($_SERVER['HTTP_RANGE'] ?? ''), 0, 100),
             // The timeline's ticked studies (`paths[]`) for /{path}/compare
             queryLists: array_map(
                 static fn (array $values): array => array_values(array_filter($values, 'is_string')),
@@ -113,6 +116,7 @@ final class Request
             askable: $askable,
             forwardedFor: $this->forwardedFor,
             host: $this->host,
+            range: $this->range,
         );
     }
 

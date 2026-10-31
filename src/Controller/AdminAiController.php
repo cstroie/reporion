@@ -44,6 +44,9 @@ final class AdminAiController
     /** What the Similar reports panel's form saves */
     public const SIMILAR = ['ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
 
+    /** The audio overview's speech model (docs/library.md, phase 8) */
+    public const SPEECH = ['ai.speech_server', 'ai.speech_model', 'ai.speech_voices'];
+
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
         private readonly InstanceSettings $settings,
@@ -115,6 +118,10 @@ final class AdminAiController
             'embedModel' => \is_string($section['embed_model'] ?? null) ? $section['embed_model'] : '',
             'embedCommonMin' => is_numeric($section['embed_common_min'] ?? null) ? (string) $section['embed_common_min'] : '',
             'embedMinScore' => is_numeric($section['embed_min_score'] ?? null) ? (string) $section['embed_min_score'] : '',
+            // Phase 8: the speech model of the audio overview
+            'speechServer' => is_numeric($section['speech_server'] ?? null) ? (int) $section['speech_server'] : 0,
+            'speechModel' => \is_string($section['speech_model'] ?? null) ? $section['speech_model'] : '',
+            'speechVoices' => \is_string($section['speech_voices'] ?? null) ? $section['speech_voices'] : '',
             // Phase 34b: the assistant's use, read from the audit
             'usage' => (new Usage($this->audit->directory()))->compute(new \DateTimeImmutable('now'), is_numeric($request->query['days'] ?? null) ? (int) $request->query['days'] : 30),
             'saved' => (string) ($request->query['saved'] ?? ''),
@@ -129,15 +136,15 @@ final class AdminAiController
 
     public function save(Request $request, string $section, ?User $principal): Response
     {
-        if ($principal?->isOwner !== true || !\in_array($section, ['use', 'similar', 'server', 'enabled', 'servers'], true)) {
+        if ($principal?->isOwner !== true || !\in_array($section, ['use', 'similar', 'speech', 'server', 'enabled', 'servers'], true)) {
             throw new PageNotFoundException();
         }
         // The switch and the default server sit in the Assistant panel: its notice reports them
         $panel = \in_array($section, ['server', 'enabled'], true) ? 'use' : $section;
         parse_str($request->body, $fields);
         $changes = [];
-        if ($section === 'use' || $section === 'similar') {
-            foreach ($section === 'use' ? self::ROUTES : self::SIMILAR as $key) {
+        if ($section === 'use' || $section === 'similar' || $section === 'speech') {
+            foreach ($section === 'use' ? self::ROUTES : ($section === 'similar' ? self::SIMILAR : self::SPEECH) as $key) {
                 // parse_str turns dots into underscores; an unticked box is absent
                 $changes[$key] = $fields[str_replace('.', '_', $key)] ?? '';
             }

@@ -51,6 +51,8 @@ final class PageTemplateRenderer
         private readonly string $libraryNamespace = 'library',
         // The assistant's saved analyses of a source and Studio texts of a notebook (2026-10-31)
         private readonly ?\Reporion\Service\Library\Analyses $analyses = null,
+        // A speech model is set: Studio offers the audio overview (phase 8)
+        private readonly bool $speaks = false,
     ) {
     }
 
@@ -176,7 +178,7 @@ final class PageTemplateRenderer
         $vars['notebookAsk'] = $notebook && $this->aiActions?->special($record->path, 'ask-notebook') !== null ? ['path' => $record->path] : null;
         // Studio (phase 6): the same gate, the tasks whose prompt page the serving profile has
         $studioTasks = $notebook && $this->aiActions !== null
-            ? array_values(array_filter(array_keys(\Reporion\Service\Library\Studio::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\Studio::TASKS[$task]) !== null))
+            ? array_values(array_filter(array_keys(\Reporion\Service\Library\Studio::TASKS), fn (string $task): bool => ($task !== 'audio' || $this->speaks) && $this->aiActions->special($record->path, \Reporion\Service\Library\Studio::TASKS[$task]) !== null))
             : [];
         $vars['notebookStudio'] = $studioTasks !== [] ? ['path' => $record->path, 'tasks' => $studioTasks, 'slug' => substr($record->path, (int) strrpos($record->path, ':') + 1),
             'saved' => $this->rendered($this->analyses?->shown($record, $principal, array_values(\Reporion\Service\Library\Studio::TASKS)) ?? [], $record->frontmatter, $request->basePath, $principal)] : null;

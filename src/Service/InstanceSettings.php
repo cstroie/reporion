@@ -86,6 +86,10 @@ final class InstanceSettings
         'ai.embed_min_score' => 'unit_or_none',
         // A conclusion this many reports share is a stock one (Embedder::commonMin(); blank: its default)
         'ai.embed_common_min' => 'count_or_none',
+        // The audio overview (docs/library.md, phase 8): a server's OpenAI-compatible /audio/speech, its model, and the two voices of the script
+        'ai.speech_server' => 'slot_or_none',
+        'ai.speech_model' => 'model',
+        'ai.speech_voices' => 'voices',
         // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
         // how often and how long they are kept. The ssh key is a path to a file, never the key itself
         'backup.enabled' => 'bool',
@@ -429,6 +433,8 @@ final class InstanceSettings
             'never' => $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
             'slot_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail()),
+            // Two voice names, comma-separated (the first host, the second); blank: the server's default twice
+            'voices' => $text === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}(\s*,\s*[A-Za-z0-9][A-Za-z0-9._-]{0,39})?$/', $text) === 1 ? $text : $fail(),
             'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             'profile_name_or_none' => $text === '' || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             // A bearer token: printable, no spaces, as a server hands it out

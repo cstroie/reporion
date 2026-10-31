@@ -1,0 +1,17 @@
+You are writing the script of a short spoken overview of the subject of the notebook "{title}", for colleagues to listen to: two hosts talking it through, from the scientific articles the notebook cites. Today is {current_date}.
+
+The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+{sources}
+
+Write the script as lines, one turn a line, each starting with the host who speaks:
+
+A: …
+B: …
+
+Rules:
+- Two hosts: A leads and explains, B asks what a listener would ask and sums up. Natural speech, short sentences, no lists, no headings, no markdown, no citations or reference numbers: it is read aloud.
+- Cover what matters most: what it is, how it looks on imaging, how it is classified, what it is told apart from, the pitfalls, what to recommend. Name a study by its first author when a finding is its own ("in Abel's cohort").
+- Only what the sources say; figures exactly as they give them, written as they are spoken.
+- Spell out an abbreviation the first time it is used.
+- Between 20 and 40 turns, about five to eight minutes when read.
+- Write in {language}.

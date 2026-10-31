@@ -19,7 +19,9 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Highlights;
+use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Library;
+use Reporion\Support\Flashcards;
 use Reporion\Service\Library\WebClip;
 use Reporion\Http\Throttle;
 use Reporion\Storage\FileTree;
@@ -157,6 +159,92 @@ final class LibraryController
         $this->audit->record('page.save', $principal->username, $request, (string) ($row['pid'] ?? ''), $sent['path'], $sent['rev'], extra: ['highlight_from' => $pid]);
 
         return ApiResponse::json(['path' => $sent['path'], 'rev' => $sent['rev'], 'page' => $sent['page'], 'href' => $request->basePath . '/' . $sent['path']]);
+    }
+
+    /**
+     * GET /library/audio/{pid}: a kept audio overview's file (`audio` on the kept `studio-audio`
+     * page, docs/library.md phase 8), under that page's visibility (anything else 404), with
+     * `Range` so the player can seek: one byte range a request, 206 with `Content-Range`
+     */
+    public function audio(Request $request, string $pid, ?User $principal): Response
+    {
+        $notFound = new Response(404, 'Not found', ['Content-Type' => 'text/plain; charset=utf-8']);
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($row === null) {
+            return $notFound;
+        }
+        try {
+            $page = $this->storage->read((string) $row['path']);
+        } catch (PageNotFoundException) {
+            return $notFound;
+        }
+        $audio = $page->frontmatter['audio'] ?? null;
+        $ext = \is_array($audio) && \in_array($audio['ext'] ?? null, ['mp3', 'wav'], true) ? (string) $audio['ext'] : null;
+        $file = $ext !== null && Analyses::isAnalysis($page->frontmatter) ? $this->storage->originalFile((string) ($audio['sha256'] ?? ''), $ext) : null;
+        $size = $file !== null ? (int) filesize($file) : 0;
+        if ($file === null || $size === 0) {
+            return $notFound;
+        }
+        $headers = [
+            'Content-Type' => $ext === 'mp3' ? 'audio/mpeg' : 'audio/wav',
+            'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ];
+        $range = $request->range;
+        if (preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $m) === 1 && ($m[1] !== '' || $m[2] !== '')) {
+            $start = $m[1] !== '' ? (int) $m[1] : max(0, $size - (int) $m[2]);
+            $end = $m[1] !== '' && $m[2] !== '' ? min((int) $m[2], $size - 1) : $size - 1;
+            if ($start > $end || $start >= $size) {
+                return new Response(416, '', ['Content-Range' => 'bytes */' . $size] + $headers);
+            }
+
+            return new Response(206, (string) file_get_contents($file, false, null, $start, $end - $start + 1), ['Content-Range' => 'bytes ' . $start . '-' . $end . '/' . $size] + $headers);
+        }
+
+        return new Response(200, (string) file_get_contents($file), $headers);
+    }
+
+    /**
+     * GET /library/flashcards/{pid}: a kept flashcards page (the `source-flashcards` or
+     * `studio-flashcards` analysis, docs/library.md phase 8) as the file Anki imports
+     * (Support\Flashcards::anki()): a citation printed as `(Author year, p. N)` from the library's
+     * record; under the page's visibility (anything else, or no card in it, 404); audited `export`.
+     */
+    public function flashcards(Request $request, string $pid, ?User $principal): Response
+    {
+        $notFound = new Response(404, 'Not found', ['Content-Type' => 'text/plain; charset=utf-8']);
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null) {
+            return $notFound;
+        }
+        try {
+            $page = $this->storage->read((string) $row['path']);
+        } catch (PageNotFoundException) {
+            return $notFound;
+        }
+        $prompt = $page->frontmatter[Analyses::KEY]['prompt'] ?? null;
+        $cards = \in_array($prompt, ['source-flashcards', 'studio-flashcards'], true) ? Flashcards::parse($page->body) : [];
+        if ($cards === []) {
+            return $notFound;
+        }
+        $records = [];
+        $cite = function (string $key, ?string $locator) use (&$records): string {
+            $records[$key] ??= $this->library->citedRecords([$key])[0]['csl'] ?? null;
+
+            return ($records[$key] !== null ? Citation::apaLabel($records[$key]) : $key) . ($locator !== null ? ', ' . $locator : '');
+        };
+        // The page it was made of names the deck: `iwata2019`, `white-matter`
+        $segments = explode(':', $page->path);
+        $of = $segments[\count($segments) - 2] ?? 'cards';
+        $this->audit->record('export', $principal->username, $request, $page->pid, $page->path, $page->rev, extra: ['format' => 'anki', 'cards' => \count($cards)]);
+
+        return new Response(200, Flashcards::anki($cards, ['reporion', $of], $cite), [
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $of . '-flashcards.txt"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     /**

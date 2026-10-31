@@ -60,7 +60,7 @@ include __DIR__ . '/saved-analyses.php';
         'questions_needed' => t('studio.questions_needed'),
         'tpl_path' => t('studio.tpl_path'), 'tpl_path_help' => t('studio.tpl_path_help'), 'tpl_create' => t('studio.tpl_create'),
         'tpl_bad_path' => t('studio.tpl_bad_path'), 'tpl_checklist' => t('studio.tpl_checklist'), 'tpl_problems' => t('studio.tpl_problems'),
-        'saved' => t('library.saved.as'), 'tpl_exists' => t('studio.tpl_exists'), 'tpl_no_grant' => t('studio.tpl_no_grant'), 'tpl_note' => t('studio.tpl_note'),
+        'saved' => t('library.saved.as'), 'speaking' => t('studio.speaking'), 'tpl_exists' => t('studio.tpl_exists'), 'tpl_no_grant' => t('studio.tpl_no_grant'), 'tpl_note' => t('studio.tpl_note'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>

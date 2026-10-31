@@ -40,6 +40,8 @@ final class StudioTest extends HttpTestCase
         $prompt('studio-compare', "STUDIO-ROW\n{sources}\n{questions}\n({count})\n");
         $prompt('studio-check', "CHECK\n<page>{page}</page>\n{sources}\n");
         $prompt('studio-template', "STUDIO-TEMPLATE\n{sources}\n");
+        $prompt('studio-flashcards', "STUDIO-CARDS\n{sources}\n");
+        $prompt('studio-audio', "STUDIO-AUDIO\n{sources}\nin {language}\n");
         $prompt('source-part', "PART {part} of {title}: {source} in {words} words, {language}\n");
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'issued' => ['date-parts' => [[2020]]]];
         $storage->create('library:abel2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl], "*— p. 4 —*\n\nWhite matter lesions were graded in 128 patients.\n\n## References\n\n```text\n1. Cited elsewhere.\n```\n", 'owner');
@@ -120,6 +122,69 @@ final class StudioTest extends HttpTestCase
         $own = Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook:studio-overview', cookies: ['reporion' => $this->cookie('writer')]))->body;
         self::assertStringNotContainsString('data-island="notebook-studio"', $own);
         self::assertSame(404, $this->studio('writer', ['path' => 'wiki:notebook:studio-overview', 'task' => 'overview'])->status);
+    }
+
+    public function testFlashcardsAreKeptAndDownloadedForAnki(): void
+    {
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'flashcards']));
+        $kept = $this->storage()->read((string) $data['saved']['path']);
+        $download = fn (?string $user, string $pid): Response => Kernel::boot($this->config)->handle(new Request('GET', '/library/flashcards/' . $pid, cookies: $user === null ? [] : ['reporion' => $this->cookie($user)]));
+
+        $file = $download('writer', $kept->pid);
+
+        self::assertSame(200, $file->status, $file->body);
+        self::assertSame('attachment; filename="notebook-flashcards.txt"', $file->headers['Content-Disposition']);
+        self::assertStringStartsWith("#separator:tab\n#html:true\n#notetype:Basic\n#tags:reporion notebook\n", $file->body);
+        self::assertStringContainsString("What grades does Fazekas give?\t0 to 3 (A made-up study, 2020, p. 4)\n", $file->body);
+        self::assertStringContainsString('data-saved-prompt="studio-flashcards"', Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook', cookies: ['reporion' => $this->cookie('writer')]))->body);
+        self::assertStringContainsString('"format":"anki"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+
+        self::assertSame(404, $download(null, $kept->pid)->status);
+        self::assertSame(404, $download('writer', $this->storage()->read('wiki:notebook')->pid)->status, 'not a flashcards page');
+    }
+
+    public function testTheAudioOverviewIsTheScriptReadAloudByTwoVoicesAndKept(): void
+    {
+        self::assertSame(422, $this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'audio'])->status, 'no speech model: no audio overview');
+        $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-test', 'speech_voices' => 'host-a, host-b'];
+        $this->config['library']['tools']['ffmpeg'] = '/nonexistent/ffmpeg';
+
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'audio']));
+
+        $speech = $this->server->speech();
+        self::assertSame(['host-a', 'host-b', 'host-a'], array_column($speech, 'voice'), 'one request a turn, a host\'s turns joined');
+        self::assertSame('How are they graded? And in whom?', $speech[1]['input'], 'no citation, no markdown read aloud');
+        self::assertSame(['tts-test', 'wav'], [$speech[0]['model'], $speech[0]['response_format']]);
+        self::assertSame([], $data['notices']);
+        $kept = $this->storage()->read('wiki:notebook:studio-audio');
+        self::assertSame(['wav', 3, 1], [$kept->frontmatter['audio']['ext'], $kept->frontmatter['audio']['turns'], $kept->frontmatter['audio']['seconds']], 'three turns and two gaps: about a second');
+        self::assertSame('/library/audio/' . $kept->pid, $data['audio']['href']);
+
+        $get = fn (?string $user, string $range = ''): Response => Kernel::boot($this->config)->handle(new Request('GET', '/library/audio/' . $kept->pid, cookies: $user === null ? [] : ['reporion' => $this->cookie($user)], range: $range));
+        $whole = $get('writer');
+        self::assertSame([200, 'audio/wav', 'bytes'], [$whole->status, $whole->headers['Content-Type'], $whole->headers['Accept-Ranges']]);
+        self::assertStringStartsWith('RIFF', $whole->body);
+        self::assertSame(\strlen($whole->body) - 8, unpack('V', substr($whole->body, 4, 4))[1], 'one header for the whole');
+        $part = $get('writer', 'bytes=0-9');
+        self::assertSame([206, 'RIFF', 'bytes 0-9/' . \strlen($whole->body)], [$part->status, substr($part->body, 0, 4), $part->headers['Content-Range']]);
+        self::assertSame(10, \strlen($part->body));
+        self::assertSame(404, $get(null)->status);
+
+        $view = Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook', cookies: ['reporion' => $this->cookie('writer')]))->body;
+        self::assertStringContainsString('data-studio-task="audio"', $view);
+        self::assertStringContainsString('<audio controls preload="none" src="/library/audio/' . $kept->pid . '"></audio>', $view);
+    }
+
+    public function testAudioThatDoesNotJoinKeepsTheScriptAndSaysSo(): void
+    {
+        $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-test', 'speech_voices' => 'host-a, stereo'];
+        $this->config['library']['tools']['ffmpeg'] = '/nonexistent/ffmpeg';
+
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'audio']));
+
+        self::assertNull($data['audio']);
+        self::assertStringStartsWith('The script is kept, but it could not be read aloud', $data['notices'][0]);
+        self::assertArrayNotHasKey('audio', $this->storage()->read('wiki:notebook:studio-audio')->frontmatter);
     }
 
     public function testALargeNotebookIsCondensedSourceBySourceAndKeepsTheKeys(): void

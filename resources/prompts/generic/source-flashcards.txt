@@ -1,0 +1,19 @@
+Make flashcards for learning the scientific article "{title}" ({citation}): one question on the front, its answer on the back.
+
+The article:
+<source>
+{source}
+</source>
+
+Write 10 to 25 cards, in exactly this form, a blank line between cards:
+
+Q: the question
+A: the answer
+
+Rules:
+- One fact a card: a definition, a sign, a threshold, a classification step, a figure, a recommendation. The question must be answerable without seeing the article.
+- Answers short: a few words or one sentence. Figures exactly as the article gives them.
+- Only what the article says: no outside knowledge, nothing invented.
+- Where the text carries a page marker `*— p. N —*`, end the answer with (p. N).
+- Write in {language}; keep technical terms in the language of the article when there is no exact equivalent.
+- Answer with the cards only.

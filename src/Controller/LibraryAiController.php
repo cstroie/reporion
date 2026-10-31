@@ -18,6 +18,8 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Library\Analyses;
+use Reporion\Service\Library\AudioOverview;
+use Reporion\Support\AudioScript;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Storage\PageRecord;
 use Reporion\Service\Library\SourceAnalysis;
@@ -65,7 +67,15 @@ final class LibraryAiController
         private readonly IndexInterface $index,
         private readonly ?Analyses $analyses = null,
         private readonly ?AuditLog $audit = null,
+        // The audio overview (phase 8): null when no speech model is set in Admin → AI
+        private readonly ?AudioOverview $audio = null,
     ) {
+    }
+
+    /** Whether Studio can read a script aloud: a speech model is set */
+    public function speaks(): bool
+    {
+        return $this->audio !== null;
     }
 
     /**
@@ -213,6 +223,9 @@ final class LibraryAiController
         if (!isset(Studio::TASKS[$task]) || !\in_array($task, $this->studio->available($page->path), true)) {
             return ApiResponse::error(422, 'unknown_task', t('studio.unknown_task'));
         }
+        if ($task === 'audio' && $this->audio === null) {
+            return ApiResponse::error(422, 'unknown_task', t('studio.audio_off'));
+        }
         $questions = [];
         if ($task === 'compare') {
             try {
@@ -231,9 +244,11 @@ final class LibraryAiController
                 default => ApiResponse::error(422, 'no_sources', t('studio.no_sources')),
             };
         }
-        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60;
+        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60
+            // The audio overview's turns, each a speech request after the script
+            + ($task === 'audio' ? AudioScript::MAX_TURNS * ($this->config->timeout + 15) : 0);
         $basePath = $request->basePath;
-        $run = function (\Closure $progress) use ($task, $plan, $page, $principal, $request, $questions, $basePath): array {
+        $run = function (\Closure $progress, ?\Closure $speaking = null) use ($task, $plan, $page, $principal, $request, $questions, $basePath): array {
             $done = $this->studio->run($plan, $page, $principal, $request, $questions, $progress);
             foreach ($done['sources'] as $i => $source) {
                 $done['sources'][$i]['href'] = $basePath . '/' . $source['path'];
@@ -242,11 +257,30 @@ final class LibraryAiController
                 $done['template']['problems'] = array_map(static fn (array $p): string => TemplateLintText::message($p), $done['template']['problems']);
                 $done['template']['reference'] = $page->path;
             }
-            // Kept beside the notebook, reading as it reads (its language, its citation style)
-            $done['saved'] = $this->keep($page, Studio::TASKS[$task], t('studio.' . $task), $done['result'], $principal, $done['provider'], $request, [
+            $extra = [
                 'language' => $page->frontmatter['language'] ?? null,
                 'citation_style' => $page->frontmatter['citation_style'] ?? null,
-            ]);
+            ];
+            // The audio overview: the script read aloud, the file beside the library's originals; a failure keeps the script
+            $done['audio'] = null;
+            if ($task === 'audio' && $this->audio !== null && trim($done['result']) !== '') {
+                try {
+                    $made = $this->audio->make($done['result'], $speaking ?? static function (int $step, int $steps): void {
+                    });
+                    $extra['audio'] = $this->storage->storeOriginal($made['bytes'], $made['ext']) + ['seconds' => $made['seconds'], 'turns' => $made['turns']];
+                    if ($made['cut']) {
+                        $done['notices'][] = t('studio.audio_cut');
+                    }
+                } catch (AiException $e) {
+                    $done['notices'][] = t('studio.audio_failed', [AiController::message($e)]);
+                }
+            }
+            // Kept beside the notebook, reading as it reads (its language, its citation style)
+            $done['saved'] = $this->keep($page, Studio::TASKS[$task], t('studio.' . $task), $done['result'], $principal, $done['provider'], $request, $extra);
+            if (isset($extra['audio']) && $done['saved'] !== null) {
+                $kept = $this->index->findByPath($done['saved']['path'], $principal);
+                $done['audio'] = $kept !== null ? ['href' => $basePath . '/library/audio/' . $kept['pid'], 'seconds' => $extra['audio']['seconds'], 'ext' => $extra['audio']['ext']] : null;
+            }
 
             return $done;
         };
@@ -270,7 +304,10 @@ final class LibraryAiController
                 flush();
             };
             try {
-                $send('done', $run(static fn (int $step, int $steps) => $send('progress', ['step' => $step, 'steps' => $steps])));
+                $send('done', $run(
+                    static fn (int $step, int $steps) => $send('progress', ['step' => $step, 'steps' => $steps]),
+                    static fn (int $step, int $steps) => $send('speaking', ['step' => $step, 'steps' => $steps]),
+                ));
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
             } catch (\Throwable $e) {

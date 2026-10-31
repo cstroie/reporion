@@ -61,11 +61,24 @@ final class FakeServer
         return (int) @file_get_contents($this->log . '.count');
     }
 
+    /**
+     * The speech requests answered so far, oldest first (POST /v1/audio/speech)
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function speech(): array
+    {
+        $lines = file((string) $this->log . '.speech', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+
+        return array_values(array_map(static fn (string $l): array => (array) json_decode($l, true), $lines));
+    }
+
     public function stop(): void
     {
         proc_terminate($this->process);
         proc_close($this->process);
         @unlink($this->log);
         @unlink($this->log . '.count');
+        @unlink($this->log . '.speech');
     }
 }

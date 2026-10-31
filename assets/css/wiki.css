@@ -2267,6 +2267,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-saved { margin-top: var(--space-3); }
 .wk-saved-item { border-top: 1px solid var(--color-divider); padding: var(--space-2) 0; }
 .wk-saved-item > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
+.wk-saved-audio { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-2) 0; }
+.wk-saved-audio audio { max-width: 100%; }
 .wk-saved-text { margin-top: var(--space-2); line-height: 1.55; overflow-wrap: anywhere; }
 .wk-saved-text table { display: block; overflow-x: auto; }
 .wk-lib-cites { margin-top: var(--space-3); }

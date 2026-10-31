@@ -200,6 +200,12 @@ final class Assistant
         return $this->context->safeQuestion($question);
     }
 
+    /** A line of the audio overview's script as it may be spoken (Context::speechText()) */
+    public function speechText(string $line): string
+    {
+        return $this->context->speechText($line);
+    }
+
     /**
      * run()'s retries around attempt()
      *

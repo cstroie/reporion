@@ -424,6 +424,26 @@ final class Context
         return trim((new Redactor())->redact($question));
     }
 
+    /**
+     * One line of the audio overview's script as it may go to the speech model (docs/library.md,
+     * phase 8): de-identified as a source's text is for a prompt (source()), contact details
+     * scrubbed, `<`/`>` and markdown marks out (they would be read aloud), the final guard: a line
+     * that still holds an identifier is never sent
+     *
+     * @throws AiException identifier_leak
+     */
+    public function speechText(string $line): string
+    {
+        $redactor = new Redactor();
+        $text = trim(Redactor::scrubContacts($redactor->redact($line)));
+        $text = trim((string) preg_replace(['/\[@[^\]]*\]/u', '/[*_`#<>]+/u', '/\s+/u', '/\s+([.,;:!?])/u'], ['', '', ' ', '$1'], $text));
+        if ($redactor->leaks($text)) {
+            throw new AiException('identifier_leak', 'A line of the script still held a patient identifier; nothing was sent');
+        }
+
+        return $text;
+    }
+
     /** The languages a notebook or source may be answered in (frontmatter `language`), by their two-letter code */
     private const LANGUAGES = ['ro' => 'Romanian', 'en' => 'English', 'fr' => 'French', 'de' => 'German', 'es' => 'Spanish', 'it' => 'Italian', 'hu' => 'Hungarian'];
 

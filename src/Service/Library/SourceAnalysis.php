@@ -38,6 +38,8 @@ final class SourceAnalysis
         'design' => 'source-design',
         'limitations' => 'source-limitations',
         'questions' => 'source-questions',
+        // Phase 8: cards for learning it, kept and downloadable for Anki
+        'flashcards' => 'source-flashcards',
     ];
 
     /** The most parts a source may be cut into */
