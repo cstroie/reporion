@@ -37,6 +37,41 @@ final class LibraryTest extends StorageTestCase
         $this->library = new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp'), new TempUploads($this->dataRoot));
     }
 
+    public function testAScanHoldingAMisreadCnpIsRefusedAndNothingIsKept(): void
+    {
+        $cnp = \Reporion\Tests\Support\CnpTest::make(1, '850723');
+        // OCR read its 0 as O: the checksum no longer holds, the stricter guard still refuses it
+        $misread = substr($cnp, 0, 3) . 'O' . substr($cnp, 4);
+        $runner = static function (array $argv, int $timeout, array $env) use ($misread): array {
+            $tool = basename($argv[0]);
+            if ($tool === 'pdftotext') {
+                file_put_contents((string) end($argv), "\f");
+
+                return [0, ''];
+            }
+            if ($tool === 'pdfinfo') {
+                return [0, \in_array('-meta', $argv, true) ? '' : "Pages: 1\n"];
+            }
+            if ($tool === 'pdftoppm') {
+                file_put_contents((string) end($argv) . '.png', 'PNG');
+
+                return [0, ''];
+            }
+
+            return $tool === 'tesseract' ? [0, "A made-up referral letter.\nPatient CNP " . $misread . "\nSeen for headaches over many weeks."] : [1, ''];
+        };
+        $library = new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp', runner: $runner), new TempUploads($this->dataRoot));
+
+        try {
+            $library->upload('%PDF-1.4 scan', 'scan.pdf', self::owner());
+            self::fail('a scan holding a CNP is refused');
+        } catch (LibraryException $e) {
+            self::assertSame(LibraryException::PATIENT_DATA, $e->reason);
+        }
+        self::assertSame([], array_merge(glob($this->dataRoot . '/tmp/library/*') ?: [], glob($this->dataRoot . '/tmp/library-file/*') ?: []), 'nothing kept');
+        self::assertSame([], glob($this->dataRoot . '/sources/*/*') ?: []);
+    }
+
     private static function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');

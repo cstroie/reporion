@@ -175,6 +175,19 @@ final class StudioTest extends HttpTestCase
         self::assertStringContainsString('<audio controls preload="none" src="/library/audio/' . $kept->pid . '"></audio>', $view);
     }
 
+    public function testTheSpeechModelSavedInAdminTurnsTheAudioOverviewOn(): void
+    {
+        $post = fn (string $body): Response => Kernel::boot($this->config)->handle(new Request('POST', '/admin/ai/speech', cookies: ['reporion' => $this->cookie('owner')], body: $body));
+        $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/wiki:notebook', cookies: ['reporion' => $this->cookie('writer')]))->body;
+        self::assertStringNotContainsString('data-studio-task="audio"', $view());
+
+        self::assertSame(422, $post('ai_speech_server=1&ai_speech_model=tts-test&ai_speech_voices=' . rawurlencode('host a; rm -rf'))->status, 'voices are names, nothing else');
+        self::assertSame(302, $post('ai_speech_server=1&ai_speech_model=tts-test&ai_speech_voices=' . rawurlencode('host-a, host-b'))->status);
+
+        self::assertStringContainsString('data-studio-task="audio"', $view(), 'settings.yaml reaches the speech model');
+        self::assertSame(['host-a', 'host-b'], \Reporion\Service\Ai\Speaker::fromConfig(Kernel::withInstanceSettings($this->config))?->voices);
+    }
+
     public function testAudioThatDoesNotJoinKeepsTheScriptAndSaysSo(): void
     {
         $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-test', 'speech_voices' => 'host-a, stereo'];
