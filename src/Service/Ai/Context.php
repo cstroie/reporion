@@ -539,14 +539,15 @@ final class Context
      * A Studio request (docs/library.md, phase 6): the notebook's sources (whole, condensed or
      * passages) as notebook() gives them in {sources}, the notebook's title in {title}, for
      * `studio-check` the page's own text in {page}, for `studio-compare` the writer's questions in
-     * {questions} (numbered lines). All de-identified like any text that leaves.
+     * {questions} (numbered lines), for `studio-template` the writer's topic in {topic} (the
+     * notebook's title when none). All de-identified like any text that leaves.
      *
      * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
      * @param list<string> $questions
      *
      * @throws AiException identifier_leak
      */
-    public function studio(Action $action, string $title, array $sources, mixed $language, string $page = '', array $questions = []): Prompt
+    public function studio(Action $action, string $title, array $sources, mixed $language, string $page = '', array $questions = [], string $topic = ''): Prompt
     {
         $redactor = new Redactor();
         $blocks = self::sourceBlocks($sources, $redactor);
@@ -557,6 +558,8 @@ final class Context
         $vars = [
             'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
             'title' => self::escape(trim($redactor->redact($title))),
+            // A template's subject in the writer's words; the notebook's title when none
+            'topic' => self::escape($this->safeQuestion(trim($topic) !== '' ? $topic : $title)),
             'page' => self::escape(trim(Redactor::scrubContacts($redactor->redact($page)))),
             'questions' => implode("\n", $numbered),
             'count' => (string) \count($numbered),

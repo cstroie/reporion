@@ -39,7 +39,7 @@ final class StudioTest extends HttpTestCase
         $prompt('studio-overview', "OVERVIEW of {title}\n{sources}\nin {language}\n");
         $prompt('studio-compare', "STUDIO-ROW\n{sources}\n{questions}\n({count})\n");
         $prompt('studio-check', "CHECK\n<page>{page}</page>\n{sources}\n");
-        $prompt('studio-template', "STUDIO-TEMPLATE\n{sources}\n");
+        $prompt('studio-template', "STUDIO-TEMPLATE\n<topic>{topic}</topic>\n{sources}\n");
         $prompt('studio-flashcards', "STUDIO-CARDS\n{sources}\n");
         $prompt('studio-audio', "STUDIO-AUDIO\n{sources}\nin {language}\n");
         $prompt('source-part', "PART {part} of {title}: {source} in {words} words, {language}\n");
@@ -304,6 +304,35 @@ final class StudioTest extends HttpTestCase
         $page = $this->storage()->read('templates:mri:substanta-alba');
         self::assertSame('wiki:notebook', $page->frontmatter['reference']);
         self::assertSame($template['checklist'], $page->frontmatter['checklist']);
+    }
+
+    public function testALargeNotebooksTemplateSearchesFirstAndWritesFromThePassages(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        // No condensing prompt: a focused template does not need it
+        $this->storage()->delete('ai:profiles:wiki:special:source-part', 'owner');
+        $this->storage()->create('library:huge2022', ['title' => 'Huge', 'visibility' => 'private', 'csl' => ['title' => 'Huge']], str_repeat("A sentence of a very long made-up article.\n\n", 1500), 'owner');
+        $this->storage()->save('wiki:two', ['title' => 'Two', 'visibility' => 'private', 'sources' => ['long2021', 'huge2022']], "# Two\n\nNotes [@abel2020].\n", 1, 'owner');
+
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:two', 'task' => 'template', 'topic' => 'MRI white matter lesions Fazekas']));
+
+        self::assertFalse($data['whole']);
+        self::assertTrue($data['focused']);
+        self::assertGreaterThan(0, $data['passages']);
+        self::assertSame(1, $this->server->requests(), 'one request on the passages, never more than the limit');
+        $user = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString('<topic>MRI white matter lesions Fazekas</topic>', $user);
+        self::assertStringContainsString('page="5"', $user, 'the passage about the subject, with its page');
+        self::assertStringNotContainsString('Page 2 filler', $user);
+        self::assertNotNull($data['template']);
+    }
+
+    public function testATemplatesTopicIsOptionalAndBounded(): void
+    {
+        $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'template']));
+        self::assertStringContainsString('<topic>White matter</topic>', $this->server->lastRequest()['body']['messages'][1]['content'], 'the notebook\'s title when none');
+
+        self::assertSame(422, $this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'template', 'topic' => str_repeat('x', 201)])->status);
     }
 
     public function testStreamedAnswersEndWithDone(): void

@@ -29,10 +29,15 @@ use Reporion\Support\TemplateDraft;
  * instruction is each task's reserved prompt page (D15); this class decides what goes in which
  * request. Shown, never written: the writer copies it, or makes the template page (D8).
  *
- * - overview, glossary, faq, timeline, template: the notebook and its sources whole when they fit
+ * - overview, glossary, faq, timeline: the notebook and its sources whole when they fit
  *   `library.context_tokens`; otherwise each text longer than its share is condensed part by part
  *   (`source-part`), each kept in its own `<source key>` block so the answer can cite it, and the
- *   task runs on the notes (map-reduce).
+ *   task runs on the notes (map-reduce: a question about the whole needs all of it, which a search
+ *   cannot promise).
+ * - template: whole when it fits; otherwise search first (2026-10-31): the passages that hold the
+ *   writer's topic and the notebook's words, or are nearest in meaning (PassageSearch), one request
+ *   on them. A template is about one exam, a focused question, where retrieval does well; no
+ *   condensing, so no request limit.
  * - compare: one request per source (its row, the questions over that source alone, whole or
  *   from its notes), the table assembled here, each row citing its own key.
  * - check: the page's own text and the sources whole, or their passages holding the page's words
@@ -94,6 +99,21 @@ final class Studio
     }
 
     /**
+     * A template's topic as sent: one line, trimmed; '' for none
+     *
+     * @throws LibraryException INVALID when longer than MAX_QUESTION
+     */
+    public static function topic(mixed $raw): string
+    {
+        $topic = \is_string($raw) ? trim((string) preg_replace('/\s+/u', ' ', $raw)) : '';
+        if (mb_strlen($topic) > self::MAX_QUESTION) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+
+        return $topic;
+    }
+
+    /**
      * The comparison's questions as sent: trimmed, one line each, empty ones out
      *
      * @return list<string>
@@ -124,12 +144,14 @@ final class Studio
     /**
      * What a run of $task on $notebook will send, counted before any request
      *
-     * @return array{task: string, texts: list<array{key: ?string, path: string, title: string, text: string}>, page: string, whole: bool, requests: int}
+     * @param string $topic a template's subject in the writer's words (topic()), '' for the notebook's
+     *
+     * @return array{task: string, texts: list<array{key: ?string, path: string, title: string, text: string}>, page: string, whole: bool, focused: bool, topic: string, requests: int}
      *
      * @throws LibraryException INVALID (an unknown task, no source the caller may read), TOO_LARGE, NO_TEXT (a check of an
      *                          empty page), TOOL_MISSING (the sources must be condensed and the `source-part` prompt is missing)
      */
-    public function plan(string $task, PageRecord $notebook, User $principal): array
+    public function plan(string $task, PageRecord $notebook, User $principal, string $topic = ''): array
     {
         if (!isset(self::TASKS[$task])) {
             throw new LibraryException(LibraryException::INVALID);
@@ -141,6 +163,7 @@ final class Studio
         $budget = SourceChunks::budget($this->contextTokens);
         $own = ['key' => null, 'path' => $notebook->path, 'title' => PageTitle::of($notebook->frontmatter, $notebook->body), 'text' => trim($notebook->body)];
         $page = '';
+        $focused = false;
 
         if ($task === 'compare') {
             $texts = $sources;
@@ -162,7 +185,13 @@ final class Studio
         } else {
             $texts = $own['text'] !== '' ? [$own, ...$sources] : $sources;
             $whole = self::length($texts) <= $budget;
-            $requests = $whole ? 1 : \count(self::condensing($texts, $budget)) + 1;
+            if (!$whole && $task === 'template') {
+                // Search first: the search words, when the prompt for them is there, then the template
+                $focused = true;
+                $requests = $this->actions->special($notebook->path, 'notebook-terms') === null ? 1 : 2;
+            } else {
+                $requests = $whole ? 1 : \count(self::condensing($texts, $budget)) + 1;
+            }
         }
         if ($requests > self::MAX_REQUESTS) {
             throw new LibraryException(LibraryException::TOO_LARGE);
@@ -170,20 +199,20 @@ final class Studio
         // Condensing needs its prompt: known now, not after rows already asked
         $condenses = $task === 'compare'
             ? $requests > \count(array_filter($texts, static fn (array $t): bool => $t['text'] !== ''))
-            : ($task !== 'check' && !$whole);
+            : ($task !== 'check' && !$whole && !$focused);
         if ($condenses && $this->actions->special($notebook->path, 'source-part') === null) {
             throw new LibraryException(LibraryException::TOOL_MISSING);
         }
 
-        return ['task' => $task, 'texts' => $texts, 'page' => $page, 'whole' => $whole, 'requests' => max(1, $requests)];
+        return ['task' => $task, 'texts' => $texts, 'page' => $page, 'whole' => $whole, 'focused' => $focused, 'topic' => $topic, 'requests' => max(1, $requests)];
     }
 
     /**
-     * @param array{task: string, texts: list<array{key: ?string, path: string, title: string, text: string}>, page: string, whole: bool, requests: int} $plan plan()'s
+     * @param array{task: string, texts: list<array{key: ?string, path: string, title: string, text: string}>, page: string, whole: bool, focused: bool, topic: string, requests: int} $plan plan()'s
      * @param list<string>          $questions the comparison's columns (questions()), else []
      * @param \Closure(int, int): void $progress called with (step, steps) before each request
      *
-     * @return array{task: string, result: string, template: ?array{body: string, checklist: list<string>, problems: list<string>}, notices: list<string>, sources: list<array{key: string, title: string, path: string}>, whole: bool, requests: int, dropped: int, ms: int, provider: string, context: list<string>}
+     * @return array{task: string, result: string, template: ?array{body: string, checklist: list<string>, problems: list<string>}, notices: list<string>, sources: list<array{key: string, title: string, path: string}>, whole: bool, focused: bool, passages: int, requests: int, dropped: int, ms: int, provider: string, context: list<string>}
      *
      * @throws AiException not_configured when a prompt page is missing, or the provider's reason
      */
@@ -227,10 +256,16 @@ final class Studio
             $dropped = 0;
         } else {
             if ($task === 'check') {
-                $sources = $plan['whole'] ? self::numbered($plan['texts']) : $this->checkPassages($plan['texts'], $notebook, $plan['page'], $budget - mb_strlen($plan['page']), $call, $user, $request);
+                $sources = $plan['whole'] ? self::numbered($plan['texts']) : $this->focusedPassages($plan['texts'], $notebook, self::subject($notebook, $plan['page']), $plan['page'], $budget - mb_strlen($plan['page']), $call, $user, $request);
                 // No passage holds the page's words: nothing to check against, no request
                 if ($sources === []) {
                     $notices[] = t('studio.nothing');
+                }
+            } elseif ($plan['focused']) {
+                $subject = trim($plan['topic'] . "\n" . self::subject($notebook, $notebook->body));
+                $sources = $this->focusedPassages($plan['texts'], $notebook, $subject, $notebook->body, $budget, $call, $user, $request);
+                if ($sources === []) {
+                    $notices[] = t('studio.nothing_focused');
                 }
             } elseif ($plan['whole']) {
                 $sources = self::numbered($plan['texts']);
@@ -240,7 +275,7 @@ final class Studio
             if ($sources === []) {
                 [$result, $dropped] = ['', 0];
             } else {
-                $answer = $call(fn (): array => $this->assistant->runStudio($action, $title, $sources, $language, $user, $request, $task === 'check' ? $plan['page'] : '', []));
+                $answer = $call(fn (): array => $this->assistant->runStudio($action, $title, $sources, $language, $user, $request, $task === 'check' ? $plan['page'] : '', [], $plan['topic']));
                 // A template goes into reports: no citation in it at all
                 [$result, $dropped] = NotebookAsk::onlySent($answer, $task === 'template' ? [] : $sent);
                 // Taken out on purpose there, not as a source the model was not given
@@ -255,6 +290,8 @@ final class Studio
             'notices' => $notices,
             'sources' => array_values(array_map(static fn (array $t): array => ['key' => (string) $t['key'], 'title' => $t['title'], 'path' => $t['path']], array_filter($plan['texts'], static fn (array $t): bool => $t['key'] !== null))),
             'whole' => $plan['whole'],
+            'focused' => $plan['focused'],
+            'passages' => $plan['focused'] ? \count($sources ?? []) : 0,
             'requests' => $step,
             'dropped' => $dropped,
             'ms' => $ms,
@@ -350,20 +387,19 @@ final class Studio
     }
 
     /**
-     * A check's sources when they do not fit beside the page: the passages holding the page's
-     * words, its headings' and those `notebook-terms` adds (the sources are mostly English, the
-     * notebooks Romanian), and those nearest in meaning to its title and headings (PassageSearch)
+     * The sources searched instead of sent whole (a check beside its page, a template over the
+     * budget): the passages holding the frequent words of $wordsFrom, the words of $subject and
+     * those `notebook-terms` adds for it (the sources are mostly English, the notebooks Romanian),
+     * and those nearest in meaning to $subject (PassageSearch)
      *
      * @param list<array{key: ?string, path: string, title: string, text: string}> $texts
      * @param \Closure(\Closure): string $call
      *
      * @return list<array{n: int, key: ?string, title: string, page: ?int, text: string}>
      */
-    private function checkPassages(array $texts, PageRecord $notebook, string $page, int $budget, \Closure $call, User $user, ?Request $request): array
+    private function focusedPassages(array $texts, PageRecord $notebook, string $subject, string $wordsFrom, int $budget, \Closure $call, User $user, ?Request $request): array
     {
-        preg_match_all('/^#{1,6}[ \t]+(.+)$/mu', $page, $m);
-        $subject = trim(PageTitle::of($notebook->frontmatter, $notebook->body) . "\n" . implode("\n", $m[1]));
-        $terms = [...RecallTerms::frequent($page, 5, 30), ...RecallTerms::ofLine($subject, 24)];
+        $terms = [...RecallTerms::frequent($wordsFrom, 5, 30), ...RecallTerms::ofLine($subject, 24)];
         $expand = $this->actions->special($notebook->path, 'notebook-terms');
         if ($expand !== null) {
             try {
@@ -379,6 +415,14 @@ final class Studio
         }
 
         return $out;
+    }
+
+    /** What the passages are found for: the notebook's title and the headings of $text */
+    private static function subject(PageRecord $notebook, string $text): string
+    {
+        preg_match_all('/^#{1,6}[ \t]+(.+)$/mu', $text, $m);
+
+        return trim(PageTitle::of($notebook->frontmatter, $notebook->body) . "\n" . implode("\n", $m[1]));
     }
 
     /**

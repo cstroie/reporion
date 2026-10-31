@@ -44,10 +44,11 @@ use Reporion\Support\LibrarySource;
  *   `[@key, p. N]` citations of sent sources only. A report, or a page naming a patient, is no
  *   notebook (404, as the EPUB and groff exports). An editor of the notebook and of the library.
  *
- * - `POST /api/v1/notebook/studio {path, task, questions?, stream?}`: one Studio text of a notebook
+ * - `POST /api/v1/notebook/studio {path, task, questions?, topic?, stream?}`: one Studio text of a notebook
  *   (Service\Library\Studio, docs/library.md phase 6): overview, glossary, faq, timeline, compare
- *   (`questions`: the table's columns, a list or one per line), check, template. Streamed as
- *   analyze; `done` carries {task, result, template?, notices, sources, whole, requests, dropped, ms,
+ *   (`questions`: the table's columns, a list or one per line), check, template (`topic`: the exam
+ *   and subject in the writer's words, steering the search when the sources do not fit). Streamed as
+ *   analyze; `done` carries {task, result, template?, notices, sources, whole, focused, passages, requests, dropped, ms,
  *   provider}. The same gate as Ask the notebook. Shown, never written: the template page is made
  *   by the writer through `POST /api/v1/pages` (D8).
  *
@@ -234,8 +235,16 @@ final class LibraryAiController
                 return ApiResponse::error(422, 'invalid_questions', t('studio.err_questions', [(string) Studio::MAX_QUESTIONS, (string) Studio::MAX_QUESTION]));
             }
         }
+        $topic = '';
+        if ($task === 'template') {
+            try {
+                $topic = Studio::topic($fields['topic'] ?? null);
+            } catch (LibraryException) {
+                return ApiResponse::error(422, 'invalid_topic', t('studio.err_topic', [(string) Studio::MAX_QUESTION]));
+            }
+        }
         try {
-            $plan = $this->studio->plan($task, $page, $principal);
+            $plan = $this->studio->plan($task, $page, $principal, $topic);
         } catch (LibraryException $e) {
             return match ($e->reason) {
                 LibraryException::TOO_LARGE => ApiResponse::error(413, 'too_long', t($task === 'check' ? 'studio.too_long_check' : 'studio.too_long', [(string) Studio::MAX_REQUESTS])),

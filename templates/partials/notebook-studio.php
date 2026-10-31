@@ -38,6 +38,13 @@ $tasks = $notebookStudio['tasks'];
 <footer class="wk-actions"><button class="btn btn-primary btn-sm" type="button" data-studio-compare><i class="ph ph-table" aria-hidden="true"></i><?= $e(t('studio.compare_run')) ?></button></footer>
 </div>
 <?php endif; ?>
+<?php if (\in_array('template', $tasks, true)): ?>
+<div class="field wk-studio-questions" data-studio-topic hidden><label><?= $e(t('studio.topic')) ?>
+<input class="input" type="text" maxlength="<?= \Reporion\Service\Library\Studio::MAX_QUESTION ?>" placeholder="<?= $e(t('studio.topic_hint')) ?>">
+<small><?= $e(t('studio.topic_help')) ?></small></label>
+<footer class="wk-actions"><button class="btn btn-primary btn-sm" type="button" data-studio-template><i class="ph ph-cards" aria-hidden="true"></i><?= $e(t('studio.template_run')) ?></button></footer>
+</div>
+<?php endif; ?>
 <div class="wk-notebook-out" data-studio-out aria-live="polite" hidden></div>
 <?php
 $savedAnalyses = $notebookStudio['saved'] ?? [];
@@ -56,7 +63,7 @@ include __DIR__ . '/saved-analyses.php';
     'strings' => [
         'working' => t('studio.working'), 'progress' => t('studio.progress'), 'failed' => t('studio.failed'), 'note' => t('studio.note'),
         'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'sources' => t('notebook.sources'),
-        'whole' => t('notebook.whole'), 'condensed' => t('studio.condensed'), 'dropped' => t('notebook.dropped'),
+        'whole' => t('notebook.whole'), 'condensed' => t('studio.condensed'), 'focused' => t('studio.focused'), 'dropped' => t('notebook.dropped'),
         'questions_needed' => t('studio.questions_needed'),
         'tpl_path' => t('studio.tpl_path'), 'tpl_path_help' => t('studio.tpl_path_help'), 'tpl_create' => t('studio.tpl_create'),
         'tpl_bad_path' => t('studio.tpl_bad_path'), 'tpl_checklist' => t('studio.tpl_checklist'), 'tpl_problems' => t('studio.tpl_problems'),

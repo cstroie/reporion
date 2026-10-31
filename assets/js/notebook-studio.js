@@ -54,9 +54,10 @@
     try { cfg = JSON.parse(cfgEl.textContent) || {}; } catch (e) { return; }
     var s = cfg.strings || {};
     var base = cfg.basePath || '';
-    var buttons = Array.prototype.slice.call(box.querySelectorAll('[data-studio-task], [data-studio-compare]'));
+    var buttons = Array.prototype.slice.call(box.querySelectorAll('[data-studio-task], [data-studio-compare], [data-studio-template]'));
     var out = box.querySelector('[data-studio-out]');
     var questionsBox = box.querySelector('[data-studio-questions]');
+    var topicBox = box.querySelector('[data-studio-topic]');
     var running = false;
 
     function busy(on) {
@@ -162,7 +163,7 @@
       out.appendChild(row);
       if (data.template) out.appendChild(templateForm(data));
       var read = el('details', 'wk-notebook-sources');
-      read.appendChild(el('summary', 'wk-dim wk-text-sm', (s.sources || '') + ' (' + (data.sources || []).length + ') · ' + (data.whole ? s.whole : s.condensed)));
+      read.appendChild(el('summary', 'wk-dim wk-text-sm', (s.sources || '') + ' (' + (data.sources || []).length + ') · ' + (data.whole ? s.whole : (data.focused ? (s.focused || '%s').replace('%s', data.passages || 0) : s.condensed))));
       var list = el('ol', 'wk-text-sm');
       (data.sources || []).forEach(function (src) {
         var li = el('li');
@@ -182,7 +183,7 @@
       out.appendChild(notice('error', message || s.failed));
     }
 
-    function run(task, questions) {
+    function run(task, questions, topic) {
       if (running) return;
       busy(true);
       out.hidden = false;
@@ -190,6 +191,7 @@
       out.appendChild(notice('info', s.working));
       var payload = { path: cfg.path, task: task, stream: true };
       if (questions) payload.questions = questions;
+      if (topic) payload.topic = topic;
       fetch(base + '/api/v1/notebook/studio', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
@@ -241,13 +243,30 @@
         // The comparison asks for its columns first
         if (task === 'compare' && questionsBox) {
           questionsBox.hidden = false;
+          if (topicBox) topicBox.hidden = true;
           questionsBox.querySelector('textarea').focus();
           return;
         }
+        // The template asks for its topic first (it may be left empty)
+        if (task === 'template' && topicBox) {
+          topicBox.hidden = false;
+          if (questionsBox) questionsBox.hidden = true;
+          topicBox.querySelector('input').focus();
+          return;
+        }
         if (questionsBox) questionsBox.hidden = true;
+        if (topicBox) topicBox.hidden = true;
         run(task);
       });
     });
+    var makeTemplate = box.querySelector('[data-studio-template]');
+    if (makeTemplate) {
+      var topicInput = topicBox.querySelector('input');
+      makeTemplate.addEventListener('click', function () { run('template', null, topicInput.value.trim()); });
+      topicInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') { event.preventDefault(); makeTemplate.click(); }
+      });
+    }
     var compare = box.querySelector('[data-studio-compare]');
     if (compare) {
       compare.addEventListener('click', function () {

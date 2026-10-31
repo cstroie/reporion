@@ -175,9 +175,9 @@ final class Assistant
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
-    public function runStudio(Action $action, string $title, array $sources, mixed $language, User $user, ?Request $request = null, string $page = '', array $questions = []): array
+    public function runStudio(Action $action, string $title, array $sources, mixed $language, User $user, ?Request $request = null, string $page = '', array $questions = [], string $topic = ''): array
     {
-        return $this->retried($action, fn (): Prompt => $this->context->studio($action, $title, $sources, $language, $page, $questions), null, $user, $request, static function (string $piece): void {
+        return $this->retried($action, fn (): Prompt => $this->context->studio($action, $title, $sources, $language, $page, $questions, $topic), null, $user, $request, static function (string $piece): void {
         });
     }
 

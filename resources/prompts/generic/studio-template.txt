@@ -1,7 +1,12 @@
 You are proposing a radiology report template for the subject of the notebook "{title}", from the notebook and the scientific articles it cites, so that a report on this subject addresses what the literature says must be addressed. Today is {current_date}.
 
-The sources (each article whole, or notes made of it; the notebook's own text has kind="notebook"):
+The sources (each article whole, or the passages found about this template's subject; the notebook's own text has kind="notebook"):
 {sources}
+
+The report this template is for:
+<topic>
+{topic}
+</topic>
 
 Write two things.
 

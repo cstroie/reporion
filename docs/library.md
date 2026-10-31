@@ -224,7 +224,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `language` and cites `[@key]`; citations of keys not sent are taken out; shown with Copy, rendered by the server, **never written**.
    *As built:* overview, glossary, FAQ, timeline and template send the notebook and its sources whole when they fit
    `library.context_tokens`, else each text longer than its share is condensed part by part (`source-part`, in the notebook's
-   language) and stays in its own `<source key>` block. **Compare** asks each source on its own (whole, or from its notes) the
+   language) and stays in its own `<source key>` block. **Template, search first (2026-10-31):** beyond the budget a template is
+   not condensed: the passages about its subject are found as Check finds them (words of the notebook and of the writer's
+   optional *Exam and subject* line `topic`, plus `notebook-terms` and passage vectors, `PassageSearch`) and one request writes
+   it from them (`{topic}` in `studio-template`, the notebook's title when empty; `focused` and `passages` in the result; no
+   `source-part` needed, no request limit). The global texts keep map-reduce: a whole-subject question needs all of it, which a
+   search cannot promise (GraphRAG, Edge et al. 2024), while a template is one exam, a focused question where retrieval does well
+   and long context wins only when it fits (Li et al. 2024). **Compare** asks each source on its own (whole, or from its notes) the
    writer's questions (1–8 columns, typed one per line), its `1. …` lines read into cells (`Studio::cells()`) and the markdown
    table assembled on the server (its first heading in the notebook's `language`: *Sursă* / *Source*), each row citing only its own key; a cell the source does not answer is a dash; a source with no text gets a row of dashes and no request.
    **Check** sends the page's own text as `{page}` (at most half the budget) and the sources whole, or their passages holding
