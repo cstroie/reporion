@@ -613,6 +613,23 @@ under `## References` in a `text` fence, as printed. Nothing about it is in the 
 hash to its name (`original_changed`). An original no page names is harmless and is not swept yet (as
 media).
 
+
+**Saved analyses** (2026-10-31, D8 amended): the assistant's analysis of a source, or Studio's text of a notebook, is kept as the page `{page}:{prompt}` (`library:iwata2019:source-points`, `wiki:white-matter:studio-overview`), its body the result as the model wrote it, its frontmatter:
+
+```yaml
+title: "Key points: A made-up study"
+visibility: private
+language: ro                 # a Studio text: the notebook's, with its citation_style, so it reads alike
+analysis:
+  prompt: source-points      # the reserved prompt that made it
+  of: 01JB…                  # the pid of the page it is about
+  of_rev: 3
+  of_sha: 9f2c…              # its text's (16 hex of sha256): another text since → shown as "older text"
+  provider: "server · model"
+  at: 2026-10-31T09:12:00+02:00
+```
+
+A page with `analysis` is no source and no notebook (no Ask, no Studio of its own); a run again is its next revision; it moves and goes to the trash with the page it is about (`Service\Library\Analyses`). A page at that path without `analysis` is never written over.
 ## 4. Share tokens
 
 *Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,

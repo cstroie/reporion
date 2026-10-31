@@ -24,6 +24,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Starred / read marks | None |
 | External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
 | Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
+| Keeping the assistant's results | **Automatically** (owner, 2026-10-31): each analysis of a source and each Studio text is kept as a page beside its page, named by its prompt (`library:{key}:source-points`, `{notebook}:studio-overview`), shown when the source or notebook is opened again; they move and go to the trash with it |
 | Where it is built | `feat/library` branch in a worktree, full suite by the owner before merging |
 
 ## Words
@@ -205,6 +206,10 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default
    32 000). A part's notes ask for at most 1500 words and are cut to their share, so the parts' answers and the notes always fit (`SourceAnalysis::shares()`).
+   *Kept since 2026-10-31 (owner's decision):* every analysis is kept automatically as `{source}:{prompt}` (`library:iwata2019:source-points`,
+   `Service\Library\Analyses`): the writer's revision (`assisted: {prompt}`), private, frontmatter `analysis` (FORMATS §3o), a run again its next
+   revision; the source's card lists them for any reader of the source (*Kept from the assistant*, rendered by the server, *older text* when the
+   source's text changed since). Still never written into the source, never read as one (Ask and Studio read `library:{key}` only).
 6. **Studio** + the template generator, **built 2026-10-30**: `POST /api/v1/notebook/studio` (`LibraryAiController::studio()`,
    `Service\Library\Studio`), a *Studio* panel on a notebook's page beside Ask the notebook (`partials/notebook-studio.php`,
    `assets/js/notebook-studio.js`), the same gate (an editor of the page and of the library, never a report or a page naming a
@@ -228,6 +233,8 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `reference:` the notebook (any namespace: `references.namespaces` only feeds the Metadata view's picker), its `checklist`,
    `private`, the revision note `assisted: studio-template`, also on the `page.create` audit line (D8), then the editor opens on it; a writer with no grant there is told so. Sources that must be condensed while the profile has no `source-part` prompt are refused before any request (503). **Not built:** snippets from a
    notebook, Studio's notes kept between runs (each run condenses again), follow-up questions, writing Studio's text into a page.
+   *Kept since 2026-10-31:* each Studio text likewise, as `{notebook}:studio-{task}`, with the notebook's `language` and `citation_style`,
+   listed in the Studio panel. Saved analyses move (`PageMoves`, a library key renamed included) and go to the trash with their page.
 7. **Passage vectors** (TODO 19: a `vectors.sqlite` schema change, disposable), highlights from
    comments with *Send to page*, *What this paper cites* (its reference list against the library),
    web clip by URL (opt-in).
