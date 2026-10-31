@@ -22,7 +22,7 @@ final class HelpTest extends TestCase
     private const COMMANDS = [
         'doctor', 'serve', 'ai:check', 'index:verify', 'integrity:verify', 'index:rebuild', 'index:vectors', 'db:recover',
         'pages:apply-patient-csv', 'pages:summarize', 'pages:tag', 'pacs:link', 'journal:replay', 'pages:repair-paths', 'trash:purge',
-        'page:new', 'page:move', 'user:create', 'dicom:header', 'templates:lint', 'library:add', 'library:import', 'library:export',
+        'page:new', 'page:move', 'user:create', 'dicom:header', 'templates:lint', 'library:add', 'library:import', 'library:relookup', 'library:export',
     ];
 
     private string $dataRoot;

@@ -207,6 +207,11 @@ final class Application
 
             return new LibraryAddCommand(Kernel::library($config, $storage, $index), $audit());
         });
+        $app->register('library:relookup', LibraryRelookupCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryRelookupCommand(Kernel::library($config, $storage, $index), $audit());
+        });
         $app->register('library:import', LibraryImportCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

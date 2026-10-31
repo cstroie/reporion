@@ -529,7 +529,7 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null);
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
@@ -781,6 +781,8 @@ final class Kernel
             => $libraryController->export($request, $session->principal($request)));
         $router->put('/api/v1/library/{pid:[0-9A-Z]+}/record', static fn (Request $request, array $params): Response
             => $libraryController->record($request, $params['pid'], $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/lookup', static fn (Request $request, array $params): Response
+            => $libraryController->lookup($request, $params['pid'], $session->principal($request)));
         $router->get('/library/audio/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->audio($request, $params['pid'], $session->principal($request)));
         $router->get('/library/flashcards/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response

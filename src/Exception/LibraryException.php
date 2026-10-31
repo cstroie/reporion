@@ -28,6 +28,8 @@ final class LibraryException extends RuntimeException
     public const SCAN_TOO_LONG = 'scan_too_long';
     /** A scan, and no OCR tools to read it */
     public const NO_OCR = 'no_ocr';
+    /** The online lookups are off (Admin → Settings → Library) */
+    public const LOOKUP_OFF = 'lookup_off';
 
     public function __construct(public readonly string $reason, public readonly ?string $pid = null)
     {

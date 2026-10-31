@@ -385,6 +385,34 @@
         });
       });
     }
+    // Look up online: the DOI or PMID sent to CrossRef and PubMed again, the record's fields overwritten
+    // with what they return (POST /api/v1/library/{pid}/lookup); asks first, as it replaces corrections
+    var lookup = box.querySelector('[data-lib-lookup]');
+    var lookupStatus = box.querySelector('[data-lib-lookup-status]');
+    if (lookup && lookupStatus) {
+      lookup.addEventListener('click', function () {
+        if (!window.confirm(s.lookup_confirm || '')) return;
+        lookupStatus.textContent = '';
+        lookupStatus.appendChild(notice('info', s.lookup_working));
+        lookup.disabled = true;
+        api((cfg.basePath || '') + '/api/v1/library/' + encodeURIComponent(cfg.pid) + '/lookup', { method: 'POST' }).then(function (result) {
+          lookup.disabled = false;
+          lookupStatus.textContent = '';
+          if (!result.ok) { lookupStatus.appendChild(notice('error', errorOf(result, s.failed))); return; }
+          var data = result.json || {};
+          if (data.status === 'updated') {
+            // The card is server-rendered: reload to show the new record, the notice stays in the session's place
+            window.location.reload();
+            return;
+          }
+          lookupStatus.appendChild(notice(data.status === 'failed' ? 'error' : 'info', s['lookup_' + data.status] || s.failed));
+        }, function () {
+          lookup.disabled = false;
+          lookupStatus.textContent = '';
+          lookupStatus.appendChild(notice('error', s.failed));
+        });
+      });
+    }
     var edit = box.querySelector('[data-lib-edit]');
     var host = box.querySelector('[data-lib-edit-host]');
     if (!edit || !host) return;

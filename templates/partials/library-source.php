@@ -8,7 +8,7 @@
  * PUT /api/v1/library/{pid}/record).
  *
  * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
- * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool,
+ * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool, canLookup: bool,
  * cites: ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int},
  * saved: list<array{prompt: string, path: string, at: string, provider: string, stale: bool, html: string}>} $librarySource;
  * string $basePath
@@ -32,10 +32,16 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <button class="btn btn-ghost btn-sm" type="button" data-lib-copy title="<?= $e(t('library.copy_ref')) ?>"><i class="ph ph-copy" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.copy_ref')) ?></span></button>
 <a class="btn btn-ghost btn-sm" href="<?= $e($basePath . '/library/export?format=bibtex&key=' . rawurlencode($source['key'])) ?>" title="<?= $e(t('library.export_title', [t('library.export_bibtex')])) ?>"><i class="ph ph-download-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.export_bibtex')) ?></span></a>
 <a class="btn btn-ghost btn-sm" href="<?= $e($basePath . '/library/export?format=ris&key=' . rawurlencode($source['key'])) ?>" title="<?= $e(t('library.export_title', [t('library.export_ris')])) ?>"><span class="wk-btn-label"><?= $e(t('library.export_ris')) ?></span></a>
+<?php if ($source['canLookup'] ?? false): ?>
+<button class="btn btn-ghost btn-sm" type="button" data-lib-lookup title="<?= $e(t('library.lookup_title')) ?>"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.lookup')) ?></span></button>
+<?php endif; ?>
 <?php if ($source['canEdit']): ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-edit><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.edit_record')) ?></span></button>
 <?php endif; ?>
 </div></header>
+<?php if ($source['canLookup'] ?? false): ?>
+<div data-lib-lookup-status aria-live="polite"></div>
+<?php endif; ?>
 <p class="wk-lib-ref" data-lib-ref><?= $e($source['citation']) ?></p>
 <?php if ($doi !== '' || $pmid !== '' || $source['original'] !== null): ?>
 <p class="wk-dim wk-text-xs wk-mono wk-lib-ids">
@@ -80,6 +86,9 @@ include __DIR__ . '/saved-analyses.php';
     'strings' => [
         'saving' => t('library.saving'), 'failed' => t('library.failed'), 'copied' => t('library.copied'),
         'title_needed' => t('library.title_needed'), 'conflict' => t('library.err_conflict'), 'duplicate' => t('library.duplicate'),
+        'lookup_confirm' => t('library.relookup_confirm'), 'lookup_working' => t('library.relookup_working'),
+        'lookup_updated' => t('library.relookup_updated'), 'lookup_unchanged' => t('library.relookup_unchanged'), 'lookup_no_id' => t('library.relookup_no_id'),
+        'lookup_none' => t('library.relookup_none'), 'lookup_failed' => t('library.relookup_failed'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 <?php else: ?>

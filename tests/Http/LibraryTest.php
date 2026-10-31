@@ -355,6 +355,28 @@ final class LibraryTest extends HttpTestCase
         self::assertSame('none', json_decode($this->upload('editor', $article, 'b.md')->body, true)['lookup']);
     }
 
+    public function testTheLookupButtonAndEndpointExistOnlyWhenTheLookupsAreOnAndForAWriter(): void
+    {
+        // No identifier in the text: the endpoint never reaches CrossRef, so no network in this test
+        $page = $this->add('editor', "# A made-up study with no identifier\n\nText only.\n", 'a.md');
+        $url = '/api/v1/library/' . $page['pid'] . '/lookup';
+
+        self::assertSame(404, $this->call('editor', 'POST', $url)->status, 'lookups off');
+        self::assertStringNotContainsString('data-lib-lookup', $this->call('editor', 'GET', '/' . $page['path'])->body);
+
+        $this->config['library']['lookup'] = true;
+        self::assertStringContainsString('data-lib-lookup', $this->call('editor', 'GET', '/' . $page['path'])->body);
+        self::assertStringNotContainsString('data-lib-lookup', $this->call('reader', 'GET', '/' . $page['path'])->body, 'a viewer cannot change the record');
+        self::assertSame(404, $this->call('reader', 'POST', $url)->status);
+        self::assertSame(404, $this->call(null, 'POST', $url)->status);
+
+        $done = $this->call('editor', 'POST', $url);
+        self::assertSame(200, $done->status);
+        $answer = json_decode($done->body, true);
+        self::assertSame('no_id', $answer['status']);
+        self::assertSame(1, $answer['rev'], 'nothing written');
+    }
+
     public function testTickingTheLookupInAdminKeepsTheOtherLibrarySettingsOfConf(): void
     {
         $this->config['library'] = ['max_mb' => 1, 'tools' => ['pandoc' => '/usr/bin/pandoc']];

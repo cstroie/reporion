@@ -428,6 +428,96 @@ BIB;
         self::assertNull($this->library->upload(self::ARTICLE, 'study.md', self::owner())['lookup'], 'off: null');
     }
 
+    /** A fetch that answers CrossRef and PubMed as a made-up article's, and counts what was asked */
+    private static function crossrefAndPubmed(array &$asked): \Closure
+    {
+        return function (string $url) use (&$asked): ?string {
+            $asked[] = $url;
+
+            return match (true) {
+                str_contains($url, 'crossref') => '{"message":{"type":"journal-article","title":["Looked-up made-up study"],"author":[{"given":"Zed","family":"Abel"}],"issued":{"date-parts":[[2023]]},"container-title":["J Synth"]}}',
+                str_contains($url, 'esearch') => '{"esearchresult":{"idlist":["12345678"]}}',
+                default => '<PubmedArticleSet><PubmedArticle><MedlineCitation><Article><Abstract><AbstractText>Abs.</AbstractText></Abstract></Article><MeshHeadingList><MeshHeading><DescriptorName>Lesions</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation></PubmedArticle></PubmedArticleSet>',
+            };
+        };
+    }
+
+    public function testALookupRunAgainOverwritesTheRecordAndKeepsTheTags(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner', ['tags' => ['mine']]);
+        $corrected = $this->library->updateRecord($page->path, ['title' => 'Corrected by hand', 'DOI' => '10.1234/jti.2024.0001', 'issued' => ['date-parts' => [[2024]]]], null, $page->rev, self::owner(), 'owner');
+        $asked = [];
+
+        $result = $this->withLookup(self::crossrefAndPubmed($asked))->relookup($page->path, self::owner(), 'owner');
+
+        self::assertSame('updated', $result['status']);
+        self::assertSame('crossref+pubmed', $result['how']);
+        self::assertContains('title', $result['changed']);
+        self::assertSame($corrected->rev + 1, $result['rev']);
+        $now = $this->storage->read($page->path);
+        self::assertSame('Looked-up made-up study', $now->frontmatter['csl']['title'], 'overwritten, the hand correction too');
+        self::assertSame('Looked-up made-up study', $now->frontmatter['title'], 'the page title follows the record');
+        self::assertSame([[2023]], $now->frontmatter['csl']['issued']['date-parts']);
+        self::assertSame('12345678', $now->frontmatter['csl']['PMID']);
+        self::assertSame(['mine', 'lesions'], $now->frontmatter['tags'], 'MeSH terms added, none removed');
+        self::assertSame(['lesions'], $result['tags']);
+        self::assertSame($corrected->body, $now->body);
+        foreach ($asked as $url) {
+            self::assertStringNotContainsString('Corrected', $url, 'the identifier only');
+        }
+
+        // Again: the same answer, nothing to change, no new revision
+        $again = $this->withLookup(self::crossrefAndPubmed($asked))->relookup($page->path, self::owner(), 'owner');
+        self::assertSame('unchanged', $again['status']);
+        self::assertSame($result['rev'], $this->storage->read($page->path)->rev);
+    }
+
+    public function testADryRunLookupAsksAndWritesNothing(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $asked = [];
+
+        $result = $this->withLookup(self::crossrefAndPubmed($asked))->relookup($page->path, self::owner(), 'owner', true);
+
+        self::assertSame('updated', $result['status']);
+        self::assertNotSame([], $asked);
+        self::assertSame($page->rev, $this->storage->read($page->path)->rev);
+        self::assertSame('A made-up study of test lesions', $this->storage->read($page->path)->frontmatter['csl']['title']);
+    }
+
+    public function testALookupWithNoIdentifierAsksNothingAndAFailedOneChangesNothing(): void
+    {
+        [$bare] = $this->library->add("# A made-up study with no identifier\n\nText only.\n", 'x.md', self::owner(), 'owner');
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $asked = 0;
+
+        $none = $this->withLookup(function () use (&$asked): ?string {
+            ++$asked;
+
+            return null;
+        });
+
+        self::assertSame('no_id', $none->relookup($bare->path, self::owner(), 'owner')['status']);
+        self::assertSame(0, $asked);
+        self::assertSame('failed', $none->relookup($page->path, self::owner(), 'owner')['status']);
+        self::assertSame($page->rev, $this->storage->read($page->path)->rev);
+    }
+
+    public function testALookupIsRefusedWhenTheLookupsAreOffOrThePageIsNoSource(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        try {
+            $this->library->relookup($page->path, self::owner(), 'owner');
+            self::fail('lookups are off');
+        } catch (LibraryException $e) {
+            self::assertSame(LibraryException::LOOKUP_OFF, $e->reason);
+        }
+
+        $this->storage->create('notes:plain', ['title' => 'Plain'], 'Text', 'owner', 'x');
+        $this->expectException(LibraryException::class);
+        $this->withLookup(static fn (string $url): ?string => null)->relookup('notes:plain', self::owner(), 'owner');
+    }
+
     public function testALookupWithNoTitleKeepsTheTitleReadFromTheFile(): void
     {
         $library = $this->withLookup(static fn (string $url): ?string => str_contains($url, 'crossref')

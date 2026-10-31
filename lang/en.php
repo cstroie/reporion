@@ -2325,6 +2325,15 @@ return [
     'library.original_info_pages' => 'Original: %s, %s pages, %s KB',
     'library.saving'           => 'Saving…',
     'library.copied'           => 'Reference copied.',
+    'library.lookup'           => 'Look up online',
+    'library.lookup_title'     => 'Ask CrossRef and PubMed again by this source\'s DOI or PMID',
+    'library.relookup_confirm'   => 'This sends the DOI or PMID to CrossRef and PubMed (the identifier only) and OVERWRITES the record\'s fields with what they return, including any you corrected by hand. The previous record stays in the page\'s history. Continue?',
+    'library.relookup_working'   => 'Asking CrossRef and PubMed…',
+    'library.relookup_updated'   => 'The record was updated.',
+    'library.relookup_unchanged' => 'CrossRef and PubMed returned nothing the record does not have already.',
+    'library.relookup_no_id'     => 'The record has no DOI or PMID to look up. Add one with Edit record first.',
+    'library.relookup_none'      => 'Nothing was found for this DOI or PMID.',
+    'library.relookup_failed'    => 'CrossRef or PubMed could not be reached. Try again in a moment.',
     'library.err_conflict'     => 'The page changed since it was opened. Reload it and correct the record again.',
     // The library (docs/library.md)
     'library.err_unsupported'  => 'This kind of file cannot go into the library. PDF, Word, OpenDocument, RTF, HTML, EPUB, PowerPoint, Excel, text and Markdown can.',
@@ -2339,6 +2348,7 @@ return [
     'library.err_private'      => 'A library source is always private: public or unlisted (anyone with the link) would republish the article. Grants on the library decide who reads it; cite it from a public page instead.',
     'library.err_expired'      => 'The upload is no longer there (it is kept an hour, and used once). Upload the file again.',
     'library.err_duplicate'    => 'This article is in the library already.',
+    'library.err_lookup_off'   => 'Online lookups are off: an owner turns them on in Admin → Settings → Library.',
     'library.err_unreadable'   => 'The file cannot be read.',
     'library.err_invalid'      => 'The record needs a title, and a key is a letter followed by letters, digits or hyphens.',
 ];

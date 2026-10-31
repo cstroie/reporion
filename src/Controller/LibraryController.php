@@ -39,6 +39,8 @@ use Reporion\Support\InternalLink;
  * GET /library: the library's view (phase 2): every source the caller may see, filtered by a tag,
  * sorted by author, year or title, with the upload form for an editor.
  * PUT /api/v1/library/{pid}/record {csl, base_rev, tags?}: a source's record corrected.
+ * POST /api/v1/library/{pid}/lookup: the record asked again of CrossRef and PubMed by its DOI or PMID and
+ * overwritten with what they return (opt-in `library.lookup`, off: 404).
  *
  * An editor of the library's namespace adds; anyone else gets 404 (invariant 9).
  */
@@ -133,6 +135,34 @@ final class LibraryController
         $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $page->rev);
 
         return ApiResponse::json(['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev]);
+    }
+
+    /**
+     * POST /api/v1/library/{pid}/lookup: the source's DOI or PMID sent again to CrossRef and PubMed
+     * (the identifier only), the record's fields overwritten with what returns (Library::relookup()),
+     * one new revision by the caller when something changed. Lookups off, or a source the caller may
+     * not write: 404.
+     */
+    public function lookup(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || !$principal->canWrite((string) $row['path']) || !$this->library->lookupOn()) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            $result = $this->library->relookup((string) $row['path'], $principal, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($result['status'] === 'updated') {
+            $this->audit->record('page.save', $principal->username, $request, $result['pid'], $result['path'], $result['rev'], extra: ['lookup' => (string) $result['how'], 'fields' => \count($result['changed'])]);
+        }
+
+        return ApiResponse::json($result);
     }
 
     /**

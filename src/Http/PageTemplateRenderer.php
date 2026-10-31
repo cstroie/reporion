@@ -53,6 +53,8 @@ final class PageTemplateRenderer
         private readonly ?\Reporion\Service\Library\Analyses $analyses = null,
         // A speech model is set: Studio offers the audio overview (phase 8)
         private readonly bool $speaks = false,
+        // The online lookups are on: a source's card offers Look up online (2026-10-31)
+        private readonly bool $lookup = false,
     ) {
     }
 
@@ -165,6 +167,7 @@ final class PageTemplateRenderer
                 ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))
                 : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
+            'canLookup' => $this->lookup && $currentRev === null && $principal->canWrite($record->path),
             // What it cites (phase 7): its reference list against the records the caller reads (the index only)
             'cites' => $this->cites($record, $principal),
             // What the assistant made of it before, kept beside it, for any reader of the source

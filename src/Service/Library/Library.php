@@ -226,6 +226,77 @@ final class Library
         return $this->storage->save($path, $frontmatter, $page->body, $baseRev, $actor, 'library: record');
     }
 
+    /** Whether the online lookups are on (Admin → Settings → Library `library.lookup`) */
+    public function lookupOn(): bool
+    {
+        return $this->lookup !== null;
+    }
+
+    /**
+     * A source's record asked again of CrossRef (its DOI) and PubMed (its PMID, or the one PubMed has
+     * for the DOI): what they return **overwrites** the record's fields, as at upload (owner's choice,
+     * 2026-10-31: whoever runs it wants the fields updated); a field the lookup does not return stays.
+     * The page's title follows the record's. PubMed's MeSH terms are added to the tags, none removed.
+     * Only the identifier is sent. One new revision when something changed; none otherwise. With
+     * $dryRun the lookup is made and nothing is written.
+     *
+     * @return array{pid: string, path: string, rev: int, status: string, how: ?string, changed: list<string>, tags: list<string>}
+     *               status: `updated`, `unchanged`, `no_id` (no DOI or PMID), `none` (nothing found), `failed` (not reached)
+     *
+     * @throws LibraryException LOOKUP_OFF, INVALID (not a source), DUPLICATE (the lookup brings a DOI or PMID another source holds), PATIENT_DATA
+     * @throws \Reporion\Exception\RevisionConflictException
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function relookup(string $path, User $principal, string $actor, bool $dryRun = false): array
+    {
+        if ($this->lookup === null) {
+            throw new LibraryException(LibraryException::LOOKUP_OFF);
+        }
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $result = ['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev, 'status' => 'unchanged', 'how' => null, 'changed' => [], 'tags' => []];
+        $before = self::cleanCsl(\is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : []);
+        if (!isset($before['DOI']) && !isset($before['PMID'])) {
+            return ['status' => 'no_id'] + $result;
+        }
+        [$found, $mesh, $how] = $this->lookedUp($before);
+        $result['how'] = $how;
+        if ($how === 'failed' || $how === 'none') {
+            return ['status' => $how] + $result;
+        }
+        $after = self::cleanCsl($found);
+        // A DOI or PMID the lookup brings that another source holds: refused, nothing written
+        $duplicate = $this->duplicateOf($after, '', $principal, $page->pid);
+        if ($duplicate !== null && $duplicate['by'] !== 'title') {
+            throw new LibraryException(LibraryException::DUPLICATE, $duplicate['pid']);
+        }
+        $changed = array_values(array_filter(array_unique(array_merge(array_keys($before), array_keys($after))), static fn (string $field): bool => ($before[$field] ?? null) !== ($after[$field] ?? null)));
+        $have = array_values(array_filter(\is_array($page->frontmatter['tags'] ?? null) ? $page->frontmatter['tags'] : [], 'is_string'));
+        $tags = self::cleanTags(array_merge($have, $mesh));
+        $added = array_values(array_diff($tags, $have));
+        $result['changed'] = $changed;
+        $result['tags'] = $added;
+        if ($changed === [] && $added === []) {
+            return $result;
+        }
+        $result['status'] = 'updated';
+        if ($dryRun) {
+            return $result;
+        }
+        $frontmatter = $page->frontmatter;
+        $frontmatter['title'] = $after['title'];
+        $frontmatter['csl'] = $after;
+        if ($tags !== []) {
+            $frontmatter['tags'] = $tags;
+        }
+        $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: lookup (' . implode(', ', $changed) . ')');
+        $result['rev'] = $saved->rev;
+
+        return $result;
+    }
+
     /**
      * The library as its view lists it: every source $principal may see, with what the table shows
      *
