@@ -20,6 +20,8 @@ Steps 1 to 5 can also be done from a browser (D43):
    - **Requirements**: checks PHP, its extensions, Argon2id, FTS5, FFI *in the web server's
      PHP* (what `doctor` cannot see), limits, and what it needs to write; anything it cannot fix
      comes with the command that does.
+     It also lists the **optional software**, one line a feature, each a warning (never a stop)
+     with the apt packages that add it: see [Requirements](#1-requirements).
    - **Packages**: runs `composer install --no-dev` as the web user (the server's composer, or
      a downloaded `composer.phar` checked against its published SHA-256); or run it yourself.
    - **Security**: writes the Apache `.htaccess` files, sets modes, then your browser checks
@@ -74,6 +76,22 @@ symlink; a `.zip` extracted on some systems loses it (the installer then re-crea
   else to `public/index.php` will do, but the docs cover lighttpd.
 - Composer. No Node, no database server, no queue in production (Node is only for the render
   conformance test, D17).
+- **Optional software** (the installer's Requirements step and `bin/reporion doctor` list what is
+  missing, with the package; Reporion runs without any of it):
+
+  | Feature | Packages (Debian/Ubuntu) |
+  |---|---|
+  | Library: PDF text, titles, scanned pages | `poppler-utils` |
+  | Library: scanned PDFs read as text (OCR, Romanian and English) | `tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng` |
+  | Library: Word, OpenDocument, RTF, HTML, EPUB | `pandoc` |
+  | Library: old `.doc`, `.xls`, `.ppt` (light, without LibreOffice) | `antiword catdoc` |
+  | Library: Office files, slides, spreadsheets | `libreoffice-writer libreoffice-calc libreoffice-impress` |
+  | Library: audio overview as MP3 (else WAV) | `ffmpeg` |
+  | Periodic backup to another machine | `rsync openssh-client` |
+  | groff plugin (typeset PDF of pages) | `groff` |
+  | dicom plugin (PACS worklist) | `dcmtk` |
+
+  For example, `sudo apt install poppler-utils tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng antiword catdoc`.
 
 ## 2. Code and configuration
 
