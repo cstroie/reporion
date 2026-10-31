@@ -31,7 +31,8 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         // mirror image: curated only on a non-report page (the
         // sub-namespace card tint), meaningless on a report; 'sort' is
         // curated beside it: how a namespace lists its pages
-        self::assertSame(['title', 'tags', 'summary', 'format', 'priority', 'sort'], array_column($result['fields'], 'key'));
+        // 'sources' closes the list: the library sources a notebook page is about (docs/library.md)
+        self::assertSame(['title', 'tags', 'summary', 'format', 'priority', 'sort', 'sources'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['exams'], 'no exam cards on a page that is not a report');
         self::assertSame('public', $result['visibility']);

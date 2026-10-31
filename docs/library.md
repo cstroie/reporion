@@ -86,6 +86,7 @@ visibility screen say so first.
 
 - Syntax: pandoc's `[@iwata2019]`, `[@iwata2019, p. 12]`, `[@a; @b]`, added to `Service\Markdown`
   with fixtures (invariant 4): page view, print, PDF, ODT, EPUB number them alike.
+- The editor's toolbar has a *Cite a source* button (quotes icon, shown when the writer may read the library) that opens the same picker at the cursor. Metadata's **Sources** field (`sources: [key, …]`, any non-report page) has *Add a source from the library* (the same picker) and *Add all cited* (every key the text cites, never twice).
 - The editor's `@` picker searches the library (opened like the slash menu, D24 rules: never on
   dictated text).
 - A **References** section is appended from the citations used, in the notebook's style

@@ -134,7 +134,13 @@ $field = static function (array $f) use ($e, $name, $checklistRow, $b): void {
             echo '<input class="input" type="time" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
             break;
         default:
-            echo '<input class="input" type="text" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
+            echo '<input class="input" type="text" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '"' . ($f['key'] === 'sources' ? ' data-sources-input' : '') . '>';
+            // The page's library sources: pick them, or take the ones the text cites (assets/js/editor.js)
+            if ($f['key'] === 'sources') {
+                echo '<small class="wk-dim">' . $e(t('details.sources_help')) . '</small>'
+                    . '<span class="wk-cl-add" data-sources-tools hidden><button type="button" class="btn btn-secondary btn-sm" data-sources-add><i class="ph ph-plus" aria-hidden="true"></i>' . $e(t('details.sources_add')) . '</button> '
+                    . '<button type="button" class="btn btn-ghost btn-sm" data-sources-cited><i class="ph ph-quotes" aria-hidden="true"></i>' . $e(t('details.sources_cited')) . '</button></span>';
+            }
     }
     // A field may say where its choices come from (phase 25's reference page)
     echo (($f['help'] ?? '') !== '' ? '<small class="wk-dim">' . $e($f['help']) . '</small>' : '') . $shownMarker . '</label>';

@@ -212,6 +212,17 @@ final class SearchTest extends HttpTestCase
         self::assertSame('RM cerebral', $decoded['data'][0]['title']);
     }
 
+    public function testJsonSuggestNsKeepsOnlyPagesDirectlyInThatNamespace(): void
+    {
+        $this->createPage('library:smith2020', 'public', 'Amyloid study', 'amiloidoza alzheimer');
+        $this->createPage('library:smith2020:source-points', 'public', 'Points', 'amiloidoza alzheimer');
+        $this->createPage('docs:notes', 'public', 'Notes', 'amiloidoza alzheimer');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/search', query: ['q' => 'amiloidoza', 'ns' => 'library']));
+
+        self::assertSame(['library:smith2020'], array_column(json_decode($response->body, true)['data'], 'path'));
+    }
+
     public function testJsonSuggestSnippetHasNoSentinelMarkersOrHtml(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante active');

@@ -193,6 +193,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('prior', 'clock-clockwise', 'editor.tb.prior', $priorCandidates !== []) ?>
 <?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
 <?= $tb('snippets', 'lightning', 'editor.tb.snippets', $snippets !== []) ?>
+<?= $tb('cite', 'quotes', 'editor.tb.cite', ($libraryCite ?? '') !== '') ?>
 <?= $tb('slash', 'command', 'editor.tb.slash') ?>
 <span class="wk-tflex"></span>
 <span class="wk-mono wk-dim" id="editor-chars"><span class="wk-chars-toggle" role="button" tabindex="0" data-count-format title="<?= $e(t('editor.tb.chars_toggle')) ?>"><?= $e(t('editor.tb.fmt_markdown')) ?></span> · <span class="wk-chars-toggle" role="button" tabindex="0" data-count-unit title="<?= $e(t('editor.tb.unit_toggle')) ?>"><?= $e(t('editor.tb.unit_chars', [mb_strlen($raw ? (string) $document : (string) $body)])) ?></span></span>
@@ -503,6 +504,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'slashRail' => t('editor.slash.rail'),
         'slashRecall' => t('editor.slash.recall'),
         'slashCite' => t('editor.slash.cite'),
+        'citeAll' => t('editor.cite.all'),
         'citeOff' => t('editor.slash.cite_off'),
         'citeOnLabel' => t('editor.slash.cite_on'),
         'slashChecks' => t('editor.slash.checks'),

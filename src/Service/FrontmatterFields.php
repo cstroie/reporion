@@ -67,6 +67,10 @@ final class FrontmatterFields
      *  Controller\NamespaceController) means nothing on a report */
     private const NAMESPACE = ['priority' => 'select', 'sort' => 'select'];
 
+    /** Curated in addition, on a non-report page: the library sources it is about
+     *  (`sources: [key, …]`, docs/library.md), read by Ask the notebook and Studio */
+    private const NOTEBOOK = ['sources' => 'list'];
+
     /** Curated in addition, only on a template (phase 25): the reference
      *  page every report made from it can open */
     private const TEMPLATE = ['reference' => 'page', 'checklist' => 'checklist'];
@@ -267,10 +271,10 @@ final class FrontmatterFields
             return [...self::BASE, ...self::REPORT];
         }
         if (PageKind::of($path) === PageKind::TEMPLATE) {
-            return [...self::BASE, ...self::NAMESPACE, ...self::TEMPLATE];
+            return [...self::BASE, ...self::NAMESPACE, ...self::NOTEBOOK, ...self::TEMPLATE];
         }
 
-        return [...self::BASE, ...self::NAMESPACE];
+        return [...self::BASE, ...self::NAMESPACE, ...self::NOTEBOOK];
     }
 
     /**

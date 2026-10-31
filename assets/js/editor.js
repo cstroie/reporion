@@ -803,6 +803,7 @@
           applyEdit(F.insertSnippet(textarea.value, a, b, sn.body));
         });
       },
+      cite: function (v, a) { openCite(a, false); },
       copy: function () { copyText(F.bodyOf(docArea.value)); },
       slash: function (v, a) { openSlash(a, false); }
     };
@@ -864,10 +865,16 @@
           .then(function (response) { return response.ok ? response.json() : { data: [] }; })
           .then(function (json) {
             if (seq !== citeSeq) return;
-            show((json.data || []).slice(0, 20).map(function (row) {
+            var rows = (json.data || []).slice(0, 20).map(function (row) {
               var key = String(row.path).split(':').pop();
-              return { title: row.title || key, meta: '@' + key, value: { key: key } };
-            }));
+              return { title: row.title || key, meta: '@' + key, value: { key: key, keys: [key] } };
+            });
+            // Several found: one more row takes them all, as [@a; @b; @c]
+            if (rows.length > 1) {
+              var all = rows.map(function (r) { return r.value.key; });
+              rows.unshift({ title: (s.citeAll || 'All %d results').replace('%d', String(all.length)), meta: '@' + all.join('; @'), value: { key: all.join('; @'), keys: all } });
+            }
+            show(rows);
           })
           .catch(function () { show([]); });
       }, 200);
@@ -882,6 +889,39 @@
         if (typed) applyEdit({ from: at, to: at, insert: '@', selStart: at + 1, selEnd: at + 1 }, target);
       });
     }
+
+    /*
+     * Metadata's Sources (`sources: [key, …]`): a pick from the library or
+     * every key the text cites is added to the field, never twice. Shown only
+     * when the writer may read the library and the script runs.
+     */
+    (function () {
+      var input = document.querySelector('[data-sources-input]');
+      var tools = document.querySelector('[data-sources-tools]');
+      if (!input || !tools || !config.libraryCite) return;
+      tools.hidden = false;
+      function addKeys(keys) {
+        var have = input.value.split(',').map(function (k) { return k.trim(); }).filter(Boolean);
+        keys.forEach(function (k) { if (have.indexOf(k) < 0) have.push(k); });
+        input.value = have.join(', ');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      tools.querySelector('[data-sources-add]').addEventListener('click', function () {
+        openPicker(citeSource, function (item) { addKeys(item.keys); });
+      });
+      tools.querySelector('[data-sources-cited]').addEventListener('click', function () {
+        var keys = [];
+        var re = /\[@([^\]]*)\]/g;
+        var m;
+        while ((m = re.exec(docArea.value)) !== null) {
+          m[1].split(';').forEach(function (part) {
+            var k = /^\s*@?([A-Za-z0-9_:.-]+)/.exec(part);
+            if (k && keys.indexOf(k[1]) < 0) keys.push(k[1]);
+          });
+        }
+        addKeys(keys);
+      });
+    }());
 
     function openSlash(at, typed) {
       var target = textarea;

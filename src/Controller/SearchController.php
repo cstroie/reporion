@@ -97,6 +97,11 @@ final class SearchController
     {
         $term = trim($request->query['q'] ?? '');
         $results = $term !== '' ? $this->index->search($term, $principal) : [];
+        // `ns`: only pages directly in that namespace (the editor's citation picker asks for the library)
+        $ns = trim($request->query['ns'] ?? '');
+        if ($ns !== '') {
+            $results = array_values(array_filter($results, static fn (array $r): bool => str_starts_with((string) $r['path'], $ns . ':') && !str_contains(substr((string) $r['path'], \strlen($ns) + 1), ':')));
+        }
 
         $data = array_map(static fn (array $result): array => [
             'pid' => $result['pid'],
