@@ -370,9 +370,15 @@ final class LibraryController
             LibraryException::EXPIRED => 410,
             LibraryException::TOOL_MISSING => 503,
             LibraryException::TIMEOUT => 504,
+            LibraryException::SCAN_TOO_LONG => 413,
+            LibraryException::NO_OCR => 503,
             default => 422,
         };
-        $args = $e->reason === LibraryException::TOO_LARGE ? [(string) intdiv($this->library->maxBytes(), 1024 * 1024)] : [];
+        $args = match ($e->reason) {
+            LibraryException::TOO_LARGE => [(string) intdiv($this->library->maxBytes(), 1024 * 1024)],
+            LibraryException::SCAN_TOO_LONG => [(string) \Reporion\Service\Library\Extractor::OCR_MAX_PAGES],
+            default => [],
+        };
         $fields = null;
         // The article already there, when the caller may see it
         if ($e->pid !== null && ($row = $this->index->findByPid($e->pid, $principal)) !== null) {

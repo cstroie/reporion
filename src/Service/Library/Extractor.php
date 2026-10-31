@@ -15,7 +15,11 @@ use Reporion\Support\SourceText;
  * list in a private temporary directory, with a timeout, its stderr discarded (as groff, D42):
  * txt/md as they are; pdf through pdftotext, pdfinfo and pdftohtml (page 1's font sizes for the
  * title); docx/odt/rtf/html/epub through pandoc; doc/ppt/pptx/xls/xlsx/odp through LibreOffice
- * first (doc to docx, the others to pdf).
+ * first (doc to docx, the others to pdf). A PDF with no text layer (a scan) is read by OCR (docs/
+ * library.md, phase 8): each page rendered by pdftoppm and read by tesseract (Romanian and
+ * English), a page at a time with its own timeout; a scan longer than OCR_MAX_PAGES is refused
+ * whole (never part of it kept: the rest could not be checked for patient data), and so is one
+ * when tesseract is missing.
  */
 final class Extractor
 {
@@ -27,7 +31,16 @@ final class Extractor
     ];
 
     /** The programs used, by name; each may be set to a full path */
-    public const TOOLS = ['pdftotext', 'pdfinfo', 'pdftohtml', 'pandoc', 'soffice'];
+    public const TOOLS = ['pdftotext', 'pdfinfo', 'pdftohtml', 'pandoc', 'soffice', 'pdftoppm', 'tesseract'];
+
+    /** The most pages a scan may have to be read by OCR */
+    public const OCR_MAX_PAGES = 30;
+
+    /** Seconds each page may take to render and read */
+    public const OCR_PAGE_SECONDS = 45;
+
+    /** The languages tesseract reads a scan in (its traineddata: tesseract-ocr-ron, tesseract-ocr-eng) */
+    public const OCR_LANGUAGES = ['ron', 'eng'];
 
     private const PANDOC_FORMATS = ['docx' => 'docx', 'odt' => 'odt', 'rtf' => 'rtf', 'html' => 'html', 'htm' => 'html', 'epub' => 'epub'];
 
@@ -92,7 +105,7 @@ final class Extractor
     {
         $found = [];
         foreach ($this->tools as $name => $program) {
-            $args = $name === 'soffice' || $name === 'pandoc' ? [$program, '--version'] : [$program, '-v'];
+            $args = \in_array($name, ['soffice', 'pandoc', 'tesseract'], true) ? [$program, '--version'] : [$program, '-v'];
             [$exit] = $this->run($args, 20);
             $found[$name] = $exit >= 0 && $exit !== 127;
         }
@@ -124,6 +137,14 @@ final class Extractor
 
         $chars = \strlen((string) preg_replace('/\s+/', '', $text));
         $count = max(1, (int) ($info['Pages'] ?? \count($pages)));
+        $ocr = false;
+        if ($chars < self::SCAN_CHARS_PER_PAGE * $count) {
+            // A scan: its text by OCR, or nothing (refused upstream as a file with no text)
+            $pages = $this->ocr($dir, $in, $count);
+            $text = implode("\f", $pages);
+            $chars = \strlen((string) preg_replace('/\s+/', '', $text));
+            $ocr = true;
+        }
         $clean = SourceText::fromPages($pages);
 
         return new Extracted(
@@ -134,8 +155,67 @@ final class Extractor
             substr($text, 0, self::HEAD_BYTES),
             $info,
             $exit === 0 ? substr($xmp, 0, 65536) : '',
-            $exit2 === 0 ? self::parseLayout($xml) : [],
+            // A scan's layout is no text's: no title from font sizes
+            $exit2 === 0 && !$ocr ? self::parseLayout($xml) : [],
+            $ocr,
         );
+    }
+
+    /**
+     * A scan's pages read by OCR, in order: each rendered at 300 dpi in grey and read by tesseract
+     *
+     * @return list<string>
+     *
+     * @throws LibraryException SCAN_TOO_LONG past OCR_MAX_PAGES, NO_OCR when the tools are missing, TIMEOUT, FAILED
+     */
+    private function ocr(string $dir, string $in, int $count): array
+    {
+        if ($count > self::OCR_MAX_PAGES) {
+            throw new LibraryException(LibraryException::SCAN_TOO_LONG);
+        }
+        @set_time_limit($count * (self::OCR_PAGE_SECONDS + 10) + 60);
+        $pages = [];
+        for ($page = 1; $page <= $count; ++$page) {
+            $image = $dir . '/page-' . $page;
+            [$exit] = $this->run([$this->tools['pdftoppm'], '-r', '300', '-gray', '-png', '-singlefile', '-f', (string) $page, '-l', (string) $page, $in, $image], self::OCR_PAGE_SECONDS);
+            $this->ocrStep($exit);
+            [$exit, $read] = $this->run([$this->tools['tesseract'], $image . '.png', 'stdout', '-l', implode('+', self::OCR_LANGUAGES)], self::OCR_PAGE_SECONDS, ['OMP_THREAD_LIMIT' => '1']);
+            $this->ocrStep($exit);
+            @unlink($image . '.png');
+            $pages[] = $read;
+        }
+
+        return $pages;
+    }
+
+    /** @throws LibraryException */
+    private function ocrStep(int $exit): void
+    {
+        if ($exit === -1 || $exit === 127) {
+            throw new LibraryException(LibraryException::NO_OCR);
+        }
+        if ($exit === -2) {
+            throw new LibraryException(LibraryException::TIMEOUT);
+        }
+        if ($exit !== 0) {
+            throw new LibraryException(LibraryException::FAILED);
+        }
+    }
+
+    /**
+     * The OCR languages tesseract lacks (`tesseract --list-langs`); null when it does not run
+     *
+     * @return ?list<string>
+     */
+    public function missingOcrLanguages(): ?array
+    {
+        [$exit, $out] = $this->run([$this->tools['tesseract'], '--list-langs'], 20);
+        if ($exit !== 0) {
+            return null;
+        }
+        $have = array_map('trim', preg_split('/\R/', $out) ?: []);
+
+        return array_values(array_diff(self::OCR_LANGUAGES, $have));
     }
 
     private function fromPandoc(string $dir, string $in, string $ext): Extracted

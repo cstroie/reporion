@@ -17,7 +17,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Online lookups | **Opt-in** (`library.lookup`, off by default): CrossRef and PubMed get a DOI, a PMID or title words only, never page text |
 | Citation styles | **Vancouver** (default), **APA**, **AMA**, hand-written (`Support\Citation`), no CSL engine dependency |
 | Output language | **Per notebook**: the notebook's frontmatter `language` (as EPUB's, D57), default `ro`; quotes stay in the source's language |
-| Scanned PDFs | Rare: a scan is kept with its metadata and flagged *no text*; OCR (tesseract) is a later phase |
+| Scanned PDFs | Rare; read by OCR (tesseract, Romanian and English) since phase 8, at most 30 pages, held to a stricter patient guard |
 | Size | 50 MB per file (`library.max_mb`) |
 | Citations a reader may not follow | Printed from the record, no link to the library page |
 | Long sources | Adaptive: whole when they fit `library.context_tokens` (32 000), else map-reduced by section |
@@ -280,7 +280,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    Radiopaedia, PubMed, Wikipedia: CDN-fronted sites included, so `peer_name` gives SNI and the certificate check). An original
    that is not a PDF is served as a download with `nosniff` and `Content-Security-Policy: sandbox`, so a clipped page's script
    never runs as this site. *Not built:* pages that need JavaScript to show their text.
-8. **Later**: OCR, flashcards / Anki export for teaching, an audio overview.
+8. **OCR, flashcards / Anki export for teaching, an audio overview** (owner, 2026-10-31: OCR by tesseract; speech by an AI server's
+   OpenAI-compatible `/audio/speech`).
+   *Step 1 built 2026-10-31:* **OCR.** A PDF with no text layer is read page by page: `pdftoppm -r 300 -gray` renders a page,
+   `tesseract … -l ron+eng` reads it (`Service\Library\Extractor`, argument lists, a private temp dir, 45 s a page, the image removed
+   as soon as it is read), each page keeping its marker; at most 30 pages (`Extractor::OCR_MAX_PAGES`): a longer scan is refused
+   **whole** (413), never part of it kept, since the rest could not be checked. No tesseract: refused, saying what to install (503).
+   The text is held to a **stricter patient guard** (`Library::holdsPatientData(…, ocr: true)`): OCR misreads digits, which breaks a
+   CNP's checksum, so any 13 digits shaped like a CNP (sex digit, month, day; `O`, `l`, `S` and the like read as digits, a space or
+   dot inside allowed) are refused, an ISBN said so aside. The original is flagged `ocr: true`; no title from a scan's layout.
+   `doctor` warns when tesseract or its `ron`/`eng` data is missing. The owner installs `tesseract-ocr tesseract-ocr-ron
+   tesseract-ocr-eng`.
 
 ## Long sources
 

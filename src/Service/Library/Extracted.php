@@ -25,6 +25,8 @@ final class Extracted
         public readonly array $info = [],
         public readonly string $xmp = '',
         public readonly array $lines = [],
+        // Read by OCR (phase 8): a scan's text, held to a stricter patient guard (Library::holdsPatientData())
+        public readonly bool $ocr = false,
     ) {
     }
 
@@ -46,6 +48,7 @@ final class Extracted
             array_map('strval', \is_array($a['info'] ?? null) ? $a['info'] : []),
             (string) ($a['xmp'] ?? ''),
             array_values(array_filter(\is_array($a['lines'] ?? null) ? $a['lines'] : [], 'is_array')),
+            (bool) ($a['ocr'] ?? false),
         );
     }
 }

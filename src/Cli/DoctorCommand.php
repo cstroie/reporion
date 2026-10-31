@@ -694,11 +694,19 @@ final class DoctorCommand implements CommandInterface
         if (!$found['soffice']) {
             $cannot[] = '.doc and office slides and sheets (install LibreOffice)';
         }
+        // Scans (phase 8): rendered by pdftoppm, read by tesseract in Romanian and English
+        $extractor = new Extractor(sys_get_temp_dir(), $tools);
+        $missingLanguages = $found['tesseract'] ? $extractor->missingOcrLanguages() : null;
+        if (!$found['tesseract'] || !$found['pdftoppm']) {
+            $cannot[] = 'scanned PDFs (install tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng' . ($found['pdftoppm'] ? '' : ' and poppler-utils') . ')';
+        } elseif ($missingLanguages !== null && $missingLanguages !== []) {
+            $cannot[] = 'scanned PDFs in every language (tesseract lacks ' . implode(', ', $missingLanguages) . ': install tesseract-ocr-' . implode(' tesseract-ocr-', $missingLanguages) . ')';
+        }
         if ($cannot !== []) {
             return CheckResult::warn($label, 'not ' . implode('; ', $cannot));
         }
 
-        return CheckResult::pass($label, $found['pdftohtml'] ? 'every type' : 'every type (no pdftohtml: titles are guessed from the text only)');
+        return CheckResult::pass($label, $found['pdftohtml'] ? 'every type, scans by OCR' : 'every type, scans by OCR (no pdftohtml: titles are guessed from the text only)');
     }
 
     /** The online lookups (Admin → Settings → Library) need PHP to open an https address; without it every lookup only says it could not be reached */

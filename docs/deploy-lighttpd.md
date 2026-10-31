@@ -170,6 +170,12 @@ HTTP request (refused before the first beyond), so the worst case is 16 × (4 ×
 16 × the model's time: with a 60 s model, about 16 minutes. Set `max_execution_time` and `request_terminate_timeout` for
 what the owner accepts; the page shows "request k of n" as the events come.
 
+**Scans are read by OCR in the upload's request** (docs/library.md, phase 8): each page is rendered and read by tesseract,
+at most 45 s a page and 30 pages, so the worst case is about 30 × 55 s ≈ 28 minutes, a normal page 3–10 s. Install
+`tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng`; set `max_execution_time` and `request_terminate_timeout` for what the owner
+accepts (a long scan is better added with `sudo -u www-data bin/reporion library:add`, which has no web timeout). tesseract
+runs single-threaded (`OMP_THREAD_LIMIT=1`), so one OCR takes one core.
+
 ## The groff plugin
 
 `plugins/groff` (D42) typesets an ordinary Markdown page (never a report) with **groff**. Install the full package, not

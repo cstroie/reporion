@@ -594,7 +594,8 @@ original:                                   # the file it was read from; absent 
   bytes: 734512
   name: nobody-2024.pdf                     # as uploaded
   pages: 4
-  text: true                                # false: no text layer (a scan)
+  text: true                                # false: no text layer
+  ocr: true                                 # the text was read by OCR from a scan (phase 8); absent otherwise
 ```
 
 `csl` keeps only the fields `Library::cleanCsl()` knows: `type` (one of a short list), `title` (required),

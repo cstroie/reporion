@@ -435,7 +435,7 @@ final class Library
     private function attach(string $path, string $bytes, string $ext, string $name, Extracted $extracted, array $csl, string $actor): PageRecord
     {
         $page = $this->storage->read($path);
-        $original = $this->storage->storeOriginal($bytes, $ext) + ['name' => $name, 'pages' => $extracted->pages, 'text' => $extracted->hasText];
+        $original = $this->storage->storeOriginal($bytes, $ext) + ['name' => $name, 'pages' => $extracted->pages, 'text' => $extracted->hasText] + ($extracted->ocr ? ['ocr' => true] : []);
         $frontmatter = $page->frontmatter;
         $frontmatter['original'] = $original;
         $frontmatter['csl'] = \is_array($frontmatter['csl'] ?? null) ? $frontmatter['csl'] + $csl : $csl;
@@ -553,14 +553,38 @@ final class Library
         return [$csl, $tags, $found === [] ? 'none' : implode('+', $found)];
     }
 
-    /** Whether the text holds a valid CNP: a patient document, which the library never takes */
-    public static function holdsPatientData(string $text): bool
+    /**
+     * Whether the text holds a valid CNP: a patient document, which the library never takes. Text
+     * read by OCR ($ocr) is held to more (phase 8): OCR misreads digits (O for 0, l for 1, S for 5,
+     * a space inside), which breaks a CNP's checksum, so there any 13 digits shaped like a CNP (a
+     * sex digit, a month, a day) are enough, with the look-alike letters read as digits.
+     * Refusing an article for a number that only looks like a CNP is the safe side.
+     */
+    public static function holdsPatientData(string $text, bool $ocr = false): bool
     {
         if (preg_match_all('/(?<!\d)[1-9]\d{12}(?!\d)/', $text, $m) > 0) {
             foreach ($m[0] as $candidate) {
                 if (Cnp::isValid($candidate)) {
                     return true;
                 }
+            }
+        }
+        if (!$ocr) {
+            return false;
+        }
+        // Digits and their look-alikes, a single space or dot allowed between them, at least 10 real digits
+        preg_match_all('/(?<![\p{L}\d])[\dOoDQIl|!SsBZz](?:[ .]?[\dOoDQIl|!SsBZz]){12,14}(?![\p{L}\d])/u', $text, $m, PREG_OFFSET_CAPTURE);
+        foreach ($m[0] as [$run, $at]) {
+            // An ISBN-13 (978…, 979…) has a CNP's shape: not one when it says so
+            if (stripos(substr($text, max(0, $at - 12), min(12, $at)), 'ISBN') !== false) {
+                continue;
+            }
+            $digits = strtr((string) preg_replace('/[ .]/', '', $run), ['O' => '0', 'o' => '0', 'D' => '0', 'Q' => '0', 'I' => '1', 'l' => '1', '|' => '1', '!' => '1', 'S' => '5', 's' => '5', 'B' => '8', 'Z' => '2', 'z' => '2']);
+            if (\strlen($digits) !== 13 || preg_match_all('/\d/', $run) < 10) {
+                continue;
+            }
+            if (preg_match('/^[1-9]\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{6}$/', $digits) === 1) {
+                return true;
             }
         }
 
@@ -582,11 +606,11 @@ final class Library
         }
         $ext = Extractor::extensionOf($name) ?? throw new LibraryException(LibraryException::UNSUPPORTED);
         $extracted = $this->extractor->extract($bytes, $ext);
-        // A scan cannot be checked for patient data: refused until OCR gives it text (owner, 2026-10-30)
+        // A scan cannot be checked for patient data: refused unless OCR gives it text (owner, 2026-10-30; phase 8)
         if (!$extracted->hasText) {
             throw new LibraryException(LibraryException::NO_TEXT);
         }
-        if (self::holdsPatientData($extracted->body . "\n" . $extracted->references . "\n" . $extracted->head)) {
+        if (self::holdsPatientData($extracted->body . "\n" . $extracted->references . "\n" . $extracted->head, $extracted->ocr)) {
             throw new LibraryException(LibraryException::PATIENT_DATA);
         }
 
@@ -617,7 +641,7 @@ final class Library
             'name' => $name,
             'pages' => $extracted->pages,
             'text' => $extracted->hasText,
-        ];
+        ] + ($extracted->ocr ? ['ocr' => true] : []);
         $frontmatter = array_filter([
             'title' => $csl['title'],
             'visibility' => 'private',

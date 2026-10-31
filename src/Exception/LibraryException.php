@@ -24,6 +24,10 @@ final class LibraryException extends RuntimeException
     public const EXPIRED = 'expired';
     public const DUPLICATE = 'duplicate';
     public const INVALID = 'invalid';
+    /** A scan longer than OCR reads (phase 8) */
+    public const SCAN_TOO_LONG = 'scan_too_long';
+    /** A scan, and no OCR tools to read it */
+    public const NO_OCR = 'no_ocr';
 
     public function __construct(public readonly string $reason, public readonly ?string $pid = null)
     {
