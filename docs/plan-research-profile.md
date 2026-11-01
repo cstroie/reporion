@@ -1,7 +1,9 @@
 # Plan: a `research` prompt profile for the library and notebooks
 
-Status: planned 2026-11-01, to be built 2026-11-02. On approval this file is committed as
-`docs/plan-research-profile.md` (and pushed); building it is a separate step.
+Status: planned and **built 2026-11-01** (branch `research-profile`). Departures from the plan:
+`specialUnder()` walks the sub-namespaces' own profiles before the fallback's page; Admin → AI
+offers research only to a profile a routing row gives the library (not the fallback that serves it
+by default); `AiConfig::routedProfileFor()` is profileFor() without the fallback.
 
 ## Context
 
@@ -124,7 +126,13 @@ first path that has a body among `ai:profiles:{profile}:{rel}` and, when
 
 ## Upgrade note for the owner
 
-Nothing changes until a `library` row exists: with none, library features use the
-everywhere-else profile, where most notebooks get them today. To switch:
+Library features change nothing until a `library` row exists: with none, they use the
+everywhere-else profile, where most notebooks get them today (a notebook in a namespace mapped
+to another profile now asks the everywhere-else one too). **The fallback for missing prompt pages
+(C) applies at once, to every profile:** a profile lacking `commit`, `summary` or `tags` (a
+reports profile, say) is served the everywhere-else profile's from the first request, so Save
+writes revision notes and Summarize/Suggest tags appear there. Admin → AI shows these as *from the
+profile …*. An empty page is as absent as none, so the way to keep one off is to remove the
+everywhere-else profile's page or to set no fallback. To switch:
 `bin/reporion ai:prompts-install --profile=research --target=research`, then Admin → AI
 routing table: `library → research`, server of choice.

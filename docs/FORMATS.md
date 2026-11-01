@@ -464,6 +464,18 @@ and it applies wherever `Render::body()` renders the page: page view, print, PDF
 sets it on every note it saves and asks `POST /api/v1/render` for it in its preview; a note started in Reporion gets it from `FrontmatterGuess::forNewPage()` (`Support\Notes::isNote()`: a direct child of `users:{u}:notes`). A text page
 (§3j) is unaffected. Signed with the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
 
+## 3j-c. `prompts`: the assistant profile a page uses (2026-11-01)
+
+```yaml
+prompts: research   # absent, invalid, or a profile with no pages: the namespace's (§13)
+```
+
+The page's rail and reserved prompts come from `ai:profiles:{prompts}` instead of the profile its
+namespace is routed to (`Service\Ai\Actions`); the server stays the namespace's, and the library's
+features (Ask the notebook, Studio, analyses) follow the library namespace whatever the key says
+(§13). Set by hand in raw mode; the Metadata view lists it read only. The index keeps it in
+`meta_json` only.
+
 ## 3k. A page's title is its first heading (2026-10-13; was "`title` from the first heading", 2026-10-10)
 
 ```yaml
@@ -1212,6 +1224,26 @@ has none).
   profile, `ai.fallback_profile` (2026-10-08): a generic one, e.g. `default` with `summarize` and
   `rewrite`, or get no Assistant when it is blank. `ai.profile_map` (2026-10-13, D47) maps namespaces to profiles: `AiConfig::profileFor()` takes the most specific namespace among the map and `ai.namespaces` (the map wins a tie), and only then the fallback. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
+- A page may name its prompts' profile (2026-11-01): frontmatter `prompts: research` (a profile
+  name, `[a-z0-9][a-z0-9_-]{0,31}`, of a profile that has pages) picks its rail and reserved
+  prompts over its namespace's; an unknown or invalid name is ignored. It never picks the server
+  (that stays by namespace, so the key cannot move a page's text to another server's egress).
+- The library's features (the reserved ids of `Actions::LIBRARY`: source analyses, Ask the
+  notebook and its search words, Studio, flashcards, the audio script; 2026-11-01) take the
+  profile **and** the server of the library namespace (`library.namespace`, default `library`)
+  wherever their page is: a notebook in `teaching:` asks the profile and server the routing table
+  gives `library` (row `library → research`). With no such row that is the fallback profile, as
+  before. A page's `prompts:` does not change them.
+- A prompt page a profile lacks (2026-11-01): a rail row whose own page `{profile}:{id}` is missing,
+  or a reserved prompt `{profile}:special:{id}`, is the fallback profile's (`ai.fallback_profile`)
+  when that profile has it, with that page's `model:`, `timeout:`, `max_tokens:` and its own
+  `system:{id}` appendage; with no fallback it stays missing. **This applies to every profile at
+  once**: a reports profile without `commit` now writes revision notes with the fallback's
+  `commit` (likewise Summarize, Suggest tags); an empty page is as absent as none, so to keep a
+  feature off remove the fallback's page or set no fallback. The table page (the rail is the profile's own) and the system prompt (own,
+  else `default`'s) never fall back. A prompt about no page (`tags-review`, `ask-archive`) takes a
+  sub-namespace's own profile first and the fallback's only when none has one. Admin → AI marks
+  a prompt served this way *from the profile {fallback}*.
 - Which server a page's Assistant asks (2026-11-01): an action whose `Model` cell (or prompt page's
   `model:`) names a server runs there; otherwise the most specific namespace of `ai.server_map`
   (`AiConfig::serverFor()`, applied by `Service\Ai\Actions` to rail and reserved actions alike), else
