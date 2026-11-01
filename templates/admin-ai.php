@@ -275,7 +275,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <?php else: ?><ul class="wk-ai-rail">
 <?php foreach ($o['rail'] as $row): ?>
 <?php if ($row['break']): ?><li class="wk-ai-rail-break"<?= $row['label'] === '' ? ' aria-hidden="true"' : '' ?>><?= $e($row['label']) ?></li><?php continue; endif; ?>
-<?php $tip = $row['id'] . ' · ' . $row['result'] . ($row['model'] !== '' ? ' · ' . $row['model'] : '') . ($row['ownSystem'] ? ' · +system' : '') . ($row['present'] ? '' : ' · ' . t('admin.ai.no_prompt_page')); ?>
+<?php $tip = $row['id'] . ' · ' . $row['result'] . ($row['model'] !== '' ? ' · ' . $row['model'] : '') . ($row['ownSystem'] ? ' · +system' : '') . ($row['present'] ? '' : ' · ' . t('admin.ai.no_prompt_page')) . (($row['from'] ?? '') !== '' ? ' · ' . t('admin.ai.from_fallback', [$row['from']]) : ''); ?>
 <li><a class="wk-ai-act"<?= $row['present'] ? '' : ' data-missing="1"' ?> href="<?= $b ?>/<?= $e($row['path']) ?><?= $row['present'] ? '' : '/edit' ?>" title="<?= $e($tip) ?>"><?= $row['present'] ? '' : '<i class="ph ph-warning" aria-hidden="true"></i>' ?><?= $e($row['label']) ?><small><?= $e($row['result']) ?></small></a></li>
 <?php endforeach; ?>
 </ul><?php endif; ?>
@@ -283,7 +283,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <h4><?= $e(t('admin.ai.reserved')) ?> <span class="wk-dim"><?= $e(t('admin.ai.features_on', [\count($on), \count($on) + \count($off)])) ?></span></h4>
 <?php if ($on !== []): ?><ul class="wk-ai-features">
 <?php foreach ($on as $r): ?>
-<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?></small></li>
+<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= ($r['from'] ?? '') !== '' ? ' · ' . $e(t('admin.ai.from_fallback', [$r['from']])) : '' ?></small></li>
 <?php endforeach; ?>
 </ul><?php endif; ?>
 <?php if ($off !== []): ?><details class="wk-ai-off">

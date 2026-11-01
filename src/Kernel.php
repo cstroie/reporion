@@ -682,7 +682,7 @@ final class Kernel
             $tagDictionary,
             $editorPage,
         );
-        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit, new DefaultPrompts($storage, $rootDir . '/resources/prompts'));
+        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit, new DefaultPrompts($storage, $rootDir . '/resources/prompts'), self::libraryNamespace($config));
         $adminUsers = new AdminUsersController($users, $groups, $index, $audit);
         $adminGroups = new AdminGroupsController($groups, $users, $index, $audit);
         $revisions = new RevisionsController($storage, $index, $audit, $render);

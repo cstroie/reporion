@@ -359,6 +359,12 @@ final class AiConfig
      */
     public function profileFor(string $path): ?string
     {
+        return $this->routedProfileFor($path) ?? ($this->fallbackProfile !== '' ? $this->fallbackProfile : null);
+    }
+
+    /** profileFor() without the fallback: the profile a namespace of the routing table names for the page, else null */
+    public function routedProfileFor(string $path): ?string
+    {
         $routes = array_fill_keys($this->namespaces, $this->promptProfile);
         foreach ($this->profileMap as $ns => $profile) {
             $routes[$ns] = $profile;
@@ -374,7 +380,7 @@ final class AiConfig
             }
         }
 
-        return $best ?? ($this->fallbackProfile !== '' ? $this->fallbackProfile : null);
+        return $best;
     }
 
     /**

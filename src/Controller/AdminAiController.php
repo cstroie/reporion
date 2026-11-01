@@ -56,6 +56,8 @@ final class AdminAiController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly ?DefaultPrompts $defaults = null,
+        /** The library's namespace: the profile routed there is offered the research examples */
+        private readonly string $libraryNamespace = 'library',
     ) {
     }
 
@@ -87,8 +89,13 @@ final class AdminAiController
         foreach ($names as $profile) {
             $profiles[$profile] = true;
             // Phase 33e: what the profile holds, and where it serves
-            // The target a profile is offered by default: radiology for the one serving reports, else generic
-            $target = $ai->profileFor('reports') === $profile ? DefaultPrompts::RADIOLOGY : DefaultPrompts::GENERIC;
+            // The target a profile is offered by default: radiology for the one serving reports,
+            // research for one a routing row gives the library (the fallback serving it by default stays generic), else generic
+            $target = match (true) {
+                $ai->profileFor('reports') === $profile => DefaultPrompts::RADIOLOGY,
+                $ai->routedProfileFor($this->libraryNamespace) === $profile => DefaultPrompts::RESEARCH,
+                default => DefaultPrompts::GENERIC,
+            };
             $shipped = $this->defaults?->status($profile, $target) ?? [];
             $overview[$profile] = $this->actions->overview($profile) + [
                 'shipped' => $shipped,

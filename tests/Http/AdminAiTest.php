@@ -364,6 +364,23 @@ final class AdminAiTest extends HttpTestCase
         ));
     }
 
+    public function testTheProfileRoutedToTheLibraryIsOfferedTheResearchExamplesAndShowsWhatTheFallbackServes(): void
+    {
+        $storage = new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        $prompts = new \Reporion\Service\Ai\DefaultPrompts($storage, \dirname(__DIR__, 2) . '/resources/prompts');
+        $prompts->install('wiki', 'owner', target: 'generic');
+        $prompts->install('research', 'owner', target: 'research');
+        $this->config['ai'] = ['enabled' => true, 'namespaces' => ['reports'], 'prompt_profile' => 'reports', 'fallback_profile' => 'wiki', 'servers' => [self::SERVER]];
+
+        $body = $this->request('GET', '/admin/ai', 'owner')->body;
+        self::assertSame(0, substr_count($body, '<option value="research" selected>'), 'served by the fallback only: generic, as before');
+
+        $this->config['ai']['profile_map'] = ['library' => 'research'];
+        $body = $this->request('GET', '/admin/ai', 'owner')->body;
+        self::assertSame(1, substr_count($body, '<option value="research" selected>'), 'the library\'s profile');
+        self::assertStringContainsString('ask · show · from the profile wiki (everywhere else)', $body, 'its rail\'s Ask comes from the fallback');
+    }
+
     public function testShippedPromptsCanBeInstalledIntoAnyProfileByAnOwnerOnly(): void
     {
         foreach ([null, 'editor'] as $user) {
