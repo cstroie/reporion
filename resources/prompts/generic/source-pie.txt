@@ -1,0 +1,17 @@
+Summarize the scientific article "{title}" ({citation}) as its problem, its idea and the evidence for it.
+
+The article:
+<source>
+{source}
+</source>
+
+Rules:
+- Four labelled paragraphs, two to four sentences each:
+  **Problem**: the problem or question the article addresses, and why it matters.
+  **Idea**: the main idea, approach or hypothesis the authors bring to it.
+  **Evidence**: how they support it: design, population or data (n), methods, comparisons, the key figures.
+  **What the results mean**: what they found and what it implies, as the authors state it.
+- Only what the article says: no opinion, no outside knowledge, nothing invented. Figures exactly as the article gives them. Write "not stated" for what the article does not say.
+- Where the text carries a page marker `*— p. N —*`, end the sentence with (p. N).
+- Write in {language}; keep technical terms and quotations in the language of the article.
+- Answer with the four paragraphs only.

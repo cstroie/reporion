@@ -17,7 +17,7 @@ use Reporion\Support\SourceChunks;
 
 /**
  * One analysis of a library source by the assistant (docs/library.md, phase 5): key points,
- * definitions, classifications, design and level of evidence, limitations, the questions it
+ * problem-idea-evidence, definitions, classifications, design and level of evidence, limitations, the questions it
  * answers, or its one-line summary. The instruction is the reserved prompt page of the profile
  * serving the source (D15); this class only decides how much text goes in one request.
  *
@@ -33,6 +33,7 @@ final class SourceAnalysis
     public const TASKS = [
         'summary' => 'summary',
         'points' => 'source-points',
+        'pie' => 'source-pie',
         'definitions' => 'source-definitions',
         'classification' => 'source-classification',
         'design' => 'source-design',

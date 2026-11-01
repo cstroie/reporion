@@ -250,6 +250,23 @@ final class LibraryAnalysisTest extends HttpTestCase
         self::assertStringContainsString('Grade 3 was the most common', $this->server->lastRequest()['body']['messages'][1]['content']);
     }
 
+    public function testTheShippedProblemIdeaEvidencePromptIsAnAnalysisLikeTheOthers(): void
+    {
+        $prompt = (string) file_get_contents(\dirname(__DIR__, 2) . '/resources/prompts/generic/source-pie.txt');
+        $this->storage()->create('ai:profiles:wiki:special:source-pie', ['title' => 'source-pie', 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
+
+        $view = Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('editor')]))->body;
+        self::assertStringContainsString('data-lib-ai-task="pie"', $view);
+
+        $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'pie'])->body, true)['data'];
+        self::assertSame('library:short2024:source-pie', $data['saved']['path']);
+        $user = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString('"A made-up study" (Nobody A. A made-up study. 2024.)', $user);
+        self::assertStringContainsString('Grade 3 was the most common in 128 patients.', $user);
+        self::assertStringContainsString('Write in English', $user);
+        self::assertStringNotContainsString('{', $user, 'every placeholder filled');
+    }
+
     public function testThePartsAnswersAndTheirNotesAlwaysFitTheirRequests(): void
     {
         foreach ([2, 3, 6] as $n) {

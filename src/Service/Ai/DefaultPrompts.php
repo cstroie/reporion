@@ -75,6 +75,7 @@ final class DefaultPrompts
         'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'source-part' => ['kind' => self::SPECIAL, 'title' => 'Source: condense one part', 'file' => 'source-part.txt', 'targets' => self::GENERIC_ONLY],
         'source-points' => ['kind' => self::SPECIAL, 'title' => 'Source: key points', 'file' => 'source-points.txt', 'targets' => self::GENERIC_ONLY],
+        'source-pie' => ['kind' => self::SPECIAL, 'title' => 'Source: problem, idea, evidence', 'file' => 'source-pie.txt', 'targets' => self::GENERIC_ONLY],
         'source-definitions' => ['kind' => self::SPECIAL, 'title' => 'Source: definitions', 'file' => 'source-definitions.txt', 'targets' => self::GENERIC_ONLY],
         'source-classification' => ['kind' => self::SPECIAL, 'title' => 'Source: classifications and staging', 'file' => 'source-classification.txt', 'targets' => self::GENERIC_ONLY],
         'source-design' => ['kind' => self::SPECIAL, 'title' => 'Source: design and level of evidence', 'file' => 'source-design.txt', 'targets' => self::GENERIC_ONLY],
