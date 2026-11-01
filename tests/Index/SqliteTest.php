@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Tests\Index;
 
 use Reporion\Auth\User;
+use Reporion\Index\Sqlite;
 use Reporion\Support\PatientKey;
 
 final class SqliteTest extends IndexTestCase
@@ -264,6 +265,8 @@ final class SqliteTest extends IndexTestCase
             ]], "## IRM genunchi drept\n\n## IRM coloană lombară\n"),
             // A text page (D40): what looks like a link in it is not one
             $this->snapshot('p6', 'docs:plain', ['format' => 'text'], 'as typed, not a link: [a](reports:mri:mioveni:a)'),
+            // A library source: its passages in passage_fts (2026-11-02)
+            $this->snapshot('p7', 'library:abel2020', ['csl' => ['title' => 'White matter']], "# White matter\n\n" . str_repeat('Lesions are graded with the Fazekas scale in older adults. ', 40) . "\n\n## Results\n\nPeriventricular caps were common.\n"),
         ];
 
         [$incremental, $incrementalPath] = $this->newIndex();
@@ -296,6 +299,41 @@ final class SqliteTest extends IndexTestCase
         self::assertSame($this->fetchAll($incrementalPath, $links), $this->fetchAll($rebuiltPath, $links));
         self::assertCount(5, $this->fetchAll($rebuiltPath, $links));
         self::assertSame([['dst_path' => 'x:y']], $this->fetchAll($rebuiltPath, 'SELECT dst_path FROM links WHERE dst_pid IS NULL'), 'only the link to a page that does not exist is broken');
+        $passages = 'SELECT pid, n, page, text FROM passage_fts ORDER BY pid, n';
+        self::assertSame($this->fetchAll($incrementalPath, $passages), $this->fetchAll($rebuiltPath, $passages));
+        self::assertGreaterThan(1, \count($this->fetchAll($rebuiltPath, $passages)));
+        self::assertSame(['p7'], array_values(array_unique(array_column($this->fetchAll($rebuiltPath, $passages), 'pid'))), 'only a library source has passages');
+    }
+
+    public function testALibrarySourcesPassagesAreFoundByWordsUnderVisibilityAndGoWithThePage(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $body = "# White matter\n\n" . str_repeat('Lesions are graded with the Fazekas scale. ', 40) . "\n\n## Results\n\nPeriventricular caps were common.\n";
+        $index->index($this->snapshot('p1', 'library:abel2020', ['csl' => ['title' => 'White matter']], $body));
+        $index->index($this->snapshot('p2', 'library:other2021', ['csl' => ['title' => 'Other']], "Nothing about lesions here but caps.\n"));
+        $index->index($this->snapshot('p3', 'teaching:notes', [], 'Fazekas, but a page, not a source.'));
+        $reader = new User('reader', '', false, [new \Reporion\Auth\Grant('library', \Reporion\Auth\GrantRole::Viewer)], true, 'now', 'now');
+
+        $about = $index->passagesAbout(['fazekas', 'caps'], null, $reader);
+        self::assertSame(['p1'], array_values(array_unique(array_column(array_filter($about, static fn (array $p): bool => str_contains($p['text'], 'Fazekas')), 'pid'))));
+        self::assertContains('p2', array_column($about, 'pid'), 'any of the words');
+        self::assertNotContains('p3', array_column($about, 'pid'), 'pages are not passages');
+        self::assertSame(['p2'], array_values(array_unique(array_column($index->passagesAbout(['caps'], ['p2'], $reader), 'pid'))), 'only the pids asked');
+        self::assertSame([], $index->passagesAbout(['fazekas'], null, null), 'a private source: none for the anonymous');
+        self::assertSame([], $index->passagesAbout(['fazekas'], null, new User('other', '', false, [], true, 'now', 'now')), 'nor for one without the grant');
+
+        $matching = $index->passagesMatching('periventricular caps', $reader);
+        self::assertSame(['p1'], array_column($matching, 'pid'), 'every word');
+        self::assertStringContainsString('<mark>', Sqlite::highlightSnippet($matching[0]['snippet']));
+        self::assertSame(['p1', 'p2'], array_keys($index->passageLengths(['p1', 'p2', 'p3'])));
+        self::assertEqualsCanonicalizing(['p1', 'p2'], $index->passagePids($reader));
+        $at = $index->passagesAt([['pid' => 'p1', 'n' => $matching[0]['n']]], $reader);
+        self::assertSame($matching[0]['text'], $at['p1:' . $matching[0]['n']]['text']);
+
+        $index->index($this->snapshot('p1', 'library:abel2020', [], 'No longer a source.'));
+        self::assertSame([], $index->passagesAbout(['fazekas'], null, $reader), 'a page that is no source has none');
+        $index->remove('p2');
+        self::assertSame([], $this->fetchColumn($path, "SELECT pid FROM passage_fts WHERE pid = 'p2'"));
     }
 
     public function testAMultiExamReportIndexesItsExamsFacetsAndAccessions(): void

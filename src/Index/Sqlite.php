@@ -15,11 +15,13 @@ use Reporion\Support\BodyFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\InternalLink;
+use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
 use Reporion\Support\RecallTerms;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
+use Reporion\Support\SourcePassages;
 use Reporion\Support\TagList;
 use Throwable;
 
@@ -86,6 +88,7 @@ final class Sqlite implements IndexInterface
             if ($rowid !== null) {
                 $this->pdo->prepare('DELETE FROM fts WHERE rowid = ?')->execute([$rowid]);
             }
+            $this->pdo->prepare('DELETE FROM passage_fts WHERE pid = ?')->execute([$pid]);
             $this->pdo->prepare('DELETE FROM pages WHERE pid = ?')->execute([$pid]);
             // Links to it are broken now; they resolve again if it comes back
             $this->pdo->prepare('UPDATE links SET dst_pid = NULL WHERE dst_pid = ?')->execute([$pid]);
@@ -115,6 +118,7 @@ final class Sqlite implements IndexInterface
         try {
             $this->pdo->exec('DELETE FROM pages');
             $this->pdo->exec('DELETE FROM fts');
+            $this->pdo->exec('DELETE FROM passage_fts');
             foreach ($snapshots as $snapshot) {
                 $this->write($snapshot);
             }
@@ -1078,6 +1082,159 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * Library passages (passage_fts, 2026-11-02) about any of $terms (each by its stem or a D28
+     * synonym, as recallCandidates()), best first by BM25, among the sources the caller can see
+     * (invariant 6) and, when $pids is a list, only those (a notebook's sources); null: the whole
+     * library. Ask the notebook and Ask the library read passages here, never whole sources.
+     *
+     * @param list<string>  $terms folded
+     * @param ?list<string> $pids
+     *
+     * @return list<array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}>
+     */
+    public function passagesAbout(array $terms, ?array $pids, ?User $principal, int $limit = 80): array
+    {
+        $parts = [];
+        foreach ($terms as $term) {
+            if (preg_match('/^[\p{L}\p{N}]{2,}$/u', $term) !== 1) {
+                continue;
+            }
+            $prefix = mb_strlen($term) > 4 ? '"' . RecallTerms::stem($term) . '"*' : '"' . $term . '"';
+            $parts[] = '(' . $prefix . ' OR ' . $this->ftsExpanded($term) . ')';
+        }
+
+        return $parts === [] ? [] : $this->passages('text:(' . implode(' OR ', $parts) . ')', $pids, $principal, $limit);
+    }
+
+    /**
+     * Library passages holding every word of $query (as /search reads a query: D28 synonyms, each
+     * word quoted), best first: the library's own text search
+     *
+     * @return list<array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}>
+     */
+    public function passagesMatching(string $query, ?User $principal, int $limit = 200): array
+    {
+        $match = $this->ftsExpanded($query);
+
+        return $match === '' ? [] : $this->passages('text:(' . $match . ')', null, $principal, $limit);
+    }
+
+    /**
+     * Passages by place, for what the vectors found (their text to send and to check the sha
+     * against), among the sources the caller can see
+     *
+     * @param list<array{pid: string, n: int}> $places
+     *
+     * @return array<string, array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}> by "pid:n"
+     */
+    public function passagesAt(array $places, ?User $principal): array
+    {
+        $out = [];
+        foreach (array_chunk($places, 200) as $chunk) {
+            $or = [];
+            $params = [];
+            foreach ($chunk as $i => $place) {
+                $or[] = '(f.pid = :p' . $i . ' AND f.n = :n' . $i . ')';
+                $params['p' . $i] = $place['pid'];
+                $params['n' . $i] = $place['n'];
+            }
+            [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+            $stmt = $this->pdo->prepare('SELECT f.pid, p.path, p.title, f.n, f.page, f.text, \'\' AS snippet FROM passage_fts f JOIN pages p ON p.pid = f.pid WHERE (' . implode(' OR ', $or) . ')' . $clauseSql);
+            $stmt->execute($params + $clauseParams);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $passage = self::passageRow($row);
+                $out[$passage['pid'] . ':' . $passage['n']] = $passage;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * How many characters each source's passages hold, for whether a notebook fits one request
+     * whole without reading its sources
+     *
+     * @param list<string> $pids
+     *
+     * @return array<string, int>
+     */
+    public function passageLengths(array $pids): array
+    {
+        if ($pids === []) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT pid, SUM(length(text)) FROM passage_fts WHERE pid IN (' . implode(', ', array_fill(0, \count($pids), '?')) . ') GROUP BY pid');
+        $stmt->execute(array_values($pids));
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_KEY_PAIR));
+    }
+
+    /**
+     * The library sources the caller can see, by pid (those that have passages)
+     *
+     * @return list<string>
+     */
+    public function passagePids(?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare('SELECT DISTINCT f.pid FROM passage_fts f JOIN pages p ON p.pid = f.pid WHERE 1 = 1' . $clauseSql);
+        $stmt->execute($clauseParams);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * @param ?list<string> $pids
+     *
+     * @return list<array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}>
+     */
+    private function passages(string $match, ?array $pids, ?User $principal, int $limit): array
+    {
+        if ($pids === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $params = ['match' => $match] + $clauseParams;
+        $in = '';
+        if ($pids !== null) {
+            $marks = [];
+            foreach (array_values($pids) as $i => $pid) {
+                $marks[] = ':pid' . $i;
+                $params['pid' . $i] = $pid;
+            }
+            $in = ' AND f.pid IN (' . implode(', ', $marks) . ')';
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT f.pid, p.path, p.title, f.n, f.page, f.text,
+                    snippet(passage_fts, 0, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet
+             FROM passage_fts f JOIN pages p ON p.pid = f.pid
+             WHERE passage_fts MATCH :match" . $in . $clauseSql . '
+             ORDER BY f.rank, f.pid, f.n LIMIT ' . max(1, min(1000, $limit))
+        );
+        $stmt->execute($params);
+
+        return array_map(self::passageRow(...), $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}
+     */
+    private static function passageRow(array $row): array
+    {
+        return [
+            'pid' => (string) $row['pid'],
+            'path' => (string) $row['path'],
+            'title' => (string) $row['title'],
+            'n' => (int) $row['n'],
+            'page' => $row['page'] !== null && $row['page'] !== '' ? (int) $row['page'] : null,
+            'text' => (string) $row['text'],
+            'snippet' => (string) $row['snippet'],
+        ];
+    }
+
+    /**
      * ftsPhrase() with D28's synonyms: a query that is a synonym term as a
      * whole ("hernie de disc"), or any one token of it, matches any term of
      * its group:`"hernie" OR "hernia" OR "hernie de disc"`, each quoted, so
@@ -1264,6 +1421,15 @@ final class Sqlite implements IndexInterface
         $this->pdo->prepare('DELETE FROM fts WHERE rowid = ?')->execute([$rowid]);
         $this->pdo->prepare('INSERT INTO fts (rowid, title, summary, body, tags, pid) VALUES (?, ?, ?, ?, ?, ?)')
             ->execute([$rowid, $title, (string) ($fm['summary'] ?? ''), $snapshot->body, implode(' ', $tags), $snapshot->pid]);
+
+        // A library source's passages (2026-11-02), the cut index:vectors embeds
+        $this->pdo->prepare('DELETE FROM passage_fts WHERE pid = ?')->execute([$snapshot->pid]);
+        if (LibrarySource::isSource($fm)) {
+            $insert = $this->pdo->prepare('INSERT INTO passage_fts (text, pid, n, page) VALUES (?, ?, ?, ?)');
+            foreach (SourcePassages::ofSource($snapshot->body) as $passage) {
+                $insert->execute([$passage['text'], $snapshot->pid, $passage['n'], $passage['page']]);
+            }
+        }
     }
 
     /**
@@ -1450,13 +1616,14 @@ final class Sqlite implements IndexInterface
      *
      * @param list<string> $pids
      */
-    public function hasPassages(string $model, array $pids): bool
+    public function hasPassages(string $model, ?array $pids): bool
     {
         if ($pids === []) {
             return false;
         }
-        $stmt = $this->pdo->prepare('SELECT 1 FROM passage_vectors WHERE model = ? AND dim > 0 AND pid IN (' . implode(', ', array_fill(0, \count($pids), '?')) . ') LIMIT 1');
-        $stmt->execute([$model, ...array_values($pids)]);
+        // null: any source of the library (Ask the library)
+        $stmt = $this->pdo->prepare('SELECT 1 FROM passage_vectors WHERE model = ? AND dim > 0' . ($pids !== null ? ' AND pid IN (' . implode(', ', array_fill(0, \count($pids), '?')) . ')' : '') . ' LIMIT 1');
+        $stmt->execute([$model, ...array_values($pids ?? [])]);
 
         return $stmt->fetchColumn() !== false;
     }
@@ -1467,12 +1634,12 @@ final class Sqlite implements IndexInterface
      * candidates before any score); a score under $minScore is no match. Brute force in PHP, as
      * similar(). The caller checks each passage's sha against the text it cuts now.
      *
-     * @param list<float>  $query unit length
-     * @param list<string> $pids
+     * @param list<float>   $query unit length
+     * @param ?list<string> $pids null: every source
      *
      * @return list<array{pid: string, n: int, sha: string, page: ?int, score: float}>
      */
-    public function passageCandidates(array $query, string $model, array $pids, ?User $principal, int $limit = 20, float $minScore = 0.0): array
+    public function passageCandidates(array $query, string $model, ?array $pids, ?User $principal, int $limit = 20, float $minScore = 0.0): array
     {
         $dim = \count($query);
         if ($dim === 0 || $pids === []) {
@@ -1481,13 +1648,14 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $marks = [];
         $params = ['model' => $model, 'dim' => $dim] + $clauseParams;
-        foreach (array_values($pids) as $i => $pid) {
+        foreach (array_values($pids ?? []) as $i => $pid) {
             $marks[] = ':q' . $i;
             $params['q' . $i] = $pid;
         }
+        // null: every source the caller can see (Ask the library)
         $stmt = $this->pdo->prepare(
             'SELECT v.pid, v.n, v.sha, v.page, v.vec FROM passage_vectors v JOIN pages p ON p.pid = v.pid '
-            . 'WHERE v.model = :model AND v.dim = :dim AND v.pid IN (' . implode(', ', $marks) . ')' . $clauseSql
+            . 'WHERE v.model = :model AND v.dim = :dim' . ($pids !== null ? ' AND v.pid IN (' . implode(', ', $marks) . ')' : '') . $clauseSql
         );
         $stmt->execute($params);
         $hits = [];
