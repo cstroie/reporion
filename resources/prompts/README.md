@@ -1,14 +1,19 @@
 # Proposed prompts
 
 Starting points for the assistant's prompts (docs/FORMATS.md §13), one file per prompt: the file's
-whole content is the prompt page's body. They come in two **targets** (2026-10-20), each a folder:
+whole content is the prompt page's body. They come in three **targets**, each a folder:
 
-- `radiology/`: for a profile serving reports. Every prompt, **written in Romanian**.
+- `radiology/`: for a profile serving reports. Every prompt but the library's, **written in Romanian**.
 - `generic/`: for a profile serving ordinary pages. The prompts that make sense for any page
-  (`summary`, `tags`, `tags-review`, `commit`, `ask`), **written in English**; they answer in the language of the page.
+  (`summary`, `tags`, `tags-review`, `commit`, `ask`, `grammar`), **written in English**; they answer in the language of the page.
+- `research/` (2026-11-01): for the profile serving the library namespace (Admin → AI routing
+  table, `library → research`). The library's prompts (`source-*`, `ask-notebook`,
+  `notebook-terms`, `studio-*`), **written in English**, and a rail table naming `ask` and
+  `grammar`, whose pages (like `summary`, `tags`, `commit`) come from the everywhere-else profile
+  (`ai.fallback_profile`): nothing is shipped twice.
 
 The web installer (radiology), Admin → AI (*Examples for*) and `bin/reporion ai:prompts-install
---target=radiology|generic` make them pages of a profile (`Service\Ai\DefaultPrompts`); a page that is
+--target=radiology|generic|research` make them pages of a profile (`Service\Ai\DefaultPrompts`); a page that is
 there already, edited or not, is left alone. Adapt a page there: nothing reads these files afterwards.
 Every prompt page is made with `format: text` in its frontmatter (shown as typed, D40), and `model: lite` for the light tasks (`summary`, `tags`, `commit`, `grammar`, `recall-missing`, `ask-expand`); the profile table stays markdown.
 `summary`, `tags`, `tags-review`, `commit` and `ask` exist in both targets; `evolution`, `presign`,

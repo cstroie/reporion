@@ -12,11 +12,14 @@ use Reporion\Storage\StorageInterface;
 
 /**
  * The prompts the app ships (resources/prompts, moved from docs/prompts
- * 2026-10-19) made into prompt pages of an AI profile. They come in two
- * targets (2026-10-20): `radiology` (reports; written in Romanian; every
- * prompt) and `generic` (ordinary pages; in English; the ones that make
- * sense for any page: summary, tags, tags-review, commit, ask, and the library's source analyses and Ask the notebook). A profile is
- * made from one of them. the reserved prompts
+ * 2026-10-19) made into prompt pages of an AI profile. They come in three
+ * targets: `radiology` (reports; written in Romanian; every
+ * prompt but the library's), `generic` (ordinary pages; in English; the ones that make
+ * sense for any page: summary, tags, tags-review, commit, ask, grammar) and,
+ * since 2026-11-01, `research` (the library's: source analyses, Ask the
+ * notebook, Studio, flashcards, the audio script; in English; a rail table
+ * naming ask and grammar, whose pages come from the fallback profile). A profile is
+ * made from one of them: the reserved prompts
  * as `ai:profiles:{profile}:special:{id}`, the rail actions as
  * `ai:profiles:{profile}:{id}` (among them *Ask*, whose `{prompt}` gives the
  * rail its question box) and, when the profile has none, its own page with
@@ -44,11 +47,19 @@ final class DefaultPrompts
     public const RADIOLOGY = 'radiology';
     /** Prompts for ordinary pages, written in English */
     public const GENERIC = 'generic';
-    public const TARGETS = [self::RADIOLOGY, self::GENERIC];
+    /**
+     * The library's prompts (2026-11-01): source analyses, Ask the notebook,
+     * Studio, flashcards, the audio script, in English, for the profile serving
+     * the library namespace; its rail's own pages come from the fallback profile
+     */
+    public const RESEARCH = 'research';
+    public const TARGETS = [self::RADIOLOGY, self::GENERIC, self::RESEARCH];
 
     private const BOTH = [self::RADIOLOGY, self::GENERIC];
+    private const ALL = [self::RADIOLOGY, self::GENERIC, self::RESEARCH];
     private const RADIOLOGY_ONLY = [self::RADIOLOGY];
     private const GENERIC_ONLY = [self::GENERIC];
+    private const RESEARCH_ONLY = [self::RESEARCH];
 
     /** The target used when none is named */
     public const DEFAULT_TARGET = self::GENERIC;
@@ -73,26 +84,26 @@ final class DefaultPrompts
         'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
         'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
-        'source-part' => ['kind' => self::SPECIAL, 'title' => 'Source: condense one part', 'file' => 'source-part.txt', 'targets' => self::GENERIC_ONLY],
-        'source-points' => ['kind' => self::SPECIAL, 'title' => 'Source: key points', 'file' => 'source-points.txt', 'targets' => self::GENERIC_ONLY],
-        'source-pie' => ['kind' => self::SPECIAL, 'title' => 'Source: problem, idea, evidence', 'file' => 'source-pie.txt', 'targets' => self::GENERIC_ONLY],
-        'source-definitions' => ['kind' => self::SPECIAL, 'title' => 'Source: definitions', 'file' => 'source-definitions.txt', 'targets' => self::GENERIC_ONLY],
-        'source-classification' => ['kind' => self::SPECIAL, 'title' => 'Source: classifications and staging', 'file' => 'source-classification.txt', 'targets' => self::GENERIC_ONLY],
-        'source-design' => ['kind' => self::SPECIAL, 'title' => 'Source: design and level of evidence', 'file' => 'source-design.txt', 'targets' => self::GENERIC_ONLY],
-        'source-limitations' => ['kind' => self::SPECIAL, 'title' => 'Source: limitations', 'file' => 'source-limitations.txt', 'targets' => self::GENERIC_ONLY],
-        'source-questions' => ['kind' => self::SPECIAL, 'title' => 'Source: questions it answers', 'file' => 'source-questions.txt', 'targets' => self::GENERIC_ONLY],
-        'ask-notebook' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook', 'file' => 'ask-notebook.txt', 'targets' => self::GENERIC_ONLY],
-        'notebook-terms' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook: search words', 'file' => 'notebook-terms.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
-        'studio-overview' => ['kind' => self::SPECIAL, 'title' => 'Studio: overview of the subject', 'file' => 'studio-overview.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-glossary' => ['kind' => self::SPECIAL, 'title' => 'Studio: glossary', 'file' => 'studio-glossary.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-faq' => ['kind' => self::SPECIAL, 'title' => 'Studio: questions and answers', 'file' => 'studio-faq.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-timeline' => ['kind' => self::SPECIAL, 'title' => 'Studio: timeline', 'file' => 'studio-timeline.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-compare' => ['kind' => self::SPECIAL, 'title' => 'Studio: one source\'s row of the comparison', 'file' => 'studio-compare.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-check' => ['kind' => self::SPECIAL, 'title' => 'Studio: check the page against its sources', 'file' => 'studio-check.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-template' => ['kind' => self::SPECIAL, 'title' => 'Studio: a report template', 'file' => 'studio-template.txt', 'targets' => self::GENERIC_ONLY],
-        'source-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Source: flashcards', 'file' => 'source-flashcards.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Studio: flashcards', 'file' => 'studio-flashcards.txt', 'targets' => self::GENERIC_ONLY],
-        'studio-audio' => ['kind' => self::SPECIAL, 'title' => 'Studio: the audio overview\'s script', 'file' => 'studio-audio.txt', 'targets' => self::GENERIC_ONLY],
+        'source-part' => ['kind' => self::SPECIAL, 'title' => 'Source: condense one part', 'file' => 'source-part.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-points' => ['kind' => self::SPECIAL, 'title' => 'Source: key points', 'file' => 'source-points.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-pie' => ['kind' => self::SPECIAL, 'title' => 'Source: problem, idea, evidence', 'file' => 'source-pie.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-definitions' => ['kind' => self::SPECIAL, 'title' => 'Source: definitions', 'file' => 'source-definitions.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-classification' => ['kind' => self::SPECIAL, 'title' => 'Source: classifications and staging', 'file' => 'source-classification.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-design' => ['kind' => self::SPECIAL, 'title' => 'Source: design and level of evidence', 'file' => 'source-design.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-limitations' => ['kind' => self::SPECIAL, 'title' => 'Source: limitations', 'file' => 'source-limitations.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-questions' => ['kind' => self::SPECIAL, 'title' => 'Source: questions it answers', 'file' => 'source-questions.txt', 'targets' => self::RESEARCH_ONLY],
+        'ask-notebook' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook', 'file' => 'ask-notebook.txt', 'targets' => self::RESEARCH_ONLY],
+        'notebook-terms' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook: search words', 'file' => 'notebook-terms.txt', 'model' => 'lite', 'targets' => self::RESEARCH_ONLY],
+        'studio-overview' => ['kind' => self::SPECIAL, 'title' => 'Studio: overview of the subject', 'file' => 'studio-overview.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-glossary' => ['kind' => self::SPECIAL, 'title' => 'Studio: glossary', 'file' => 'studio-glossary.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-faq' => ['kind' => self::SPECIAL, 'title' => 'Studio: questions and answers', 'file' => 'studio-faq.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-timeline' => ['kind' => self::SPECIAL, 'title' => 'Studio: timeline', 'file' => 'studio-timeline.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-compare' => ['kind' => self::SPECIAL, 'title' => 'Studio: one source\'s row of the comparison', 'file' => 'studio-compare.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-check' => ['kind' => self::SPECIAL, 'title' => 'Studio: check the page against its sources', 'file' => 'studio-check.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-template' => ['kind' => self::SPECIAL, 'title' => 'Studio: a report template', 'file' => 'studio-template.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Source: flashcards', 'file' => 'source-flashcards.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Studio: flashcards', 'file' => 'studio-flashcards.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-audio' => ['kind' => self::SPECIAL, 'title' => 'Studio: the audio overview\'s script', 'file' => 'studio-audio.txt', 'targets' => self::RESEARCH_ONLY],
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
         'create' => ['kind' => self::ACTION, 'title' => 'Create', 'file' => 'create.txt', 'targets' => self::RADIOLOGY_ONLY],
         'conclusion' => ['kind' => self::ACTION, 'title' => 'Conclusion', 'file' => 'conclusion.txt', 'targets' => self::RADIOLOGY_ONLY],
@@ -103,7 +114,7 @@ final class DefaultPrompts
         'rapno' => ['kind' => self::ACTION, 'title' => 'RAPNO', 'file' => 'rapno.txt', 'targets' => self::RADIOLOGY_ONLY],
         'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
         'system' => ['kind' => self::SYSTEM, 'title' => 'System prompt', 'file' => 'system.txt', 'targets' => self::RADIOLOGY_ONLY],
-        'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::BOTH],
+        'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::ALL],
     ];
 
     /**
@@ -160,7 +171,7 @@ final class DefaultPrompts
      * that exists, empty or not, is skipped.
      *
      * @param list<string>|null $only ids to make (null: all the target has)
-     * @param string $target self::RADIOLOGY (Romanian) or self::GENERIC (English)
+     * @param string $target self::RADIOLOGY (Romanian), self::GENERIC or self::RESEARCH (English)
      *
      * @throws InvalidArgumentException an unknown target
      *

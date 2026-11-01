@@ -31,10 +31,10 @@ final class AiPromptsInstallCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Makes the shipped example prompts pages of an AI profile (ai:profiles:<name>), skipping any page that is there already. Sends nothing to a model.',
-            usage: '--profile=<name> [--target=radiology|generic] [--only=<id,id>] [--actor=<username>] [--list] [--dry-run] [--json]',
+            usage: '--profile=<name> [--target=radiology|generic|research] [--only=<id,id>] [--actor=<username>] [--list] [--dry-run] [--json]',
             options: [
                 '--profile=<name>' => 'the profile to complete (a new name makes it); default: reports',
-                '--target=<t>' => 'generic (default: summary, tags, tags-review, commit, ask, grammar, in English, for ordinary pages) or radiology (every prompt but grammar, in Romanian, for reports)',
+                '--target=<t>' => 'generic (default: summary, tags, tags-review, commit, ask, grammar, in English, for ordinary pages), radiology (every prompt but grammar and the library\'s, in Romanian, for reports) or research (the library\'s: source analyses, Ask the notebook, Studio, flashcards, the audio script, in English, and a rail table naming ask and grammar, for the profile serving the library)',
                 '--only=<id,id>' => 'only these ids (summary, tags, ask-archive, table, …)',
                 '--actor=<username>' => 'author of the pages and of the audit line (default: cli)',
                 '--list' => 'show which shipped prompts the profile has and which it lacks; write nothing',

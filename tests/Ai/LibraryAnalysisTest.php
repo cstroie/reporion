@@ -252,7 +252,7 @@ final class LibraryAnalysisTest extends HttpTestCase
 
     public function testTheShippedProblemIdeaEvidencePromptIsAnAnalysisLikeTheOthers(): void
     {
-        $prompt = (string) file_get_contents(\dirname(__DIR__, 2) . '/resources/prompts/generic/source-pie.txt');
+        $prompt = (string) file_get_contents(\dirname(__DIR__, 2) . '/resources/prompts/research/source-pie.txt');
         $this->storage()->create('ai:profiles:wiki:special:source-pie', ['title' => 'source-pie', 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
 
         $view = Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('editor')]))->body;
