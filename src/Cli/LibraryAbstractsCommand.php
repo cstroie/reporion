@@ -27,7 +27,7 @@ final class LibraryAbstractsCommand extends PagesSummarizeCommand
             options: [
                 '--offline' => 'do not ask PubMed or CrossRef, even with the lookups on',
                 '--dry-run' => 'say what would be made; write nothing (the lookups are still asked, by identifier only)',
-                '--limit=<n>' => 'make at most n pages per run (the next run carries on)',
+                '--limit=<n>' => 'try at most n sources without an abstract page per run, which bounds the lookups too (the next run carries on)',
                 '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are system:librarian\'s (D41)',
                 '--json' => 'print the run report as JSON',
             ],

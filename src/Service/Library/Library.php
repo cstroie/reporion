@@ -601,8 +601,8 @@ final class Library
 
     /**
      * A proposed record completed from CrossRef (a DOI) and PubMed (a PMID, or the one PubMed has for
-     * the DOI), when the lookup is on: what they return replaces what was read from the file; only
-     * the identifier is sent. A failure leaves the record as it was.
+     * the DOI), when the lookup is on: what they return replaces what was read from the file, CrossRef's
+     * fields first but PubMed's abstract; only the identifier is sent. A failure leaves the record as it was.
      *
      * @param array<string, mixed> $csl
      *
@@ -631,6 +631,10 @@ final class Library
             if ($pubmed !== null) {
                 $found[] = 'pubmed';
                 $csl = ($crossref !== null ? $csl + $pubmed['csl'] : $pubmed['csl'] + $csl);
+                // PubMed's abstract over CrossRef's: structured, and seldom cut short (owner, 2026-11-01)
+                if (\is_string($pubmed['csl']['abstract'] ?? null) && trim($pubmed['csl']['abstract']) !== '') {
+                    $csl['abstract'] = $pubmed['csl']['abstract'];
+                }
                 $tags = $pubmed['tags'];
             }
         } catch (\RuntimeException) {
@@ -761,7 +765,10 @@ final class Library
     {
         try {
             return $this->abstracts->write($source, $actor, $found, $onBehalfOf);
-        } catch (\RuntimeException|InvalidArgumentException) {
+        } catch (\Throwable $e) {
+            // The source is made: its abstract is not, and library:abstracts makes it later
+            error_log(\sprintf('reporion: abstract not kept: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+
             return null;
         }
     }
@@ -798,8 +805,9 @@ final class Library
      * would be written is said and nothing is. $actor is the pseudouser that writes it
      * (`system:librarian`), $onBehalfOf the person who ran it.
      *
-     * @return array{pid: string, status: string, from: ?string}
-     *               status: `made`, `has` (it has one), `none` (no abstract found), `failed` (not written)
+     * @return array{pid: string, status: string, from: ?string, lookup: ?string}
+     *               status: `made`, `has` (it has one), `none` (no abstract found), `failed` (not written);
+     *               lookup: what the lookup did (Library::lookedUp(): `pubmed`, `none`, `failed`…), null when not asked
      *
      * @throws LibraryException INVALID (not a source)
      * @throws \Reporion\Exception\PageNotFoundException
@@ -810,7 +818,7 @@ final class Library
         if (!LibrarySource::isSource($page->frontmatter)) {
             throw new LibraryException(LibraryException::INVALID);
         }
-        $result = ['pid' => $page->pid, 'status' => 'has', 'from' => null];
+        $result = ['pid' => $page->pid, 'status' => 'has', 'from' => null, 'lookup' => null];
         try {
             $this->storage->read(Abstracts::pathFor($path));
 
@@ -821,6 +829,7 @@ final class Library
         if ($online && ($found === null || $found['from'] !== 'record')) {
             $csl = \is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : [];
             [$looked, , $how] = $this->lookedUp($csl);
+            $result['lookup'] = $how;
             $text = \is_string($looked['abstract'] ?? null) ? trim($looked['abstract']) : '';
             if ($how !== null && $how !== 'none' && $how !== 'failed' && preg_match_all('/[\p{L}\p{N}]+/u', $text) >= Abstracts::MIN_RECORD_WORDS && !self::holdsPatientData($text)) {
                 $found = ['text' => trim(mb_substr($text, 0, 10000)), 'from' => 'record'];

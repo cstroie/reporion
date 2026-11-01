@@ -105,6 +105,19 @@ final class AbstractsTest extends StorageTestCase
         self::assertSame('text', $this->storage->read(Abstracts::pathFor($other->path))->frontmatter['abstract']['from']);
     }
 
+    public function testPubmedsAbstractWinsOverCrossrefsWhenBothAnswer(): void
+    {
+        $pubmed = self::pubmed(60);
+        $both = static fn (string $url): ?string => str_contains($url, 'crossref')
+            ? '{"message":{"type":"journal-article","title":["A made-up study of test lesions"],"abstract":"<jats:p>' . self::words(70, 'crossref') . '</jats:p>"}}'
+            : $pubmed($url);
+
+        [$source] = $this->library($both)->add(self::article(self::words(150, 'opening')), 'study.md', self::owner(), 'owner');
+
+        self::assertStringStartsWith('PURPOSE: aim', $source->frontmatter['csl']['abstract'], 'the record keeps PubMed\'s');
+        self::assertStringStartsWith('PURPOSE: aim', $this->storage->read(Abstracts::pathFor($source->path))->body);
+    }
+
     public function testAnArticleWithNoAbstractItsTextMarksPlainlyGetsNone(): void
     {
         [$source] = $this->library()->add(self::article(self::words(150, 'opening')), 'study.md', self::owner(), 'owner');

@@ -217,7 +217,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    revision; the source's card lists them for any reader of the source (*Kept from the assistant*, rendered by the server, *older text* when the
    source's text changed since). Still never written into the source, never read as one (Ask and Studio read `library:{key}` only).
    *Abstracts, 2026-11-01 (owner's request):* each source's abstract is kept as `library:{key}:abstract` (FORMATS §3o, `Service\Library\Abstracts`):
-   the record's `csl.abstract` (PubMed, CrossRef, an import; 40 words at least), else the article's own (`Support\SourceAbstract`: a plain `Abstract` /
+   the record's `csl.abstract` (PubMed's over CrossRef's when both answer, or an import; 40 words at least), else the article's own (`Support\SourceAbstract`: a plain `Abstract` /
    `Summary` / `Rezumat` heading in the first quarter, 80–500 words), made as the source is added and by `bin/reporion library:abstracts` (Admin →
    Maintenance) for older ones, as `system:librarian` (D41). The one-line summary, *Problem, idea, evidence* and *Key points* read it instead of the
    article (one request, so a source too long to analyse still has them; the response and the kept analysis say `from: abstract`); the other

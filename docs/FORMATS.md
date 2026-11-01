@@ -646,7 +646,7 @@ title: "Abstract: A made-up study"
 visibility: private
 abstract:
   of: 01JB…                  # the source's pid
-  from: record               # record: the record's csl.abstract (PubMed, CrossRef, an import or a hand edit; at least 40 words); text: the article's own
+  from: record               # record: the record's csl.abstract (PubMed's over CrossRef's, an import or a hand edit; at least 40 words); text: the article's own
   at: 2026-11-01T10:00:00+02:00
 ```
 

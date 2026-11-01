@@ -19,7 +19,7 @@ use RuntimeException;
  * else the article's own, when its text marks it plainly. No AI. Each page one revision by
  * `system:librarian` (D41), audited on behalf of whoever ran it. Check says what would be made
  * and writes nothing (it does ask the lookups, as library:relookup's dry run). --limit counts
- * the pages made. The run report names sources by pid; the progress line by path (a library key names no patient).
+ * the sources tried (those with no abstract page), so it bounds the lookups too. The run report names sources by pid; the progress line by path (a library key names no patient).
  */
 final class LibraryAbstractsTask implements MaintenanceTask, ProgressAware
 {
@@ -61,18 +61,20 @@ final class LibraryAbstractsTask implements MaintenanceTask, ProgressAware
         $limit = (int) $options['limit'];
         $online = $options['offline'] !== true && $this->library->lookupOn();
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'made' : 'would_make', 'from_record', 'from_text', 'has', 'none', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'made' : 'would_make', 'from_record', 'from_text', 'has', 'none', 'failed', 'lookup_failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
         $paths = $this->library->sourcePaths();
-        $made = 0;
+        $tried = 0;
         foreach ($paths as $n => $path) {
-            if ($limit > 0 && $made >= $limit) {
+            if ($limit > 0 && $tried >= $limit) {
                 if ($apply) {
                     $report->count('remaining', \count($paths) - $n);
                 }
                 break;
             }
+            // Up to three lookups a source, each with its own timeout
+            @set_time_limit(60);
             $this->tell('start', ['n' => $n + 1, 'total' => \count($paths), 'label' => $path]);
             try {
                 $done = $this->library->fillAbstract($path, SystemActor::LIBRARIAN, $online, !$apply, $actor);
@@ -81,9 +83,15 @@ final class LibraryAbstractsTask implements MaintenanceTask, ProgressAware
                 $this->tell('done', ['status' => 'unreadable']);
                 continue;
             }
-            $this->tell('done', ['status' => $done['status'] . ($done['from'] !== null ? ' (' . $done['from'] . ')' : '')]);
+            $this->tell('done', ['status' => $done['status'] . ($done['from'] !== null ? ' (' . $done['from'] . ')' : '') . ($done['lookup'] === 'failed' ? ', lookup failed' : '')]);
+            // Not reached (or throttled): the text's abstract or none was taken, and another run may find the record's
+            if ($done['lookup'] === 'failed') {
+                $report->count('lookup_failed');
+            }
+            if ($done['status'] !== 'has') {
+                ++$tried;
+            }
             if ($done['status'] === 'made') {
-                ++$made;
                 $report->count($apply ? 'made' : 'would_make');
                 $report->count('from_' . $done['from']);
                 $report->item($done['pid'], null, $apply ? 'made' : 'would_make', 'from ' . $done['from']);
@@ -93,6 +101,9 @@ final class LibraryAbstractsTask implements MaintenanceTask, ProgressAware
                     $report->item($done['pid'], null, 'failed', 'not written');
                 }
             }
+        }
+        if (($report->summary()['lookup_failed'] ?? 0) > 0) {
+            $report->note('PubMed or CrossRef did not answer for some sources (not reached, or too many requests): run it again later for their records\' abstracts.');
         }
         if ($online === false && $options['offline'] !== true) {
             $report->note('The online lookups are off (Admin → Settings → Library): only the records and the articles\' own texts were read.');

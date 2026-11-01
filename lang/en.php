@@ -828,7 +828,7 @@ return [
     'admin.maint.task.library:abstracts.confirm' => 'Write the abstract pages, as system:librarian on my behalf',
     'admin.maint.task.library:abstracts.apply' => 'Make abstracts',
     'admin.maint.opt.offline'  => 'Do not ask PubMed or CrossRef',
-    'admin.maint.opt.limit_abstracts' => 'At most this many abstracts per run',
+    'admin.maint.opt.limit_abstracts' => 'At most this many sources without an abstract per run',
     'admin.maint.task.index:vectors.title' => 'Vectors for Similar reports',
     'admin.maint.task.index:vectors.desc' => 'Makes the embedding of each report: its conclusion, de-identified: with the one embedding model named in Admin → AI, and keeps it in the index for Similar reports. Reports whose text and model are unchanged are not asked again; vectors of deleted reports are dropped. Writes no page. Check counts what would be sent and sends nothing.',
     'admin.maint.task.index:vectors.check' => 'Check',

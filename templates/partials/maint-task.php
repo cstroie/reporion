@@ -31,7 +31,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php elseif ($name === 'library:abstracts'): ?>
 <div class="wk-maint-opts">
 <div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit_abstracts')) ?>
-<input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="0"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="20"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
 <label class="radio"><input type="checkbox" name="offline" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.offline')) ?></label>
 </div>
 <?php elseif ($name === 'pages:summarize' || $name === 'pages:tag'): ?>
