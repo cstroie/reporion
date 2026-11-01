@@ -164,6 +164,11 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <input class="input" id="ai-speech-model" type="text" name="ai_speech_model" value="<?= $e((string) ($speechModel ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_model_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_model_help')) ?></small></label></div>
 <div class="field"><label for="ai-speech-voices"><?= $e(t('admin.ai.speech_voices')) ?>
 <input class="input" id="ai-speech-voices" type="text" name="ai_speech_voices" value="<?= $e((string) ($speechVoices ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_voices_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_voices_help')) ?></small></label></div>
+<div class="field"><label for="ai-speech-language"><?= $e(t('admin.ai.speech_language')) ?>
+<select class="input" id="ai-speech-language" name="ai_speech_language">
+<option value=""<?= ($speechLanguage ?? '') === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.speech_language_page')) ?></option>
+<?php foreach (\Reporion\Service\Ai\Context::LANGUAGES as $code => $name): ?><option value="<?= $e($code) ?>"<?= ($speechLanguage ?? '') === $code ? ' selected' : '' ?>><?= $e($name) ?></option><?php endforeach; ?>
+</select><small><?= $e(t('admin.ai.speech_language_help')) ?></small></label></div>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

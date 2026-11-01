@@ -94,6 +94,8 @@ final class InstanceSettings
         'ai.speech_server' => 'slot_or_none',
         'ai.speech_model' => 'model',
         'ai.speech_voices' => 'voices',
+        // The language the audio overview's script is written in, the voices' own (2026-11-01; '' the notebook's)
+        'ai.speech_language' => 'language_or_none',
         // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
         // how often and how long they are kept. The ssh key is a path to a file, never the key itself
         'backup.enabled' => 'bool',
@@ -438,6 +440,7 @@ final class InstanceSettings
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'never' => $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
+            'language_or_none' => $text === '' || \array_key_exists($text, \Reporion\Service\Ai\Context::LANGUAGES) ? $text : $fail(),
             'slot_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail()),
             // Two voice names, comma-separated (the first host, the second); blank: the server's default twice
             'voices' => $text === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}(\s*,\s*[A-Za-z0-9][A-Za-z0-9._-]{0,39})?$/', $text) === 1 ? $text : $fail(),

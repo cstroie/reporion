@@ -186,6 +186,17 @@ final class StudioTest extends HttpTestCase
 
         self::assertStringContainsString('data-studio-task="audio"', $view(), 'settings.yaml reaches the speech model');
         self::assertSame(['host-a', 'host-b'], \Reporion\Service\Ai\Speaker::fromConfig(Kernel::withInstanceSettings($this->config))?->voices);
+
+        // The script's language, the voices' own: Admin → AI's, a notebook's speech_language over it
+        self::assertSame(422, $post('ai_speech_server=1&ai_speech_model=tts-test&ai_speech_language=xx')->status);
+        self::assertSame(302, $post('ai_speech_server=1&ai_speech_model=tts-test&ai_speech_language=en')->status);
+        self::assertSame('en', Kernel::withInstanceSettings($this->config)['ai']['speech_language']);
+        self::assertStringContainsString('<option value="en" selected>English</option>', Kernel::boot($this->config)->handle(new Request('GET', '/admin/ai', cookies: ['reporion' => $this->cookie('owner')]))->body);
+        $studio = \Reporion\Service\Library\Studio::class;
+        self::assertSame('en', $studio::audioLanguage(['language' => 'ro'], 'en'));
+        self::assertSame('fr', $studio::audioLanguage(['language' => 'ro', 'speech_language' => 'FR'], 'en'), 'the page\'s over the instance\'s');
+        self::assertSame('en', $studio::audioLanguage(['language' => 'ro', 'speech_language' => 'klingon'], 'en'), 'an unknown one passed over');
+        self::assertSame('ro', $studio::audioLanguage(['language' => 'ro'], ''), 'none set: the notebook\'s, as before');
     }
 
     public function testAudioThatDoesNotJoinKeepsTheScriptAndSaysSo(): void

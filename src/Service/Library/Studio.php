@@ -82,7 +82,28 @@ final class Studio
         private readonly int $contextTokens,
         // The table's heading for a notebook with no `language` (`library.language`)
         private readonly string $defaultLanguage = 'ro',
+        // The audio overview's script language, the voices' (`ai.speech_language`; '' the notebook's)
+        private readonly string $speechLanguage = '',
     ) {
+    }
+
+    /**
+     * The language the audio overview's script is written in (2026-11-01): the voices decide what
+     * is pronounced right, so the notebook's `speech_language`, else Admin → AI's
+     * (`ai.speech_language`), else the notebook's `language` (else the library's); a code
+     * Context::LANGUAGES does not know is passed over
+     *
+     * @param array<string, mixed> $frontmatter the notebook's
+     */
+    public static function audioLanguage(array $frontmatter, string $instance): mixed
+    {
+        foreach ([$frontmatter['speech_language'] ?? null, $instance] as $code) {
+            if (\is_string($code) && \array_key_exists(strtolower(trim($code)), \Reporion\Service\Ai\Context::LANGUAGES)) {
+                return strtolower(trim($code));
+            }
+        }
+
+        return $frontmatter['language'] ?? null;
     }
 
     /**
@@ -223,7 +244,7 @@ final class Studio
         if ($action === null) {
             throw new AiException('not_configured', 'No prompt page for this Studio task');
         }
-        $language = $notebook->frontmatter['language'] ?? null;
+        $language = $task === 'audio' ? self::audioLanguage($notebook->frontmatter, $this->speechLanguage) : ($notebook->frontmatter['language'] ?? null);
         $title = PageTitle::of($notebook->frontmatter, $notebook->body);
         $budget = SourceChunks::budget($this->contextTokens);
         $step = 0;

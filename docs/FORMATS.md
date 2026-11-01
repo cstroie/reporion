@@ -219,6 +219,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   speech_server: 2                   # the audio overview (docs/library.md, phase 8): a server slot with an OpenAI-compatible /audio/speech; blank: no audio overview
   speech_model: 'kokoro'             # its speech model's name
   speech_voices: 'af_heart, am_michael'  # two voices: the first host, the second (they must speak the notebook's language)
+  speech_language: ''               # the script's language, the voices' own (ro, en, fr, de, es, it, hu; '' the notebook's `language`); a notebook's frontmatter `speech_language` wins (2026-11-01)
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5
   embed_common_min: 5                # a conclusion this many reports share word for word is a stock one, left out; 0: off; null or absent: 5
   servers:                           # up to six OpenAI-compatible servers (phase 33a)
@@ -475,6 +476,11 @@ namespace is routed to (`Service\Ai\Actions`); the server stays the namespace's,
 features (Ask the notebook, Studio, analyses) follow the library namespace whatever the key says
 (§13). Set by hand in raw mode; the Metadata view lists it read only. The index keeps it in
 `meta_json` only.
+
+A notebook's `speech_language: en` (2026-11-01) is the language its audio overview's script is
+written in, over Admin → AI's `ai.speech_language` and the page's `language` (`Studio::audioLanguage()`):
+a speech model pronounces a text in its voice's language (Kokoro's `af_`/`am_` voices are English
+and it has no Romanian one), so the script follows the voices, not the notebook.
 
 ## 3k. A page's title is its first heading (2026-10-13; was "`title` from the first heading", 2026-10-10)
 
