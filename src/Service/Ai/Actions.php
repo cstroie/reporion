@@ -399,12 +399,11 @@ final class Actions
     {
         if (!\array_key_exists($path, $this->pageProfiles)) {
             $this->pageProfiles[$path] = null;
-            try {
-                $named = $this->storage->read($path)->frontmatter['prompts'] ?? null;
-            } catch (RuntimeException|\InvalidArgumentException) {
-                // No page there (a namespace, a page not saved yet): its namespace's
-                $named = null;
-            }
+            // From the index row's frontmatter (meta_json): one lookup, no history read on a page view;
+            // no row (a namespace, a page not saved yet): its namespace's
+            $row = $this->index->findByPath($path, $this->instance);
+            $meta = $row !== null ? json_decode((string) ($row['meta_json'] ?? ''), true) : null;
+            $named = \is_array($meta) ? ($meta['prompts'] ?? null) : null;
             if (\is_string($named) && preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $named) === 1
                 && ($this->page(self::NS . ':' . $named) !== null || \in_array($named, $this->profiles(), true))) {
                 $this->pageProfiles[$path] = $named;
