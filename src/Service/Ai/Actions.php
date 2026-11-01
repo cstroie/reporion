@@ -32,6 +32,14 @@ use RuntimeException;
  * their model is the page's `model:`, and they run with no system prompt. Pages outside the profile's namespaces use the
  * fallback profile, if one is set (`ai.fallback_profile`).
  *
+ * Since 2026-11-01 (the `research` profile): the library's features
+ * (self::LIBRARY) take the profile and server of the library namespace
+ * wherever their page is, since a notebook may be any page; a page may name
+ * its prompts' profile in its frontmatter (`prompts: research`: the prompts
+ * only, never the server); and a prompt page a profile lacks (a rail row's or
+ * a reserved one, not the table or the system prompt) is the fallback
+ * profile's, when one is set.
+ *
  * Prompts are the instance's configuration, like its settings: they are
  * read whatever the caller's grants (an editor under reports: need not
  * read ai:); who may *change* them is the ordinary page rule.
@@ -92,10 +100,18 @@ final class Actions
     /** @var array<string, list<Action>> forPage()'s actions, by profile and server */
     private array $byProfile = [];
 
+    /** @var array<string, ?string> a page's own `prompts:` profile, by path (the value only: a maintenance run asks for every report) */
+    private array $pageProfiles = [];
+
+    /** @var ?list<string> profiles(), asked once */
+    private ?array $profileNames = null;
+
     public function __construct(
         private readonly AiConfig $config,
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        /** Where the library's features take their profile and server from (Kernel::libraryNamespace()) */
+        private readonly string $libraryNamespace = 'library',
     ) {
         $this->instance = new User('instance', '', true, [], true, '', '');
     }
@@ -103,8 +119,11 @@ final class Actions
     /** @return list<Action> the actions for a page, in the profile's own table order */
     public function forPage(string $path): array
     {
-        $profile = $this->config->profileFor($path);
-        if (!$this->config->isConfigured() || $profile === null) {
+        if (!$this->config->isConfigured()) {
+            return [];
+        }
+        $profile = $this->profileOf($path);
+        if ($profile === null) {
             return [];
         }
 
@@ -141,13 +160,15 @@ final class Actions
             if ($id === self::SYSTEM || $id === self::SPECIAL_NS || \in_array($id, self::SPECIAL, true)) {
                 continue;
             }
-            $prompt = $this->body($ns . ':' . $id);
-            if ($prompt === null) {
+            // The profile's own prompt page, else the fallback profile's
+            $at = $this->promptPage($profile, $id);
+            if ($at === null) {
                 continue;
             }
+            $prompt = (string) $this->body($at);
             $result = strtolower($row['result']);
             // The table's Model cell, else the prompt page's own `model:`
-            $own = $this->pageSettings($ns . ':' . $id);
+            $own = $this->pageSettings($at);
             $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $own['model']);
             $actions[] = new Action(
                 $id,
@@ -156,7 +177,8 @@ final class Actions
                 $row['icon'],
                 \in_array($result, Action::RESULTS, true) ? $result : 'show',
                 $prompt,
-                $this->systemFor($ns, $system, $id),
+                // The appendage of the profile the prompt came from
+                $this->systemFor(self::under($at, $id), $system, $id),
                 $model['tier'],
                 $model['server'] ?? $server,
                 $own['max_tokens'],
@@ -179,7 +201,7 @@ final class Actions
      */
     public function profiles(): array
     {
-        return array_values(array_map(static fn (array $row): string => $row['name'], $this->index->listSubnamespaces(self::NS, $this->instance)));
+        return $this->profileNames ??= array_values(array_map(static fn (array $row): string => $row['name'], $this->index->listSubnamespaces(self::NS, $this->instance)));
     }
 
     /**
@@ -221,7 +243,10 @@ final class Actions
      * `default`'s it falls back to); and the profile's other pages, which
      * nothing reads as an action. Reads the same pages forPage() does.
      *
-     * @return array{path: string, table: bool, rail: list<array<string, mixed>>, reserved: list<array{id: string, path: string, present: bool}>, system: array{path: string, present: bool, fallback: bool}, other: list<array{id: string, label: string, path: string}>}
+     * A prompt page the profile lacks but the fallback profile has counts as
+     * present, with `from` naming the fallback.
+     *
+     * @return array{path: string, table: bool, rail: list<array<string, mixed>>, reserved: list<array{id: string, path: string, present: bool, from: string}>, system: array{path: string, present: bool, fallback: bool}, other: list<array{id: string, label: string, path: string}>}
      */
     public function overview(string $profile): array
     {
@@ -235,21 +260,25 @@ final class Actions
                 continue;
             }
             $named[$row['id']] = true;
+            $at = $this->promptPage($profile, $row['id']);
             $rail[] = [
                 'break' => false,
                 'id' => $row['id'],
                 'label' => $row['label'] !== '' ? $row['label'] : $row['id'],
                 'result' => \in_array(strtolower($row['result']), Action::RESULTS, true) ? strtolower($row['result']) : 'show',
                 'model' => $row['model'],
-                'path' => $ns . ':' . $row['id'],
-                'present' => $this->body($ns . ':' . $row['id']) !== null,
-                'ownSystem' => $this->body($ns . ':' . self::SYSTEM . ':' . $row['id']) !== null,
+                'path' => $at ?? $ns . ':' . $row['id'],
+                'present' => $at !== null,
+                // The fallback profile's page serves it: that profile's name, else ''
+                'from' => $this->fromFallback($ns, $at),
+                'ownSystem' => $this->body(($at !== null ? self::under($at, $row['id']) : $ns) . ':' . self::SYSTEM . ':' . $row['id']) !== null,
             ];
         }
         $reserved = [];
         foreach (self::SPECIAL as $id) {
             $named[self::SPECIAL_NS . ':' . $id] = true;
-            $reserved[] = ['id' => $id, 'path' => $this->specialPath($ns, $id), 'present' => $this->body($this->specialPath($ns, $id)) !== null];
+            $at = $this->promptPage($profile, self::SPECIAL_NS . ':' . $id);
+            $reserved[] = ['id' => $id, 'path' => $at ?? $this->specialPath($ns, $id), 'present' => $at !== null, 'from' => $this->fromFallback($ns, $at)];
         }
         $systemPresent = $this->body($ns . ':' . self::SYSTEM) !== null;
         $other = [];
@@ -297,19 +326,27 @@ final class Actions
      */
     public function special(string $path, string $id): ?Action
     {
-        if (!\in_array($id, self::SPECIAL, true)) {
+        return $this->reserved($path, $id, true);
+    }
+
+    /** special(), with or without the fallback profile's page when the profile has none */
+    private function reserved(string $path, string $id, bool $fallback): ?Action
+    {
+        if (!\in_array($id, self::SPECIAL, true) || !$this->config->isConfigured()) {
             return null;
         }
-        $profile = $this->config->profileFor($path);
-        if (!$this->config->isConfigured() || $profile === null) {
+        // The library's features follow the library namespace's profile and server wherever they run
+        $library = \in_array($id, self::LIBRARY, true);
+        $serving = $library ? $this->libraryNamespace : $path;
+        $profile = $library ? $this->config->profileFor($serving) : $this->profileOf($path);
+        if ($profile === null) {
             return null;
         }
-        $ns = self::NS . ':' . $profile;
-        $at = $this->specialPath($ns, $id);
-        $prompt = $this->body($at);
-        if ($prompt === null) {
+        $at = $this->promptPage($profile, self::SPECIAL_NS . ':' . $id, $fallback);
+        if ($at === null) {
             return null;
         }
+        $prompt = (string) $this->body($at);
 
         $own = $this->pageSettings($at);
         $commit = $id === 'commit';
@@ -317,29 +354,86 @@ final class Actions
         $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing' || $id === 'ask-expand') ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
-        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'] ?? $this->config->serverFor($path), $own['max_tokens'], timeout: $timeout);
+        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'] ?? $this->config->serverFor($serving), $own['max_tokens'], timeout: $timeout);
     }
 
     /**
      * A reserved prompt about no one page (`tags-review`, `ask-archive`):
      * the one of the profile serving $ns, else of the first of its
      * sub-namespaces (`reports:mri`, …) whose profile has it: an instance
-     * may map only those (ai.profile_map)
+     * may map only those (ai.profile_map); the fallback profile's page only
+     * when none of them has one of its own
      */
     public function specialUnder(string $ns, string $id): ?Action
     {
-        $action = $this->special($ns, $id);
+        $action = $this->reserved($ns, $id, false);
         if ($action !== null) {
             return $action;
         }
         foreach ($this->index->listSubnamespaces($ns, $this->instance) as $row) {
-            $action = $this->special($ns . ':' . $row['name'], $id);
+            $action = $this->reserved($ns . ':' . $row['name'], $id, false);
             if ($action !== null) {
                 return $action;
             }
         }
 
-        return null;
+        return $this->reserved($ns, $id, true);
+    }
+
+    /**
+     * The profile whose prompts serve a page: the one its frontmatter names
+     * (`prompts:`), when that is a profile there is, else its namespace's
+     * (AiConfig::profileFor())
+     */
+    private function profileOf(string $path): ?string
+    {
+        if (!\array_key_exists($path, $this->pageProfiles)) {
+            $this->pageProfiles[$path] = null;
+            try {
+                $named = $this->storage->read($path)->frontmatter['prompts'] ?? null;
+            } catch (RuntimeException|\InvalidArgumentException) {
+                // No page there (a namespace, a page not saved yet): its namespace's
+                $named = null;
+            }
+            if (\is_string($named) && preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $named) === 1
+                && ($this->page(self::NS . ':' . $named) !== null || \in_array($named, $this->profiles(), true))) {
+                $this->pageProfiles[$path] = $named;
+            }
+        }
+
+        return $this->pageProfiles[$path] ?? $this->config->profileFor($path);
+    }
+
+    /**
+     * The page holding a profile's prompt `{rel}` (`grammar`,
+     * `special:summary`): its own, else, with $fallback, the fallback
+     * profile's when that is another profile; null when neither has text
+     */
+    private function promptPage(string $profile, string $rel, bool $fallback = true): ?string
+    {
+        $own = self::NS . ':' . $profile . ':' . $rel;
+        if ($this->body($own) !== null) {
+            return $own;
+        }
+        $other = $this->config->fallbackProfile;
+        if (!$fallback || $other === '' || $other === $profile) {
+            return null;
+        }
+        $there = self::NS . ':' . $other . ':' . $rel;
+
+        return $this->body($there) !== null ? $there : null;
+    }
+
+    /** The namespace a prompt page found for $id sits in (`ai:profiles:{profile}`) */
+    private static function under(string $at, string $id): string
+    {
+        return substr($at, 0, -\strlen(':' . $id));
+    }
+
+    /** The fallback profile's name when $at, the prompt page found, is not under $ns, else '' */
+    private function fromFallback(string $ns, ?string $at): string
+    {
+        return $at !== null && !str_starts_with($at, $ns . ':') ? $this->config->fallbackProfile : '';
     }
 
     /** The page of a reserved prompt under a profile's namespace */

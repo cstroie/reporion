@@ -363,7 +363,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
+        return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index, self::libraryNamespace($config)), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
     }
 
     /**
@@ -376,7 +376,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), $aiConfig->longestTimeout());
+        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index, self::libraryNamespace($config)), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), $aiConfig->longestTimeout());
     }
 
     /**
@@ -389,7 +389,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new TagReviewTask($index, new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
+        return new TagReviewTask($index, new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), new AiActions($aiConfig, $storage, $index, self::libraryNamespace($config)), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
     }
 
     /**
@@ -535,7 +535,7 @@ final class Kernel
         $references = new References($storage, $index, $render, $templatePages);
         // The AI assistant (phase 15): off until configured (D15)
         $aiConfig = AiConfig::fromConfig($config);
-        $aiActions = new AiActions($aiConfig, $storage, $index);
+        $aiActions = new AiActions($aiConfig, $storage, $index, self::libraryNamespace($config));
         // Similar reports (phase 34e): the one embedding model, when one is set up
         $embedModel = Embedder::fromConfig($config)?->model;
         // A report's vector: none (null), made from its text as it is now (true), or from an older one (false)
