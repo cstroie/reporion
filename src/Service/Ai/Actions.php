@@ -130,11 +130,16 @@ final class Actions
         // The namespace's server (ai.server_map) for the actions whose Model cell names none
         $server = $this->config->serverFor($path);
 
-        return $this->byProfile[$profile . '|' . ($server ?? '')] ??= $this->build($profile, $server);
+        // A server a row or a prompt page names applies only where the namespace's routing chose
+        // the profile and the page is its own: a borrowed prompt (`prompts:`, the fallback's page)
+        // never moves the page's text to another server
+        $routed = $profile === $this->config->profileFor($path);
+
+        return $this->byProfile[$profile . '|' . ($server ?? '') . '|' . (int) $routed] ??= $this->build($profile, $server, $routed);
     }
 
-    /** @return list<Action> a profile's rail actions, in its table's order, on $server unless a row names its own */
-    private function build(string $profile, ?string $server): array
+    /** @return list<Action> a profile's rail actions, in its table's order, on $server unless a row names its own (only when $routed) */
+    private function build(string $profile, ?string $server, bool $routed = true): array
     {
         $ns = self::NS . ':' . $profile;
         $index = $this->body($ns);
@@ -170,6 +175,7 @@ final class Actions
             // The table's Model cell, else the prompt page's own `model:`
             $own = $this->pageSettings($at);
             $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $own['model']);
+            $named = $routed && ($row['model'] !== '' || str_starts_with($at, $ns . ':'));
             $actions[] = new Action(
                 $id,
                 $row['label'] !== '' ? $row['label'] : $id,
@@ -180,7 +186,7 @@ final class Actions
                 // The appendage of the profile the prompt came from
                 $this->systemFor(self::under($at, $id), $system, $id),
                 $model['tier'],
-                $model['server'] ?? $server,
+                $named ? ($model['server'] ?? $server) : $server,
                 $own['max_tokens'],
                 $break !== null,
                 $own['timeout'],
@@ -354,7 +360,11 @@ final class Actions
         $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing' || $id === 'ask-expand') ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
-        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'] ?? $this->config->serverFor($serving), $own['max_tokens'], timeout: $timeout);
+        // A server the page names only when it is the routed profile's own page: a borrowed one
+        // (`prompts:`, the fallback's) runs on the namespace's server
+        $named = $profile === $this->config->profileFor($serving) && str_starts_with($at, self::NS . ':' . $profile . ':');
+
+        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], ($named ? $model['server'] : null) ?? $this->config->serverFor($serving), $own['max_tokens'], timeout: $timeout);
     }
 
     /**

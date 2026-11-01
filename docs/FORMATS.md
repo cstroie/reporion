@@ -1236,8 +1236,9 @@ has none).
   before. A page's `prompts:` does not change them.
 - A prompt page a profile lacks (2026-11-01): a rail row whose own page `{profile}:{id}` is missing,
   or a reserved prompt `{profile}:special:{id}`, is the fallback profile's (`ai.fallback_profile`)
-  when that profile has it, with that page's `model:`, `timeout:`, `max_tokens:` and its own
-  `system:{id}` appendage; with no fallback it stays missing. **This applies to every profile at
+  when that profile has it, with that page's `model:` alias, `timeout:`, `max_tokens:` and its own
+  `system:{id}` appendage, but never a server it names (`#2:lite`): a borrowed prompt runs on the
+  page's namespace's server, as does a table chosen with `prompts:`; with no fallback it stays missing. **This applies to every profile at
   once**: a reports profile without `commit` now writes revision notes with the fallback's
   `commit` (likewise Summarize, Suggest tags); an empty page is as absent as none, so to keep a
   feature off remove the fallback's page or set no fallback. The table page (the rail is the profile's own) and the system prompt (own,

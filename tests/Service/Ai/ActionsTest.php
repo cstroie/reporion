@@ -385,6 +385,24 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['', true], [$reserved['ask-notebook']['from'], $reserved['ask-notebook']['present']]);
     }
 
+    public function testABorrowedPromptNeverRunsOnTheServerItNames(): void
+    {
+        $this->storage->create('ai:profiles:wiki:special:commit', ['visibility' => 'private', 'model' => '#2:lite'], "Note it.\n", 'owner');
+        $this->storage->create('ai:profiles:wiki:ask', ['visibility' => 'private', 'model' => '#2:lite'], "Ask.\n", 'owner');
+        $this->table('wiki', 'ask');
+        $this->table('reports', 'ask');
+        $this->storage->create('ai:profiles:other:grammar', ['visibility' => 'private'], "Fix.\n", 'owner');
+        $this->storage->create('ai:profiles:other', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| grammar | Grammar | | | replace | #2:lite |\n", 'owner');
+        $this->storage->create('reports:mri:x', ['visibility' => 'private', 'prompts' => 'other'], "Raport.\n", 'owner');
+        $actions = new Actions($this->routed(['profile_map' => ['reports' => 'reports'], 'fallback_profile' => 'wiki']), $this->storage, $this->index);
+
+        self::assertNull($actions->special('reports:ct:y', 'commit')?->server, 'the fallback\'s commit on reports\' own server');
+        self::assertSame('lite', $actions->special('reports:ct:y', 'commit')->model);
+        self::assertNull($actions->forPage('reports:ct:y')[0]->server, 'the fallback\'s ask page likewise');
+        self::assertNull($actions->forPage('reports:mri:x')[0]->server, 'nor a table a page chose with prompts:');
+        self::assertSame('#2', $actions->special('docs:howto', 'commit')?->server, 'where the fallback serves, its own page names its server');
+    }
+
     public function testAPromptAboutNoPageTakesASubnamespacesOwnBeforeTheFallbacks(): void
     {
         $this->storage->create('ai:profiles:wiki:special:tags-review', ['visibility' => 'private'], "Generic review.\n", 'owner');

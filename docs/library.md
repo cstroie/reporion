@@ -227,7 +227,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `assets/js/notebook-studio.js`), the same gate (an editor of the page and of the library, never a report or a page naming a
    patient), one button per task whose prompt page the serving profile has: seven reserved prompts `studio-overview` (the
    systematization), `studio-glossary`, `studio-faq`, `studio-timeline`, `studio-compare`, `studio-check`, `studio-template`
-   (generic target, D15 amended). The sources are read under the caller (`NotebookAsk::sources()`), the answer is in the notebook's
+   (generic target, the research target since 2026-11-01; D15 amended). The sources are read under the caller (`NotebookAsk::sources()`), the answer is in the notebook's
    `language` and cites `[@key]`; citations of keys not sent are taken out; shown with Copy, rendered by the server, **never written**.
    *As built:* overview, glossary, FAQ, timeline and template send the notebook and its sources whole when they fit
    `library.context_tokens`, else each text longer than its share is condensed part by part (`source-part`, in the notebook's
