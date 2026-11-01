@@ -157,6 +157,22 @@ final class AbstractsTest extends StorageTestCase
 
         self::assertSame($source->pid, $this->storage->read('library:renamed2024:abstract')->frontmatter['abstract']['of']);
         self::assertStringContainsString('"with":"abstract"', $this->audited());
+
+        // The whole subnamespace follows the source's key, pages written by hand and deeper ones too
+        $this->storage->create('library:renamed2024:notes', ['visibility' => 'private'], "Mine.\n", 'owner');
+        $this->storage->create('library:renamed2024:notes:deep', ['visibility' => 'private'], "Deeper.\n", 'owner');
+        $this->storage->create('library:renamed2024x', ['visibility' => 'private'], "A neighbour.\n", 'owner');
+        $again = $moves->move($moved->path, 'library:final2024', 'owner')['moved'];
+        self::assertSame("Mine.\n", $this->storage->read('library:final2024:notes')->body);
+        self::assertSame("Deeper.\n", $this->storage->read('library:final2024:notes:deep')->body);
+        self::assertSame($source->pid, $this->storage->read('library:final2024:abstract')->frontmatter['abstract']['of']);
+        self::assertSame("A neighbour.\n", $this->storage->read('library:renamed2024x')->body, 'a key that only starts the same stays');
+        self::assertStringContainsString('"with":"page"', $this->audited());
+        $moves->move($again->path, $moved->path, 'owner');
+        foreach (['library:final2024:notes:deep', 'library:final2024:notes'] as $child) {
+            $this->storage->delete($moved->path . substr($child, \strlen('library:final2024')), 'owner');
+        }
+
         $this->storage->delete($moved->path, 'owner');
         self::assertSame(1, (new Analyses($this->storage))->trashWith($moved->path, 'owner', $this->audit));
         $this->expectException(PageNotFoundException::class);

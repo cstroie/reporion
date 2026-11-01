@@ -41,8 +41,30 @@ final class PageMoves
     }
 
     /**
-     * The saved analyses under $from moved under $to, after their page: each as it was named
-     * (`{page}:{prompt}`); one whose new path is taken stays where it was
+     * What moves with a page: its saved analyses and abstract (Analyses::under()); for a library
+     * source (`{library}:{key}`) every page under it too, at any depth (2026-11-01, owner's
+     * request: the source's subnamespace follows its new key). Read before the page moves.
+     *
+     * @return list<string>
+     */
+    private function along(string $from): array
+    {
+        $children = $this->analyses?->under($from) ?? [];
+        $library = $this->libraryNamespace . ':';
+        if (str_starts_with($from, $library) && !str_contains(substr($from, \strlen($library)), ':')) {
+            foreach ($this->storage->allPaths() as $path) {
+                if (str_starts_with((string) $path, $from . ':') && !\in_array((string) $path, $children, true)) {
+                    $children[] = (string) $path;
+                }
+            }
+        }
+
+        return $children;
+    }
+
+    /**
+     * The pages along() found under $from moved under $to, after their page: each as it was named
+     * (`{page}:{prompt}`, `{page}:abstract`, …); one whose new path is taken stays where it was
      *
      * @param list<string> $children Analyses::under($from), read before the page moved
      *
@@ -55,7 +77,11 @@ final class PageMoves
             try {
                 $record = $this->storage->move($child, $to . substr($child, \strlen($from)), $actor);
                 $map[$child] = $record->path;
-                $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: ['from_hash' => AuditLog::pathHash($child), 'with' => \Reporion\Service\Library\Abstracts::isAbstract($record->frontmatter) ? 'abstract' : 'analysis']);
+                $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: ['from_hash' => AuditLog::pathHash($child), 'with' => match (true) {
+                    \Reporion\Service\Library\Abstracts::isAbstract($record->frontmatter) => 'abstract',
+                    \Reporion\Service\Library\Analyses::isAnalysis($record->frontmatter) => 'analysis',
+                    default => 'page',
+                }]);
             } catch (InvalidArgumentException|PageNotFoundException) {
                 // Its new path is taken: left where it was, still readable
             }
@@ -72,7 +98,7 @@ final class PageMoves
      */
     public function move(string $from, string $to, string $actor, ?Request $request = null): array
     {
-        $children = $this->analyses?->under($from) ?? [];
+        $children = $this->along($from);
         $moved = $this->storage->move($from, $to, $actor);
         $along = $this->moveAnalyses($children, $from, $moved->path, $actor, $request);
         ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $this->relink([$from => $moved->path] + $along, $actor, 'link to moved page');
@@ -109,7 +135,7 @@ final class PageMoves
         $moved = [];
         $failed = [];
         foreach ($moves as $from => $to) {
-            $children = $this->analyses?->under((string) $from) ?? [];
+            $children = $this->along((string) $from);
             try {
                 $record = $this->storage->move((string) $from, $to, $actor);
             } catch (InvalidArgumentException|PageNotFoundException $e) {
