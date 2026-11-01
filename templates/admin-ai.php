@@ -84,7 +84,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php /* Two groups on one field grid: label, control, help, so the controls line up */ ?>
 <fieldset class="wk-ai-group">
 <legend class="wk-eyebrow"><?= $e(t('admin.ai.routes')) ?></legend>
-<?php /* One table for "which prompts and which server serve which pages": a row per namespace (the most specific wins), the last row for every other page. Saved as ai.namespaces, ai.prompt_profile, ai.profile_map, ai.fallback_profile, ai.server_map and ai.server (AdminAiController::routeChanges()). Two blank rows to add to without JavaScript */
+<?php /* One table for "which prompts and which server serve which pages": a row per namespace (the most specific wins), the last row for every other page. Saved as ai.namespaces, ai.prompt_profile, ai.profile_map, ai.fallback_profile, ai.server_map and ai.server (AdminAiController::routeChanges()). One blank row to add to without JavaScript */
 $serverOptions = static function (string $selected, ?string $blank) use ($servers, $e): string {
     $html = $blank !== null ? '<option value=""' . ($selected === '' ? ' selected' : '') . '>' . $e($blank) . '</option>' : '';
     foreach ($servers as $i => $server) {
@@ -97,7 +97,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <table class="table table-cards table-cards-form wk-ai-routes">
 <thead><tr><th scope="col"><?= $e(t('admin.ai.route_ns')) ?></th><th scope="col"><?= $e(t('admin.ai.route_profile')) ?></th><th scope="col"><?= $e(t('admin.ai.route_server')) ?></th></tr></thead>
 <tbody>
-<?php $routeRows = []; foreach ($routes as $ns => $profile) { $routeRows[] = [(string) $ns, (string) $profile]; } $routeRows[] = ['', $ai->promptProfile]; $routeRows[] = ['', $ai->promptProfile]; ?>
+<?php $routeRows = []; foreach ($routes as $ns => $profile) { $routeRows[] = [(string) $ns, (string) $profile]; } $routeRows[] = ['', $ai->promptProfile]; ?>
 <?php foreach ($routeRows as $r => [$ns, $routeProfile]): ?>
 <tr>
 <td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><input class="input wk-mono" type="text" name="route_ns[]" value="<?= $e($ns) ?>" placeholder="<?= $e($ns === '' ? t('admin.ai.route_ns_hint') : '') ?>" aria-label="<?= $e(t('admin.ai.route_ns')) ?>" autocomplete="off"></td>
