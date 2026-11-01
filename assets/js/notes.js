@@ -319,6 +319,11 @@
     return meta;
   }
 
+  /** The server keeps a body ending in one line break (Storage); the textarea shows it as typed */
+  function typedBody(body) {
+    return String(body || '').replace(/\n+$/, '');
+  }
+
   function fromServer(page, previous) {
     return {
       path: page.path,
@@ -326,8 +331,8 @@
       baseTitle: pageTitle(page),
       tags: tagsOf(page),
       baseTags: tagsOf(page),
-      body: page.body,
-      base: page.body,
+      body: typedBody(page.body),
+      base: typedBody(page.body),
       rev: page.rev,
       meta: page.meta || {},
       dirty: false,
@@ -406,7 +411,7 @@
           return api('GET', '/pages/' + note.path + '?render=0').then(check401).then(function (got) {
             if (got.status !== 200) throw new Error('create ' + got.status);
             again.meta = got.data.meta || {};
-            again.base = got.data.rev === 1 ? got.data.body : '';
+            again.base = got.data.rev === 1 ? typedBody(got.data.body) : '';
             return keep(again).then(function () { return push(again); });
           });
         }
@@ -453,7 +458,7 @@
       ? data.merged
       : '<<<<<<< server\n' + current.body.replace(/\n$/, '') + '\n=======\n' + sent.replace(/\n$/, '') + '\n>>>>>>> this device\n';
     var next = fromServer(current, local);
-    next.body = local && local.body !== sent ? local.body : text;
+    next.body = local && local.body !== sent ? local.body : typedBody(text);
     // The title the device changed is kept, else the server's (it is sent again on Resolved)
     if (local && (local.title || '') !== (local.baseTitle || '')) next.title = local.title;
     if (local && !sameTags(local.tags, local.baseTags)) next.tags = local.tags;
