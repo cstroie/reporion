@@ -30,6 +30,7 @@ return [
     'notes.tag_hint'          => '+ tag',
     'notes.tag_remove'        => 'Remove the tag %s',
     'notes.all'               => 'All',
+    'notes.shared'            => 'Shared into a new note',
     'notes.signin_lead'       => 'Sign in with your Reporion account.',
     'notes.menu'              => 'Menu',
     'notes.open_reporion'     => 'Open Reporion',

@@ -341,6 +341,38 @@ final class NotesTest extends HttpTestCase
         self::assertSame('standalone', $manifest['display']);
     }
 
+    public function testTheManifestOffersTheAppInTheShareSheetThroughThePostTheWorkerAnswers(): void
+    {
+        $manifest = $this->decode($this->request('GET', '/notes/manifest.webmanifest'));
+
+        $target = $manifest['share_target'];
+        self::assertSame('/notes/share', $target['action']);
+        self::assertStringStartsWith($manifest['scope'] . '/', $target['action'], 'inside the scope, so the worker answers it');
+        self::assertSame('POST', $target['method'], 'what is shared is never a URL in a log');
+        self::assertSame('multipart/form-data', $target['enctype']);
+        self::assertSame(['title' => 'title', 'text' => 'text', 'url' => 'url'], $target['params']);
+    }
+
+    public function testTheWorkerKeepsAShareOnTheDeviceAndItsCacheOutlivesAnUpdate(): void
+    {
+        $worker = $this->request('GET', '/notes/sw.js')->body;
+
+        self::assertStringContainsString("request.method === 'POST' && url.pathname === BASE + '/notes/share'", $worker);
+        self::assertStringContainsString("var SHARED = 'notes-share';", $worker);
+        self::assertStringContainsString('name !== CACHE && name !== SHARED', $worker, 'activate removes old app caches, not waiting shares');
+        self::assertStringContainsString("Response.redirect(BASE + '/notes', 303)", $worker);
+    }
+
+    public function testAShareThePostReachesTheServerWithIsNeverReadOnlyRedirectedToTheApp(): void
+    {
+        $response = Kernel::boot($this->config)->handle(new Request('POST', '/notes/share', body: 'title=Fixture-title&text=fixture-text-xyz'));
+
+        self::assertSame(303, $response->status);
+        self::assertSame('/notes', $response->headers['Location']);
+        self::assertStringNotContainsString('fixture-text-xyz', $response->body);
+        self::assertArrayNotHasKey('Set-Cookie', $response->headers);
+    }
+
     public function testTheManifestNamesTheAppsOwnIconsAndEachExists(): void
     {
         $icons = $this->decode($this->request('GET', '/notes/manifest.webmanifest'))['icons'];

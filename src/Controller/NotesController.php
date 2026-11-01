@@ -24,6 +24,11 @@ use Reporion\Support\Asset;
  * hash of the shell, the worker and the asset URLs, by itself). Both name
  * the worker's cache, so any change is a new worker; the page tells the
  * writer a new one is ready and reloads into it when asked.
+ *
+ * Share target (version 2.5.0): the manifest names POST /notes/share, which
+ * the worker answers itself (the shared title, text and URL kept on the
+ * device, never sent here); share() is only the fallback for a launch the
+ * worker does not control yet.
  */
 final class NotesController
 {
@@ -33,7 +38,7 @@ final class NotesController
      * notes-sw.js, notes.css, the API calls they make). The build hash
      * changes with any byte anyway, so a forgotten bump still updates.
      */
-    public const VERSION = '2.4.0';
+    public const VERSION = '2.5.0';
 
     /**
      * The app's stylesheets: Reporion's colour tokens and fonts, the icons,
@@ -52,7 +57,7 @@ final class NotesController
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
         'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready', 'notes.install_desktop', 'notes.install_mac',
         'notes.install_ios', 'notes.install_later', 'notes.installed', 'notes.saved', 'notes.edited_at',
-        'notes.not_synced_one', 'notes.signed_in_as', 'notes.tags', 'notes.tag_remove', 'notes.all',
+        'notes.not_synced_one', 'notes.signed_in_as', 'notes.tags', 'notes.tag_remove', 'notes.all', 'notes.shared',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',
     ];
 
@@ -123,12 +128,29 @@ final class NotesController
                 ['src' => Asset::url($b, 'notes/icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
                 ['src' => Asset::url($b, 'notes/icon.svg'), 'sizes' => 'any', 'type' => 'image/svg+xml', 'purpose' => 'any'],
             ],
+            // The system's share sheet: a POST the worker answers (notes-sw.js), so what is shared stays on the device
+            'share_target' => [
+                'action' => $b . '/notes/share',
+                'method' => 'POST',
+                'enctype' => 'multipart/form-data',
+                'params' => ['title' => 'title', 'text' => 'text', 'url' => 'url'],
+            ],
         ];
 
         return new Response(200, (string) json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), [
             'Content-Type' => 'application/manifest+json; charset=utf-8',
             'Cache-Control' => 'no-cache',
         ]);
+    }
+
+    /**
+     * POST /notes/share without the worker (a launch before it controls the
+     * app): the body is never read, the writer lands on the app, whose worker
+     * takes the next share
+     */
+    public function share(Request $request): Response
+    {
+        return Response::redirect($request->basePath . '/notes', 303)->withHeader('Cache-Control', 'no-store');
     }
 
     /**

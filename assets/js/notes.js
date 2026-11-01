@@ -45,6 +45,12 @@
  * Install button if the event comes later. Never when it already runs
  * installed. "Not now" waits 30 days; the menu's Install item stays on any
  * browser that can install it.
+ *
+ * Share target: the system's share sheet posts a title, text and URL to
+ * /notes/share, which the worker keeps in its `notes-share` cache (never
+ * sent to the server) before opening the app. Once an account is signed in
+ * each share waiting there becomes a new note (the title; the text, then the
+ * link unless the text holds it) and the last one opens.
  */
 (function () {
   'use strict';
@@ -829,12 +835,59 @@
     });
   });
 
+  /** A note not yet on the server, at a fresh path in the account's notes */
+  function blankNote() {
+    return { path: state.user.notes + ':' + ulid(), title: '', baseTitle: '', tags: [], baseTags: [], body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() };
+  }
+
+  function openNote(path) {
+    location.hash = '#/n/' + encodeURIComponent(path.slice(state.user.notes.length + 1));
+  }
+
   el.add.addEventListener('click', function () {
-    var path = state.user.notes + ':' + ulid();
-    keep({ path: path, title: '', baseTitle: '', tags: state.tag ? [state.tag] : [], baseTags: [], body: '', base: '', rev: 0, meta: {}, dirty: false, deleted: false, conflict: false, updated: Date.now() }).then(function () {
-      location.hash = '#/n/' + encodeURIComponent(path.slice(state.user.notes.length + 1));
-    });
+    var note = Object.assign(blankNote(), { tags: state.tag ? [state.tag] : [] });
+    keep(note).then(function () { openNote(note.path); });
   });
+
+  // ---- the share target: what the worker kept from the system's share sheet (notes-sw.js) ----
+
+  var SHARED = 'notes-share';
+
+  /** A share as a note's title and text: the text, then the link unless the text holds it */
+  function sharedNote(item) {
+    var title = String(item.title || '').split(/\r?\n/)[0].trim();
+    var text = String(item.text || '').trim();
+    var url = String(item.url || '').trim();
+    var body = url && text.indexOf(url) === -1 ? (text ? text + '\n' + url : url) : text;
+    if (!title && !body) return null;
+    return Object.assign(blankNote(), { title: title, body: body, dirty: true, updated: item.at || Date.now() });
+  }
+
+  /** Each share waiting in the cache becomes a new note; the last one opens */
+  function takeShared() {
+    if (!window.caches || !state.user) return Promise.resolve();
+    var key = cfg.base + '/notes/share/pending';
+    return caches.open(SHARED).then(function (cache) {
+      return cache.match(key).then(function (hit) {
+        if (!hit) return null;
+        return hit.json().catch(function () { return []; }).then(function (list) {
+          // Taken before the notes are made: a share is never made twice
+          return cache['delete'](key).then(function () { return Array.isArray(list) ? list : []; });
+        });
+      });
+    }).then(function (list) {
+      var notes = (list || []).map(sharedNote).filter(Boolean);
+      if (!notes.length) return null;
+      var chain = Promise.resolve();
+      notes.forEach(function (note) { chain = chain.then(function () { return keep(note); }); });
+      return chain.then(function () {
+        openNote(notes[notes.length - 1].path);
+        notice('ok', t('notes.shared'), false);
+        showStatus();
+        scheduleSync(0);
+      });
+    }).catch(function () { /* left in the cache for the next start */ });
+  }
 
   el.search.addEventListener('input', renderList);
   el.sync.addEventListener('click', function () { scheduleSync(0); });
@@ -899,6 +952,7 @@
       route();
       showStatus();
       offerInstall();
+      return takeShared();
     });
   }
 

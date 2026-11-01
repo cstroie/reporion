@@ -727,6 +727,7 @@ final class Kernel
         $router->get('/notes', static fn (Request $request, array $params): Response => $notes->shell($request));
         $router->get('/notes/sw.js', static fn (Request $request, array $params): Response => $notes->serviceWorker($request));
         $router->get('/notes/manifest.webmanifest', static fn (Request $request, array $params): Response => $notes->manifest($request));
+        $router->post('/notes/share', static fn (Request $request, array $params): Response => $notes->share($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         $router->post('/mcp', static fn (Request $request, array $params): Response
