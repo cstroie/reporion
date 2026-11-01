@@ -101,7 +101,7 @@ final class AiController
 
         if (($fields['stream'] ?? false) !== true) {
             // Room for Assistant's retries
-            @set_time_limit(Assistant::maxSeconds($this->config->timeout) + 30);
+            @set_time_limit(Assistant::maxSeconds($this->config->longestTimeout()) + 30);
             try {
                 $done = $run(static function (string $piece): void {
                 });
@@ -113,7 +113,7 @@ final class AiController
         }
 
         return Response::eventStream(function () use ($run, $action, $text): void {
-            set_time_limit(Assistant::maxSeconds($this->config->timeout) + 30);
+            set_time_limit(Assistant::maxSeconds($this->config->longestTimeout()) + 30);
             $send = static function (string $event, array $data): void {
                 echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
                 flush();

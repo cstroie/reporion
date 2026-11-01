@@ -208,11 +208,12 @@ reports:                             # the new-report form: modality → namespa
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ai:                                  # the AI assistant (phase 15), edited in Admin → AI
   enabled: true
-  server: 1                          # which of the servers below is in use (1–6)
+  server: 1                          # which of the servers below is in use (1–6): the default server, for every page no `server_map` namespace covers
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
   profile_map: {}                    # {namespace: profile}, e.g. {reports:mri: mri} (D47, Admin → AI routing table, 2026-10-14: rows of namespace + profile, saved as these four settings)
+  server_map: {}                     # {namespace: slot}, e.g. {library: 2} (2026-11-01, the routing table's Server column): the server a namespace's Assistant asks; the most specific wins, the rest use `server`; an action's `{server}:{alias}` Model cell still wins
   embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
   embed_model: 'nomic-embed-text'    # its model name: one for the instance, not one per server
   speech_server: 2                   # the audio overview (docs/library.md, phase 8): a server slot with an OpenAI-compatible /audio/speech; blank: no audio overview
@@ -1211,6 +1212,13 @@ has none).
   profile, `ai.fallback_profile` (2026-10-08): a generic one, e.g. `default` with `summarize` and
   `rewrite`, or get no Assistant when it is blank. `ai.profile_map` (2026-10-13, D47) maps namespaces to profiles: `AiConfig::profileFor()` takes the most specific namespace among the map and `ai.namespaces` (the map wins a tie), and only then the fallback. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
+- Which server a page's Assistant asks (2026-11-01): an action whose `Model` cell (or prompt page's
+  `model:`) names a server runs there; otherwise the most specific namespace of `ai.server_map`
+  (`AiConfig::serverFor()`, applied by `Service\Ai\Actions` to rail and reserved actions alike), else
+  the default server `ai.server`. Each server keeps its own egress rule and failover; the editor rail
+  names the page's server and whether it is external. A `Model` cell may also name a server by its
+  number, `#2:lite`. The embedding and
+  speech models stay instance-wide (`ai.embed_server`, `ai.speech_server`).
 - De-identification (`Service\Ai\Redactor`) takes a report's name from wherever it is written, not
   `patient.name` alone (2026-10-10): also the path's name words (D1) and the `#` heading when it shares a
   word with either: a report whose fields disagree sends none of its spellings.

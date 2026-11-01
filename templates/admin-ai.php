@@ -84,10 +84,18 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php /* Two groups on one field grid: label, control, help, so the controls line up */ ?>
 <fieldset class="wk-ai-group">
 <legend class="wk-eyebrow"><?= $e(t('admin.ai.routes')) ?></legend>
-<?php /* One table for "which prompts serve which pages": a row per namespace (the most specific wins), the last row for every other page. Saved as ai.namespaces, ai.prompt_profile, ai.profile_map and ai.fallback_profile (AdminAiController::routeChanges()). Two blank rows to add to without JavaScript */ ?>
+<?php /* One table for "which prompts and which server serve which pages": a row per namespace (the most specific wins), the last row for every other page. Saved as ai.namespaces, ai.prompt_profile, ai.profile_map, ai.fallback_profile, ai.server_map and ai.server (AdminAiController::routeChanges()). Two blank rows to add to without JavaScript */
+$serverOptions = static function (string $selected, ?string $blank) use ($servers, $e): string {
+    $html = $blank !== null ? '<option value=""' . ($selected === '' ? ' selected' : '') . '>' . $e($blank) . '</option>' : '';
+    foreach ($servers as $i => $server) {
+        $html .= '<option value="' . ($i + 1) . '"' . ($selected === (string) ($i + 1) ? ' selected' : '') . '>' . ($i + 1) . ' · ' . $e((string) $server['name']) . (($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '') . '</option>';
+    }
+
+    return $html;
+}; ?>
 <p class="wk-dim wk-text-sm wk-ai-routes-help"><?= $e(t('admin.ai.routes_help')) ?></p>
 <table class="table table-cards table-cards-form wk-ai-routes">
-<thead><tr><th scope="col"><?= $e(t('admin.ai.route_ns')) ?></th><th scope="col"><?= $e(t('admin.ai.route_profile')) ?></th></tr></thead>
+<thead><tr><th scope="col"><?= $e(t('admin.ai.route_ns')) ?></th><th scope="col"><?= $e(t('admin.ai.route_profile')) ?></th><th scope="col"><?= $e(t('admin.ai.route_server')) ?></th></tr></thead>
 <tbody>
 <?php $routeRows = []; foreach ($routes as $ns => $profile) { $routeRows[] = [(string) $ns, (string) $profile]; } $routeRows[] = ['', $ai->promptProfile]; $routeRows[] = ['', $ai->promptProfile]; ?>
 <?php foreach ($routeRows as $r => [$ns, $routeProfile]): ?>
@@ -96,6 +104,9 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_profile[]" aria-label="<?= $e(t('admin.ai.route_profile')) ?>">
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $routeProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
 </select></td>
+<td data-label="<?= $e(t('admin.ai.route_server')) ?>"><select class="input" name="route_server[]" aria-label="<?= $e(t('admin.ai.route_server')) ?>">
+<?= $serverOptions(isset($routeServers[$ns]) ? (string) $routeServers[$ns] : '', t('admin.ai.route_server_default')) ?>
+</select></td>
 </tr>
 <?php endforeach; ?>
 <tr class="wk-ai-routes-else">
@@ -103,6 +114,9 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_else" aria-label="<?= $e(t('admin.ai.route_else')) ?>">
 <option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
+</select></td>
+<td data-label="<?= $e(t('admin.ai.route_server')) ?>"><select class="input" name="route_else_server" aria-label="<?= $e(t('admin.ai.server_in_use')) ?>" title="<?= $e(t('admin.ai.server_in_use_help')) ?>">
+<?= $serverOptions((string) $ai->server, null) ?>
 </select></td>
 </tr>
 </tbody>

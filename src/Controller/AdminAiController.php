@@ -39,7 +39,7 @@ use Reporion\Service\InstanceSettings;
 final class AdminAiController
 {
     /** What the Assistant panel's form saves (its routing table); the switch, the default server and Similar reports post alone */
-    public const ROUTES = ['ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.profile_map'];
+    public const ROUTES = ['ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.profile_map', 'ai.server_map'];
 
     /** What the Similar reports panel's form saves */
     public const SIMILAR = ['ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
@@ -104,10 +104,15 @@ final class AdminAiController
         foreach ($ai->profileMap as $ns => $profile) {
             $routes[$ns] = $profile;
         }
+        foreach (array_keys($ai->serverMap) as $ns) {
+            $routes[$ns] ??= (string) ($ai->profileFor((string) $ns) ?? $ai->promptProfile);
+        }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-ai.php', [
             'ai' => $ai,
             'routes' => $routes,
+            // …and the server a namespace names (ai.server_map): a namespace with a server but no row of its own gets one, with the profile it has
+            'routeServers' => $ai->serverMap,
             'servers' => $servers,
             'status' => $check ?? $this->check->run($ai, false),
             'checked' => $check !== null,
@@ -213,8 +218,10 @@ final class AdminAiController
      * The routing table (rows `route_ns[]` + `route_profile[]`, and `route_else`) as the settings it
      * stands for: the profile most rows use (the first on a tie) is `ai.prompt_profile` and its rows
      * `ai.namespaces`; every other row is a `namespace = profile` line of `ai.profile_map`; the last
-     * row is `ai.fallback_profile`. A blank namespace is an unused row; the same namespace twice
-     * keeps the later one. Their values are checked by InstanceSettings, as ever.
+     * row is `ai.fallback_profile`. A row's server (`route_server[]`, blank: the default) is a
+     * `namespace = slot` line of `ai.server_map`; the last row's (`route_else_server`) is the default
+     * server, `ai.server`. A blank namespace is an unused row; the same namespace twice keeps the
+     * later one. Their values are checked by InstanceSettings, as ever.
      *
      * @param array<string, mixed> $fields
      *
@@ -226,11 +233,18 @@ final class AdminAiController
     {
         $names = \is_array($fields['route_ns'] ?? null) ? $fields['route_ns'] : [];
         $profiles = \is_array($fields['route_profile'] ?? null) ? $fields['route_profile'] : [];
+        $servers = \is_array($fields['route_server'] ?? null) ? $fields['route_server'] : [];
         $rows = [];
+        $serverMap = [];
         foreach ($names as $i => $ns) {
             $ns = \is_string($ns) ? trim(trim($ns), ':') : '';
             if ($ns !== '') {
                 $rows[$ns] = \is_string($profiles[$i] ?? null) ? trim($profiles[$i]) : '';
+                $server = \is_string($servers[$i] ?? null) ? trim($servers[$i]) : '';
+                unset($serverMap[$ns]);
+                if ($server !== '') {
+                    $serverMap[$ns] = $ns . ' = ' . $server;
+                }
             }
         }
         if ($rows === []) {
@@ -251,12 +265,18 @@ final class AdminAiController
             }
         }
 
-        return [
+        $changes = [
             'ai.prompt_profile' => $main,
             'ai.namespaces' => implode(', ', array_keys(array_filter($rows, static fn (string $p): bool => $p === $main))),
             'ai.profile_map' => implode("\n", $map),
             'ai.fallback_profile' => \is_string($fields['route_else'] ?? null) ? trim($fields['route_else']) : '',
+            'ai.server_map' => implode("\n", $serverMap),
         ];
+        if (\is_string($fields['route_else_server'] ?? null)) {
+            $changes['ai.server'] = trim($fields['route_else_server']);
+        }
+
+        return $changes;
     }
 
     public function check(Request $request, ?User $principal): Response

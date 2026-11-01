@@ -136,7 +136,7 @@ final class LibraryAiController
             return ApiResponse::error(413, 'too_long', t('library.ai.too_long', [(string) SourceAnalysis::MAX_PARTS]));
         }
         // Every request has the Assistant's retries: room for all of them
-        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60;
+        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->longestTimeout()) + 60;
         $run = function (\Closure $progress) use ($task, $page, $principal, $request): array {
             $done = $this->analysis->run($task, $page, $principal, $request, $progress);
 
@@ -196,7 +196,7 @@ final class LibraryAiController
             return ApiResponse::error(422, 'invalid_question', t('notebook.err_question'));
         }
         // The search words, then the answer
-        @set_time_limit(2 * Assistant::maxSeconds($this->config->timeout) + 60);
+        @set_time_limit(2 * Assistant::maxSeconds($this->config->longestTimeout()) + 60);
         try {
             $done = $this->notebooks->ask($page, $question, $principal, $request);
         } catch (AiException $e) {
@@ -253,9 +253,9 @@ final class LibraryAiController
                 default => ApiResponse::error(422, 'no_sources', t('studio.no_sources')),
             };
         }
-        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->timeout) + 60
+        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->longestTimeout()) + 60
             // The audio overview's turns, each a speech request after the script
-            + ($task === 'audio' ? AudioScript::MAX_TURNS * ($this->config->timeout + 15) : 0);
+            + ($task === 'audio' ? AudioScript::MAX_TURNS * ($this->config->longestTimeout() + 15) : 0);
         $basePath = $request->basePath;
         $run = function (\Closure $progress, ?\Closure $speaking = null) use ($task, $plan, $page, $principal, $request, $questions, $basePath): array {
             $done = $this->studio->run($plan, $page, $principal, $request, $questions, $progress);

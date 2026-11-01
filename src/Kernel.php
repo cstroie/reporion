@@ -363,7 +363,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->timeout);
+        return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
     }
 
     /**
@@ -376,7 +376,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), $aiConfig->timeout);
+        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), $aiConfig->longestTimeout());
     }
 
     /**
@@ -389,7 +389,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new TagReviewTask($index, new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->timeout);
+        return new TagReviewTask($index, new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->longestTimeout());
     }
 
     /**

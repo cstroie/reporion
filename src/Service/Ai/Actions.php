@@ -89,7 +89,7 @@ final class Actions
     /** @var array<string, ?PageRecord> prompt pages read so far, by path (null: none, or not indexed) */
     private array $pages = [];
 
-    /** @var array<string, list<Action>> forPage()'s actions, by profile */
+    /** @var array<string, list<Action>> forPage()'s actions, by profile and server */
     private array $byProfile = [];
 
     public function __construct(
@@ -108,11 +108,14 @@ final class Actions
             return [];
         }
 
-        return $this->byProfile[$profile] ??= $this->build($profile);
+        // The namespace's server (ai.server_map) for the actions whose Model cell names none
+        $server = $this->config->serverFor($path);
+
+        return $this->byProfile[$profile . '|' . ($server ?? '')] ??= $this->build($profile, $server);
     }
 
-    /** @return list<Action> a profile's rail actions, in its table's order */
-    private function build(string $profile): array
+    /** @return list<Action> a profile's rail actions, in its table's order, on $server unless a row names its own */
+    private function build(string $profile, ?string $server): array
     {
         $ns = self::NS . ':' . $profile;
         $index = $this->body($ns);
@@ -155,7 +158,7 @@ final class Actions
                 $prompt,
                 $this->systemFor($ns, $system, $id),
                 $model['tier'],
-                $model['server'],
+                $model['server'] ?? $server,
                 $own['max_tokens'],
                 $break !== null,
                 $own['timeout'],
@@ -314,7 +317,7 @@ final class Actions
         $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing' || $id === 'ask-expand') ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
-        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);
+        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'] ?? $this->config->serverFor($path), $own['max_tokens'], timeout: $timeout);
     }
 
     /**

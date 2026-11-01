@@ -19,7 +19,9 @@ use Reporion\Support\ReportPath;
  * (`ai.server`, 1–6); one **prompt profile** in use (`ai.prompt_profile`,
  * the pages under `ai:profiles:{profile}`) on the namespaces it serves
  * (`ai.namespaces`), and optionally a **fallback profile** for every other
- * page (`ai.fallback_profile`, 2026-10-08).
+ * page (`ai.fallback_profile`, 2026-10-08). A namespace may also name its
+ * own **server** (`ai.server_map`, 2026-11-01): the most specific one wins,
+ * every other page uses the server in use.
  */
 final class AiConfig
 {
@@ -67,6 +69,10 @@ final class AiConfig
         public readonly ?int $fallback = null,
         /** @var array<string, string> namespace → profile (`ai.profile_map`, D47): the longest match wins, over $namespaces too */
         public readonly array $profileMap = [],
+        /** @var array<string, int> namespace → server slot (`ai.server_map`): the longest match wins, else the server in use */
+        public readonly array $serverMap = [],
+        /** @var array<string, mixed> the config's `ai` section, for forPath() and longestTimeout() */
+        private readonly array $section = [],
     ) {
     }
 
@@ -197,6 +203,10 @@ final class AiConfig
      */
     public static function slotByName(array $config, string $name): ?int
     {
+        // `#2`: a slot by its number (serverFor()), whatever the servers are called
+        if (preg_match('/^#([1-9])$/', trim($name), $m) === 1) {
+            return (int) $m[1] <= self::SLOTS ? (int) $m[1] : null;
+        }
         $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
         foreach (self::servers($ai) as $i => $server) {
             if (strcasecmp(self::serverName($server, $i + 1), trim($name)) === 0) {
@@ -239,6 +249,8 @@ final class AiConfig
             modelFilter: \is_string($server['model_filter'] ?? null) ? $server['model_filter'] : '',
             fallback: is_numeric($server['fallback'] ?? null) && (int) $server['fallback'] >= 1 && (int) $server['fallback'] <= self::SLOTS && (int) $server['fallback'] !== $slot ? (int) $server['fallback'] : null,
             profileMap: self::profileMap($ai),
+            serverMap: self::serverMap($ai),
+            section: $ai,
         );
     }
 
@@ -363,5 +375,73 @@ final class AiConfig
         }
 
         return $best ?? ($this->fallbackProfile !== '' ? $this->fallbackProfile : null);
+    }
+
+    /**
+     * `ai.server_map` (2026-11-01): a server per namespace, `{namespace: slot}`, invalid entries
+     * left out
+     *
+     * @param array<string, mixed> $ai
+     *
+     * @return array<string, int>
+     */
+    public static function serverMap(array $ai): array
+    {
+        $map = [];
+        foreach (\is_array($ai['server_map'] ?? null) ? $ai['server_map'] : [] as $ns => $slot) {
+            if (\is_string($ns) && trim($ns, ':') !== '' && is_numeric($slot) && (int) $slot >= 1 && (int) $slot <= self::SLOTS) {
+                $map[trim($ns, ':')] = (int) $slot;
+            }
+        }
+
+        return $map;
+    }
+
+    /** The slot a page's assistant runs on when its action names none: the most specific namespace of `ai.server_map`, else the server in use */
+    public function slotFor(string $path): int
+    {
+        $best = $this->server;
+        $bestLength = -1;
+        foreach ($this->serverMap as $ns => $slot) {
+            $ns = (string) $ns;
+            if (($path === $ns || str_starts_with($path, $ns . ':')) && \strlen($ns) > $bestLength) {
+                $best = $slot;
+                $bestLength = \strlen($ns);
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * slotFor() as an action's server: `#{slot}` (slotByName() reads it, so two servers with one
+     * name are never confused); null for the server in use
+     */
+    public function serverFor(string $path): ?string
+    {
+        $slot = $this->slotFor($path);
+
+        return $slot === $this->server ? null : '#' . $slot;
+    }
+
+    /** The settings of the server a page's assistant runs on (slotFor()): this one for the server in use */
+    public function forPath(string $path): self
+    {
+        $slot = $this->slotFor($path);
+
+        return $slot === $this->server ? $this : self::fromConfig(['ai' => $this->section], $slot);
+    }
+
+    /** The longest time limit of the servers the assistant may ask: the one in use and those `ai.server_map` names, for a request's own time limit */
+    public function longestTimeout(): int
+    {
+        $longest = $this->timeout;
+        foreach (array_unique(array_values($this->serverMap)) as $slot) {
+            if ($slot !== $this->server) {
+                $longest = max($longest, self::fromConfig(['ai' => $this->section], $slot)->timeout);
+            }
+        }
+
+        return $longest;
     }
 }

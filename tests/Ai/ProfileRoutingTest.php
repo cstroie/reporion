@@ -31,4 +31,28 @@ final class ProfileRoutingTest extends TestCase
         self::assertSame('default', $withFallback->profileFor('docs:x'));
         self::assertSame('writing', $withFallback->profileFor('wiki'));
     }
+
+    /** Which server a page's assistant asks (ai.server_map, 2026-11-01): the most specific namespace, else the server in use */
+    public function testTheMostSpecificNamespaceNamesTheServerAndTheRestUseTheDefault(): void
+    {
+        $config = ['ai' => [
+            'server' => 1,
+            'servers' => [['name' => 'Local', 'timeout' => 60], ['name' => 'Cloud', 'timeout' => 300], ['name' => 'Cloud', 'timeout' => 30]],
+            'server_map' => ['library' => 2, 'library:deep' => 3, 'reports' => 1, 'bad' => 9, 'worse' => 'x'],
+        ]];
+        $ai = AiConfig::fromConfig($config);
+
+        self::assertSame(['library' => 2, 'library:deep' => 3, 'reports' => 1], $ai->serverMap, 'a slot out of range is left out');
+        self::assertSame('#2', $ai->serverFor('library:smith2020'), 'by its number');
+        self::assertSame('#3', $ai->serverFor('library:deep:x'), 'more specific');
+        self::assertSame(3, AiConfig::slotByName($config, '#3'), 'two servers called Cloud are never confused');
+        self::assertSame(2, AiConfig::slotByName($config, 'Cloud'), 'a name is the first server so called, as before');
+        self::assertSame('Cloud', $ai->forPath('library:deep:x')->serverName);
+        self::assertSame(30, $ai->forPath('library:deep:x')->timeout);
+        self::assertSame($ai, $ai->forPath('wiki:x'), 'the server in use');
+        self::assertSame(300, $ai->longestTimeout(), 'the slowest server a page may ask');
+        self::assertNull($ai->serverFor('reports:mri:x'), 'the server in use: no name needed');
+        self::assertNull($ai->serverFor('librarything:x'), 'a namespace boundary, not a string prefix');
+        self::assertNull($ai->serverFor('wiki:x'), 'everywhere else: the server in use');
+    }
 }

@@ -98,7 +98,7 @@ final class AskController
         }
         $notices = [];
         // Room for the Assistant's retries: the expansion, then the answer
-        @set_time_limit(2 * Assistant::maxSeconds($this->config->timeout) + 60);
+        @set_time_limit(2 * Assistant::maxSeconds($this->config->longestTimeout()) + 60);
         // Step 1: the question as a standalone one (an earlier turn resolved) and the words a report would use
         $standalone = $question;
         $extra = [];

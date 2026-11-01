@@ -81,6 +81,8 @@ final class InstanceSettings
         'ai.fallback_profile' => 'profile_name_or_none',
         // A profile per namespace (D47), over the main one's where more specific: `namespace = profile` lines
         'ai.profile_map' => 'profile_map',
+        // A server per namespace (2026-11-01), over the server in use where more specific: `namespace = slot` lines
+        'ai.server_map' => 'server_map',
         // Similar reports (phase 34e): the one embedding model: a server and its model name
         'ai.embed_server' => 'slot_or_none',
         'ai.embed_model' => 'model',
@@ -423,6 +425,7 @@ final class InstanceSettings
             'namespaces' => self::validNamespaces($raw, $fail),
             'modality_map' => self::validModalityMap($raw, $fail),
             'profile_map' => self::validProfileMap($raw, $fail),
+            'server_map' => self::validServerMap($raw, $fail),
             'model' => $text === '' || preg_match('~^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,159}$~', $text) === 1 ? $text : $fail(),
             'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
@@ -502,6 +505,30 @@ final class InstanceSettings
                 $fail();
             }
             $map[$ns] = $profile;
+        }
+
+        return $map;
+    }
+
+    /**
+     * `namespace = slot` lines (or the stored map) → `{namespace: slot}` (ai.server_map, 2026-11-01)
+     *
+     * @return array<string, int>
+     */
+    private static function validServerMap(mixed $raw, callable $fail): array
+    {
+        $map = [];
+        $lines = \is_array($raw) ? array_map(static fn ($k, $v): string => $k . '=' . $v, array_keys($raw), $raw) : preg_split('/\R/', \is_string($raw) ? $raw : '');
+        foreach ($lines ?: [] as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            [$ns, $slot] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
+            $ns = trim($ns, ':');
+            if (preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $ns) !== 1 || !ctype_digit($slot) || (int) $slot < 1 || (int) $slot > AiConfig::SLOTS) {
+                $fail();
+            }
+            $map[$ns] = (int) $slot;
         }
 
         return $map;

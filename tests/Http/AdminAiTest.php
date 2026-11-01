@@ -223,6 +223,19 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['', 'reports']]))->status);
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['reports', 'Bad Name']]))->status);
         self::assertSame(['a', 'b'], (new InstanceSettings($this->dataRoot))->load()['ai']['namespaces']);
+
+        // A row's server is a line of ai.server_map (blank: the default); the last row's is the default server
+        $withServers = 'route_ns%5B%5D=reports&route_profile%5B%5D=reports&route_server%5B%5D='
+            . '&route_ns%5B%5D=library&route_profile%5B%5D=reports&route_server%5B%5D=2'
+            . '&route_else=&route_else_server=3';
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', $withServers)->status);
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame(['library' => 2], $ai['server_map']);
+        self::assertSame(3, $ai['server']);
+        $screen = $this->request('GET', '/admin/ai', 'owner')->body;
+        self::assertMatchesRegularExpression('~value="library".*?name="route_server\[\]"[^>]*>.*?<option value="2" selected>~s', $screen);
+        self::assertMatchesRegularExpression('~name="route_else_server"[^>]*>\s*<option value="1">.*?<option value="3" selected>~s', $screen);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'route_ns%5B%5D=reports&route_profile%5B%5D=reports&route_server%5B%5D=7')->status, 'no slot 7');
     }
 
     public function testEachPanelSavesOnlyItsOwnSettingsAndCheckAsksTheChosenServer(): void

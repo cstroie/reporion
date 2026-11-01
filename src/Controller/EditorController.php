@@ -865,17 +865,19 @@ final class EditorController
         if ($actions === [] || $this->aiConfig === null) {
             return null;
         }
+        // The server this page's namespace asks (ai.server_map), else the one in use
+        $server = $this->aiConfig->forPath($path);
         try {
-            $external = (new EgressGuard())->isExternal($this->aiConfig->endpoint);
+            $external = (new EgressGuard())->isExternal($server->endpoint);
         } catch (\Reporion\Exception\AiException) {
             return null;
         }
 
         return [
             'actions' => array_map(static fn (\Reporion\Service\Ai\Action $a): array => $a->forEditor() + ['custom' => str_contains($a->prompt, '{prompt}')], $actions),
-            'provider' => (string) parse_url($this->aiConfig->endpoint, PHP_URL_HOST) . ' · ' . $this->aiConfig->model,
-            // The rail head names the server in use (Admin → AI); host and model are its tooltip
-            'server' => $this->aiConfig->serverName,
+            'provider' => (string) parse_url($server->endpoint, PHP_URL_HOST) . ' · ' . $server->model,
+            // The rail head names the page's server (Admin → AI); host and model are its tooltip
+            'server' => $server->serverName,
             'external' => $external,
         ];
     }

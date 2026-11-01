@@ -57,6 +57,35 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['summarize', 'expand'], $ids, 'table order, not creation order');
     }
 
+    public function testTheNamespacesServerServesActionsThatNameNoneOfTheirOwn(): void
+    {
+        $this->storage->create('ai:profiles:reports:expand', ['visibility' => 'private'], "Expand it.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:shorten', ['visibility' => 'private'], "Shorten it.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create(
+            'ai:profiles:reports',
+            ['visibility' => 'private'],
+            "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n"
+            . "| expand | Expand | | | replace | |\n"
+            . "| shorten | Shorten | | | replace | Local:lite |\n",
+            'owner'
+        );
+        $config = AiConfig::fromConfig(['ai' => [
+            'enabled' => true,
+            'server' => 1,
+            'namespaces' => ['reports'],
+            'servers' => [['name' => 'Local', 'endpoint' => 'http://127.0.0.1:1/v1', 'tiers' => ['normal' => ['model' => 'm']]], ['name' => 'Cloud', 'endpoint' => 'http://127.0.0.1:2/v1', 'tiers' => ['normal' => ['model' => 'm']]]],
+            'server_map' => ['reports:mri' => 2],
+        ]]);
+        $actions = new Actions($config, $this->storage, $this->index);
+
+        $servers = static fn (array $list): array => array_map(static fn (Action $a): ?string => $a->server, $list);
+        self::assertSame(['#2', 'Local'], $servers($actions->forPage(self::PATH)), 'the namespace\'s server, unless the Model cell names one');
+        self::assertSame([null, 'Local'], $servers($actions->forPage('reports:ct:x')), 'elsewhere the server in use');
+        self::assertSame('#2', $actions->special(self::PATH, 'summary')?->server, 'a reserved prompt too');
+        self::assertNull($actions->special('reports:ct:x', 'summary')?->server);
+    }
+
     public function testARowWithNoPromptPageContributesNothing(): void
     {
         $this->storage->create('ai:profiles:reports:expand', ['visibility' => 'private'], "Expand it.\n", 'owner');
