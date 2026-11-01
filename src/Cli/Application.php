@@ -86,7 +86,7 @@ final class Application
             $audit(),
             (string) $config['paths']['data'],
             (int) ($config['pages']['trash_purge_days'] ?? 30),
-            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::tagReviewTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index)],
+            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::tagReviewTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index), Kernel::libraryAbstractsTask($config, $storage, $index, $audit())],
         );
         $app->register('index:verify', IndexVerifyCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -110,6 +110,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new IndexVectorsCommand($maintenance($storage, $index));
+        });
+        $app->register('library:abstracts', LibraryAbstractsCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryAbstractsCommand($maintenance($storage, $index));
         });
         // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
         $app->register('pages:apply-patient-csv', PagesApplyPatientCsvCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
@@ -205,17 +210,17 @@ final class Application
         $app->register('library:add', LibraryAddCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new LibraryAddCommand(Kernel::library($config, $storage, $index), $audit());
+            return new LibraryAddCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
         $app->register('library:relookup', LibraryRelookupCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new LibraryRelookupCommand(Kernel::library($config, $storage, $index), $audit());
+            return new LibraryRelookupCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
         $app->register('library:import', LibraryImportCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new LibraryImportCommand(Kernel::library($config, $storage, $index), $audit());
+            return new LibraryImportCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
         $app->register('library:export', LibraryExportCommand::class, static function () use ($indexAndStorage, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();

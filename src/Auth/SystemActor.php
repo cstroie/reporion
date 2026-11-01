@@ -30,11 +30,13 @@ final class SystemActor
     public const AI = 'system:ai';
     /** Instance housekeeping that rewrites pages: tags:prune */
     public const ADMIN = 'system:admin';
+    /** The library's housekeeping: library:abstracts (a source's abstract page) */
+    public const LIBRARIAN = 'system:librarian';
 
     /** @return list<string> */
     public static function all(): array
     {
-        return [self::SUMMARIZER, self::TAGGER, self::IMPORTER, self::PACS, self::AI, self::ADMIN];
+        return [self::SUMMARIZER, self::TAGGER, self::IMPORTER, self::PACS, self::AI, self::ADMIN, self::LIBRARIAN];
     }
 
     public static function isSystem(string $actor): bool

@@ -267,6 +267,58 @@ final class LibraryAnalysisTest extends HttpTestCase
         self::assertStringNotContainsString('{', $user, 'every placeholder filled');
     }
 
+    /** The source's abstract page, as Service\Library\Abstracts writes it */
+    private function giveAbstract(string $path, string $text): void
+    {
+        $this->storage()->create($path . ':abstract', ['title' => 'Abstract', 'visibility' => 'private', 'abstract' => ['of' => $this->pid($path), 'from' => 'record', 'at' => date('c')]], $text . "\n", 'owner');
+    }
+
+    public function testTheShortAnalysesReadTheAbstractInOneRequestHoweverLongTheArticle(): void
+    {
+        $this->giveAbstract('library:long2024', 'Grade 2 lesions were rare in this made-up cohort.');
+
+        $data = json_decode($this->analyze('editor', 'library:long2024', ['task' => 'points'])->body, true)['data'];
+
+        self::assertSame([1, 1, 'abstract'], [$data['parts'], $data['requests'], $data['from']]);
+        self::assertSame(1, $this->server->requests());
+        $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString("## Abstract\n\nGrade 2 lesions were rare in this made-up cohort.", $sent);
+        self::assertStringNotContainsString('sentence with a finding', $sent, 'not the article');
+        self::assertContains('source abstract', $data['context']);
+        self::assertSame('abstract', $this->storage()->read('library:long2024:source-points')->frontmatter['analysis']['from']);
+
+        // Even a source too long to be analysed whole has its summary from the abstract
+        $this->giveAbstract('library:huge2024', 'A huge made-up study, in short.');
+        self::assertSame(200, $this->analyze('editor', 'library:huge2024', ['task' => 'summary'])->status);
+    }
+
+    public function testTheOtherAnalysesAndASourceWithNoAbstractReadTheArticle(): void
+    {
+        $this->storage()->create('ai:profiles:wiki:special:source-design', ['title' => 'source-design', 'format' => 'text', 'visibility' => 'private'], "Design of {title}:\n<a>{source}</a>\n", 'owner');
+        $this->giveAbstract('library:short2024', 'An abstract that says little.');
+
+        $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'design'])->body, true)['data'];
+        self::assertSame('text', $data['from']);
+        self::assertStringContainsString('Grade 3 was the most common in 128 patients.', $this->server->lastRequest()['body']['messages'][1]['content']);
+        self::assertArrayNotHasKey('from', $this->storage()->read('library:short2024:source-design')->frontmatter['analysis']);
+
+        // An abstract page of another source (copied by hand) is not this one's
+        $this->storage()->create('library:long2024:abstract', ['title' => 'Abstract', 'visibility' => 'private', 'abstract' => ['of' => $this->pid('library:short2024'), 'from' => 'text']], "Someone else's abstract.\n", 'owner');
+        $data = json_decode($this->analyze('editor', 'library:long2024', ['task' => 'points'])->body, true)['data'];
+        self::assertSame('text', $data['from']);
+        self::assertGreaterThan(1, $data['requests']);
+    }
+
+    public function testTheSourceCardShowsTheAbstractToItsReaders(): void
+    {
+        $this->giveAbstract('library:short2024', 'A made-up abstract & its <findings>.');
+        $view = Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('reader')]))->body;
+
+        self::assertStringContainsString('data-lib-abstract', $view);
+        self::assertStringContainsString('A made-up abstract &amp; its &lt;findings&gt;.', $view);
+        self::assertStringContainsString('/library:short2024:abstract"', $view);
+    }
+
     public function testThePartsAnswersAndTheirNotesAlwaysFitTheirRequests(): void
     {
         foreach ([2, 3, 6] as $n) {

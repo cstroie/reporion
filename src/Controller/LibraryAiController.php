@@ -88,13 +88,13 @@ final class LibraryAiController
      *
      * @return ?array{path: string, href: string, created: bool}
      */
-    private function keep(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, ?Request $request, array $extra = []): ?array
+    private function keep(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, ?Request $request, array $extra = [], ?string $from = null): ?array
     {
         if ($this->analyses === null || trim($text) === '') {
             return null;
         }
         try {
-            $saved = $this->analyses->save($of, $prompt, $label, $text, $by, $provider, $extra);
+            $saved = $this->analyses->save($of, $prompt, $label, $text, $by, $provider, $extra, $from);
         } catch (\Throwable $e) {
             error_log(\sprintf('reporion: analysis not kept: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
 
@@ -131,7 +131,7 @@ final class LibraryAiController
             return ApiResponse::error(422, 'unknown_task', t('library.ai.unknown_task'));
         }
         try {
-            $plan = $this->analysis->plan($page);
+            $plan = $this->analysis->plan($page, $task);
         } catch (LibraryException) {
             return ApiResponse::error(413, 'too_long', t('library.ai.too_long', [(string) SourceAnalysis::MAX_PARTS]));
         }
@@ -140,7 +140,7 @@ final class LibraryAiController
         $run = function (\Closure $progress) use ($task, $page, $principal, $request): array {
             $done = $this->analysis->run($task, $page, $principal, $request, $progress);
 
-            return $done + ['saved' => $this->keep($page, SourceAnalysis::TASKS[$task], t('library.ai.' . $task), $done['result'], $principal, $done['provider'], $request)];
+            return $done + ['saved' => $this->keep($page, SourceAnalysis::TASKS[$task], t('library.ai.' . $task), $done['result'], $principal, $done['provider'], $request, from: $done['from'])];
         };
 
         if (($fields['stream'] ?? false) !== true) {

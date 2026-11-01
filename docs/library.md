@@ -25,6 +25,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
 | Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
 | Keeping the assistant's results | **Automatically** (owner, 2026-10-31): each analysis of a source and each Studio text is kept as a page beside its page, named by its prompt (`library:{key}:source-points`, `{notebook}:studio-overview`), shown when the source or notebook is opened again; they move and go to the trash with it |
+| Abstracts | **Kept as a page** (owner, 2026-11-01): `library:{key}:abstract`, from the record (PubMed, CrossRef, an import) first, else the article's own when its text marks it plainly; the summary, problem-idea-evidence and key points read it instead of the article; `library:abstracts` (also Admin → Maintenance) for older sources, as `system:librarian` |
 | Where the audio overview's files go | `data/sources/`, beside the library's originals (owner, 2026-10-31: fine for now); each run keeps its own file, trash and purge leave them |
 | Where it is built | `feat/library` branch in a worktree, full suite by the owner before merging |
 
@@ -215,6 +216,12 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `Service\Library\Analyses`): the writer's revision (`assisted: {prompt}`), private, frontmatter `analysis` (FORMATS §3o), a run again its next
    revision; the source's card lists them for any reader of the source (*Kept from the assistant*, rendered by the server, *older text* when the
    source's text changed since). Still never written into the source, never read as one (Ask and Studio read `library:{key}` only).
+   *Abstracts, 2026-11-01 (owner's request):* each source's abstract is kept as `library:{key}:abstract` (FORMATS §3o, `Service\Library\Abstracts`):
+   the record's `csl.abstract` (PubMed, CrossRef, an import; 40 words at least), else the article's own (`Support\SourceAbstract`: a plain `Abstract` /
+   `Summary` / `Rezumat` heading in the first quarter, 80–500 words), made as the source is added and by `bin/reporion library:abstracts` (Admin →
+   Maintenance) for older ones, as `system:librarian` (D41). The one-line summary, *Problem, idea, evidence* and *Key points* read it instead of the
+   article (one request, so a source too long to analyse still has them; the response and the kept analysis say `from: abstract`); the other
+   analyses read the article. The source's card shows it (*Abstract*, closed), with a link to correct it.
 6. **Studio** + the template generator, **built 2026-10-30**: `POST /api/v1/notebook/studio` (`LibraryAiController::studio()`,
    `Service\Library\Studio`), a *Studio* panel on a notebook's page beside Ask the notebook (`partials/notebook-studio.php`,
    `assets/js/notebook-studio.js`), the same gate (an editor of the page and of the library, never a report or a page naming a

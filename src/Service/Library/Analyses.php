@@ -56,10 +56,11 @@ final class Analyses
      * Keeps $text as the analysis $prompt of $of: a new page, or a new revision of the one there
      *
      * @param array<string, mixed> $extra frontmatter the result needs to read as it did (a notebook's `language`, `citation_style`)
+     * @param ?string $from what it was made from, when that is not the page's text: `abstract` (the source's abstract page)
      *
      * @return ?array{path: string, rev: int, pid: string, created: bool} null: a page there that is not a saved analysis, or signed
      */
-    public function save(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, array $extra = []): ?array
+    public function save(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, array $extra = [], ?string $from = null): ?array
     {
         $path = self::pathFor($of->path, $prompt);
         $title = $label . ': ' . (\is_string($of->frontmatter['title'] ?? null) && $of->frontmatter['title'] !== '' ? $of->frontmatter['title'] : substr($of->path, (int) strrpos($of->path, ':') + 1));
@@ -71,7 +72,7 @@ final class Analyses
             'of_sha' => self::textSha($of),
             'provider' => $provider,
             'at' => date('c'),
-        ]];
+        ] + ($from !== null && $from !== 'text' ? ['from' => $from] : [])];
         $body = rtrim($text) . "\n";
         $note = 'assisted: ' . $prompt;
         try {
@@ -90,7 +91,8 @@ final class Analyses
     }
 
     /**
-     * The saved analyses directly under $path, whoever may read them (a move or a delete takes them all)
+     * The saved analyses directly under $path, and its abstract page (Abstracts), whoever may read
+     * them (a move or a delete takes them all)
      *
      * @return list<string>
      */
@@ -103,7 +105,8 @@ final class Analyses
                 continue;
             }
             try {
-                if (self::isAnalysis($this->storage->read($child)->frontmatter)) {
+                $frontmatter = $this->storage->read($child)->frontmatter;
+                if (self::isAnalysis($frontmatter) || Abstracts::isAbstract($frontmatter)) {
                     $out[] = $child;
                 }
             } catch (PageNotFoundException) {
@@ -126,7 +129,7 @@ final class Analyses
             try {
                 $page = $this->storage->read($child);
                 $this->storage->delete($child, $actor);
-                $audit->record('page.delete', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['with' => 'analysis']);
+                $audit->record('page.delete', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['with' => Abstracts::isAbstract($page->frontmatter) ? 'abstract' : 'analysis']);
                 ++$gone;
             } catch (\RuntimeException) {
                 // Gone meanwhile, or a write that failed: the page itself is in the trash all the same
@@ -134,6 +137,33 @@ final class Analyses
         }
 
         return $gone;
+    }
+
+    /**
+     * The abstract page of $page (Abstracts), when the caller reads it, for its card
+     *
+     * @return ?array{path: string, text: string, from: string}
+     */
+    public function abstractShown(PageRecord $page, ?User $principal): ?array
+    {
+        if ($this->index === null) {
+            return null;
+        }
+        foreach ($this->index->listNamespaceMeta($page->path, $principal) as $row) {
+            $marker = $row['meta'][Abstracts::KEY] ?? null;
+            if (!\is_array($marker) || ($marker['of'] ?? null) !== $page->pid || $row['path'] !== Abstracts::pathFor($page->path)) {
+                continue;
+            }
+            try {
+                $record = $this->storage->read((string) $row['path']);
+            } catch (PageNotFoundException) {
+                return null;
+            }
+
+            return trim($record->body) === '' ? null : ['path' => $record->path, 'text' => trim($record->body), 'from' => \is_string($marker['from'] ?? null) ? $marker['from'] : 'text'];
+        }
+
+        return null;
     }
 
     /**

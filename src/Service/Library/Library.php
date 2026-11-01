@@ -50,6 +50,9 @@ final class Library
     private const MAX_TAGS = 20;
     private const PREVIEW_CHARS = 800;
 
+    /** Each source's abstract page (Abstracts), written as the source is added */
+    private readonly Abstracts $abstracts;
+
     public function __construct(
         private readonly FileTree $storage,
         private readonly IndexInterface $index,
@@ -59,7 +62,9 @@ final class Library
         private readonly int $maxBytes = 50 * 1024 * 1024,
         // The online lookups (Admin → Settings → Library, off by default): null sends nothing anywhere
         private readonly ?Lookup $lookup = null,
+        ?Abstracts $abstracts = null,
     ) {
+        $this->abstracts = $abstracts ?? new Abstracts($storage);
     }
 
     public function namespace(): string
@@ -293,6 +298,10 @@ final class Library
         }
         $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: lookup (' . implode(', ', $changed) . ')');
         $result['rev'] = $saved->rev;
+        // The abstract the lookup brought replaces the one kept (its page's history keeps the old)
+        if (\in_array('abstract', $changed, true)) {
+            $this->keepAbstract($saved, $actor);
+        }
 
         return $result;
     }
@@ -512,10 +521,16 @@ final class Library
         $frontmatter['csl'] = \is_array($frontmatter['csl'] ?? null) ? $frontmatter['csl'] + $csl : $csl;
 
         try {
-            return $this->storage->save($path, $frontmatter, trim($page->body) === '' ? self::body($extracted) : $page->body, $page->rev, $actor, 'library: file added (' . $ext . ')');
+            $saved = $this->storage->save($path, $frontmatter, trim($page->body) === '' ? self::body($extracted) : $page->body, $page->rev, $actor, 'library: file added (' . $ext . ')');
         } catch (\Reporion\Exception\RevisionConflictException) {
             throw new LibraryException(LibraryException::DUPLICATE, $page->pid);
         }
+        // A record imported with no abstract may find one in the file's text
+        if (!$this->abstracts->has($saved)) {
+            $this->keepAbstract($saved, $actor);
+        }
+
+        return $saved;
     }
 
     /** The most records one import takes */
@@ -577,6 +592,7 @@ final class Library
                 $skipped[] = ['title' => $label, 'reason' => LibraryException::INVALID];
                 continue;
             }
+            $this->keepAbstract($page, $actor);
             $added[] = ['key' => $key, 'path' => $page->path, 'pid' => $page->pid, 'title' => $csl['title']];
         }
 
@@ -722,12 +738,103 @@ final class Library
         ], static fn (mixed $v): bool => $v !== []);
 
         try {
-            return $this->storage->create($this->namespace . ':' . $key, $frontmatter, self::body($extracted), $actor, 'library: from ' . $ext, exclusive: true);
+            $page = $this->storage->create($this->namespace . ':' . $key, $frontmatter, self::body($extracted), $actor, 'library: from ' . $ext, exclusive: true);
         } catch (PageExistsException) {
             throw new LibraryException(LibraryException::DUPLICATE);
         } catch (InvalidArgumentException) {
             throw new LibraryException(LibraryException::INVALID);
         }
+        $this->keepAbstract($page, $actor);
+
+        return $page;
+    }
+
+    /**
+     * The source's abstract page written (Abstracts), when it has one; a failure there leaves the
+     * source as it is, without one (library:abstracts makes it later)
+     *
+     * @param ?array{text: string, from: string} $found
+     *
+     * @return ?array{path: string, rev: int, created: bool, from: string}
+     */
+    private function keepAbstract(PageRecord $source, string $actor, ?array $found = null, ?string $onBehalfOf = null): ?array
+    {
+        try {
+            return $this->abstracts->write($source, $actor, $found, $onBehalfOf);
+        } catch (\RuntimeException|InvalidArgumentException) {
+            return null;
+        }
+    }
+
+    /**
+     * Every source's path, whoever may read it (library:abstracts)
+     *
+     * @return list<string>
+     */
+    public function sourcePaths(): array
+    {
+        $out = [];
+        foreach ($this->storage->allPaths() as $path) {
+            if (!str_starts_with($path, $this->namespace . ':')) {
+                continue;
+            }
+            try {
+                if (LibrarySource::isSource($this->storage->read($path)->frontmatter)) {
+                    $out[] = $path;
+                }
+            } catch (\Reporion\Exception\PageNotFoundException) {
+            }
+        }
+        sort($out);
+
+        return $out;
+    }
+
+    /**
+     * The abstract page made for a source that has none (`library:abstracts`, for the sources added
+     * before abstracts were kept): the record's `csl.abstract`; else, with $online and the lookups
+     * on, the abstract PubMed or CrossRef has for its DOI or PMID (only the abstract is taken: the
+     * record is not rewritten, `relookup()` does that); else the article's own. With $dryRun what
+     * would be written is said and nothing is. $actor is the pseudouser that writes it
+     * (`system:librarian`), $onBehalfOf the person who ran it.
+     *
+     * @return array{pid: string, status: string, from: ?string}
+     *               status: `made`, `has` (it has one), `none` (no abstract found), `failed` (not written)
+     *
+     * @throws LibraryException INVALID (not a source)
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function fillAbstract(string $path, string $actor, bool $online = true, bool $dryRun = false, ?string $onBehalfOf = null): array
+    {
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $result = ['pid' => $page->pid, 'status' => 'has', 'from' => null];
+        try {
+            $this->storage->read(Abstracts::pathFor($path));
+
+            return $result;
+        } catch (\Reporion\Exception\PageNotFoundException) {
+        }
+        $found = Abstracts::propose($page);
+        if ($online && ($found === null || $found['from'] !== 'record')) {
+            $csl = \is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : [];
+            [$looked, , $how] = $this->lookedUp($csl);
+            $text = \is_string($looked['abstract'] ?? null) ? trim($looked['abstract']) : '';
+            if ($how !== null && $how !== 'none' && $how !== 'failed' && preg_match_all('/[\p{L}\p{N}]+/u', $text) >= Abstracts::MIN_RECORD_WORDS && !self::holdsPatientData($text)) {
+                $found = ['text' => trim(mb_substr($text, 0, 10000)), 'from' => 'record'];
+            }
+        }
+        if ($found === null) {
+            return ['status' => 'none'] + $result;
+        }
+        if ($dryRun) {
+            return ['status' => 'made', 'from' => $found['from']] + $result;
+        }
+        $written = $this->keepAbstract($page, $actor, $found, $onBehalfOf);
+
+        return ['status' => $written !== null ? 'made' : 'failed', 'from' => $found['from']] + $result;
     }
 
     /** The page body: the article's text, then its own references as they were printed */

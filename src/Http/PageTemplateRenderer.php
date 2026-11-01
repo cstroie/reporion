@@ -172,6 +172,8 @@ final class PageTemplateRenderer
             'cites' => $this->cites($record, $principal),
             // What the assistant made of it before, kept beside it, for any reader of the source
             'saved' => $currentRev === null ? $this->rendered($this->analyses?->shown($record, $principal, array_values(\Reporion\Service\Library\SourceAnalysis::TASKS)) ?? [], [], $request->basePath, $principal) : [],
+            // Its abstract, kept beside it (Service\Library\Abstracts): what the short analyses read
+            'abstract' => $currentRev === null ? $this->analyses?->abstractShown($record, $principal) : null,
         ] : null;
         // Ask the notebook (docs/library.md, phase 5): a page that cites library sources, for an editor of it and of the library, with the prompt there
         $notebook = $currentRev === null && !ReportPath::isReport($record->path) && !isset($record->frontmatter['patient']) && !LibrarySource::isSource($record->frontmatter)

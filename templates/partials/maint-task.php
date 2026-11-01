@@ -28,6 +28,12 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php elseif ($name === 'index:vectors'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit')) ?>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="500"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
+<?php elseif ($name === 'library:abstracts'): ?>
+<div class="wk-maint-opts">
+<div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit_abstracts')) ?>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="0"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
+<label class="radio"><input type="checkbox" name="offline" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.offline')) ?></label>
+</div>
 <?php elseif ($name === 'pages:summarize' || $name === 'pages:tag'): ?>
 <div class="wk-maint-opts">
 <div class="field"><label for="<?= $e($fid) ?>-namespace"><?= $e(t('admin.maint.opt.namespace')) ?>

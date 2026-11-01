@@ -98,6 +98,7 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\SummarizeTask;
 use Reporion\Service\Maintenance\TagReviewTask;
 use Reporion\Service\Maintenance\TagTask;
+use Reporion\Service\Maintenance\LibraryAbstractsTask;
 use Reporion\Service\Maintenance\VectorsTask;
 use Reporion\Service\NamespaceDefaults;
 use Reporion\Service\NewReport;
@@ -126,6 +127,7 @@ use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\Lookup;
 use Reporion\Service\Library\NotebookAsk;
+use Reporion\Service\Library\Abstracts;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\AudioOverview;
 use Reporion\Service\Library\Highlights;
@@ -239,7 +241,7 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
-    public static function library(array $config, FileTree $storage, IndexInterface $index): Library
+    public static function library(array $config, FileTree $storage, IndexInterface $index, ?AuditLog $audit = null): Library
     {
         $data = (string) $config['paths']['data'];
         $settings = \is_array($config['library'] ?? null) ? $config['library'] : [];
@@ -254,6 +256,7 @@ final class Kernel
             $namespace,
             max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024,
             ($settings['lookup'] ?? false) === true ? new Lookup(Lookup::http()) : null,
+            new Abstracts($storage, $audit),
         );
     }
 
@@ -398,6 +401,17 @@ final class Kernel
     public static function vectorsTask(array $config, FileTree $storage, Sqlite $index): VectorsTask
     {
         return new VectorsTask($storage, $index, Embedder::fromConfig($config), AiConfig::fromConfig($config)->timeout, self::libraryNamespace($config));
+    }
+
+    /**
+     * library:abstracts: each library source's abstract page, for Admin → Maintenance and
+     * bin/reporion alike
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function libraryAbstractsTask(array $config, FileTree $storage, Sqlite $index, AuditLog $audit): LibraryAbstractsTask
+    {
+        return new LibraryAbstractsTask(self::library($config, $storage, $index, $audit));
     }
 
     public static function newReport(array $config, string $rootDir, Sqlite $index, FileTree $storage, Accessions $accessions, Loader $schemas): NewReport
@@ -570,13 +584,13 @@ final class Kernel
             return $ask instanceof AskController && $ask->available();
         });
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
+        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $libraryController = new LibraryController(
-            self::library($config, $storage, $index),
+            self::library($config, $storage, $index, $audit),
             $storage,
             $index,
             $audit,
@@ -646,7 +660,7 @@ final class Kernel
         $libraryAi = new LibraryAiController(
             $aiConfig,
             $assistant,
-            new SourceAnalysis($aiActions, $assistant, $libraryTokens),
+            new SourceAnalysis($aiActions, $assistant, $libraryTokens, new Abstracts($storage)),
             $notebookAsk,
             new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens, self::libraryLanguage($config)),
             self::libraryNamespace($config),

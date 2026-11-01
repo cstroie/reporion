@@ -504,7 +504,7 @@
       }
       var meta = [data.provider || '', ((data.ms || 0) / 1000).toFixed(1) + ' s'].concat(data.requests > 1 ? [data.requests + ' ×'] : []).filter(Boolean).join(' · ');
       out.appendChild(el('p', 'wk-dim wk-text-xs wk-mono', meta));
-      out.appendChild(el('p', 'wk-dim wk-text-sm', s.note));
+      out.appendChild(el('p', 'wk-dim wk-text-sm', data.from === 'abstract' ? s.from_abstract + ' ' + s.note : s.note));
       if (data.saved) out.appendChild(keptAs(data.saved, s.saved));
       var row = el('div', 'wk-actions');
       var copy = el('button', 'btn btn-secondary btn-sm', s.copy);

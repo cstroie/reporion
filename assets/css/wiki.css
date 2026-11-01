@@ -2275,6 +2275,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-lib-cites > summary { cursor: pointer; }
 .wk-lib-cites-list { margin: var(--space-2) 0 0; padding-left: var(--space-5); max-height: 28rem; overflow-y: auto; overflow-wrap: anywhere; }
 .wk-lib-cites-list li { margin-bottom: var(--space-2); }
+.wk-lib-abstract-text { margin-top: var(--space-2); max-height: 28rem; overflow-y: auto; }
+.wk-lib-abstract-text p { margin: 0 0 var(--space-2); }
 .wk-lib-ai { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 .wk-lib-ai-tasks { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
 .wk-lib-ai-out { margin-top: var(--space-3); }

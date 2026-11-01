@@ -52,6 +52,17 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
     : t('library.original_info', [strtoupper($source['original']['ext']), (string) max(1, (int) round($source['original']['bytes'] / 1024))])) ?><?php endif; ?>
 </p>
 <?php endif; ?>
+<?php if (($source['abstract'] ?? null) !== null): ?>
+<details class="wk-lib-cites wk-lib-abstract" data-lib-abstract>
+<summary class="wk-dim wk-text-sm"><i class="ph ph-article" aria-hidden="true"></i> <?= $e(t('library.abstract.title')) ?> <span class="wk-dim">· <?= $e(t('library.abstract.from_' . ($source['abstract']['from'] === 'record' ? 'record' : 'text'))) ?></span></summary>
+<div class="wk-lib-abstract-text wk-text-sm">
+<?php foreach (preg_split('/\n\s*\n/', $source['abstract']['text']) ?: [] as $paragraph): ?>
+<p><?= nl2br($e(trim($paragraph))) ?></p>
+<?php endforeach; ?>
+</div>
+<p class="wk-dim wk-text-xs"><a href="<?= $e($basePath . '/' . $source['abstract']['path']) ?>"><?= $e(t('library.abstract.open')) ?></a> · <?= $e(t('library.abstract.note')) ?></p>
+</details>
+<?php endif; ?>
 <?php
 $savedAnalyses = $source['saved'] ?? [];
 $savedLabels = [];
@@ -109,7 +120,7 @@ include __DIR__ . '/saved-analyses.php';
     'path' => $source['path'],
     'rev' => $source['rev'],
     'strings' => [
-        'working' => t('library.ai.working'), 'progress' => t('library.ai.progress'), 'failed' => t('library.ai.failed'), 'note' => t('library.ai.note'),
+        'working' => t('library.ai.working'), 'progress' => t('library.ai.progress'), 'failed' => t('library.ai.failed'), 'note' => t('library.ai.note'), 'from_abstract' => t('library.ai.from_abstract'),
         'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'use_summary' => t('library.ai.use_summary'), 'saved' => t('library.saved.as'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>

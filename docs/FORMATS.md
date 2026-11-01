@@ -632,11 +632,25 @@ analysis:
   of_sha: 9f2c…              # its text's (16 hex of sha256): another text since → shown as "older text"
   provider: "server · model"
   at: 2026-10-31T09:12:00+02:00
+  from: abstract             # only when made from the source's abstract page (below), not its text
 ```
 
 An audio overview's kept page (`{notebook}:studio-audio`, phase 8) also carries `audio: {sha256, ext: mp3|wav, bytes, seconds, turns}`: the file is kept with the library's originals in `data/sources/{ab}/{sha256}.{ext}` (`Storage::storeOriginal()`, so it is backed up with `data/`) and served by `GET /library/audio/{pid}` under the page's visibility. It is not an `original`, so the page is never taken for a source.
 
 A page with `analysis` is no source and no notebook (no Ask, no Studio of its own); a run again is its next revision; it moves and goes to the trash with the page it is about (`Service\Library\Analyses`). A page at that path without `analysis` is never written over.
+
+**The abstract page** (2026-11-01, owner's request): a source's abstract is kept as `library:{key}:abstract`, its body the abstract alone (a structured one as `Label: text` paragraphs), no AI involved:
+
+```yaml
+title: "Abstract: A made-up study"
+visibility: private
+abstract:
+  of: 01JB…                  # the source's pid
+  from: record               # record: the record's csl.abstract (PubMed, CrossRef, an import or a hand edit; at least 40 words); text: the article's own
+  at: 2026-11-01T10:00:00+02:00
+```
+
+It is made when the source is added (upload, `library:add`, an import whose record has one, a record taking its file) and by `library:abstracts` for older sources; a re-lookup that brings another `csl.abstract` makes its next revision. *From the text* only when the text marks it plainly (`Support\SourceAbstract`: a heading `Abstract`, `Summary` or `Rezumat` in the first quarter, up to the next heading, a structured abstract's short part headings followed, 80–500 words), else none. Never written when it holds a CNP. A writer may correct it: the marker stays and the corrected text is used. The one-line summary, *Problem, idea, evidence* and *Key points* read it instead of the article (`SourceAnalysis::ABSTRACT_TASKS`, one request); the other analyses, Ask the notebook and Studio read the article. It moves and goes to the trash with its source (`Analyses::under()`); a page at that path without `abstract`, or a signed one, is never written over.
 ## 4. Share tokens
 
 *Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,

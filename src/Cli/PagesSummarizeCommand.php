@@ -31,6 +31,10 @@ use Reporion\Service\Maintenance\ProgressAware;
  * Service\Maintenance\VectorsTask (phase 34e): it writes no page, so it
  * needs no actor. --force embeds every report again, not only the ones
  * whose text changed.
+ *
+ * bin/reporion library:abstracts [--offline] [--dry-run] [--limit=<n>] [--actor=<u>] [--json] runs
+ * Service\Maintenance\LibraryAbstractsTask (2026-11-01): the abstract page of each library source
+ * that has none.
  */
 class PagesSummarizeCommand implements CommandInterface
 {
@@ -66,7 +70,7 @@ class PagesSummarizeCommand implements CommandInterface
         }
         $apply = !\in_array('--dry-run', $args, true);
         $actor = null;
-        $raw = ['overwrite' => \in_array('--overwrite', $args, true), 'force' => \in_array('--force', $args, true)];
+        $raw = ['overwrite' => \in_array('--overwrite', $args, true), 'force' => \in_array('--force', $args, true), 'offline' => \in_array('--offline', $args, true)];
         foreach ($args as $arg) {
             if (str_starts_with($arg, '--actor=') && \strlen($arg) > 8) {
                 $actor = substr($arg, 8);

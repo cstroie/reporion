@@ -26,6 +26,9 @@ use Reporion\Support\SourceChunks;
  * notes (map-reduce), at most MAX_PARTS parts: beyond that it is refused rather than run for
  * minutes. N parts are N+1 requests, each with the Assistant's retries. Nothing is written: the
  * answer is shown, and the writer applies it (D8).
+ *
+ * The short analyses (ABSTRACT_TASKS) read the source's abstract page instead (Abstracts) when it
+ * has one: one request whatever the article's length.
  */
 final class SourceAnalysis
 {
@@ -42,6 +45,9 @@ final class SourceAnalysis
         // Phase 8: cards for learning it, kept and downloadable for Anki
         'flashcards' => 'source-flashcards',
     ];
+
+    /** The analyses an abstract answers well: they read it, when the source has one, instead of the whole text */
+    public const ABSTRACT_TASKS = ['summary', 'pie', 'points'];
 
     /** The most parts a source may be cut into */
     public const MAX_PARTS = 6;
@@ -70,6 +76,7 @@ final class SourceAnalysis
         private readonly Actions $actions,
         private readonly Assistant $assistant,
         private readonly int $contextTokens,
+        private readonly ?Abstracts $abstracts = null,
     ) {
     }
 
@@ -91,10 +98,13 @@ final class SourceAnalysis
      *
      * @return array{parts: int, requests: int}
      *
-     * @throws LibraryException TOO_LARGE when it would need more than MAX_PARTS parts
+     * @throws LibraryException TOO_LARGE when it would need more than MAX_PARTS parts (not when $task reads the abstract)
      */
-    public function plan(PageRecord $page): array
+    public function plan(PageRecord $page, string $task = ''): array
     {
+        if ($this->abstractFor($task, $page) !== null) {
+            return ['parts' => 1, 'requests' => 1];
+        }
         $parts = SourceChunks::split(SourceChunks::withoutReferences($page->body), SourceChunks::budget($this->contextTokens));
         if (\count($parts) > self::MAX_PARTS) {
             throw new LibraryException(LibraryException::TOO_LARGE);
@@ -106,7 +116,8 @@ final class SourceAnalysis
     /**
      * @param \Closure(int, int): void $progress called with (step, steps) before each request
      *
-     * @return array{result: string, parts: int, requests: int, ms: int, provider: string, usage: array<string, int>, context: list<string>}
+     * @return array{result: string, parts: int, requests: int, ms: int, provider: string, usage: array<string, int>, context: list<string>, from: string}
+     *               from: `abstract` (the source's abstract page) or `text`
      *
      * @throws LibraryException INVALID for an unknown task or a source with no text, TOO_LARGE
      * @throws AiException not_configured when a prompt page is missing, or the provider's reason
@@ -119,6 +130,13 @@ final class SourceAnalysis
         $action = $this->actions->special($page->path, self::TASKS[$task]);
         if ($action === null) {
             throw new AiException('not_configured', 'No prompt page for this analysis');
+        }
+        $abstract = $this->abstractFor($task, $page);
+        if ($abstract !== null) {
+            $progress(1, 1);
+            $done = $this->assistant->runSource($action, $page, "## Abstract\n\n" . $abstract, 'source abstract', '', 0, $user, $request);
+
+            return ['result' => trim($done['result']), 'parts' => 1, 'requests' => 1, 'ms' => $done['ms'], 'provider' => $done['provider'], 'usage' => array_map('intval', $done['usage']), 'context' => $done['contextSet'], 'from' => 'abstract'];
         }
         $text = SourceChunks::withoutReferences($page->body);
         if ($text === '') {
@@ -166,6 +184,16 @@ final class SourceAnalysis
         $done = $this->assistant->runSource($action, $page, $text, $label, '', 0, $user, $request);
         $note($done);
 
-        return ['result' => trim($done['result']), 'parts' => $n, 'requests' => $steps, 'ms' => $ms, 'provider' => $done['provider'], 'usage' => $usage, 'context' => $context];
+        return ['result' => trim($done['result']), 'parts' => $n, 'requests' => $steps, 'ms' => $ms, 'provider' => $done['provider'], 'usage' => $usage, 'context' => $context, 'from' => 'text'];
+    }
+
+    /** The abstract $task reads for $page, or null when it reads the text */
+    private function abstractFor(string $task, PageRecord $page): ?string
+    {
+        if ($this->abstracts === null || !\in_array($task, self::ABSTRACT_TASKS, true)) {
+            return null;
+        }
+
+        return $this->abstracts->of($page)['text'] ?? null;
     }
 }

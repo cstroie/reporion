@@ -55,7 +55,7 @@ final class PageMoves
             try {
                 $record = $this->storage->move($child, $to . substr($child, \strlen($from)), $actor);
                 $map[$child] = $record->path;
-                $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: ['from_hash' => AuditLog::pathHash($child), 'with' => 'analysis']);
+                $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: ['from_hash' => AuditLog::pathHash($child), 'with' => \Reporion\Service\Library\Abstracts::isAbstract($record->frontmatter) ? 'abstract' : 'analysis']);
             } catch (InvalidArgumentException|PageNotFoundException) {
                 // Its new path is taken: left where it was, still readable
             }
