@@ -83,7 +83,7 @@ final class AdminAiTest extends HttpTestCase
 
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default')->status);
         self::assertSame('default', (new InstanceSettings($this->dataRoot))->load()['ai']['fallback_profile']);
-        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $this->request('GET', '/admin/ai', 'owner')->body, 'the fallback route');
+        self::assertStringContainsString('<option value="default" selected>Default</option>', $this->request('GET', '/admin/ai', 'owner')->body, 'the fallback route');
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=Bad%20Name')->status);
         // A profile per namespace (D47)
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default&ai_profile_map=' . rawurlencode("wiki = writing\ndocs:protocols: = protocols\n"))->status);
@@ -134,7 +134,7 @@ final class AdminAiTest extends HttpTestCase
             self::assertStringNotContainsString('<datalist id="ai-models">', $screen, 'no server call until asked');
             self::assertStringContainsString('href="/ai:profiles:reports:conclusion"', $screen);
             self::assertStringContainsString('Concluzie', $screen);
-            self::assertStringContainsString('<option value="short">ai:profiles:short</option>', $screen, 'every profile with pages can be chosen');
+            self::assertStringContainsString('<option value="short">Short</option>', $screen, 'every profile with pages can be chosen');
 
             // Phase 33e: a profile's card: its rail from the table, reserved prompts, system
             $storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| conclusion | Concluzie | t | flag | append | expert |\n| --- |\n| absent | Lipsă | t | x | show | |\n", 'owner');
@@ -199,7 +199,7 @@ final class AdminAiTest extends HttpTestCase
         foreach (['reports', 'templates', 'docs:protocols', 'wiki', ''] as $ns) {
             self::assertStringContainsString('name="route_ns[]" value="' . $ns . '"', $screen);
         }
-        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $screen);
+        self::assertStringContainsString('<option value="default" selected>Default</option>', $screen);
 
         // A tie goes to the first row's profile; the same namespace twice keeps the later row; no fallback
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', $post([['a', 'one'], ['b', 'two'], ['a', 'two']]))->status);

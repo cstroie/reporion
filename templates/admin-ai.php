@@ -102,7 +102,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <tr>
 <td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><input class="input wk-mono" type="text" name="route_ns[]" value="<?= $e($ns) ?>" placeholder="<?= $e($ns === '' ? t('admin.ai.route_ns_hint') : '') ?>" aria-label="<?= $e(t('admin.ai.route_ns')) ?>" autocomplete="off"></td>
 <td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_profile[]" aria-label="<?= $e(t('admin.ai.route_profile')) ?>">
-<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $routeProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
+<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $routeProfile === (string) $profile ? ' selected' : '' ?>><?= $e(ucfirst(str_replace(['-', '_'], ' ', (string) $profile))) ?></option><?php endforeach; ?>
 </select></td>
 <td data-label="<?= $e(t('admin.ai.route_server')) ?>"><select class="input" name="route_server[]" aria-label="<?= $e(t('admin.ai.route_server')) ?>">
 <?= $serverOptions(isset($routeServers[$ns]) ? (string) $routeServers[$ns] : '', t('admin.ai.route_server_default')) ?>
@@ -113,7 +113,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><b><?= $e(t('admin.ai.route_else')) ?></b></td>
 <td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_else" aria-label="<?= $e(t('admin.ai.route_else')) ?>">
 <option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
-<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
+<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>><?= $e(ucfirst(str_replace(['-', '_'], ' ', (string) $profile))) ?></option><?php endforeach; ?>
 </select></td>
 <td data-label="<?= $e(t('admin.ai.route_server')) ?>"><select class="input" name="route_else_server" aria-label="<?= $e(t('admin.ai.server_in_use')) ?>" title="<?= $e(t('admin.ai.server_in_use_help')) ?>">
 <?= $serverOptions((string) $ai->server, null) ?>
