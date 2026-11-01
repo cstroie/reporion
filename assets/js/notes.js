@@ -917,6 +917,11 @@
   });
 
   function route() {
+    // The server's answer to a share the worker did not catch (NotesController::share())
+    if (location.hash === '#/share-lost') {
+      notice('warn', t('notes.share_lost'), false);
+      history.replaceState(null, '', location.pathname + location.search + '#/');
+    }
     if (!state.user) { show('signin'); return; }
     // Any slug: the app makes ULIDs, a note written in Reporion by hand may have another
     var m = /^#\/n\/([^\/]+)$/.exec(location.hash);
@@ -986,6 +991,8 @@
       state.db = null;
       state.notes = {};
       try { indexedDB.deleteDatabase('reporion-notes-' + name); } catch (e) { /* left for the next sign-in */ }
+      // A share still waiting is this writer's too: never the next account's note
+      if (window.caches) caches['delete'](SHARED).catch(function () { /* nothing waiting */ });
       signedOut();
     });
   });
@@ -1174,7 +1181,7 @@
   var remembered = null;
   try { remembered = JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch (e) { remembered = null; }
   (remembered && remembered.username && remembered.notes ? start(remembered) : Promise.resolve()).then(function () {
-    if (!state.user) show('signin');
+    if (!state.user) route();
     return api('GET', '/session');
   }).then(function (r) {
     state.online = true;

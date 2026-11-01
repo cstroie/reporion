@@ -368,7 +368,7 @@ final class NotesTest extends HttpTestCase
         $response = Kernel::boot($this->config)->handle(new Request('POST', '/notes/share', body: 'title=Fixture-title&text=fixture-text-xyz'));
 
         self::assertSame(303, $response->status);
-        self::assertSame('/notes', $response->headers['Location']);
+        self::assertSame('/notes#/share-lost', $response->headers['Location'], 'the app says the share was lost');
         self::assertStringNotContainsString('fixture-text-xyz', $response->body);
         self::assertArrayNotHasKey('Set-Cookie', $response->headers);
     }

@@ -57,7 +57,7 @@ final class NotesController
         'notes.recreated', 'notes.edited', 'notes.not_found', 'notes.storage_failed',
         'notes.update_ready', 'notes.update_reload', 'notes.install', 'notes.install_ready', 'notes.install_desktop', 'notes.install_mac',
         'notes.install_ios', 'notes.install_later', 'notes.installed', 'notes.saved', 'notes.edited_at',
-        'notes.not_synced_one', 'notes.signed_in_as', 'notes.tags', 'notes.tag_remove', 'notes.all', 'notes.shared',
+        'notes.not_synced_one', 'notes.signed_in_as', 'notes.tags', 'notes.tag_remove', 'notes.all', 'notes.shared', 'notes.share_lost',
         'auth.username', 'auth.password', 'auth.submit', 'auth.invalid', 'nav.signin', 'app.name',
     ];
 
@@ -145,12 +145,12 @@ final class NotesController
 
     /**
      * POST /notes/share without the worker (a launch before it controls the
-     * app): the body is never read, the writer lands on the app, whose worker
-     * takes the next share
+     * app, or an older worker): the body is never read; the writer lands on
+     * the app, which says the share was lost, and its worker takes the next
      */
     public function share(Request $request): Response
     {
-        return Response::redirect($request->basePath . '/notes', 303)->withHeader('Cache-Control', 'no-store');
+        return Response::redirect($request->basePath . '/notes#/share-lost', 303)->withHeader('Cache-Control', 'no-store');
     }
 
     /**
