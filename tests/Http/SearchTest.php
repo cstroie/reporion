@@ -246,6 +246,26 @@ final class SearchTest extends HttpTestCase
         self::assertSame(['data' => []], json_decode($response->body, true));
     }
 
+    public function testTheLibraryIsLeftOutOfTheSearchAndThePaletteUnlessAskedFor(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'leziuni fazekas');
+        $this->createPage('library:readme', 'public', 'Library readme', 'fazekas grading');
+        $this->createPage('library:deep:note', 'public', 'Deep note', 'fazekas again');
+        $this->createPage('librarything:x', 'public', 'Not the library', 'fazekas here too');
+        $get = fn (string $path, array $query): string => Kernel::boot($this->config)->handle(new Request('GET', $path, query: $query))->body;
+
+        $page = $get('/search', ['q' => 'fazekas']);
+        self::assertStringContainsString('RM cerebral', $page);
+        self::assertStringContainsString('Not the library', $page, 'a namespace boundary, not a string prefix');
+        self::assertStringNotContainsString('Library readme', $page);
+        self::assertStringNotContainsString('Deep note', $page);
+        self::assertStringContainsString('Library readme', $get('/search', ['q' => 'fazekas', 'ns' => 'library']), 'asked for: listed');
+
+        $palette = array_column(json_decode($get('/api/v1/search', ['q' => 'fazekas']), true)['data'], 'path');
+        self::assertEqualsCanonicalizing(['reports:mri:mioveni:a', 'librarything:x'], $palette);
+        self::assertSame(['library:readme'], array_column(json_decode($get('/api/v1/search', ['q' => 'fazekas', 'ns' => 'library']), true)['data'], 'path'), 'the citation picker');
+    }
+
     public function testJsonSuggestObeysVisibilityForAnonymous(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'RM privat', 'secretdiagnostic');

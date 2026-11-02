@@ -713,6 +713,13 @@ final class Sqlite implements IndexInterface
                 : ' AND p.' . $facet['col'] . ' = :' . $param;
             $params[$param] = $value;
         }
+        // `not_ns` (2026-11-02): a namespace and everything under it left out (/search leaves the library out)
+        $not = $filters['not_ns'] ?? '';
+        if (\is_string($not) && trim($not, ':') !== '') {
+            $sql .= " AND NOT (p.ns = :not_ns OR p.ns LIKE :not_ns_prefix ESCAPE '\\')";
+            $params['not_ns'] = trim($not, ':');
+            $params['not_ns_prefix'] = Query::likeEscape(trim($not, ':')) . ':%';
+        }
 
         return [$sql, $params];
     }

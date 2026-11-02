@@ -33,7 +33,15 @@ final class SearchController
         private readonly IndexInterface $index,
         /** @var ?\Closure(): bool whether Ask the archive is there (D53), asked only for a signed-in search */
         private readonly ?\Closure $askable = null,
+        // The library is searched on /library, never beside the reports (2026-11-02)
+        private readonly string $libraryNamespace = 'library',
     ) {
+    }
+
+    /** Whether $ns asks for the library (or a namespace in it): only then are its pages listed */
+    private function asksLibrary(string $ns): bool
+    {
+        return $ns === $this->libraryNamespace || str_starts_with($ns, $this->libraryNamespace . ':');
     }
 
     public function search(Request $request, ?User $principal): Response
@@ -47,6 +55,9 @@ final class SearchController
             if (\is_string($value) && trim($value) !== '') {
                 $filters[$facet] = trim($value);
             }
+        }
+        if (!$this->asksLibrary($ns)) {
+            $filters['not_ns'] = $this->libraryNamespace;
         }
         $page = max(1, (int) ($request->query['page'] ?? 1));
         $total = $term !== '' ? $this->index->searchCount($term, $principal, $ns, $filters) : 0;
@@ -96,9 +107,9 @@ final class SearchController
     public function suggest(Request $request, ?User $principal): Response
     {
         $term = trim($request->query['q'] ?? '');
-        $results = $term !== '' ? $this->index->search($term, $principal) : [];
-        // `ns`: only pages directly in that namespace (the editor's citation picker asks for the library)
+        // `ns`: only pages directly in that namespace (the editor's citation picker asks for the library); the library only when asked for
         $ns = trim($request->query['ns'] ?? '');
+        $results = $term !== '' ? $this->index->search($term, $principal, filters: $this->asksLibrary(trim($ns, ':')) ? [] : ['not_ns' => $this->libraryNamespace]) : [];
         if ($ns !== '') {
             $results = array_values(array_filter($results, static fn (array $r): bool => str_starts_with((string) $r['path'], $ns . ':') && !str_contains(substr((string) $r['path'], \strlen($ns) + 1), ':')));
         }

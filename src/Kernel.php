@@ -584,7 +584,7 @@ final class Kernel
         $ask = null;
         $search = new SearchController($index, static function () use (&$ask): bool {
             return $ask instanceof AskController && $ask->available();
-        });
+        }, self::libraryNamespace($config));
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
