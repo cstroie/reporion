@@ -41,7 +41,7 @@ use Throwable;
  */
 final class Sqlite implements IndexInterface
 {
-    private const SNIPPET_OPEN = "\x02";
+    public const SNIPPET_OPEN = "\x02";
     private const SNIPPET_CLOSE = "\x03";
 
     private readonly PDO $pdo;

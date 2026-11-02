@@ -49,7 +49,7 @@ final class SourcePassages
     }
 
     /** A page marker (Support\SourceText) */
-    private const MARKER = '/\*— p\. (\d+) —\*/u';
+    public const MARKER = '/\*— p\. (\d+) —\*/u';
 
     /** A part with fewer characters than this, markers aside, is joined to the one before */
     private const SHORT = 200;
