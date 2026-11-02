@@ -120,6 +120,39 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     }
 
     /**
+     * The speech server's voices, for Admin → AI's *Get voices*: `GET {endpoint}/audio/voices`
+     * (Kokoro-FastAPI's `{voices: [...]}`; a bare list or `{data: [...]}` too, entries being names
+     * or objects with an `id`, `name` or `voice_id`). OpenAI's own and many others have no such
+     * list: the caller says so and the voices are typed.
+     *
+     * @return list<string>
+     *
+     * @throws AiException
+     */
+    public function voices(): array
+    {
+        $handle = $this->open('GET', '/audio/voices', null);
+        $json = json_decode((string) stream_get_contents($handle, 1024 * 1024), true);
+        fclose($handle);
+        $list = \is_array($json) ? ($json['voices'] ?? $json['data'] ?? $json) : [];
+        $voices = [];
+        foreach (\is_array($list) ? $list : [] as $key => $voice) {
+            $name = \is_array($voice) ? ($voice['id'] ?? $voice['voice_id'] ?? $voice['name'] ?? null) : $voice;
+            // A map of name => details
+            if (\is_string($key) && \is_array($voice) && $name === null) {
+                $name = $key;
+            }
+            if (\is_string($name) && $name !== '' && mb_strlen($name) <= 100) {
+                $voices[] = $name;
+            }
+        }
+        $voices = array_values(array_unique($voices));
+        sort($voices);
+
+        return $voices;
+    }
+
+    /**
      * Phase 34e: `POST {endpoint}/embeddings`: one vector per text, in the
      * order given
      *

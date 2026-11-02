@@ -60,6 +60,12 @@ if ($path === '/v1/embeddings') {
 
     return;
 }
+if ($path === '/v1/audio/voices') {
+    header('Content-Type: application/json');
+    echo json_encode(['voices' => ['bf_emma', 'af_heart', 'am_michael']]);
+
+    return;
+}
 if ($path === '/v1/audio/speech') {
     // The audio overview (phase 8): a tenth of a second of silence as 16-bit mono WAV at 8 kHz; each request
     // logged, one JSON line each, beside the log; voice "stereo" answers in another format (joining must refuse it)

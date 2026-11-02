@@ -319,6 +319,16 @@ final class AdminAiController
     }
 
     /**
+     * POST /admin/ai/servers/{slot}/voices: one server's speech voices (`GET /audio/voices`), from
+     * its saved settings, for the Audio overview's two pickers: `{data: [name], error}`. Owner-only,
+     * 404 otherwise.
+     */
+    public function voices(Request $request, string $slot, ?User $principal): Response
+    {
+        return ApiResponse::json($this->check->voices($this->server($slot, $principal)));
+    }
+
+    /**
      * POST /admin/ai/servers/{slot}/test: each alias of one server: listed,
      * and one fixed one-line request with its parameters (no report text)
      * `{data: [{tier, model, listed, ok, ms, answer, error}]}`; audited

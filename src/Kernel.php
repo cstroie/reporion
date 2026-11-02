@@ -915,6 +915,8 @@ final class Kernel
             => $adminAi->save($request, 'servers', $session->principal($request)));
         $router->post('/admin/ai/servers/{slot}/models', static fn (Request $request, array $params): Response
             => $adminAi->models($request, $params['slot'], $session->principal($request)));
+        $router->post('/admin/ai/servers/{slot}/voices', static fn (Request $request, array $params): Response
+            => $adminAi->voices($request, $params['slot'], $session->principal($request)));
         $router->post('/admin/ai/servers/{slot}/test', static fn (Request $request, array $params): Response
             => $adminAi->test($request, $params['slot'], $session->principal($request)));
         $router->get('/admin/settings', static fn (Request $request, array $params): Response

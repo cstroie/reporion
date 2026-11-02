@@ -291,6 +291,23 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_common_min=2.5')->status);
     }
 
+    public function testGetVoicesListsTheSpeechServersVoices(): void
+    {
+        $server = new \Reporion\Tests\Ai\FakeServer();
+        try {
+            $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([[], ['endpoint' => $server->url]]));
+            foreach ([null, 'editor'] as $user) {
+                self::assertSame(404, $this->request('POST', '/admin/ai/servers/2/voices', $user)->status, 'owner only');
+            }
+            self::assertSame(404, $this->request('POST', '/admin/ai/servers/7/voices', 'owner')->status, 'six slots');
+            self::assertSame(['data' => ['af_heart', 'am_michael', 'bf_emma'], 'error' => null], json_decode($this->request('POST', '/admin/ai/servers/2/voices', 'owner')->body, true));
+            self::assertStringContainsString('no address', (string) json_decode($this->request('POST', '/admin/ai/servers/3/voices', 'owner')->body, true)['error']);
+            self::assertStringContainsString('data-ai-get-voices', $this->request('GET', '/admin/ai', 'owner')->body);
+        } finally {
+            $server->stop();
+        }
+    }
+
     public function testGetModelsAndTestPerCardFromTheSavedSettings(): void
     {
         $server = new \Reporion\Tests\Ai\FakeServer();

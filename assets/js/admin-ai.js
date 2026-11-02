@@ -112,6 +112,53 @@
     });
   });
 
+  // Audio overview: the speech server's voices (POST /admin/ai/servers/{slot}/voices) in two pickers
+  // that write the Voices field ("first, second")
+  var voicesBar = document.querySelector('[data-ai-voices]');
+  var speechServer = document.getElementById('ai-speech-server');
+  var voicesField = document.getElementById('ai-speech-voices');
+  if (voicesBar && speechServer && voicesField) {
+    var voicesOut = voicesBar.querySelector('[data-ai-voices-out]');
+    var voicesButton = voicesBar.querySelector('[data-ai-get-voices]');
+    var pickers = Array.prototype.slice.call(voicesBar.querySelectorAll('[data-ai-voice]'));
+    voicesBar.hidden = false;
+    var writeVoices = function () {
+      voicesField.value = pickers.map(function (p) { return p.value; }).filter(Boolean).join(', ');
+    };
+    pickers.forEach(function (p) { p.addEventListener('change', writeVoices); });
+    voicesButton.addEventListener('click', function () {
+      var slot = speechServer.value;
+      if (slot === '') { voicesOut.textContent = s.saveFirst; return; }
+      voicesButton.setAttribute('aria-busy', 'true');
+      voicesButton.disabled = true;
+      voicesOut.textContent = s.working;
+      post(slot, 'voices').then(function (json) {
+        if (json.error) { voicesOut.textContent = json.error; return; }
+        var current = voicesField.value.split(',').map(function (v) { return v.trim(); });
+        pickers.forEach(function (p, i) {
+          p.innerHTML = '';
+          var known = json.data.indexOf(current[i]) >= 0;
+          // A voice typed by hand that the list lacks stays selectable
+          (current[i] && !known ? [current[i]].concat(json.data) : json.data).forEach(function (voice) {
+            var option = document.createElement('option');
+            option.value = voice;
+            option.textContent = voice;
+            p.appendChild(option);
+          });
+          p.value = current[i] || json.data[Math.min(i, json.data.length - 1)] || '';
+          p.hidden = false;
+        });
+        writeVoices();
+        voicesOut.textContent = format(s.voices, [json.data.length]);
+      }).catch(function (error) {
+        voicesOut.textContent = error.message || s.failed;
+      }).then(function () {
+        voicesButton.removeAttribute('aria-busy');
+        voicesButton.disabled = false;
+      });
+    });
+  }
+
   var embedServer = document.getElementById('ai-embed-server');
   var embedModel = document.querySelector('[data-ai-embed-model]');
   var embedList = document.getElementById('ai-embed-models');

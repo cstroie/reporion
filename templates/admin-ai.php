@@ -163,7 +163,14 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <div class="field"><label for="ai-speech-model"><?= $e(t('admin.ai.speech_model')) ?>
 <input class="input" id="ai-speech-model" type="text" name="ai_speech_model" value="<?= $e((string) ($speechModel ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_model_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_model_help')) ?></small></label></div>
 <div class="field"><label for="ai-speech-voices"><?= $e(t('admin.ai.speech_voices')) ?>
-<input class="input" id="ai-speech-voices" type="text" name="ai_speech_voices" value="<?= $e((string) ($speechVoices ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_voices_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_voices_help')) ?></small></label></div>
+<input class="input" id="ai-speech-voices" type="text" name="ai_speech_voices" value="<?= $e((string) ($speechVoices ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_voices_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_voices_help')) ?></small></label>
+<?php /* *Get voices*: the server's own list in two pickers that write the field above; assets/js/admin-ai.js, hidden without JavaScript */ ?>
+<div class="wk-actions" data-ai-voices hidden>
+<button type="button" class="btn btn-secondary btn-sm" data-ai-get-voices><i class="ph ph-list-magnifying-glass" aria-hidden="true"></i><?= $e(t('admin.ai.get_voices')) ?></button>
+<select class="input" data-ai-voice="0" aria-label="<?= $e(t('admin.ai.voice_first')) ?>" hidden></select>
+<select class="input" data-ai-voice="1" aria-label="<?= $e(t('admin.ai.voice_second')) ?>" hidden></select>
+<span class="wk-mono wk-dim wk-text-xs" data-ai-voices-out aria-live="polite"></span>
+</div></div>
 <div class="field"><label for="ai-speech-language"><?= $e(t('admin.ai.speech_language')) ?>
 <select class="input" id="ai-speech-language" name="ai_speech_language">
 <option value=""<?= ($speechLanguage ?? '') === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.speech_language_page')) ?></option>
@@ -247,6 +254,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
         'ok' => t('admin.ai.test_ok'),
         'saveFirst' => t('admin.ai.save_first'),
         'embedModels' => t('admin.ai.embed_models_found'),
+        'voices' => t('admin.ai.voices_found'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/admin-ai.js')) ?>" defer></script>

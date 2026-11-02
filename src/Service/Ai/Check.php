@@ -90,6 +90,27 @@ final class Check
     }
 
     /**
+     * One server's voices for the audio overview (Admin → AI → Audio overview, *Get voices*):
+     * `GET {endpoint}/audio/voices`; a server that has no such list answers with `error`, and the
+     * voices are typed. Never report text.
+     *
+     * @return array{data: list<string>, error: ?string}
+     */
+    public function voices(AiConfig $ai): array
+    {
+        try {
+            if ($ai->endpoint === '') {
+                throw new AiException('not_configured', 'This server has no address yet: fill it in and save');
+            }
+            $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
+
+            return ['data' => (new OpenAiCompatibleProvider($ai, $this->egress))->voices(), 'error' => null];
+        } catch (AiException $e) {
+            return ['data' => [], 'error' => self::said($e)];
+        }
+    }
+
+    /**
      * Admin → AI's *Test* (phase 33c): is each alias's model among the
      * server's, and does one fixed one-line request (Context::probe(), no
      * report text) come back with that alias's parameters: the server's own
