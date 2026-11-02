@@ -219,6 +219,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   speech_server: 2                   # the audio overview (docs/library.md, phase 8): a server slot with an OpenAI-compatible /audio/speech; blank: no audio overview
   speech_model: 'kokoro'             # its speech model's name
   speech_voices: 'af_heart, am_michael'  # two voices: the first host, the second (they must speak the notebook's language)
+  speech_rate: ''                  # sample rate in Hz of a server's raw pcm (8000-96000; '' 24000), used only when the server refuses WAV and is asked for pcm (2026-11-02)
   speech_language: ''               # the script's language, the voices' own (ro, en, fr, de, es, it, hu; '' the notebook's `language`); a notebook's frontmatter `speech_language` wins (2026-11-01)
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5
   embed_common_min: 5                # a conclusion this many reports share word for word is a stock one, left out; 0: off; null or absent: 5

@@ -45,7 +45,7 @@ final class AdminAiController
     public const SIMILAR = ['ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
 
     /** The audio overview's speech model (docs/library.md, phase 8) */
-    public const SPEECH = ['ai.speech_server', 'ai.speech_model', 'ai.speech_voices', 'ai.speech_language'];
+    public const SPEECH = ['ai.speech_server', 'ai.speech_model', 'ai.speech_voices', 'ai.speech_language', 'ai.speech_rate'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -134,6 +134,7 @@ final class AdminAiController
             'speechServer' => is_numeric($section['speech_server'] ?? null) ? (int) $section['speech_server'] : 0,
             'speechModel' => \is_string($section['speech_model'] ?? null) ? $section['speech_model'] : '',
             'speechVoices' => \is_string($section['speech_voices'] ?? null) ? $section['speech_voices'] : '',
+            'speechRate' => is_numeric($section['speech_rate'] ?? null) ? (string) (int) $section['speech_rate'] : '',
             'speechLanguage' => \is_string($section['speech_language'] ?? null) ? $section['speech_language'] : '',
             // Phase 34b: the assistant's use, read from the audit
             'usage' => (new Usage($this->audit->directory()))->compute(new \DateTimeImmutable('now'), is_numeric($request->query['days'] ?? null) ? (int) $request->query['days'] : 30),

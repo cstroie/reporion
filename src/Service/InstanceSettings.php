@@ -96,6 +96,8 @@ final class InstanceSettings
         'ai.speech_voices' => 'voices',
         // The language the audio overview's script is written in, the voices' own (2026-11-01; '' the notebook's)
         'ai.speech_language' => 'language_or_none',
+        // The sample rate of a server's raw `pcm` (2026-11-02; blank: 24000, OpenAI's and Kokoro's): the WAV header written round it
+        'ai.speech_rate' => 'rate_or_none',
         // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
         // how often and how long they are kept. The ssh key is a path to a file, never the key itself
         'backup.enabled' => 'bool',
@@ -432,6 +434,7 @@ final class InstanceSettings
             'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
             'count_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text <= 10000 ? (int) $text : $fail()),
+            'rate_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text >= 8000 && (int) $text <= 96000 ? (int) $text : $fail()),
             'unit_or_none' => $text === '' ? null : (is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail()),
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 200000 ? (int) $text : $fail(),
             'top_k' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 1000 ? (int) $text : $fail(),

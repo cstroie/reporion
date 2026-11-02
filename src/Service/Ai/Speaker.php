@@ -17,13 +17,13 @@ use Reporion\Support\Wav;
  * egress rule; never failed over to another server (a voice is the server's own). Asks for WAV,
  * so the turns can be joined without re-encoding (Support\Wav). A server that refuses `wav` as a
  * `response_format` (OpenAI's own, and others, offer only mp3 and pcm) is asked for raw PCM
- * instead (OpenAI's: 24 kHz, 16-bit, mono, signed little-endian), wrapped in a WAV header here,
+ * instead (16-bit, mono, signed little-endian, at `ai.speech_rate`: 24 kHz unless set), wrapped in a WAV header here,
  * and is asked for PCM from then on.
  */
 final class Speaker
 {
     /** Raw PCM as OpenAI-compatible servers send it: 24 kHz, 16-bit, mono */
-    private const PCM_RATE = 24000;
+    public const PCM_RATE = 24000;
 
     private bool $pcm = false;
 
@@ -35,6 +35,7 @@ final class Speaker
         public readonly string $model,
         public readonly array $voices,
         public readonly string $serverName,
+        private readonly int $pcmRate = self::PCM_RATE,
     ) {
     }
 
@@ -57,9 +58,10 @@ final class Speaker
             return null;
         }
         $voices = array_values(array_filter(array_map('trim', explode(',', \is_string($ai['speech_voices'] ?? null) ? $ai['speech_voices'] : '')), static fn (string $v): bool => $v !== ''));
+        $rate = is_numeric($ai['speech_rate'] ?? null) ? (int) $ai['speech_rate'] : 0;
         $voices = [$voices[0] ?? '', $voices[1] ?? ($voices[0] ?? '')];
 
-        return new self(new OpenAiCompatibleProvider($server, new EgressGuard()), $model, $voices, $server->serverName);
+        return new self(new OpenAiCompatibleProvider($server, new EgressGuard()), $model, $voices, $server->serverName, $rate >= 8000 && $rate <= 96000 ? $rate : self::PCM_RATE);
     }
 
     /**
@@ -80,7 +82,7 @@ final class Speaker
                     throw $e;
                 }
                 try {
-                    $wav = Wav::fromPcm($this->provider->speech($text, $this->model, $voice, 'pcm'), self::PCM_RATE);
+                    $wav = Wav::fromPcm($this->provider->speech($text, $this->model, $voice, 'pcm'), $this->pcmRate);
                 } catch (AiException $second) {
                     throw $second;
                 }
@@ -90,6 +92,6 @@ final class Speaker
             }
         }
 
-        return Wav::fromPcm($this->provider->speech($text, $this->model, $voice, 'pcm'), self::PCM_RATE);
+        return Wav::fromPcm($this->provider->speech($text, $this->model, $voice, 'pcm'), $this->pcmRate);
     }
 }

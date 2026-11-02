@@ -171,6 +171,8 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <select class="input" data-ai-voice="1" aria-label="<?= $e(t('admin.ai.voice_second')) ?>" hidden></select>
 <span class="wk-mono wk-dim wk-text-xs" data-ai-voices-out aria-live="polite"></span>
 </div></div>
+<div class="field"><label for="ai-speech-rate"><?= $e(t('admin.ai.speech_rate')) ?>
+<input class="input" id="ai-speech-rate" type="text" inputmode="numeric" name="ai_speech_rate" value="<?= $e((string) ($speechRate ?? '')) ?>" placeholder="<?= $e(t('admin.ai.speech_rate_hint')) ?>" autocomplete="off"><small><?= $e(t('admin.ai.speech_rate_help')) ?></small></label></div>
 <div class="field"><label for="ai-speech-language"><?= $e(t('admin.ai.speech_language')) ?>
 <select class="input" id="ai-speech-language" name="ai_speech_language">
 <option value=""<?= ($speechLanguage ?? '') === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.speech_language_page')) ?></option>
