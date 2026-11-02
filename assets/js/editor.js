@@ -494,6 +494,42 @@
       }
     }
 
+    // Scrolls a textarea so offset `at` stands a third of the way down: a mirror of its box measures
+    // where the text before it ends, wrapped lines included (setSelectionRange alone does not scroll)
+    function reveal(area, at, end) {
+      area.focus();
+      area.setSelectionRange(at, end === undefined ? at : end);
+      var cs = window.getComputedStyle(area);
+      var mirror = document.createElement('div');
+      ['boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+        'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing', 'wordSpacing', 'tabSize', 'textIndent', 'textTransform'].forEach(function (k) { mirror.style[k] = cs[k]; });
+      mirror.style.position = 'absolute';
+      mirror.style.visibility = 'hidden';
+      mirror.style.top = '0';
+      mirror.style.left = '-9999px';
+      mirror.style.whiteSpace = 'pre-wrap';
+      mirror.style.overflowWrap = 'break-word';
+      mirror.style.width = area.clientWidth + 'px';
+      mirror.style.boxSizing = 'content-box';
+      mirror.style.paddingLeft = cs.paddingLeft;
+      mirror.style.paddingRight = cs.paddingRight;
+      mirror.style.borderWidth = '0';
+      mirror.style.width = (area.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) + 'px';
+      mirror.textContent = area.value.slice(0, at);
+      var mark = document.createElement('span');
+      mark.textContent = '\u200b';
+      mirror.appendChild(mark);
+      document.body.appendChild(mirror);
+      var y = mark.offsetTop;
+      document.body.removeChild(mirror);
+      area.scrollTop = Math.max(0, y - area.clientHeight / 3);
+      // A textarea that grows with its text scrolls the page instead
+      if (area.scrollHeight <= area.clientHeight + 1 && area.getBoundingClientRect) {
+        var top = area.getBoundingClientRect().top + window.pageYOffset + y;
+        window.scrollTo({ top: Math.max(0, top - window.innerHeight / 3) });
+      }
+    }
+
     function closePicker(refocus) {
       if (!picker) return;
       picker.remove();
@@ -1062,10 +1098,9 @@
         b.textContent = issue.message + (issue.quote ? ' “' + issue.quote + '”' : '');
         b.addEventListener('click', function () {
           var at = issue.quote ? textarea.value.indexOf(issue.quote) : -1;
+          if (at === -1 && issue.code === 'references_unpaired') at = textarea.value.lastIndexOf('\n## References');
           if (at === -1) return;
-          textarea.focus();
-          textarea.setSelectionRange(at, at + issue.quote.length);
-          if (textarea.blur && textarea.focus) { textarea.blur(); textarea.focus(); }
+          reveal(textarea, at, at + (issue.quote ? issue.quote.length : 0));
         });
         li.appendChild(b);
         flowList.appendChild(li);
@@ -1842,8 +1877,7 @@
             var at = areas[i].value.indexOf(quote);
             if (at === -1) continue;
             if (exams) show(i - 1);
-            areas[i].focus();
-            areas[i].setSelectionRange(at, at + quote.length);
+            reveal(areas[i], at, at + quote.length);
             return true;
           }
           return false;
