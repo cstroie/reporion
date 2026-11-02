@@ -17,10 +17,12 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Index\Sqlite;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Library;
+use Reporion\Service\Library\LibrarySearch;
 use Reporion\Support\Flashcards;
 use Reporion\Service\Library\WebClip;
 use Reporion\Http\Throttle;
@@ -62,7 +64,26 @@ final class LibraryController
         private readonly ?Highlights $highlights = null,
         private readonly ?WebClip $clip = null,
         private readonly ?Throttle $throttle = null,
+        private readonly ?LibrarySearch $search = null,
     ) {
+    }
+
+    /**
+     * GET /api/v1/library/search?q=: the articles holding every word of q, in their text or their
+     * record, best first, each with its best passage's snippet (marked with <mark>) and page;
+     * library sources the caller can read only (LibrarySearch); anonymous: 404
+     */
+    public function search(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || $this->search === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $hits = $this->search->search((string) ($request->query['q'] ?? ''), $principal);
+
+        return ApiResponse::json([
+            'data' => array_map(static fn (array $h): array => ['snippet' => Sqlite::highlightSnippet($h['snippet']), 'href' => $request->basePath . '/' . $h['path']] + $h, $hits),
+            'page' => ['total' => \count($hits), 'limit' => LibrarySearch::LIMIT],
+        ]);
     }
 
     /** Web clips a writer may make in an hour */
@@ -97,12 +118,30 @@ final class LibraryController
             'title' => strcoll(mb_strtolower($a['title']), mb_strtolower($b['title'])),
             default => [mb_strtolower($a['authors'] !== '' ? $a['authors'] : $a['title']), $a['year'] ?? 0] <=> [mb_strtolower($b['authors'] !== '' ? $b['authors'] : $b['title']), $b['year'] ?? 0],
         });
+        // A text search (2026-11-02): the articles holding the words, best first, each with its passage
+        $query = trim((string) ($request->query['q'] ?? ''));
+        $hits = null;
+        if ($query !== '' && $this->search !== null) {
+            $hits = [];
+            foreach ($this->search->search($query, $principal) as $hit) {
+                $hits[$hit['pid']] = $hit;
+            }
+            $byPid = array_column($entries, null, 'pid');
+            $entries = [];
+            foreach ($hits as $pid => $hit) {
+                if (isset($byPid[$pid])) {
+                    $entries[] = $byPid[$pid] + ['snippet' => Sqlite::highlightSnippet($hit['snippet']), 'page' => $hit['page']];
+                }
+            }
+        }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/library.php', [
             'entries' => $entries,
             'tagCounts' => $counts,
             'tag' => $tag,
             'sort' => $sort,
+            'query' => $query,
+            'searched' => $hits !== null,
             'canAdd' => $this->library->canAdd($principal),
             'namespace' => $this->library->namespace(),
             'maxMb' => intdiv($this->library->maxBytes(), 1024 * 1024),

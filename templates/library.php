@@ -78,7 +78,8 @@ $total = \count($entries);
 </section>
 <?php endif; ?>
 
-<?php if ($total === 0 && $tag === ''): ?>
+<?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
+<?php if ($total === 0 && $tag === '' && !$searched): ?>
 <?php $noticeKind = 'info'; $noticeText = t($canAdd ? 'library.empty_add' : 'library.empty'); include __DIR__ . '/partials/notice.php'; ?>
 <?php else: ?>
 <section class="wk-panel wk-lib-list" data-island="library-list">
@@ -95,6 +96,13 @@ $total = \count($entries);
 <?php endforeach; ?>
 </nav>
 </header>
+<form class="wk-lib-search" method="get" action="<?= $e($basePath . '/library') ?>" role="search">
+<label class="group"><span class="group-addon"><i class="ph ph-text-aa" aria-hidden="true"></i></span><input class="input" type="search" name="q" value="<?= $e($query) ?>" maxlength="200" placeholder="<?= $e(t('library.search_hint')) ?>" aria-label="<?= $e(t('library.search')) ?>"></label>
+<?php if ($tag !== ''): ?><input type="hidden" name="tag" value="<?= $e($tag) ?>"><?php endif; ?>
+<button class="btn btn-secondary" type="submit"><?= $e(t('library.search')) ?></button>
+<?php if ($searched): ?><a class="btn btn-ghost" href="<?= $e($link([])) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('library.search_clear')) ?></a><?php endif; ?>
+</form>
+<?php if ($searched): ?><p class="wk-dim wk-text-sm" role="status"><?= $e(t($total === 0 ? 'library.search_none' : 'library.search_found', [(string) $total, $query])) ?></p><?php endif; ?>
 <div class="wk-lib-tools">
 <label class="group wk-lib-filter"><span class="group-addon"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span><input class="input" type="search" placeholder="<?= $e(t('library.filter_hint')) ?>" aria-label="<?= $e(t('library.filter')) ?>" data-lib-filter></label>
 <?php if ($tagCounts !== []): ?>
@@ -111,7 +119,7 @@ $total = \count($entries);
 <tbody>
 <?php foreach ($entries as $entry): ?>
 <tr data-lib-row>
-<td class="wk-card-head"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['authors'] !== ''): ?><span class="wk-lib-authors wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?></td>
+<td class="wk-card-head"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['authors'] !== ''): ?><span class="wk-lib-authors wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?><?php if (($entry['snippet'] ?? '') !== ''): /* highlightSnippet(): escaped, then <mark> */ ?><span class="wk-lib-snippet wk-text-sm"><?= $entry['snippet'] ?><?= isset($entry['page']) && $entry['page'] !== null ? ' <span class="wk-dim">p. ' . (int) $entry['page'] . '</span>' : '' ?></span><?php endif; ?></td>
 <td class="wk-mono"><?= $entry['year'] !== null ? (int) $entry['year'] : '' ?></td>
 <td class="wk-dim"><?= $e($entry['journal']) ?></td>
 <td class="wk-mono"><?= $entry['cited'] > 0 ? '<a href="' . $e($basePath . '/' . $entry['path']) . '#backlinks" title="' . $e(t('library.cited_title')) . '">' . (int) $entry['cited'] . '</a>' : '' ?></td>

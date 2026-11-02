@@ -132,6 +132,7 @@ use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\AudioOverview;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\PassageSearch;
+use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\WebClip;
 use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\Library\Studio;
@@ -598,6 +599,7 @@ final class Kernel
             // Web clip (phase 7): off unless an owner turns it on
             ($config['library']['web_clip'] ?? false) === true ? new WebClip(max(1, (int) ($config['library']['max_mb'] ?? 50)) * 1024 * 1024) : null,
             $throttle,
+            new LibrarySearch($index, self::libraryNamespace($config)),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -792,6 +794,8 @@ final class Kernel
             => $libraryController->confirm($request, $session->principal($request)));
         $router->get('/library', static fn (Request $request, array $params): Response
             => $libraryController->index($request, $session->principal($request)));
+        $router->get('/api/v1/library/search', static fn (Request $request, array $params): Response
+            => $libraryController->search($request, $session->principal($request)));
         $router->get('/library/export', static fn (Request $request, array $params): Response
             => $libraryController->export($request, $session->principal($request)));
         $router->put('/api/v1/library/{pid:[0-9A-Z]+}/record', static fn (Request $request, array $params): Response

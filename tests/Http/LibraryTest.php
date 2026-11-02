@@ -509,4 +509,30 @@ final class LibraryTest extends HttpTestCase
     {
         return (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($user);
     }
+
+    public function testTheLibrarysTextSearchFindsAnArticleByItsWordsForThoseWhoMayReadIt(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $csl = ['type' => 'article-journal', 'title' => 'Made-up', 'issued' => ['date-parts' => [[2020]]]];
+        $storage->create('library:abel2020', ['title' => 'White matter in older adults', 'visibility' => 'private', 'csl' => $csl], "*— p. 3 —*\n\n" . str_repeat('Filler. ', 50) . "\n\nPeriventricular caps were graded with Fazekas.\n", 'owner');
+        $storage->create('library:cole2021', ['title' => 'Fazekas revisited', 'visibility' => 'private', 'csl' => $csl], '', 'owner');
+        $storage->create('library:abel2020:abstract', ['title' => 'Abstract', 'visibility' => 'private'], "Fazekas periventricular.\n", 'owner');
+        $storage->create('wiki:notes', ['title' => 'Notes', 'visibility' => 'public'], "Fazekas periventricular caps.\n", 'owner');
+        $get = fn (?string $user, string $path, array $query): Response => Kernel::boot($this->config)->handle(new Request('GET', $path, query: $query, cookies: $user === null ? [] : ['reporion' => $this->cookie($user)]));
+
+        $data = json_decode($get('reader', '/api/v1/library/search', ['q' => 'periventricular caps'])->body, true)['data'];
+        self::assertSame(['abel2020'], array_column($data, 'key'), 'every word, in the text; not the abstract page, not the wiki');
+        self::assertSame([3, 'text'], [$data[0]['page'], $data[0]['in']]);
+        self::assertStringContainsString('<mark>', $data[0]['snippet']);
+        self::assertEqualsCanonicalizing(['abel2020', 'cole2021'], array_column(json_decode($get('editor', '/api/v1/library/search', ['q' => 'fazekas'])->body, true)['data'], 'key'), 'a record with no file by its title');
+        self::assertSame([], json_decode($get('other', '/api/v1/library/search', ['q' => 'fazekas'])->body, true)['data'], 'no library grant: nothing');
+        self::assertSame(404, $get(null, '/api/v1/library/search', ['q' => 'fazekas'])->status);
+        self::assertSame(200, $get('owner', '/api/v1/library/search', ['q' => 'fazekas'])->status);
+
+        $page = $get('reader', '/library', ['q' => 'periventricular caps'])->body;
+        self::assertStringContainsString('href="/library:abel2020"', $page);
+        self::assertStringNotContainsString('href="/library:cole2021"', $page);
+        self::assertStringContainsString('<mark>', $page);
+        self::assertStringContainsString('No article holds “zebra”.', $get('reader', '/library', ['q' => 'zebra'])->body);
+    }
 }

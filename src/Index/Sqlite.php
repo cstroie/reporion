@@ -1184,6 +1184,21 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * The library sources directly in $ns the caller can see: pages carrying a record (`csl`) or
+     * an original, with a file or not (Support\LibrarySource)
+     *
+     * @return list<string> pids
+     */
+    public function sourcePids(string $ns, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare("SELECT p.pid FROM pages p WHERE p.ns = :ns AND (json_extract(p.meta_json, '$.csl') IS NOT NULL OR json_extract(p.meta_json, '$.original') IS NOT NULL)" . $clauseSql);
+        $stmt->execute(['ns' => $ns] + $clauseParams);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
      * @param ?list<string> $pids
      *
      * @return list<array{pid: string, path: string, title: string, n: int, page: ?int, text: string, snippet: string}>
