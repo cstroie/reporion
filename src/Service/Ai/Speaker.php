@@ -75,14 +75,14 @@ final class Speaker
                 return $this->provider->speech($text, $this->model, $voice, 'wav');
             } catch (AiException $e) {
                 // Only a refusal of the request itself is answered by asking for another format; if
-                // that fails too, the first refusal is the one told
+                // that fails too, the second refusal is the one told: it is the server's last word
                 if (!\in_array($e->status, [400, 422], true)) {
                     throw $e;
                 }
                 try {
                     $wav = Wav::fromPcm($this->provider->speech($text, $this->model, $voice, 'pcm'), self::PCM_RATE);
-                } catch (AiException) {
-                    throw $e;
+                } catch (AiException $second) {
+                    throw $second;
                 }
                 $this->pcm = true;
 
