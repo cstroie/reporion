@@ -54,6 +54,17 @@ final class PlainPagesTest extends HttpTestCase
         }
     }
 
+    public function testAPageTitledByItsOwnHeadingPrintsTheTitleOnce(): void
+    {
+        (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
+            ->create('docs:rezumat', ['visibility' => 'private'], "# Rezumat pentru șef\n\nText.\n\n# Altă parte\n", 'owner');
+
+        $print = $this->staff('/export/docs:rezumat.html')->body;
+        self::assertStringContainsString('<h1 class="doc-title">Rezumat pentru șef</h1>', $print);
+        self::assertSame(1, substr_count($print, 'Rezumat pentru șef</h1>'), 'the heading is not printed again in the text');
+        self::assertStringContainsString('Altă parte</h1>', $print, 'a later level-1 heading stays');
+    }
+
     /** @param array<string, mixed> $extra */
     private function page(string $path, array $extra): void
     {

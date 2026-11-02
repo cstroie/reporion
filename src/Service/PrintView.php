@@ -17,6 +17,7 @@ use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
+use Reporion\Support\TitleFromHeading;
 
 /**
  * The view-model behind templates/print/report.php: the ONE template for
@@ -108,6 +109,10 @@ final class PrintView
     {
         $title = PageTitle::of($record->frontmatter, $record->body);
         $last = $record->revlog[array_key_last($record->revlog)] ?? [];
+        // The title is printed above the text: the body's own `#` heading, when it is that title, is not printed twice
+        $body = $title !== '' && TitleFromHeading::first($record->body) === $title
+            ? TitleFromHeading::withoutFirst($record->body)
+            : $record->body;
 
         return [
             'css' => (string) @file_get_contents($this->printCssFile),
@@ -116,7 +121,7 @@ final class PrintView
             'rev' => $record->rev,
             'updated' => MetaText::date($last['ts'] ?? null, MetaText::DATE),
             // Paper and export files: links to other pages keep their text only (invariant 8)
-            'bodyHtml' => $this->render->body($record->body, $record->frontmatter, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
+            'bodyHtml' => $this->render->body($body, $record->frontmatter, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
         ];
     }

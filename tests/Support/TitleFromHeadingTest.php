@@ -33,4 +33,25 @@ final class TitleFromHeadingTest extends TestCase
 
         self::assertSame('Real', TitleFromHeading::first($body));
     }
+
+    public function testWithoutFirstRemovesOnlyThatHeadingLine(): void
+    {
+        $body = "# Summary for the head\n\nFirst paragraph.\n\n## Part\n\n# Second\n";
+
+        self::assertSame("First paragraph.\n\n## Part\n\n# Second\n", TitleFromHeading::withoutFirst($body));
+    }
+
+    public function testWithoutFirstSkipsFencedCodeAndKeepsCrlf(): void
+    {
+        $body = "```\r\n# a comment\r\n```\r\n\r\n# Real\r\nText\r\n";
+
+        self::assertSame("```\r\n# a comment\r\n```\r\n\r\nText\r\n", TitleFromHeading::withoutFirst($body));
+    }
+
+    public function testWithoutFirstLeavesABodyWithNoTitleAlone(): void
+    {
+        $body = "## Only two\n\nText\n";
+
+        self::assertSame($body, TitleFromHeading::withoutFirst($body));
+    }
 }
