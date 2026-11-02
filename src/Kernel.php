@@ -133,6 +133,7 @@ use Reporion\Service\Library\AudioOverview;
 use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\PassageSearch;
 use Reporion\Service\Library\LibrarySearch;
+use Reporion\Service\Library\LibraryAsk;
 use Reporion\Service\Library\WebClip;
 use Reporion\Service\Library\SourceAnalysis;
 use Reporion\Service\Library\Studio;
@@ -600,6 +601,8 @@ final class Kernel
             ($config['library']['web_clip'] ?? false) === true ? new WebClip(max(1, (int) ($config['library']['max_mb'] ?? 50)) * 1024 * 1024) : null,
             $throttle,
             new LibrarySearch($index, self::libraryNamespace($config)),
+            // Ask the library's panel: the assistant on and the library's profile has the prompt
+            static fn (): bool => $aiConfig->isConfigured() && $aiActions->special(self::libraryNamespace($config), 'ask-library') !== null,
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -658,7 +661,8 @@ final class Kernel
         );
         $libraryTokens = max(4000, (int) ($config['library']['context_tokens'] ?? 32000));
         // Phase 7: passages found by meaning too, when an embedding model is set and index:vectors has run
-        $notebookAsk = new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens, new PassageSearch(Embedder::fromConfig($config), $index, Embedder::minScore($config)));
+        $passageSearch = new PassageSearch(Embedder::fromConfig($config), $index, Embedder::minScore($config));
+        $notebookAsk = new NotebookAsk($aiActions, $assistant, $storage, $index, self::libraryNamespace($config), $libraryTokens, $passageSearch);
         $libraryAi = new LibraryAiController(
             $aiConfig,
             $assistant,
@@ -674,6 +678,8 @@ final class Kernel
             ($speaker = Speaker::fromConfig($config)) !== null
                 ? new AudioOverview($speaker, $assistant, (string) $config['paths']['data'] . '/tmp', \is_string($config['library']['tools']['ffmpeg'] ?? null) ? $config['library']['tools']['ffmpeg'] : 'ffmpeg')
                 : null,
+            // Ask the library (2026-11-02): every source, never reports
+            new LibraryAsk($aiActions, $assistant, $storage, $passageSearch, self::libraryNamespace($config), $libraryTokens),
         );
         $ai = new AiController(
             $aiConfig,
@@ -784,6 +790,8 @@ final class Kernel
             => $libraryController->highlight($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/analyze', static fn (Request $request, array $params): Response
             => $libraryAi->analyze($request, $params['pid'], $session->principal($request)));
+        $router->post('/api/v1/library/ask', static fn (Request $request, array $params): Response
+            => $libraryAi->askLibrary($request, $session->principal($request)));
         $router->post('/api/v1/notebook/ask', static fn (Request $request, array $params): Response
             => $libraryAi->askNotebook($request, $session->principal($request)));
         $router->post('/api/v1/notebook/studio', static fn (Request $request, array $params): Response

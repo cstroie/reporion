@@ -93,6 +93,7 @@ final class DefaultPrompts
         'source-limitations' => ['kind' => self::SPECIAL, 'title' => 'Source: limitations', 'file' => 'source-limitations.txt', 'targets' => self::RESEARCH_ONLY],
         'source-questions' => ['kind' => self::SPECIAL, 'title' => 'Source: questions it answers', 'file' => 'source-questions.txt', 'targets' => self::RESEARCH_ONLY],
         'ask-notebook' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook', 'file' => 'ask-notebook.txt', 'targets' => self::RESEARCH_ONLY],
+        'ask-library' => ['kind' => self::SPECIAL, 'title' => 'Ask the library', 'file' => 'ask-library.txt', 'targets' => self::RESEARCH_ONLY],
         'notebook-terms' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook: search words', 'file' => 'notebook-terms.txt', 'model' => 'lite', 'targets' => self::RESEARCH_ONLY],
         'studio-overview' => ['kind' => self::SPECIAL, 'title' => 'Studio: overview of the subject', 'file' => 'studio-overview.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-glossary' => ['kind' => self::SPECIAL, 'title' => 'Studio: glossary', 'file' => 'studio-glossary.txt', 'targets' => self::RESEARCH_ONLY],

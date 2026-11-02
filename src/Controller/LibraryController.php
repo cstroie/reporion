@@ -65,6 +65,8 @@ final class LibraryController
         private readonly ?WebClip $clip = null,
         private readonly ?Throttle $throttle = null,
         private readonly ?LibrarySearch $search = null,
+        /** @var ?\Closure(): bool whether Ask the library is set up */
+        private readonly ?\Closure $askable = null,
     ) {
     }
 
@@ -141,6 +143,8 @@ final class LibraryController
             'tag' => $tag,
             'sort' => $sort,
             'query' => $query,
+            // Ask the library (2026-11-02): for an editor of the library, when its prompt is there
+            'libraryAsk' => $this->library->canAdd($principal) && $this->askable !== null && ($this->askable)(),
             'searched' => $hits !== null,
             'canAdd' => $this->library->canAdd($principal),
             'namespace' => $this->library->namespace(),

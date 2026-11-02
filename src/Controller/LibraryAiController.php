@@ -20,6 +20,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\AudioOverview;
 use Reporion\Support\AudioScript;
+use Reporion\Service\Library\LibraryAsk;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Storage\PageRecord;
 use Reporion\Service\Library\SourceAnalysis;
@@ -70,7 +71,38 @@ final class LibraryAiController
         private readonly ?AuditLog $audit = null,
         // The audio overview (phase 8): null when no speech model is set in Admin → AI
         private readonly ?AudioOverview $audio = null,
+        // Ask the library (2026-11-02)
+        private readonly ?LibraryAsk $library = null,
     ) {
+    }
+
+    /**
+     * POST /api/v1/library/ask {question, history?, stream?}: a question answered from every library
+     * source the caller can read (LibraryAsk), never reports; an editor of the library only, others
+     * 404; `history` the last turns [{question, answer}] the browser kept
+     */
+    public function askLibrary(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || $this->library === null || !$principal->canWrite($this->libraryNamespace)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if (!$this->config->isConfigured() || !$this->library->available()) {
+            return ApiResponse::error(503, 'not_configured', t('library.ask.unavailable'));
+        }
+        $fields = $request->json();
+        $question = \is_string($fields['question'] ?? null) ? trim($fields['question']) : '';
+        if ($question === '' || mb_strlen($question) > self::MAX_QUESTION) {
+            return ApiResponse::error(422, 'invalid_question', t('notebook.err_question'));
+        }
+        $history = [];
+        foreach (\is_array($fields['history'] ?? null) ? \array_slice(array_values($fields['history']), -LibraryAsk::TURNS) : [] as $turn) {
+            if (\is_array($turn) && \is_string($turn['question'] ?? null) && \is_string($turn['answer'] ?? null)) {
+                $history[] = ['question' => mb_substr($turn['question'], 0, self::MAX_QUESTION), 'answer' => mb_substr($turn['answer'], 0, 4000)];
+            }
+        }
+        $library = $this->library;
+
+        return $this->answered($request, ($fields['stream'] ?? false) === true, fn (?\Closure $event): array => $library->ask($question, $history, $principal, $request, $event));
     }
 
     /** Whether Studio can read a script aloud: a speech model is set */

@@ -79,6 +79,33 @@ $total = \count($entries);
 <?php endif; ?>
 
 <?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
+<?php if (($libraryAsk ?? false) === true): /* Ask the library (2026-11-02): every source, never reports; assets/js/notebook-ask.js */ ?>
+<details class="wk-panel wk-notebook-ask" data-island="notebook-ask">
+<summary class="wk-eyebrow"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('library.ask.title')) ?></summary>
+<p class="wk-dim wk-text-sm"><?= $e(t('library.ask.lede')) ?></p>
+<form class="wk-notebook-form" data-notebook-form>
+<div class="field"><label><?= $e(t('library.ask.title')) ?>
+<textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('library.ask.hint')) ?>"></textarea>
+</label></div>
+<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button><button class="btn btn-ghost" type="button" data-notebook-clear hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('library.ask.clear')) ?></button></footer>
+</form>
+<div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
+<script type="application/json"><?= json_encode([
+    'basePath' => $basePath,
+    'endpoint' => '/api/v1/library/ask',
+    'history' => true,
+    'citationStyle' => \Reporion\Support\Citation::style(null),
+    'strings' => [
+        'asking' => t('notebook.asking'), 'failed' => t('notebook.failed'), 'sources' => t('notebook.sources'),
+        'whole' => t('notebook.whole'), 'passages' => t('library.ask.passages'), 'understood' => t('notebook.understood'),
+        'dropped' => t('notebook.dropped'), 'note' => t('notebook.note'),
+        'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</details>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/render-client.js')) ?>" defer></script>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/notebook-ask.js')) ?>" defer></script>
+<?php endif; ?>
 <?php if ($total === 0 && $tag === '' && !$searched): ?>
 <?php $noticeKind = 'info'; $noticeText = t($canAdd ? 'library.empty_add' : 'library.empty'); include __DIR__ . '/partials/notice.php'; ?>
 <?php else: ?>
