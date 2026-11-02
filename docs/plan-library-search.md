@@ -1,6 +1,10 @@
 # Plan: library search and ask, refactored (passage index, streaming, its own place)
 
-Status: approved 2026-11-02; built on branch `library-search`.
+Status: approved and **built 2026-11-02** on branch `library-search` (D59). Departures: Studio keeps
+its own budget (`SourceChunks::budget()`) and `PassageSearch::choose()` over the texts it already
+reads for its other tasks; the library's live title filter stays client-side and the search API is
+not wired into it (the search is the `/library?q=` form); `LibrarySearch` keeps record hits to real
+sources with `Sqlite::sourcePids()`.
 
 ## Context
 

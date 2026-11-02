@@ -116,6 +116,17 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
   of evidence, limitations, questions it answers.
 - **Ask the notebook**: Ask (D53) limited to the notebook and its sources, answers citing `[@key]`
   that link to the source's page anchor.
+- **Search and ask, apart from the reports** (2026-11-02, owner's request: a notebook may cite many
+  references, the model may be slow and have a small budget, an article must be found by its words,
+  and the library never mixes with reports): each source's passages are in the index
+  (`passage_fts`, beside `passage_vectors`). *Ask the notebook* reads its sources' passages from there
+  and a source whole only when everything fits; the budget counts the prompt, the question and the
+  answer's room; at most 24 passages; the answer streams (the sources first, then the text as it is
+  written). **Ask the library** on `/library` (`POST /api/v1/library/ask`, the `ask-library` prompt,
+  the last turns kept in the browser) asks every source the caller can read. **The library's text
+  search** (`/library?q=`, `GET /api/v1/library/search`) finds an article by the words of its text or
+  its record, with its best passage and page. `/search` and the palette no longer list library pages
+  (only with `ns=library`, as the editor's citation picker asks).
 - **Studio** (map-reduce over the sources, in the notebook's `language`, citing `[@key]`):
   systematization (definition, epidemiology, pathophysiology, imaging by modality, classification,
   differential, pitfalls, follow-up), glossary, FAQ, timeline, a comparison table (one row per source,

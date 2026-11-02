@@ -328,7 +328,20 @@ CREATE TABLE passage_vectors (
 
 - **Cut in one place:** `Support\SourcePassages` (about 1 200 characters, at headings, paragraphs and sentences, a marker-only part dropped and a short tail joined to the passage before), used by `index:vectors` and by the query alike, so passage `n` is the same text on both sides; a vector is used only while its `sha` matches the passage cut now.
 - **Filled by `index:vectors`** after the reports: a source whose model and every passage's `sha` (in order) match is `sources_current`; any other has all its passages embedded (de-identified by `Context::passageEmbeddingText()`: contact details scrubbed, the final guard) and its rows replaced in one transaction (`Sqlite::putPassages()`), so a source is never half one text and half another. A passage still holding an identifier is a row with no vector (`passages_withheld`, never sent, never matched); one the server rejects a row with no vector and no `sha`, so the source is asked for again next run (`passages_failed`). `--limit` counts reports and whole sources. Sources that are gone are dropped; `remove()` deletes a page's passages.
-- **Query: `Sqlite::passageCandidates($query, $model, $pids, $principal)`:** only the notebook's own sources' pids, joined to `pages` under `visibilityClause()` (invariant 6), cosine by brute force in PHP at or above `ai.embed_min_score`. `Service\Library\PassageSearch` fuses it by rank (RRF, k = 60) with the words' ranking, keeps two places for passages only meaning finds, at most four passages a text, until the budget is full; an embedding failure is a notice and the words alone are used. Report passages (Ask the archive) have no vectors yet (TODO 19).
+- **Query: `Sqlite::passageCandidates($query, $model, $pids, $principal)`:** only the notebook's own sources' pids (null since 2026-11-02: every source, for Ask the library), joined to `pages` under `visibilityClause()` (invariant 6), cosine by brute force in PHP at or above `ai.embed_min_score`. `Service\Library\PassageSearch` fuses it by rank (RRF, k = 60) with the words' ranking, keeps two places for passages only meaning finds, at most four passages a text, until the budget is full; an embedding failure is a notice and the words alone are used. Report passages (Ask the archive) have no vectors yet (TODO 19).
+
+**Library passages' text** (2026-11-02, `migrations/index/008_passage_fts.sql`; schema change approved by the owner 2026-11-02): each library source's passages, the same cut as `passage_vectors` (`Support\SourcePassages::ofSource()`), in a full-text table, so Ask the notebook, Ask the library and the library's search read passages from the index instead of every source.
+
+```
+CREATE VIRTUAL TABLE passage_fts USING fts5(
+  text, pid UNINDEXED, n UNINDEXED, page UNINDEXED,
+  tokenize = "unicode61 remove_diacritics 2"
+);
+```
+
+- **Derived per page by `index()`** (like `fts`): a page that is a library source (`Support\LibrarySource::isSource()`: `csl` or `original`) has its passages deleted and written again on every save; `rebuild()` truncates and refills it, so the rebuild-equals-incremental test covers it; `remove()` deletes a page's rows. Deleting `index.sqlite` loses nothing (invariant 1).
+- **Queries:** `passagesAbout($terms, $pids, $principal)` (any word, by stem or a D28 synonym: the asks), `passagesMatching($query, $principal)` (every word, as `/search` reads a query: the library's search), `passagesAt($places)` (the text for what the vectors found, to check their `sha`), `passageLengths($pids)` (whether a notebook fits whole), `passagePids()`, `sourcePids($ns)`: each joined to `pages` under `visibilityClause()` (invariant 6); BM25 order, `snippet()` with the search's markers.
+- **`/search` leaves the library out** (2026-11-02): the facet clause's `not_ns` filter, set by `SearchController` for the library namespace unless the request's `ns` asks for it.
 
 ### Visibility inside the query
 
