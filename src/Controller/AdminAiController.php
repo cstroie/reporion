@@ -321,12 +321,14 @@ final class AdminAiController
 
     /**
      * POST /admin/ai/servers/{slot}/voices: one server's speech voices (`GET /audio/voices`), from
-     * its saved settings, for the Audio overview's two pickers: `{data: [name], error}`. Owner-only,
+     * its saved settings, for the Audio overview's two pickers: `{data: [name], error}`; `?model=` the Model field's text: OpenRouter lists a model's voices in `GET /models?output_modalities=speech`. Owner-only,
      * 404 otherwise.
      */
     public function voices(Request $request, string $slot, ?User $principal): Response
     {
-        return ApiResponse::json($this->check->voices($this->server($slot, $principal)));
+        $model = \is_string($request->query['model'] ?? null) ? trim($request->query['model']) : '';
+
+        return ApiResponse::json($this->check->voices($this->server($slot, $principal), mb_strlen($model) <= 200 ? $model : ''));
     }
 
     /**

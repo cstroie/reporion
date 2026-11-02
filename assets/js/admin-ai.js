@@ -132,7 +132,8 @@
       voicesButton.setAttribute('aria-busy', 'true');
       voicesButton.disabled = true;
       voicesOut.textContent = s.working;
-      post(slot, 'voices').then(function (json) {
+      var speechModel = document.getElementById('ai-speech-model');
+      post(slot, 'voices' + (speechModel && speechModel.value.trim() ? '?model=' + encodeURIComponent(speechModel.value.trim()) : '')).then(function (json) {
         if (json.error) { voicesOut.textContent = json.error; return; }
         var current = voicesField.value.split(',').map(function (v) { return v.trim(); });
         pickers.forEach(function (p, i) {

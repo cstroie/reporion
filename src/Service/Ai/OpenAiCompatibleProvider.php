@@ -130,11 +130,11 @@ final class OpenAiCompatibleProvider implements ProviderInterface
      *
      * @throws AiException
      */
-    public function voices(): array
+    public function voices(string $model = ''): array
     {
-        $voices = [];
+        $voices = $model !== '' ? $this->modelVoices($model) : [];
         // Where servers put it: Kokoro-FastAPI under the endpoint, others beside the speech route or at the root
-        foreach ([['/audio/voices', false], ['/audio/speech/voices', false], ['/voices', false], ['/audio/voices', true], ['/voices', true]] as [$path, $fromRoot]) {
+        foreach ($voices !== [] ? [] : [['/audio/voices', false], ['/audio/speech/voices', false], ['/voices', false], ['/audio/voices', true], ['/voices', true]] as [$path, $fromRoot]) {
             try {
                 $handle = $this->open('GET', $path, null, null, $fromRoot);
             } catch (AiException $e) {
@@ -167,6 +167,31 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         sort($voices);
 
         return $voices;
+    }
+
+    /**
+     * OpenRouter's own list: `GET {endpoint}/models?output_modalities=speech`, whose entries carry
+     * `supported_voices` (null when the provider documents none); [] for any other server, or a
+     * model it does not list
+     *
+     * @return list<string>
+     */
+    private function modelVoices(string $model): array
+    {
+        try {
+            $handle = $this->open('GET', '/models?output_modalities=speech', null);
+        } catch (AiException) {
+            return [];
+        }
+        $json = json_decode((string) stream_get_contents($handle, 8 * 1024 * 1024), true);
+        fclose($handle);
+        foreach (\is_array($json['data'] ?? null) ? $json['data'] : [] as $entry) {
+            if (\is_array($entry) && ($entry['id'] ?? null) === $model && \is_array($entry['supported_voices'] ?? null)) {
+                return array_values(array_filter($entry['supported_voices'], static fn (mixed $v): bool => \is_string($v) && $v !== '' && mb_strlen($v) <= 100));
+            }
+        }
+
+        return [];
     }
 
     /**

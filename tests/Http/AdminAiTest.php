@@ -301,6 +301,8 @@ final class AdminAiTest extends HttpTestCase
             }
             self::assertSame(404, $this->request('POST', '/admin/ai/servers/7/voices', 'owner')->status, 'six slots');
             self::assertSame(['data' => ['af_heart', 'am_michael', 'bf_emma'], 'error' => null], json_decode($this->request('POST', '/admin/ai/servers/2/voices', 'owner')->body, true));
+            self::assertSame(['bram', 'nadine'], json_decode($this->request('POST', '/admin/ai/servers/2/voices', 'owner', query: ['model' => 'tts-or'])->body, true)['data'], 'OpenRouter: the model\'s own supported_voices');
+            self::assertSame(['af_heart', 'am_michael', 'bf_emma'], json_decode($this->request('POST', '/admin/ai/servers/2/voices', 'owner', query: ['model' => 'tts-none'])->body, true)['data'], 'none documented: the server\'s voices list');
             self::assertStringContainsString('no address', (string) json_decode($this->request('POST', '/admin/ai/servers/3/voices', 'owner')->body, true)['error']);
             self::assertStringContainsString('data-ai-get-voices', $this->request('GET', '/admin/ai', 'owner')->body);
         } finally {

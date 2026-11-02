@@ -91,12 +91,12 @@ final class Check
 
     /**
      * One server's voices for the audio overview (Admin → AI → Audio overview, *Get voices*):
-     * `GET {endpoint}/audio/voices`; a server that has no such list answers with `error`, and the
+     * the model's `supported_voices` (OpenRouter) or `GET {endpoint}/audio/voices`; a server that has no such list answers with `error`, and the
      * voices are typed. Never report text.
      *
      * @return array{data: list<string>, error: ?string}
      */
-    public function voices(AiConfig $ai): array
+    public function voices(AiConfig $ai, string $model = ''): array
     {
         try {
             if ($ai->endpoint === '') {
@@ -104,7 +104,7 @@ final class Check
             }
             $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
 
-            return ['data' => (new OpenAiCompatibleProvider($ai, $this->egress))->voices(), 'error' => null];
+            return ['data' => (new OpenAiCompatibleProvider($ai, $this->egress))->voices($model), 'error' => null];
         } catch (AiException $e) {
             return ['data' => [], 'error' => self::said($e)];
         }

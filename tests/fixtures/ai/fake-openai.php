@@ -24,6 +24,13 @@ if ($path === '/api/v1/models') {
 
     return;
 }
+if ($path === '/v1/models' && ($_GET['output_modalities'] ?? '') === 'speech') {
+    // OpenRouter's: a speech model carries its voices (null when none are documented)
+    header('Content-Type: application/json');
+    echo json_encode(['data' => [['id' => 'tts-or', 'supported_voices' => ['nadine', 'bram']], ['id' => 'tts-none', 'supported_voices' => null]]]);
+
+    return;
+}
 if ($path === '/v1/models') {
     header('Content-Type: application/json');
     echo json_encode(['data' => [['id' => 'test-model'], ['id' => 'other-model']]]);
