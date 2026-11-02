@@ -13,10 +13,8 @@ use Reporion\Http\Request;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
-use Reporion\Service\ArchiveAsk;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
-use Reporion\Support\AskExpansion;
 use Reporion\Support\InternalLink;
 use Reporion\Support\LibrarySource;
 use Reporion\Support\PageTitle;
@@ -68,14 +66,8 @@ final class NotebookAsk
      */
     public function sources(PageRecord $notebook, User $principal): array
     {
-        $keys = InternalLink::citedKeys($notebook->body);
-        foreach (\is_array($notebook->frontmatter['sources'] ?? null) ? $notebook->frontmatter['sources'] : [] as $key) {
-            if (\is_string($key) && !\in_array($key, $keys, true)) {
-                $keys[] = $key;
-            }
-        }
         $sources = [];
-        foreach ($keys as $key) {
+        foreach ($this->keys($notebook) as $key) {
             $path = $this->libraryNamespace . ':' . $key;
             if ($this->index->findByPath($path, $principal) === null) {
                 continue;
@@ -95,72 +87,66 @@ final class NotebookAsk
     }
 
     /**
+     * The sources a notebook cites that the caller may read, from the index only (2026-11-02: a
+     * notebook may cite many; none is read until it is needed), in the order first cited
+     *
+     * @return list<array{key: string, path: string, pid: string, title: string}>
+     */
+    public function cited(PageRecord $notebook, User $principal): array
+    {
+        $out = [];
+        foreach ($this->keys($notebook) as $key) {
+            $path = $this->libraryNamespace . ':' . $key;
+            $row = $this->index->findByPath($path, $principal);
+            $meta = $row !== null ? json_decode((string) ($row['meta_json'] ?? ''), true) : null;
+            if (\is_array($meta) && LibrarySource::isSource($meta)) {
+                $out[] = ['key' => $key, 'path' => $path, 'pid' => (string) $row['pid'], 'title' => (string) ($row['title'] ?? $key)];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param ?\Closure(string, array<string, mixed>): void $event progress, sources and the answer's pieces (SourceAsk)
+     *
      * @return array{answer: ?string, sources: list<array{n: int, key: ?string, title: string, page: ?int, path: string}>, whole: bool, understood: ?string, notices: list<string>, dropped: int, ms: int, provider: string, context: list<string>}
      *
      * @throws AiException not_configured without the prompt, or the provider's reason
      */
-    public function ask(PageRecord $notebook, string $question, User $principal, ?Request $request): array
+    public function ask(PageRecord $notebook, string $question, User $principal, ?Request $request, ?\Closure $event = null): array
     {
         $action = $this->actions->special($notebook->path, 'ask-notebook');
         if ($action === null) {
             throw new AiException('not_configured', 'No prompt page for Ask the notebook');
         }
         $own = ['key' => null, 'path' => $notebook->path, 'title' => PageTitle::of($notebook->frontmatter, $notebook->body), 'text' => trim($notebook->body)];
-        $texts = array_merge([$own], $this->sources($notebook, $principal));
-        $budget = SourceChunks::budget($this->contextTokens);
-        $notices = [];
-        $understood = null;
-        $whole = array_sum(array_map(static fn (array $t): int => mb_strlen($t['text']), $texts)) <= $budget;
 
-        if ($whole) {
-            $passages = [];
-            foreach ($texts as $t) {
-                if ($t['text'] !== '') {
-                    $passages[] = ['key' => $t['key'], 'path' => $t['path'], 'title' => $t['title'], 'page' => null, 'text' => $t['text']];
-                }
-            }
-        } else {
-            $terms = ArchiveAsk::terms($question);
-            $expand = $this->actions->special($notebook->path, 'notebook-terms');
-            if ($expand !== null) {
-                try {
-                    $parsed = AskExpansion::parse($this->assistant->runNotebookTerms($expand, $question, $principal, $request)['result']);
-                    $understood = $parsed['question'] !== '' && $parsed['question'] !== $question ? $parsed['question'] : null;
-                    $terms = array_values(array_unique([...$terms, ...$parsed['terms']]));
-                } catch (AiException) {
-                    $notices[] = t('notebook.expand_failed');
-                }
-            }
-            $found = $this->search->choose($texts, $terms, $budget, $this->assistant->safeQuestion($understood ?? $question), $principal);
-            $passages = $found['passages'];
-            if ($found['failed']) {
-                $notices[] = t('notebook.meaning_failed');
+        return (new SourceAsk($this->assistant, $this->storage, $this->search, $this->libraryNamespace, $this->contextTokens))->answer(
+            $action,
+            $this->actions->special($notebook->path, 'notebook-terms'),
+            $question,
+            [],
+            [$own],
+            $this->cited($notebook, $principal),
+            $notebook->frontmatter['language'] ?? null,
+            $principal,
+            $request,
+            $event,
+        );
+    }
+
+    /** @return list<string> the keys a notebook cites (`[@key]`), then those its `sources:` lists */
+    private function keys(PageRecord $notebook): array
+    {
+        $keys = InternalLink::citedKeys($notebook->body);
+        foreach (\is_array($notebook->frontmatter['sources'] ?? null) ? $notebook->frontmatter['sources'] : [] as $key) {
+            if (\is_string($key) && !\in_array($key, $keys, true)) {
+                $keys[] = $key;
             }
         }
 
-        $sources = [];
-        foreach ($passages as $i => $p) {
-            $sources[] = ['n' => $i + 1] + $p;
-        }
-        // No source: no model call (as Ask the archive, D53)
-        if ($sources === []) {
-            return ['answer' => null, 'sources' => [], 'whole' => $whole, 'understood' => $understood, 'notices' => [...$notices, t('notebook.nothing')], 'dropped' => 0, 'ms' => 0, 'provider' => '', 'context' => []];
-        }
-        $done = $this->assistant->runNotebook($action, $understood ?? $question, array_map(static fn (array $s): array => ['n' => $s['n'], 'key' => $s['key'], 'title' => $s['title'], 'page' => $s['page'], 'text' => $s['text']], $sources), $notebook->frontmatter['language'] ?? null, $principal, $request);
-        $sent = array_values(array_unique(array_filter(array_column($sources, 'key'), 'is_string')));
-        [$answer, $dropped] = self::onlySent($done['result'], $sent);
-
-        return [
-            'answer' => $answer,
-            'sources' => array_map(static fn (array $s): array => ['n' => $s['n'], 'key' => $s['key'], 'title' => $s['title'], 'page' => $s['page'], 'path' => $s['path']], $sources),
-            'whole' => $whole,
-            'understood' => $understood,
-            'notices' => $notices,
-            'dropped' => $dropped,
-            'ms' => $done['ms'],
-            'provider' => $done['provider'],
-            'context' => $done['contextSet'],
-        ];
+        return $keys;
     }
 
     /**

@@ -510,17 +510,22 @@ final class Context
      * (the notebook's own with `kind="notebook"` and no key), de-identified like any text that
      * leaves. {question} goes through safeQuestion().
      *
+     * Also Ask the library's (2026-11-02, the `ask-library` prompt), with the earlier turns in {history}.
+     *
      * @param list<array{n: int, key: ?string, title: string, page: ?int, text: string}> $sources
      * @param ?string $language the notebook's `language` (Context::languageName())
+     * @param list<array{question: string, answer: string}> $history
      *
      * @throws AiException identifier_leak
      */
-    public function notebook(Action $action, string $question, array $sources, mixed $language = null): Prompt
+    public function notebook(Action $action, string $question, array $sources, mixed $language = null, array $history = []): Prompt
     {
         $redactor = new Redactor();
         $blocks = self::sourceBlocks($sources, $redactor);
         $vars = [
             'question' => self::escape($this->safeQuestion($question)),
+            // Ask the library's earlier turns (2026-11-02), as expand() gives them
+            'history' => $this->historyBlock($history),
             'sources' => $blocks !== [] ? implode("\n", $blocks) : '( no sources )',
             'language' => $this->language($language),
             'current_date' => date('Y-m-d'),
@@ -634,14 +639,9 @@ final class Context
      */
     public function expand(Action $action, string $question, array $history): Prompt
     {
-        $turns = [];
-        foreach ($history as $turn) {
-            $answer = trim((string) preg_replace('/\s*\[\d{1,2}\]/u', '', $turn['answer']));
-            $turns[] = "<turn>\n<question>" . self::escape($this->safeQuestion($turn['question'])) . "</question>\n<answer>" . self::escape($this->safeQuestion($answer)) . "</answer>\n</turn>";
-        }
         $vars = [
             'question' => self::escape($this->safeQuestion($question)),
-            'history' => $turns !== [] ? "<history>\n" . implode("\n", $turns) . "\n</history>" : '',
+            'history' => $this->historyBlock($history),
             'language' => self::LANGUAGE,
             'current_date' => date('Y-m-d'),
             'action' => $action->id,
@@ -653,7 +653,24 @@ final class Context
             throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
         }
 
-        return new Prompt($system, $user, [\count($turns) . ' turns', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+        return new Prompt($system, $user, [\count($history) . ' turns', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * Earlier turns as `<history><turn>…</turn></history>`, each de-identified (safeQuestion()), old
+     * citations (`[3]`, `[@key, p. 4]`) taken out; '' for none
+     *
+     * @param list<array{question: string, answer: string}> $history
+     */
+    private function historyBlock(array $history): string
+    {
+        $turns = [];
+        foreach ($history as $turn) {
+            $answer = trim((string) preg_replace(['/\s*\[\d{1,2}\]/u', '/\s*\[@[^\]]{1,200}\]/u'], '', $turn['answer']));
+            $turns[] = "<turn>\n<question>" . self::escape($this->safeQuestion($turn['question'])) . "</question>\n<answer>" . self::escape($this->safeQuestion($answer)) . "</answer>\n</turn>";
+        }
+
+        return $turns !== [] ? "<history>\n" . implode("\n", $turns) . "\n</history>" : '';
     }
 
     /**

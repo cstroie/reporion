@@ -25,6 +25,23 @@ final class SourceChunks
         return max(2000, ($contextTokens - self::RESERVED_TOKENS) * self::CHARS_PER_TOKEN);
     }
 
+    /** The answer's room when its prompt page sets no `max_tokens:` */
+    public const ANSWER_TOKENS = 1500;
+
+    /**
+     * What a request of $contextTokens can hold for its sources, in characters, counted from what
+     * it really carries (2026-11-02): less the prompt page ($prompt), the answer's room
+     * ($answerTokens, else ANSWER_TOKENS) and whatever else goes with it (the question, the earlier
+     * turns), with a small margin for the source tags; never under 2000
+     */
+    public static function budgetFor(int $contextTokens, string $prompt, int $answerTokens = 0, string ...$also): int
+    {
+        $carried = mb_strlen($prompt) + array_sum(array_map('mb_strlen', $also));
+        $room = ($answerTokens > 0 ? $answerTokens : self::ANSWER_TOKENS) + 300;
+
+        return max(2000, ($contextTokens - $room) * self::CHARS_PER_TOKEN - $carried);
+    }
+
     /** The article without the reference list the library keeps at the end of its page (Service\Library\Library::body()) */
     public static function withoutReferences(string $body): string
     {

@@ -159,9 +159,10 @@ final class Assistant
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
-    public function runNotebook(Action $action, string $question, array $sources, mixed $language, User $user, ?Request $request = null): array
+    public function runNotebook(Action $action, string $question, array $sources, mixed $language, User $user, ?Request $request = null, ?\Closure $emit = null, array $history = []): array
     {
-        return $this->retried($action, fn (): Prompt => $this->context->notebook($action, $question, $sources, $language), null, $user, $request, static function (string $piece): void {
+        // $emit: the answer's pieces as they come (a streamed ask, 2026-11-02)
+        return $this->retried($action, fn (): Prompt => $this->context->notebook($action, $question, $sources, $language, $history), null, $user, $request, $emit ?? static function (string $piece): void {
         });
     }
 

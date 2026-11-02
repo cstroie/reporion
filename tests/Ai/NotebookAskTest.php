@@ -40,7 +40,7 @@ final class NotebookAskTest extends HttpTestCase
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'issued' => ['date-parts' => [[2020]]]];
         $storage->create('library:abel2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl], "*— p. 4 —*\n\nWhite matter lesions were graded in 128 patients.\n\n## References\n\n```text\n1. Cited elsewhere.\n```\n", 'owner');
         $long = '';
-        foreach (range(1, 6) as $page) {
+        foreach (range(1, 12) as $page) {
             $long .= "*— p. {$page} —*\n\n" . str_repeat("Page {$page} filler sentence about nothing. ", 20) . ($page === 5 ? "\n\nLeziuni de substanță albă: white matter lesions graded with Fazekas.\n\n" : "\n\n");
         }
         $storage->create('library:long2021', ['title' => 'A long made-up study', 'visibility' => 'private', 'csl' => $csl], $long, 'owner');
@@ -138,6 +138,38 @@ final class NotebookAskTest extends HttpTestCase
         self::assertSame(['long2021'], array_column($data['sources'], 'key'));
         self::assertSame(1, $this->server->requests(), 'found by meaning: the model is asked');
         self::assertStringContainsString('graded with Fazekas', $this->server->lastRequest()['body']['messages'][1]['content']);
+    }
+
+    public function testANotebookCitingManySourcesSendsTheBestPassagesFromTheIndexWithinBudget(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $storage = $this->storage();
+        $csl = ['type' => 'article-journal', 'title' => 'Many', 'issued' => ['date-parts' => [[2022]]]];
+        $keys = [];
+        foreach (range(1, 30) as $i) {
+            $key = 'many' . $i . '2022';
+            $keys[] = $key;
+            $storage->create('library:' . $key, ['title' => 'Study ' . $i, 'visibility' => 'private', 'csl' => $csl], str_repeat("Unrelated filler about method {$i}. ", 30) . "\n\nFazekas grading was used in study {$i}.\n", 'owner');
+        }
+        $storage->create('wiki:many', ['title' => 'Many', 'visibility' => 'private', 'sources' => $keys], "# Many\n\nNotes.\n", 'owner');
+
+        $data = json_decode($this->ask('writer', ['path' => 'wiki:many', 'question' => 'Ce spune despre Fazekas?'])->body, true)['data'];
+
+        self::assertFalse($data['whole']);
+        self::assertLessThanOrEqual(\Reporion\Service\Library\PassageSearch::MAX_PASSAGES, \count($data['sources']));
+        self::assertNotSame([], $data['sources']);
+        $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertLessThanOrEqual(\Reporion\Support\SourceChunks::budgetFor(4000, "{sources}\n<q>{question}</q> in {language}\n", 0, 'Ce spune despre Fazekas?') + 2000, mb_strlen($sent), 'within the budget, tags aside');
+        self::assertStringContainsString('Fazekas grading', $sent);
+    }
+
+    public function testTheBudgetCountsThePromptTheQuestionAndTheAnswersRoom(): void
+    {
+        $chunks = \Reporion\Support\SourceChunks::class;
+        self::assertSame((32000 - 1500 - 300) * 3, $chunks::budgetFor(32000, ''));
+        self::assertSame((32000 - 4000 - 300) * 3 - 600, $chunks::budgetFor(32000, str_repeat('p', 500), 4000, str_repeat('q', 100)), 'the page\'s max_tokens is the answer\'s room');
+        self::assertSame(2000, $chunks::budgetFor(4000, str_repeat('p', 20000)), 'never under 2000');
     }
 
     public function testNothingMatchingAsksNoModel(): void

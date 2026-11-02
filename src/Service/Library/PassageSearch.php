@@ -37,12 +37,29 @@ final class PassageSearch
 
     /** Passages asked of the vectors */
     private const SEMANTIC = 40;
+    /** Passages asked of passage_fts */
+    private const WORDS = 120;
+    /** The most passages one answer is given (a notebook citing many sources, the whole library) */
+    public const MAX_PASSAGES = 24;
 
     public function __construct(
         private readonly ?Embedder $embedder = null,
         private readonly ?Sqlite $index = null,
         private readonly float $minScore = Embedder::DEFAULT_MIN_SCORE,
     ) {
+    }
+
+    /**
+     * How many characters each source's passages hold (passage_fts), without reading a source;
+     * empty with no index
+     *
+     * @param list<string> $pids
+     *
+     * @return array<string, int>
+     */
+    public function lengths(array $pids): array
+    {
+        return $this->index?->passageLengths($pids) ?? [];
     }
 
     /** Whether passages can be found by meaning: an embedding model is set */
@@ -82,31 +99,114 @@ final class PassageSearch
 
         [$meaningIds, $failed] = $this->byMeaning($meaning, $byPid, $all, $principal);
 
+        return $this->pack($keyword, $meaningIds, array_map(static fn (array $p): array => ['path' => $texts[$p['t']]['path'], 'key' => $texts[$p['t']]['key'], 'title' => $texts[$p['t']]['title'], 'page' => $p['page'], 'text' => $p['text']], $all), $budget, PHP_INT_MAX) + ['failed' => $failed];
+    }
+
+    /**
+     * The passages a question is about, read from the index (2026-11-02): a notebook's own texts
+     * ($own, cut and scored here, as choose()) and the library sources' passages, by words from
+     * passage_fts and by meaning from passage_vectors, only of $pids (a notebook's sources) or of
+     * every source the caller can see (null: Ask the library). No source is read whole. At most
+     * $max passages, PER_SOURCE a source, within $budget characters.
+     *
+     * @param list<array{key: ?string, path: string, title: string, text: string}> $own
+     * @param ?list<string> $pids
+     * @param list<string>  $terms folded
+     * @param string        $meaning already safe to send; '' for words only
+     *
+     * @return array{passages: list<array{key: ?string, path: string, title: string, page: ?int, text: string}>, semantic: int, failed: bool}
+     */
+    public function find(array $own, ?array $pids, array $terms, int $budget, string $meaning, ?User $principal, int $max = self::MAX_PASSAGES): array
+    {
+        $all = [];
+        $ownIds = [];
+        foreach ($own as $t => $text) {
+            $scored = [];
+            foreach (SourcePassages::cut($text['text']) as $p) {
+                $id = 'own' . $t . ':' . $p['n'];
+                $all[$id] = ['path' => $text['path'], 'key' => $text['key'], 'title' => $text['title'], 'page' => $p['page'], 'text' => $p['text']];
+                $score = \count(RecallTerms::matched($terms, RecallTerms::fold($p['text'])));
+                if ($score > 0) {
+                    $scored[] = ['id' => $id, 'score' => $score];
+                }
+            }
+            usort($scored, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+            $ownIds = [...$ownIds, ...array_column($scored, 'id')];
+        }
+        $sourceIds = [];
+        foreach ($this->index?->passagesAbout($terms, $pids, $principal, self::WORDS) ?? [] as $p) {
+            $id = $p['pid'] . ':' . $p['n'];
+            $all[$id] = ['path' => $p['path'], 'key' => null, 'title' => $p['title'], 'page' => $p['page'], 'text' => $p['text']];
+            $sourceIds[] = $id;
+        }
+        // The notebook's own passages and the sources' by turns: neither crowds the other out
+        $keyword = [];
+        for ($i = 0, $n = max(\count($ownIds), \count($sourceIds)); $i < $n; ++$i) {
+            array_push($keyword, ...\array_slice($ownIds, $i, 1), ...\array_slice($sourceIds, $i, 1));
+        }
+
+        $meaningIds = [];
+        $failed = false;
+        if ($this->embedder !== null && $this->index !== null && trim($meaning) !== '' && $this->index->hasPassages($this->embedder->model, $pids)) {
+            try {
+                $vector = $this->embedder->embed([$meaning])[0] ?? [];
+                $hits = $this->index->passageCandidates($vector, $this->embedder->model, $pids, $principal, self::SEMANTIC, $this->minScore);
+                $missing = array_values(array_filter($hits, static fn (array $h): bool => !isset($all[$h['pid'] . ':' . $h['n']])));
+                foreach ($this->index->passagesAt(array_map(static fn (array $h): array => ['pid' => $h['pid'], 'n' => $h['n']], $missing), $principal) as $id => $p) {
+                    $all[$id] = ['path' => $p['path'], 'key' => null, 'title' => $p['title'], 'page' => $p['page'], 'text' => $p['text']];
+                }
+                foreach ($hits as $hit) {
+                    $id = $hit['pid'] . ':' . $hit['n'];
+                    // A vector only for the text it was made from
+                    if (isset($all[$id]) && Embedder::sha($this->embedder->model, $all[$id]['text']) === $hit['sha']) {
+                        $meaningIds[] = $id;
+                    }
+                }
+            } catch (AiException) {
+                $failed = true;
+            }
+        }
+
+        return $this->pack($keyword, $meaningIds, $all, $budget, $max) + ['failed' => $failed];
+    }
+
+    /**
+     * The two rankings fused by rank and packed: the best passage by words first (so a small
+     * budget is never all meaning), then the places kept for what only meaning finds, then the
+     * rest, PER_SOURCE a source (by path), within $budget characters and $max passages; in fused order
+     *
+     * @param list<string> $keyword
+     * @param list<string> $meaning
+     * @param array<string, array{path: string, key: ?string, title: string, page: ?int, text: string}> $all
+     *
+     * @return array{passages: list<array{key: ?string, path: string, title: string, page: ?int, text: string}>, semantic: int}
+     */
+    private function pack(array $keyword, array $meaning, array $all, int $budget, int $max): array
+    {
         $rrf = [];
-        foreach ([$keyword, $meaningIds] as $list) {
+        foreach ([$keyword, $meaning] as $list) {
             foreach ($list as $rank => $id) {
                 $rrf[$id] = ($rrf[$id] ?? 0.0) + 1 / (self::RRF + $rank + 1);
             }
         }
         arsort($rrf);
         $viaKeyword = array_flip($keyword);
-        $meaningOnly = array_values(array_filter($meaningIds, static fn (string $id): bool => !isset($viaKeyword[$id])));
+        $meaningOnly = array_values(array_filter($meaning, static fn (string $id): bool => !isset($viaKeyword[$id])));
 
         $chosen = [];
         $used = 0;
         $per = [];
-        $take = function (array $ids, int $max) use (&$chosen, &$used, &$per, $all, $texts, $budget): int {
+        $take = function (array $ids, int $limit) use (&$chosen, &$used, &$per, $all, $budget, $max): int {
             $taken = 0;
             foreach ($ids as $id) {
-                if ($taken >= $max) {
+                if ($taken >= $limit || \count($chosen) >= $max) {
                     break;
                 }
                 $p = $all[$id];
-                $path = $texts[$p['t']]['path'];
-                if (isset($chosen[$id]) || ($per[$path] ?? 0) >= self::PER_SOURCE || $used + mb_strlen($p['text']) > $budget) {
+                if (isset($chosen[$id]) || ($per[$p['path']] ?? 0) >= self::PER_SOURCE || $used + mb_strlen($p['text']) > $budget) {
                     continue;
                 }
-                $per[$path] = ($per[$path] ?? 0) + 1;
+                $per[$p['path']] = ($per[$p['path']] ?? 0) + 1;
                 $used += mb_strlen($p['text']);
                 $chosen[$id] = true;
                 ++$taken;
@@ -114,21 +214,18 @@ final class PassageSearch
 
             return $taken;
         };
-        // The best passage by words first, so a small budget is never all meaning; then the places kept for meaning
         $take(\array_slice($keyword, 0, 1), 1);
         $semantic = $take($meaningOnly, self::SEMANTIC_PLACES);
-        $take(array_keys($rrf), PHP_INT_MAX);
+        $take(array_map('strval', array_keys($rrf)), PHP_INT_MAX);
 
         $out = [];
         foreach (array_keys($rrf) as $id) {
             if (isset($chosen[$id])) {
-                $p = $all[$id];
-                $text = $texts[$p['t']];
-                $out[] = ['key' => $text['key'], 'path' => $text['path'], 'title' => $text['title'], 'page' => $p['page'], 'text' => $p['text']];
+                $out[] = $all[$id];
             }
         }
 
-        return ['passages' => $out, 'semantic' => $semantic, 'failed' => $failed];
+        return ['passages' => $out, 'semantic' => $semantic];
     }
 
     /**
