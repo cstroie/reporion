@@ -796,6 +796,8 @@ final class Kernel
             => $libraryAi->askNotebook($request, $session->principal($request)));
         $router->post('/api/v1/notebook/studio', static fn (Request $request, array $params): Response
             => $libraryAi->studio($request, $session->principal($request)));
+        $router->post('/api/v1/notebook/audio', static fn (Request $request, array $params): Response
+            => $libraryAi->audioAgain($request, $session->principal($request)));
         $router->post('/api/v1/library/import', static fn (Request $request, array $params): Response
             => $libraryController->import($request, $session->principal($request)));
         $router->post('/api/v1/library', static fn (Request $request, array $params): Response

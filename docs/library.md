@@ -334,7 +334,10 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    (`Support\Wav`: one PCM format or refused) and encoded to MP3 by ffmpeg when it is there (`library.tools.ffmpeg`), else kept as WAV.
    The file goes with the library's originals (`Storage::storeOriginal()`), recorded as `audio` on the kept script page
    (`{notebook}:studio-audio`), played from the Studio panel and the kept list (`GET /library/audio/{pid}`, `Range` for seeking).
-   Progress is streamed for both the script and the reading. A failure to read it keeps the script and says why. *Not built:*
+   Progress is streamed for both the script and the reading. A failure to read it keeps the script and says why. *Added 2026-11-02:*
+   **Read aloud again**: the kept script's *Read aloud again* button (`POST /api/v1/notebook/audio`) makes the audio from the script as the
+   page holds it now (editable) with the speech model and voices set now, a new revision with the new `audio`, no script request; the
+   earlier file stays in `data/sources/`; a failure replaces nothing. *Not built:*
    per-voice language checks (the owner picks voices that speak the notebook's language), an audio overview of a single source.
 
 ## Long sources

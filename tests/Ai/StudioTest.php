@@ -211,6 +211,37 @@ final class StudioTest extends HttpTestCase
         self::assertArrayNotHasKey('audio', $this->storage()->read('wiki:notebook:studio-audio')->frontmatter);
     }
 
+    public function testTheAudioIsReadAloudAgainFromTheKeptScript(): void
+    {
+        $audioAgain = fn (?string $user, array $body = ['path' => 'wiki:notebook']): Response => Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/notebook/audio', cookies: $user === null ? [] : ['reporion' => $this->cookie($user)], body: (string) json_encode($body)));
+        $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-test', 'speech_voices' => 'host-a, stereo'];
+        $this->config['library']['tools']['ffmpeg'] = '/nonexistent/ffmpeg';
+        self::assertSame(404, $audioAgain('writer')->status, 'no kept script yet');
+        $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'audio']));
+        $before = $this->storage()->read('wiki:notebook:studio-audio');
+        self::assertArrayNotHasKey('audio', $before->frontmatter, 'the first run failed to read it aloud');
+        $requests = $this->server->requests();
+
+        // A voice that does not join: nothing replaced, nothing new kept
+        self::assertGreaterThanOrEqual(400, $audioAgain('writer')->status, 'still failing');
+        self::assertSame($before->rev, $this->storage()->read('wiki:notebook:studio-audio')->rev);
+
+        // New voices: the same script, read again
+        $this->config['ai']['speech_voices'] = 'host-a, host-b';
+        self::assertSame(404, $audioAgain(null)->status);
+        $data = $this->data($audioAgain('writer'));
+        $kept = $this->storage()->read('wiki:notebook:studio-audio');
+        self::assertSame($before->rev + 1, $kept->rev);
+        self::assertSame(['wav', 3], [$kept->frontmatter['audio']['ext'], $kept->frontmatter['audio']['turns']]);
+        self::assertSame('/library/audio/' . $kept->pid, $data['audio']['href']);
+        self::assertSame($before->body, $kept->body, 'the script is not asked for again');
+        self::assertSame($before->frontmatter['analysis'], $kept->frontmatter['analysis']);
+        self::assertSame($requests, $this->server->requests(), 'no chat request: only the speech turns were asked');
+
+        unset($this->config['ai']['speech_server']);
+        self::assertSame(422, $audioAgain('writer')->status, 'no speech model');
+    }
+
     public function testALargeNotebookIsCondensedSourceBySourceAndKeepsTheKeys(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];

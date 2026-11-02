@@ -10,6 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Exception\LibraryException;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -392,6 +393,85 @@ final class LibraryAiController
                 ));
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
+            } catch (\Throwable $e) {
+                error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+                $send('error', ['code' => 'internal', 'message' => AiController::message(new AiException('internal'))]);
+            }
+        });
+    }
+
+    /**
+     * POST /api/v1/notebook/audio {path, stream?}: the kept audio overview of a notebook read aloud
+     * again, from the script as the kept `{path}:studio-audio` page holds it now (the writer may
+     * have edited it) and the speech model and voices of Admin → AI as they are now: after a failure,
+     * or new voices. No script request; a new revision of the kept page with the new file, the old
+     * file left in place. Same gate as Studio (404); no speech model: 422 `unknown_task`; no kept
+     * script: 404; a signed page: 409
+     */
+    public function audioAgain(Request $request, ?User $principal): Response
+    {
+        $fields = $request->json();
+        $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
+        $page = $principal !== null && $path !== '' ? $this->notebook($path, $principal) : null;
+        $row = $page !== null ? $this->index->findByPath(Analyses::pathFor($page->path, Studio::TASKS['audio']), $principal) : null;
+        if ($principal === null || $page === null || $row === null || $this->analyses === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($this->audio === null) {
+            return ApiResponse::error(422, 'unknown_task', t('studio.audio_off'));
+        }
+        try {
+            $kept = $this->storage->read((string) $row['path']);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if (!Analyses::isAnalysis($kept->frontmatter) || trim($kept->body) === '') {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($kept->status === 'signed') {
+            return ApiResponse::error(409, 'conflict', t('studio.audio_signed'));
+        }
+        $seconds = AudioScript::MAX_TURNS * ($this->config->longestTimeout() + 15) + 60;
+        $basePath = $request->basePath;
+        $audio = $this->audio;
+        $run = function (\Closure $speaking) use ($audio, $kept, $principal, $request, $basePath): array {
+            $notices = [];
+            // A failure replaces nothing: the earlier file, if any, stays
+            $made = $audio->make($kept->body, $speaking);
+            if ($made['cut']) {
+                $notices[] = t('studio.audio_cut');
+            }
+            $file = $this->storage->storeOriginal($made['bytes'], $made['ext']) + ['seconds' => $made['seconds'], 'turns' => $made['turns']];
+            $saved = $this->storage->save($kept->path, ['audio' => $file] + $kept->frontmatter, $kept->body, $kept->rev, $principal->username, 'assisted: studio-audio (read aloud again)');
+            $this->audit?->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['assisted' => ['studio-audio']]);
+
+            return ['audio' => ['href' => $basePath . '/library/audio/' . $saved->pid, 'seconds' => $file['seconds'], 'ext' => $file['ext']], 'notices' => $notices];
+        };
+
+        if (($fields['stream'] ?? false) !== true) {
+            @set_time_limit($seconds);
+            try {
+                return ApiResponse::json(['data' => $run(static function (int $step, int $steps): void {
+                })]);
+            } catch (AiException $e) {
+                return AiController::error($e);
+            } catch (RevisionConflictException) {
+                return ApiResponse::error(409, 'conflict', t('studio.audio_changed'));
+            }
+        }
+
+        return Response::eventStream(function () use ($run, $seconds): void {
+            set_time_limit($seconds);
+            $send = static function (string $event, array $data): void {
+                echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+                flush();
+            };
+            try {
+                $send('done', $run(static fn (int $step, int $steps) => $send('speaking', ['step' => $step, 'steps' => $steps])));
+            } catch (AiException $e) {
+                $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
+            } catch (RevisionConflictException) {
+                $send('error', ['code' => 'conflict', 'message' => t('studio.audio_changed')]);
             } catch (\Throwable $e) {
                 error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
                 $send('error', ['code' => 'internal', 'message' => AiController::message(new AiException('internal'))]);

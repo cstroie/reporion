@@ -237,6 +237,73 @@
       }).catch(function () { fail(); }).then(function () { busy(false); });
     }
 
+    // The kept audio overview read aloud again from its kept script (POST /api/v1/notebook/audio)
+    Array.prototype.forEach.call(box.querySelectorAll('[data-audio-again]'), function (b) {
+      b.addEventListener('click', function () {
+        var item = b.closest('[data-saved-prompt]');
+        var status = el('div', 'wk-dim wk-text-xs');
+        status.setAttribute('aria-live', 'polite');
+        if (b.nextElementSibling && b.nextElementSibling.hasAttribute('data-audio-status')) b.nextElementSibling.remove();
+        status.setAttribute('data-audio-status', '');
+        b.parentNode.appendChild(status);
+        b.disabled = true;
+        function end(message, failed) {
+          status.textContent = '';
+          if (failed) status.appendChild(notice('error', message || s.failed));
+          else status.textContent = message || '';
+          b.disabled = false;
+        }
+        status.textContent = s.working;
+        fetch(base + '/api/v1/notebook/audio', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+          body: JSON.stringify({ path: cfg.path, stream: true })
+        }).then(function (response) {
+          if (!response.ok || !response.body) {
+            return response.json().then(function (j) { end((j && j.error && j.error.message) || s.failed, true); }, function () { end(s.failed, true); });
+          }
+          var reader = response.body.getReader();
+          var decoder = new TextDecoder();
+          var buffer = '';
+          var finished = false;
+          function handle(block) {
+            var m = /^event: (\w+)\ndata: (.*)$/m.exec(block);
+            if (!m) return;
+            var data;
+            try { data = JSON.parse(m[2]); } catch (e) { return; }
+            if (m[1] === 'speaking') {
+              status.textContent = (s.speaking || '%s / %s').replace('%s', data.step).replace('%s', data.steps);
+            } else if (m[1] === 'done') {
+              finished = true;
+              var player = item && item.querySelector('audio');
+              if (player && data.audio) {
+                // The same address, a new file: a query keeps the browser from playing its cached one
+                player.src = data.audio.href + '?v=' + Date.now();
+                player.load();
+                var length = item.querySelector('.wk-saved-audio .wk-mono');
+                if (length) length.textContent = Math.floor(data.audio.seconds / 60) + ':' + ('0' + (data.audio.seconds % 60)).slice(-2) + ' \u00b7 ' + String(data.audio.ext).toUpperCase();
+              }
+              end([s.audio_again_done].concat(data.notices || []).join(' '), false);
+            } else if (m[1] === 'error') {
+              finished = true;
+              end(data.message || s.failed, true);
+            }
+          }
+          function pump() {
+            return reader.read().then(function (chunk) {
+              if (chunk.done) { if (!finished) end(s.failed, true); return; }
+              buffer += decoder.decode(chunk.value, { stream: true });
+              var blocks = buffer.split('\n\n');
+              buffer = blocks.pop();
+              blocks.forEach(handle);
+              return pump();
+            });
+          }
+          return pump();
+        }).catch(function () { end(s.failed, true); });
+      });
+    });
+
     Array.prototype.forEach.call(box.querySelectorAll('[data-studio-task]'), function (b) {
       b.addEventListener('click', function () {
         var task = b.getAttribute('data-studio-task');

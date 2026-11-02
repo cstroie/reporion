@@ -30,6 +30,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if (($saved['audio'] ?? null) !== null): ?>
 <p class="wk-saved-audio"><audio controls preload="none" src="<?= $e($basePath . '/library/audio/' . $saved['pid']) ?>"></audio> <span class="wk-dim wk-text-xs wk-mono"><?= $e(sprintf('%d:%02d', intdiv($saved['audio']['seconds'], 60), $saved['audio']['seconds'] % 60)) ?> · <?= $e(strtoupper($saved['audio']['ext'])) ?></span></p>
 <?php endif; ?>
+<?php if ($saved['prompt'] === 'studio-audio' && ($savedCanSpeak ?? false)): ?>
+<p class="wk-actions"><button class="btn btn-secondary btn-sm" type="button" data-audio-again title="<?= $e(t('studio.audio_again_help')) ?>"><i class="ph ph-speaker-high" aria-hidden="true"></i><?= $e(t('studio.audio_again')) ?></button></p>
+<?php endif; ?>
 <div class="wk-saved-text wk-prose"><?= $saved['html'] ?></div>
 <p class="wk-dim wk-text-xs"><?php if (\in_array($saved['prompt'], ['source-flashcards', 'studio-flashcards'], true)): ?><a class="btn btn-secondary btn-sm" href="<?= $e($basePath . '/library/flashcards/' . $saved['pid']) ?>" title="<?= $e(t('library.saved.anki_help')) ?>"><i class="ph ph-cards" aria-hidden="true"></i><?= $e(t('library.saved.anki')) ?></a> <?php endif; ?><a href="<?= $e($basePath . '/' . $saved['path']) ?>"><?= $e(t('library.saved.open')) ?></a> · <?= $e(t('library.saved.note')) ?></p>
 </details>
