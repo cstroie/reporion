@@ -1014,6 +1014,70 @@
       });
     }
 
+    // Text flow (2026-11-02): Support\TextFlow on the server over the body in front; Check lists,
+    // Fix applies the mended body as one edit (Ctrl+Z undoes it)
+    var flowList = document.getElementById('editor-flow-list');
+    function runFlow(mode, button) {
+      if (button.getAttribute('aria-busy') === 'true') return;
+      button.setAttribute('aria-busy', 'true');
+      var start = F ? F.bodyStart(textarea.value) : 0;
+      var before = textarea.value;
+      fetch(basePath + '/api/v1/textflow', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: path, text: before.slice(start) })
+      }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (json) {
+        var d = json.data;
+        var msg = '';
+        if (mode === 'fix' && d.changed && textarea.value === before) {
+          applyEdit({ from: start, to: before.length, insert: d.text, selStart: start, selEnd: start }, textarea);
+          var parts = Object.keys(d.fixed || {}).map(function (k) {
+            return ((s.flowCodes || {})[k] || (k + ' %d')).replace('%d', String(d.fixed[k]));
+          });
+          msg = (s.flowFixed || '%s').replace('%s', parts.join(', '));
+        } else if (!d.changed && d.issues.length === 0) {
+          msg = s.flowNone || '';
+        } else if (mode === 'check' && d.changed) {
+          var would = Object.keys(d.fixed || {}).map(function (k) {
+            return ((s.flowCodes || {})[k] || (k + ' %d')).replace('%d', String(d.fixed[k]));
+          });
+          msg = would.join(', ');
+        }
+        if (d.issues.length > 0) msg += ' ' + (s.flowLeft || '%d').replace('%d', String(d.issues.length));
+        setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
+        showFlowIssues(d.issues);
+      }).catch(function () {
+        setStatus('<span data-editor-status="error">' + esc(s.flowFailed || '') + '</span>');
+      }).then(function () { button.removeAttribute('aria-busy'); });
+    }
+    function showFlowIssues(issues) {
+      if (!flowList) return;
+      flowList.innerHTML = '';
+      flowList.hidden = issues.length === 0;
+      issues.slice(0, 50).forEach(function (issue) {
+        var li = document.createElement('li');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'wk-aid-check-btn';
+        b.textContent = issue.message + (issue.quote ? ' “' + issue.quote + '”' : '');
+        b.addEventListener('click', function () {
+          var at = issue.quote ? textarea.value.indexOf(issue.quote) : -1;
+          if (at === -1) return;
+          textarea.focus();
+          textarea.setSelectionRange(at, at + issue.quote.length);
+          if (textarea.blur && textarea.focus) { textarea.blur(); textarea.focus(); }
+        });
+        li.appendChild(b);
+        flowList.appendChild(li);
+      });
+    }
+    if (rail) {
+      rail.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-flow]');
+        if (button) runFlow(button.getAttribute('data-flow'), button);
+      });
+    }
+
     if (F && toolbar) {
       toolbar.addEventListener('click', function (event) {
         var button = event.target.closest('[data-tb]');

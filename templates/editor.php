@@ -393,6 +393,15 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="alignTables" title="<?= $e(t('editor.tools.align_help')) ?>"><i class="ph ph-columns"></i><?= $e(t('editor.tools.align')) ?></button>
+<?php if (!\Reporion\Support\ReportPath::isReport($path)): ?>
+<?php /* Text flow (2026-11-02): an article's text as a PDF left it, mended on the server
+ * (POST /api/v1/textflow, Support\TextFlow, the same pass a library source gets as it is made):
+ * Check lists what is wrong, Fix applies what it can as one undoable edit. Not on reports. */ ?>
+<hr class="wk-ai-sep">
+<button type="button" class="wk-ai-btn" data-flow="check" title="<?= $e(t('editor.flow.check_help')) ?>"><i class="ph ph-magnifying-glass"></i><?= $e(t('editor.flow.check')) ?></button>
+<button type="button" class="wk-ai-btn" data-flow="fix" title="<?= $e(t('editor.flow.fix_help')) ?>"><i class="ph ph-paragraph"></i><?= $e(t('editor.flow.fix')) ?></button>
+<ul class="wk-aid-checks" id="editor-flow-list" hidden></ul>
+<?php endif; ?>
 <?php if ($pluginTools !== []): ?>
 <hr class="wk-ai-sep">
 <?php foreach ($pluginTools as $tool): ?>
@@ -480,6 +489,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'toolDone' => t('editor.tools.done'),
         'toolLeft' => t('editor.tools.left'),
         'toolNone' => t('editor.tools.none'),
+        'flowNone' => t('editor.flow.none'),
+        'flowFailed' => t('editor.flow.failed'),
+        'flowFixed' => t('editor.flow.fixed'),
+        'flowLeft' => t('editor.flow.left'),
+        'flowCodes' => [
+            'heads' => t('editor.flow.fixed.heads'),
+            'boilerplate' => t('editor.flow.fixed.boilerplate'),
+            'joined' => t('editor.flow.fixed.joined'),
+            'headings' => t('editor.flow.fixed.headings'),
+            'words' => t('editor.flow.fixed.words'),
+            'references' => t('editor.flow.fixed.references'),
+        ],
         'filter' => t('editor.tb.filter'),
         'noMatch' => t('editor.tb.no_match'),
         'templateFailed' => t('editor.tb.template_failed'),

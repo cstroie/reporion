@@ -645,6 +645,7 @@ final class Kernel
         $recall = new RecallController($editorPages, new Recall($index, $storage));
         // The editor's checks and prior section (D51): rules and the index, no AI
         $writingAids = new WritingAidsController($editorPages, new PriorStudy($storage, $index));
+        $textFlow = new Controller\TextFlowController();
         $assistant = self::assistant($config, $aiConfig, $storage, $index, $audit);
         // Plugins listen on these (and add routes); the Ask screen asks them for outside passages
         $hooks = new Hooks();
@@ -828,6 +829,8 @@ final class Kernel
             => $recall->find($request, $session->principal($request)));
         $router->post('/api/v1/checks', static fn (Request $request, array $params): Response
             => $writingAids->checks($request, $session->principal($request)));
+        $router->post('/api/v1/textflow', static fn (Request $request, array $params): Response
+            => $textFlow->flow($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response
             => $writingAids->prior($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response

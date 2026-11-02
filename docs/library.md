@@ -280,7 +280,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    places kept for meaning. Needs the
    embedding model of Admin → AI (*Similar reports*) and a run of `index:vectors` (as `www-data`; the first run over a large
    library is many requests: `--limit`). Report passages (Ask the archive) are not embedded.
-   *Step 2 built 2026-10-30:* **What it cites**, on a source's card: its reference list (the `text` fence under `## References`)
+   *Step 2 built 2026-10-30:* **What it cites**, on a source's card: its reference list (the list under `## References`, or the `text` fence of sources made before 2026-11-02)
    cut into entries (`Support\ReferenceList`: numbered ones with their wrapped lines joined, else paragraphs or lines; at most
    300) and matched against the library's records the caller reads (`listNamespaceMeta`, the index only: no source file is read
    for a page view): by DOI or PMID exactly, by title only when the library's title is at least 25 characters, stands whole in

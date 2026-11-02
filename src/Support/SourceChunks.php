@@ -45,8 +45,11 @@ final class SourceChunks
     /** The article without the reference list the library keeps at the end of its page (Service\Library\Library::body()) */
     public static function withoutReferences(string $body): string
     {
-        $cut = strrpos($body, "\n## References\n\n```");
-        $body = $cut === false ? $body : substr($body, 0, $cut);
+        // The list to the end (since 2026-11-02) or the `text` fence of the lines as printed (before);
+        // a References heading of the writer's own, with prose under it, stays
+        if (preg_match('/\n## References\n\n(?:(?:`{3,}|~{3,})text\n.*|(?:(?:\d{1,4}\.|-) .*(?:\n|$))+\s*)$/su', $body, $m, PREG_OFFSET_CAPTURE) === 1) {
+            $body = substr($body, 0, (int) $m[0][1]);
+        }
 
         return trim($body);
     }

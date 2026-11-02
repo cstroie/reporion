@@ -14,7 +14,8 @@ namespace Reporion\Support;
  * hyphenated over a line end and the lines of one paragraph, fixes ligatures, and puts an anchor
  * before each page of more than one (`*— p. 12 —*`, a paragraph of its own: markdown the renderer shows as
  * it is, D17) so a passage can be traced to the original's page.
- * The references section is cut off and returned apart (phase 7 reads it).
+ * The references section is cut off and returned apart (phase 7 reads it). The body then goes
+ * through Support\TextFlow, which mends what only shows across pages.
  *
  * fromMarkdown() takes what pandoc made of a docx/odt/html: already in paragraphs, only tidied.
  */
@@ -85,8 +86,9 @@ final class SourceText
         }
         $parts[] = self::paragraphs($page);
 
+        // Across pages: heads that stand mid-page, the publisher's lines, paragraphs cut by a page or a caption
         return [
-            'body' => trim(implode("\n\n", array_filter($parts, static fn (string $p): bool => $p !== ''))) . "\n",
+            'body' => TextFlow::fix(trim(implode("\n\n", array_filter($parts, static fn (string $p): bool => $p !== ''))) . "\n")['text'],
             'references' => $references,
         ];
     }
@@ -127,10 +129,15 @@ final class SourceText
         return array_map(static fn (string $l): string => rtrim($l), explode("\n", $page));
     }
 
-    /** A line's shape for comparing running heads: digits (page numbers) folded, spaces squeezed */
+    /**
+     * A line's shape for comparing running heads: the page number at either end dropped (a head
+     * prints it first on even pages and last on odd ones), other digits folded, spaces squeezed
+     */
     private static function shape(string $line): string
     {
-        return mb_strtolower((string) preg_replace(['/\d+/', '/\s+/'], ['#', ' '], trim($line)));
+        $line = (string) preg_replace('/^\d{1,4}\s+|\s+\d{1,4}$/u', '', trim((string) preg_replace('/\s+/u', ' ', $line)));
+
+        return mb_strtolower((string) preg_replace('/\d+/', '#', $line));
     }
 
     /**

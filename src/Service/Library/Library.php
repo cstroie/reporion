@@ -11,6 +11,7 @@ use Reporion\Auth\User;
 use Reporion\Exception\LibraryException;
 use Reporion\Exception\PageExistsException;
 use Reporion\Support\Bibliography;
+use Reporion\Support\TextFlow;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\FileTree;
@@ -846,14 +847,17 @@ final class Library
         return ['status' => $written !== null ? 'made' : 'failed', 'from' => $found['from']] + $result;
     }
 
-    /** The page body: the article's text, then its own references as they were printed */
+    /**
+     * The page body: the article's text, then its own references as a markdown list, each number
+     * paired with its entry again (Support\TextFlow::referenceList(); before 2026-11-02 a `text`
+     * fence of the lines as printed, which Support\ReferenceList still reads)
+     */
     private static function body(Extracted $extracted): string
     {
         $body = rtrim($extracted->body);
-        if ($extracted->references !== '') {
-            $longest = preg_match_all('/`+/', $extracted->references, $runs) > 0 ? max(array_map('strlen', $runs[0])) : 0;
-            $fence = str_repeat('`', max(3, $longest + 1));
-            $body .= ($body !== '' ? "\n\n" : '') . "## References\n\n" . $fence . "text\n" . rtrim($extracted->references) . "\n" . $fence;
+        $list = $extracted->references !== '' ? TextFlow::referenceList($extracted->references)['text'] : '';
+        if ($list !== '') {
+            $body .= ($body !== '' ? "\n\n" : '') . "## References\n\n" . $list;
         }
 
         return $body !== '' ? $body . "\n" : '';

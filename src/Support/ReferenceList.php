@@ -25,14 +25,29 @@ final class ReferenceList
     /** An entry is shown up to this many characters */
     private const SHOW = 400;
 
-    /** The reference list's text, or '' when the page has none */
+    /**
+     * The reference list's text, or '' when the page has none: the `text` fence of the lines as
+     * printed (sources made before 2026-11-02), or the markdown list Support\TextFlow writes, its
+     * escapes and links undone and each item one line (`1. …`)
+     */
     public static function of(string $body): string
     {
-        if (preg_match('/\n## References\n\n(`{3,}|~{3,})text\n(.*?)\n\1\s*$/su', "\n" . $body, $m) !== 1) {
+        if (preg_match('/\n## References\n\n(`{3,}|~{3,})text\n(.*?)\n\1\s*$/su', "\n" . $body, $m) === 1) {
+            return trim($m[2]);
+        }
+        if (preg_match('/\n## References\n\n((?:(?:\d{1,4}\.|-) .*(?:\n|$))+)\s*$/u', "\n" . $body, $m) !== 1) {
             return '';
         }
+        $lines = [];
+        $n = 0;
+        foreach (preg_split('/\n/u', trim($m[1])) ?: [] as $line) {
+            ++$n;
+            $line = (string) preg_replace('/^- /', $n . '. ', $line);
+            $line = (string) preg_replace('/<(https?:\/\/[^>\s]+)>/u', '$1', $line);
+            $lines[] = str_replace(['\\[', '\\]', '\\*', '\\`', '\\_', '&lt;', '\\\\'], ['[', ']', '*', '`', '_', '<', '\\'], $line);
+        }
 
-        return trim($m[2]);
+        return implode("\n", $lines);
     }
 
     /**

@@ -102,7 +102,7 @@ final class LibraryTest extends StorageTestCase
         self::assertSame(hash('sha256', self::ARTICLE), $original['sha256']);
         self::assertSame(['md', 'study.md', true], [$original['ext'], $original['name'], $original['text']]);
         self::assertSame(self::ARTICLE, file_get_contents((string) $this->storage->originalFile($original['sha256'], 'md')));
-        self::assertStringContainsString("## References\n\n```text\n1. Nobody C. A paper that does not exist. 2020.\n```", $page->body);
+        self::assertStringContainsString("## References\n\n1. Nobody C. A paper that does not exist. 2020.\n", $page->body);
         self::assertSame('10.1234/jti.2024.0001', $this->index->listNamespaceMeta('library', self::owner())[0]['meta']['csl']['DOI']);
     }
 
