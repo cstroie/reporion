@@ -391,6 +391,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
 <button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="joinLines" title="<?= $e(t('editor.tools.join_help')) ?>"><i class="ph ph-arrows-in-line-vertical"></i><?= $e(t('editor.tools.join')) ?> <kbd class="wk-kbd">Ctrl+J</kbd></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="linesToRow" title="<?= $e(t('editor.tools.row_help')) ?>"><i class="ph ph-rows"></i><?= $e(t('editor.tools.row')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="unescapeText" title="<?= $e(t('editor.tools.unescape_help')) ?>"><i class="ph ph-link-break"></i><?= $e(t('editor.tools.unescape')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="alignTables" title="<?= $e(t('editor.tools.align_help')) ?>"><i class="ph ph-columns"></i><?= $e(t('editor.tools.align')) ?></button>
 <?php if (!\Reporion\Support\ReportPath::isReport($path)): ?>

@@ -1197,6 +1197,11 @@
       el.addEventListener('keydown', function (event) {
         if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
         var key = event.key.toLowerCase();
+        if (key === 'j') {
+          event.preventDefault();
+          runTool('joinLines', null);
+          return;
+        }
         if (key !== 'b' && key !== 'i') return;
         event.preventDefault();
         var sel = selection();

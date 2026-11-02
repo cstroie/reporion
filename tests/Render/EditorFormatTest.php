@@ -264,6 +264,43 @@ final class EditorFormatTest extends TestCase
         self::assertGreaterThan(0, $run['result']['converted']);
     }
 
+    public function testJoinLinesPutsASpaceWhereEachBreakWas(): void
+    {
+        $text = self::DOC . "One line  \nsecond\n\n  third\nLast\n";
+        $from = \strlen(self::DOC) + 3;
+        $to = strpos($text, 'third') + 2;
+        [$run] = $this->run1('joinLines', [$text, $from, $to]);
+
+        self::assertSame(self::DOC . "One line second third\nLast\n", $run['text']);
+        self::assertSame(2, $run['result']['converted'], 'a blank line between is one break');
+
+        [$cursor] = $this->run1('joinLines', [$text, $from, $from]);
+        self::assertSame(self::DOC . "One line second\n\n  third\nLast\n", $cursor['text'], 'no selection: the line and the next');
+
+        [$last] = $this->run1('joinLines', [self::DOC . "Only\n", \strlen(self::DOC) + 1, \strlen(self::DOC) + 1]);
+        self::assertSame(0, $last['result']['converted']);
+    }
+
+    public function testLinesToRowMakesEachSelectedLineACell(): void
+    {
+        $text = self::DOC . "Before\nAbsent\n\n  Mild a|b \nPresent\nAfter\n";
+        $from = strpos($text, 'Absent');
+        $to = strpos($text, 'Present') + 3;
+        [$run] = $this->run1('linesToRow', [$text, $from, $to]);
+
+        self::assertSame(self::DOC . "Before\n| Absent | Mild a\\|b | Present |\nAfter\n", $run['text']);
+        self::assertSame(3, $run['result']['converted']);
+    }
+
+    public function testUnescapeTextMendsAReferenceListPastedFromTheWeb(): void
+    {
+        $text = self::DOC . " - 1\\. Nobody A. A made-up paper. J Synth. 2022;41:34‐43. \\\[\[DOI\](<https://doi.org/10.1234/x.1)\]> \\\[\[PMC free article\](/articles/PMC0000001/)\\\] - 2\\. Other B. Another. 2023.\n";
+        [$run] = $this->run1('unescapeText', [$text, 0, 0]);
+
+        self::assertSame(self::DOC . "1. Nobody A. A made-up paper. J Synth. 2022;41:34-43. [DOI](https://doi.org/10.1234/x.1) [PMC free article](https://pmc.ncbi.nlm.nih.gov/articles/PMC0000001/)\n2. Other B. Another. 2023.\n", $run['text']);
+        self::assertGreaterThan(0, $run['result']['converted']);
+    }
+
     public function testCleanTextOnTidyTextIsNoEdit(): void
     {
         [$run] = $this->run1('cleanText', [self::DOC . "Fără leziuni, la nivelul țesutului.\n", 0, 0]);

@@ -520,6 +520,74 @@
    * blank line becomes one, and the cedilla ş ţ Ş Ţ become the comma-below ș ț Ș Ț that Romanian
    * is written with (the index folds neither the same way).
    */
+  /**
+   * Joins the selected lines into one, with a space where each line break was (blank lines and
+   * the spaces around a break go too); with nothing selected, the cursor's line and the next.
+   */
+  function joinLines(text, from, to) {
+    var c = clamp(text, from, to);
+    var r = lineRange(text, c[0], c[1]);
+    if (c[0] === c[1] || r[0] === lineRange(text, c[1], c[1])[0]) {
+      var next = text.indexOf('\n', r[1] + 1);
+      r[1] = r[1] >= text.length ? r[1] : (next === -1 ? text.length : next);
+    }
+    // Nothing after the last line to join with: the trailing break and blank lines stay
+    var tailBlank = /\s*$/.exec(text.slice(r[0], r[1]))[0];
+    if (tailBlank.indexOf('\n') !== -1) r[1] -= tailBlank.length;
+    var region = text.slice(r[0], r[1]);
+    var breaks = 0;
+    var out = region.replace(/[ \t]*\n[\s]*/g, function () { breaks++; return ' '; });
+    var result = finish(r[0], r[1], region, out, breaks, 0);
+    if (breaks > 0) {
+      result.selStart = r[0];
+      result.selEnd = r[0] + out.length;
+    }
+    return result;
+  }
+
+  /**
+   * The selected lines as one table row, each line a cell (`| a | b |`); blank lines are left out,
+   * a `|` in a line is escaped. With nothing selected, the cursor's line alone.
+   */
+  function linesToRow(text, from, to) {
+    var c = clamp(text, from, to);
+    var r = lineRange(text, c[0], c[1]);
+    var region = text.slice(r[0], r[1]);
+    var cells = region.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+    if (cells.length === 0) return finish(r[0], r[1], region, region, 0, 0);
+    var out = '| ' + cells.map(function (l) { return l.replace(/\\?\|/g, '\\|'); }).join(' | ') + ' |';
+    var result = finish(r[0], r[1], region, out, cells.length, 0);
+    result.selStart = r[0] + out.length;
+    result.selEnd = result.selStart;
+    return result;
+  }
+
+  /**
+   * Text pasted from a web page that went through markdown twice (a PubMed Central reference
+   * list): `\\\[\[DOI\](<https://…)\]>` becomes `[DOI](https://…)` (a PMC `/articles/…` link
+   * made whole), ` - 119\\. Name…` an item `119. Name…` on a line of its own, the backslashes
+   * left before punctuation go, and the typographic hyphen ‐ is a plain -. On the selection, or
+   * all the body; code is left alone.
+   */
+  function unescapeText(text, from, to) {
+    return proseTool(text, from, to, function (t, stats) {
+      var n = 0;
+      t = t.replace(/\\*\[\\*\[([^\]\\\n]+)\\*\]\(<?([^)\s>]+)\)\\*\]>?/g, function (m, label, url) {
+        n++;
+        if (/^\/articles\/PMC/.test(url)) url = 'https://pmc.ncbi.nlm.nih.gov' + url;
+        return '[' + label + '](' + url + ')';
+      });
+      t = t.replace(/(^|[ \t]+)-[ \t]+(\d{1,4})\\+\.[ \t]+/g, function (m, before, num, offset) {
+        n++;
+        return (offset === 0 ? '' : '\n') + num + '. ';
+      });
+      t = t.replace(/\\+([\[\]().*_#>!+\-`{}|])/g, function (m, c) { n++; return c; });
+      t = t.replace(/[‐‑]/g, function () { n++; return '-'; });
+      stats.converted = n;
+      return t;
+    }, true);
+  }
+
   function cleanText(text, from, to) {
     var cedilla = { 'ş': 'ș', 'ţ': 'ț', 'Ş': 'Ș', 'Ţ': 'Ț' };
     return proseTool(text, from, to, function (t, stats) {
@@ -846,6 +914,9 @@
     citeEdit: citeEdit,
     sectionAt: sectionAt,
     cleanText: cleanText,
+    joinLines: joinLines,
+    unescapeText: unescapeText,
+    linesToRow: linesToRow,
     unitsDegrees: unitsDegrees,
     alignTables: alignTables,
     addPrior: addPrior,
