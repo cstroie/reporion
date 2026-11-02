@@ -46,6 +46,18 @@ final class Wav
             . 'data' . pack('V', \strlen($pcm)) . $pcm;
     }
 
+    /** Raw signed 16-bit little-endian PCM (a speech server's `pcm`) as a WAV file */
+    public static function fromPcm(string $pcm, int $rate, int $channels = 1): string
+    {
+        // Whole samples only
+        $pcm = substr($pcm, 0, \strlen($pcm) - \strlen($pcm) % (2 * $channels));
+        $block = 2 * $channels;
+
+        return 'RIFF' . pack('V', 36 + \strlen($pcm)) . 'WAVE'
+            . 'fmt ' . pack('VvvVVvv', 16, 1, $channels, $rate, $rate * $block, $block, 16)
+            . 'data' . pack('V', \strlen($pcm)) . $pcm;
+    }
+
     /** The length of a PCM WAV, in seconds */
     public static function seconds(string $file): float
     {

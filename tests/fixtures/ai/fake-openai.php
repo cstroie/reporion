@@ -67,6 +67,20 @@ if ($path === '/v1/audio/speech') {
     file_put_contents($log . '.speech', json_encode($request, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
     $channels = ($request['voice'] ?? '') === 'stereo' ? 2 : 1;
     $pcm = str_repeat("\0\0", 800 * $channels);
+    // Model "tts-pcm" offers only mp3 and pcm, as OpenAI's does (pcm: 24 kHz, 16-bit, mono, no header)
+    if (($request['model'] ?? '') === 'tts-pcm') {
+        if (($request['response_format'] ?? '') !== 'pcm') {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => ['message' => json_encode([['code' => 'invalid_value', 'values' => ['mp3', 'pcm'], 'path' => ['response_format']]])]]);
+
+            return;
+        }
+        header('Content-Type: audio/pcm');
+        echo str_repeat("\0\0", 2400);
+
+        return;
+    }
     header('Content-Type: audio/wav');
     echo 'RIFF' . pack('V', 36 + strlen($pcm)) . 'WAVE' . 'fmt ' . pack('VvvVVvv', 16, 1, $channels, 8000, 8000 * 2 * $channels, 2 * $channels, 16) . 'data' . pack('V', strlen($pcm)) . $pcm;
 

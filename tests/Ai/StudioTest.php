@@ -211,6 +211,20 @@ final class StudioTest extends HttpTestCase
         self::assertArrayNotHasKey('audio', $this->storage()->read('wiki:notebook:studio-audio')->frontmatter);
     }
 
+    public function testAServerThatOffersOnlyMp3AndPcmIsAskedForPcmWrappedAsWav(): void
+    {
+        $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-pcm', 'speech_voices' => 'host-a, host-b'];
+        $this->config['library']['tools']['ffmpeg'] = '/nonexistent/ffmpeg';
+
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'audio']));
+
+        self::assertSame([], $data['notices']);
+        $formats = array_column($this->server->speech(), 'response_format');
+        self::assertSame(['wav', 'pcm', 'pcm', 'pcm'], $formats, 'wav refused once, then pcm for every turn');
+        $kept = $this->storage()->read('wiki:notebook:studio-audio');
+        self::assertSame(['wav', 3], [$kept->frontmatter['audio']['ext'], $kept->frontmatter['audio']['turns']]);
+    }
+
     public function testTheAudioIsReadAloudAgainFromTheKeptScript(): void
     {
         $audioAgain = fn (?string $user, array $body = ['path' => 'wiki:notebook']): Response => Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/notebook/audio', cookies: $user === null ? [] : ['reporion' => $this->cookie($user)], body: (string) json_encode($body)));
