@@ -164,6 +164,27 @@ final class NotebookAskTest extends HttpTestCase
         self::assertStringContainsString('Fazekas grading', $sent);
     }
 
+    public function testTheAnswerIsStreamedAfterItsSources(): void
+    {
+        $this->config['library'] = ['context_tokens' => 4000];
+        $response = $this->ask('writer', ['path' => 'wiki:long', 'question' => 'Cum descriem leziunile de substanță albă?', 'stream' => true]);
+
+        self::assertSame('text/event-stream; charset=utf-8', $response->headers['Content-Type']);
+        ob_start();
+        ($response->stream)();
+        preg_match_all('/^event: (\w+)\ndata: (.*)$/m', (string) ob_get_clean(), $events, PREG_SET_ORDER);
+        $names = array_column($events, 1);
+        self::assertSame(['progress', 'progress', 'sources', 'progress'], \array_slice($names, 0, 4), 'the words, the search, the sources, then the answer');
+        self::assertContains('delta', $names);
+        self::assertSame('done', end($names));
+        $sources = json_decode($events[2][2], true)['sources'];
+        self::assertContains('long2021', array_column($sources, 'key'));
+        self::assertStringStartsWith('/library:', $sources[array_search('long2021', array_column($sources, 'key'), true)]['href']);
+        $deltas = implode('', array_map(static fn (array $e): string => json_decode($e[2], true)['text'], array_filter($events, static fn (array $e): bool => $e[1] === 'delta')));
+        self::assertSame('Concluzie: fără leziuni.', $deltas);
+        self::assertSame('Concluzie: fără leziuni.', json_decode(end($events)[2], true)['answer']);
+    }
+
     public function testTheBudgetCountsThePromptTheQuestionAndTheAnswersRoom(): void
     {
         $chunks = \Reporion\Support\SourceChunks::class;

@@ -195,18 +195,59 @@ final class LibraryAiController
         if ($question === '' || mb_strlen($question) > self::MAX_QUESTION) {
             return ApiResponse::error(422, 'invalid_question', t('notebook.err_question'));
         }
-        // The search words, then the answer
-        @set_time_limit(2 * Assistant::maxSeconds($this->config->longestTimeout()) + 60);
-        try {
-            $done = $this->notebooks->ask($page, $question, $principal, $request);
-        } catch (AiException $e) {
-            return AiController::error($e);
-        }
-        foreach ($done['sources'] as $i => $source) {
-            $done['sources'][$i]['href'] = $request->basePath . '/' . $source['path'];
+
+        return $this->answered($request, ($fields['stream'] ?? false) === true, fn (?\Closure $event): array => $this->notebooks->ask($page, $question, $principal, $request, $event));
+    }
+
+    /**
+     * An ask's answer (Ask the notebook, Ask the library): JSON when it is done, or with
+     * `stream: true` server-sent events as it goes (2026-11-02): `progress` {step:
+     * terms|searching|answering}, `sources` (the passages chosen, linked, before the model is
+     * asked), `delta` {text} (the answer's pieces), then `done` (the answer as kept: a citation
+     * of a key not sent taken out, so it replaces what was streamed) or `error`
+     *
+     * @param \Closure(?\Closure): array<string, mixed> $run
+     */
+    private function answered(Request $request, bool $stream, \Closure $run): Response
+    {
+        // The search words, then the answer, each with the Assistant's retries
+        $seconds = 2 * Assistant::maxSeconds($this->config->longestTimeout()) + 60;
+        $linked = static function (array $sources) use ($request): array {
+            foreach ($sources as $i => $source) {
+                $sources[$i]['href'] = $request->basePath . '/' . $source['path'];
+            }
+
+            return $sources;
+        };
+        if (!$stream) {
+            @set_time_limit($seconds);
+            try {
+                $done = $run(null);
+            } catch (AiException $e) {
+                return AiController::error($e);
+            }
+
+            return ApiResponse::json(['data' => ['sources' => $linked($done['sources'])] + $done]);
         }
 
-        return ApiResponse::json(['data' => $done]);
+        return Response::eventStream(function () use ($run, $seconds, $linked): void {
+            set_time_limit($seconds);
+            $send = static function (string $event, array $data): void {
+                echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+                flush();
+            };
+            try {
+                $done = $run(static function (string $event, array $data) use ($send, $linked): void {
+                    $send($event, $event === 'sources' ? ['sources' => $linked($data['sources'])] + $data : $data);
+                });
+                $send('done', ['sources' => $linked($done['sources'])] + $done);
+            } catch (AiException $e) {
+                $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
+            } catch (\Throwable $e) {
+                error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+                $send('error', ['code' => 'internal', 'message' => AiController::message(new AiException('internal'))]);
+            }
+        });
     }
 
     public function studio(Request $request, ?User $principal): Response

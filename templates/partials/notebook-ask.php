@@ -36,6 +36,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
         'asking' => t('notebook.asking'), 'failed' => t('notebook.failed'), 'sources' => t('notebook.sources'),
         'whole' => t('notebook.whole'), 'passages' => t('notebook.passages'), 'understood' => t('notebook.understood'),
         'dropped' => t('notebook.dropped'), 'note' => t('notebook.note'),
+        'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>

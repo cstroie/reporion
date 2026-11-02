@@ -2286,6 +2286,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-notebook-form { margin-top: var(--space-2); }
 .wk-notebook-out { margin-top: var(--space-3); }
 .wk-notebook-answer { line-height: 1.55; overflow-wrap: anywhere; }
+/* The answer as it is written, before the server renders it */
+.wk-notebook-live { white-space: pre-wrap; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
 .wk-notebook-sources { margin: var(--space-2) 0; }
 .wk-notebook-studio > summary { cursor: pointer; }
 .wk-studio-questions { margin: var(--space-2) 0; }
