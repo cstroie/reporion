@@ -1194,6 +1194,14 @@
         files.forEach(upload);
       });
       if (!F || !toolbar) return;
+      // The Tools' own keys: Alt+Shift and a letter, by key position (event.code), so a Romanian
+      // layout's AltGr letters (Ctrl+Alt) never fire them; Ctrl+T and its kin belong to the browser
+      var toolKeys = { KeyR: 'linesToRow', KeyU: 'unescapeText', KeyC: 'cleanText', KeyA: 'alignTables' };
+      el.addEventListener('keydown', function (event) {
+        if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey || !toolKeys[event.code]) return;
+        event.preventDefault();
+        runTool(toolKeys[event.code], document.querySelector('[data-edit-tool="' + toolKeys[event.code] + '"]'));
+      });
       el.addEventListener('keydown', function (event) {
         if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
         var key = event.key.toLowerCase();

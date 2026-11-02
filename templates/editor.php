@@ -390,12 +390,12 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-wrench"></i> <?= $e(t('editor.tools.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.tools.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
-<button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?> <kbd class="wk-kbd">Alt+Shift+C</kbd></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="joinLines" title="<?= $e(t('editor.tools.join_help')) ?>"><i class="ph ph-arrows-in-line-vertical"></i><?= $e(t('editor.tools.join')) ?> <kbd class="wk-kbd">Ctrl+J</kbd></button>
-<button type="button" class="wk-ai-btn" data-edit-tool="linesToRow" title="<?= $e(t('editor.tools.row_help')) ?>"><i class="ph ph-rows"></i><?= $e(t('editor.tools.row')) ?></button>
-<button type="button" class="wk-ai-btn" data-edit-tool="unescapeText" title="<?= $e(t('editor.tools.unescape_help')) ?>"><i class="ph ph-link-break"></i><?= $e(t('editor.tools.unescape')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="linesToRow" title="<?= $e(t('editor.tools.row_help')) ?>"><i class="ph ph-rows"></i><?= $e(t('editor.tools.row')) ?> <kbd class="wk-kbd">Alt+Shift+R</kbd></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="unescapeText" title="<?= $e(t('editor.tools.unescape_help')) ?>"><i class="ph ph-link-break"></i><?= $e(t('editor.tools.unescape')) ?> <kbd class="wk-kbd">Alt+Shift+U</kbd></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
-<button type="button" class="wk-ai-btn" data-edit-tool="alignTables" title="<?= $e(t('editor.tools.align_help')) ?>"><i class="ph ph-columns"></i><?= $e(t('editor.tools.align')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="alignTables" title="<?= $e(t('editor.tools.align_help')) ?>"><i class="ph ph-columns"></i><?= $e(t('editor.tools.align')) ?> <kbd class="wk-kbd">Alt+Shift+A</kbd></button>
 <?php if (!\Reporion\Support\ReportPath::isReport($path)): ?>
 <?php /* Text flow (2026-11-02): an article's text as a PDF left it, mended on the server
  * (POST /api/v1/textflow, Support\TextFlow, the same pass a library source gets as it is made):
