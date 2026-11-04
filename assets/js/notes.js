@@ -19,11 +19,16 @@
  *         server (Support\Merge3), and an overlap comes back with conflict
  *         markers for the writer to resolve; a deleted one: DELETE.
  *   pull  GET /pages?ns=… : a newer revision of a note not changed here is
- *         fetched; one gone from the server and not changed here is dropped
- *         (one changed here is created again: the writer's text is kept).
+ *         fetched with its HTML (and so is one whose kept HTML is missing or
+ *         older than its text); one gone from the server and not changed
+ *         here is dropped (one changed here is created again: the writer's
+ *         text is kept).
  * A note holding an unresolved conflict is not pushed until its writer says
- * it is resolved. The preview is the server's renderer (POST /api/v1/render,
- * invariant 4), online only. Text is shown with textContent.
+ * it is resolved. A note reads as the server's HTML (invariant 4: no parser
+ * here), kept on the device with the text it was made from (`html`,
+ * `htmlOf`), so a synced note reads rendered offline; text changed since is
+ * rendered by POST /api/v1/render when online, else shown as typed. Text is
+ * shown with textContent.
  *
  * The look is an app's (templates/notes.php, notes.css): `data-screen` on the
  * frame puts sign-in, the list (cards) or the editor in front; a wide window
@@ -324,15 +329,27 @@
     return String(body || '').replace(/\n+$/, '');
   }
 
+  /**
+   * The note as HTML for reading offline: the server's own rendering (invariant 4, no parser here), kept
+   * with the text it was made from (`htmlOf`) and good only while the text is still that
+   */
+  function cachedHtml(note, text) {
+    return note && typeof note.html === 'string' && note.htmlOf === text ? note.html : null;
+  }
+
   function fromServer(page, previous) {
+    var body = typedBody(page.body);
+    var rendered = typeof page.html === 'string';
     return {
+      html: rendered ? page.html : (previous ? previous.html : undefined),
+      htmlOf: rendered ? body : (previous ? previous.htmlOf : undefined),
       path: page.path,
       title: pageTitle(page),
       baseTitle: pageTitle(page),
       tags: tagsOf(page),
       baseTags: tagsOf(page),
-      body: typedBody(page.body),
-      base: typedBody(page.body),
+      body: body,
+      base: body,
       rev: page.rev,
       meta: page.meta || {},
       dirty: false,
@@ -481,7 +498,8 @@
           if (row.path.indexOf(prefix) !== 0 || row.path.indexOf(':', prefix.length) !== -1) return;
           seen[row.path] = true;
           var local = state.notes[row.path];
-          if (local && (local.dirty || local.rev >= row.rev)) return;
+          // Fetched again too when its HTML is missing or older than its text (saved from here: a save answers no HTML)
+          if (local && (local.dirty || (local.rev >= row.rev && cachedHtml(local, local.body) !== null))) return;
           chain = chain.then(function () { return fetchNote(row.path, row.updated); });
         });
         return chain.then(function () { return r.data.page.next !== null ? page(r.data.page.next) : null; });
@@ -497,11 +515,12 @@
   }
 
   function fetchNote(path, updated) {
-    return api('GET', '/pages/' + path + '?render=0').then(check401).then(function (r) {
+    // With its HTML, so the note reads rendered offline too
+    return api('GET', '/pages/' + path).then(check401).then(function (r) {
       if (r.status !== 200 || !r.data) return null;
       var local = state.notes[path];
       if (local && local.dirty) return null; // typed into while fetching: the next push merges
-      var next = fromServer(r.data, null);
+      var next = fromServer(r.data, local);
       next.updated = Date.parse(updated) || Date.now();
       return keep(next);
     });
@@ -815,15 +834,21 @@
     el.previewPane.hidden = !on;
   }
 
-  // The note rendered as HTML by the server's renderer (the one parser, invariant 4); offline, the text as typed
+  // The note rendered as HTML by the server's renderer (the one parser, invariant 4): the HTML kept on the device
+  // while the text is the one it was made from, else asked again and kept; offline and not kept, the text as typed
   function showRendered() {
     setPreview(true);
     el.previewPane.textContent = '';
+    var path = state.current;
     var asked = el.text.value;
+    var kept = cachedHtml(state.notes[path], asked);
+    if (kept !== null) { el.previewPane.innerHTML = kept; return; } // escaped by the server
     api('POST', '/render', { markdown: asked, breaks: true }).then(function (r) {
-      if (el.text.value !== asked || el.previewPane.hidden) return; // edited or left meanwhile
-      if (r.status === 200 && r.data) el.previewPane.innerHTML = r.data.html; // escaped there
-      else throw new Error('render ' + r.status);
+      if (r.status !== 200 || !r.data) throw new Error('render ' + r.status);
+      var note = state.notes[path];
+      if (note) keep(Object.assign({}, note, { html: r.data.html, htmlOf: asked }));
+      if (el.text.value !== asked || el.previewPane.hidden || state.current !== path) return; // edited or left meanwhile
+      el.previewPane.innerHTML = r.data.html; // escaped there
     }).catch(function () {
       var pre = document.createElement('pre');
       pre.textContent = el.text.value;
