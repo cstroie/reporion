@@ -20,11 +20,11 @@ JSON;
 <?xml version="1.0"?>
 <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2019//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_190101.dtd">
 <PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>12345678</PMID><Article>
-<Journal><ISSN>0000-0000</ISSN><JournalIssue><Volume>3</Volume><Issue>2</Issue><PubDate><Year>2024</Year></PubDate></JournalIssue><Title>Journal of Synthetic Imaging</Title><ISOAbbreviation>J Synth Imaging</ISOAbbreviation></Journal>
+<Journal><ISSN>0000-0000</ISSN><JournalIssue><Volume>3</Volume><Issue>2</Issue><PubDate><Year>2024</Year></PubDate></JournalIssue><Title>Journal of Synthetic Imaging</Title><ISOAbbreviation>J. Synth. Imaging</ISOAbbreviation></Journal>
 <ArticleTitle>A made-up study of test lesions.</ArticleTitle><Pagination><MedlinePgn>11-4</MedlinePgn></Pagination>
 <Abstract><AbstractText Label="BACKGROUND">Why.</AbstractText><AbstractText Label="RESULTS">What.</AbstractText></Abstract>
 <AuthorList><Author><LastName>Nobody</LastName><ForeName>Ann</ForeName><Initials>A</Initials></Author><Author><CollectiveName>Synthetic Imaging Group</CollectiveName></Author></AuthorList>
-</Article><MeshHeadingList><MeshHeading><DescriptorName>Magnetic Resonance Imaging</DescriptorName></MeshHeading><MeshHeading><DescriptorName>Lesions</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation>
+</Article><MedlineJournalInfo><MedlineTA>J Synth Imaging</MedlineTA></MedlineJournalInfo><MeshHeadingList><MeshHeading><DescriptorName>Magnetic Resonance Imaging</DescriptorName></MeshHeading><MeshHeading><DescriptorName>Lesions</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation>
 <PubmedData><ArticleIdList><ArticleId IdType="pubmed">12345678</ArticleId><ArticleId IdType="doi">10.9999/JSI.2024.0001</ArticleId><ArticleId IdType="pmc">PMC1234567</ArticleId></ArticleIdList></PubmedData></PubmedArticle></PubmedArticleSet>
 XML;
 

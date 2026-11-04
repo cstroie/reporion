@@ -15,7 +15,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Who sees the library | **Signed-in only.** Library pages are `private` only (republishing a paper is redistribution; `unlisted`, readable by anyone with the link, ruled out by the owner the same day); a notebook may be published with its bibliography |
 | Who adds and runs the assistant | **Any editor** with a grant on `library` (and on the notebook's namespace); not tied to the radiologist flag |
 | Online lookups | **Opt-in** (`library.lookup`, off by default): CrossRef and PubMed get a DOI, a PMID or title words only, never page text |
-| Citation styles | **Vancouver** (default), **APA**, **AMA**, hand-written (`Support\Citation`), no CSL engine dependency |
+| Citation styles | **Vancouver** (default), **APA**, **AMA**, hand-written (`Support\Citation`), no CSL engine dependency; Vancouver and AMA print the journal's NLM abbreviation (PubMed's `MedlineTA`, else ISO's; periods dropped: `N Engl J Med`) |
 | Output language | **Per notebook**: the notebook's frontmatter `language` (as EPUB's, D57); without one, the library's language, Admin → Settings → Library (`library.language`, default `ro`; owner, 2026-10-31); quotes stay in the source's language |
 | Scanned PDFs | Rare; read by OCR (tesseract, Romanian and English) since phase 8, at most 30 pages, held to a stricter patient guard |
 | Size | 50 MB per file (`library.max_mb`) |

@@ -156,8 +156,9 @@ final class Citation
             $imprint = trim(($place !== '' ? $place . ': ' : '') . $publisher);
             $parts[] = ($imprint !== '' ? $imprint . ($year !== null ? '; ' : '') : '') . ($year ?? '') . ($imprint !== '' || $year !== null ? '.' : '');
         } else {
-            $journal = self::text($csl['container-title-short'] ?? null);
-            $journal = $journal !== '' ? $journal : self::text($csl['container-title'] ?? null);
+            // The short title is the journal's abbreviation: NLM's has no periods, and a CrossRef or ISO one ("N. Engl. J. Med.") is printed the same way
+            $journal = str_replace('.', '', self::text($csl['container-title-short'] ?? null));
+            $journal = $journal !== '' ? trim((string) preg_replace('/\s+/u', ' ', $journal)) : self::text($csl['container-title'] ?? null);
             if ($journal !== '') {
                 $parts[] = self::sentence($journal);
             }

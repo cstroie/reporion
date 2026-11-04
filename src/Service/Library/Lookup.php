@@ -153,10 +153,14 @@ final class Lookup
         if ($authors !== []) {
             $csl['author'] = $authors;
         }
-        foreach (['container-title' => '//PubmedArticle[1]//Journal/Title', 'container-title-short' => '//PubmedArticle[1]//Journal/ISOAbbreviation', 'volume' => '//PubmedArticle[1]//JournalIssue/Volume', 'issue' => '//PubmedArticle[1]//JournalIssue/Issue', 'page' => '//PubmedArticle[1]//Pagination/MedlinePgn', 'ISSN' => '//PubmedArticle[1]//Journal/ISSN'] as $field => $path) {
+        foreach (['container-title' => '//PubmedArticle[1]//Journal/Title', 'container-title-short' => '//PubmedArticle[1]//MedlineJournalInfo/MedlineTA', 'volume' => '//PubmedArticle[1]//JournalIssue/Volume', 'issue' => '//PubmedArticle[1]//JournalIssue/Issue', 'page' => '//PubmedArticle[1]//Pagination/MedlinePgn', 'ISSN' => '//PubmedArticle[1]//Journal/ISSN'] as $field => $path) {
             if ($text($path) !== '') {
                 $csl[$field] = $text($path);
             }
+        }
+        // The NLM title abbreviation (MedlineTA: `N Engl J Med`) is what Vancouver and AMA print; the ISO one has periods
+        if (!isset($csl['container-title-short']) && $text('//PubmedArticle[1]//Journal/ISOAbbreviation') !== '') {
+            $csl['container-title-short'] = $text('//PubmedArticle[1]//Journal/ISOAbbreviation');
         }
         $year = $text('//PubmedArticle[1]//JournalIssue/PubDate/Year');
         if ($year === '' && preg_match('/\b(1[5-9]\d\d|20\d\d)\b/', $text('//PubmedArticle[1]//JournalIssue/PubDate/MedlineDate'), $m) === 1) {

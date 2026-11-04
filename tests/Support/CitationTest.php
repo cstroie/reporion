@@ -31,6 +31,14 @@ final class CitationTest extends TestCase
         );
     }
 
+    public function testAnAbbreviationWithPeriodsIsPrintedWithoutThem(): void
+    {
+        $csl = ['container-title-short' => 'N. Engl. J. Med.'] + self::ARTICLE;
+
+        self::assertStringContainsString('N Engl J Med. 2024;3(2):11-14.', Citation::vancouver($csl));
+        self::assertStringContainsString('N Engl J Med. 2024;3(2):11-14.', Citation::ama($csl));
+    }
+
     public function testMoreThanSixAuthorsAreSixThenEtAlAndATitleKeepsItsQuestionMark(): void
     {
         $csl = ['title' => 'Is any of this real?', 'author' => array_map(static fn (int $i): array => ['family' => 'Author' . $i, 'given' => 'X'], range(1, 7)), 'issued' => ['date-parts' => [[2020]]]];
