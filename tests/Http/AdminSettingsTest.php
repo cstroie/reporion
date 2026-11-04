@@ -145,6 +145,14 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'xx']))->status, 'a language the assistant does not know');
     }
 
+    public function testSearchingPubmedIsOffUntilTheOwnerTurnsItOn(): void
+    {
+        self::assertStringNotContainsString('name="library_search" value="1" checked', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_search' => '1']))->status);
+        self::assertStringContainsString('search: true', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(404, $this->request('POST', '/admin/settings/library', 'editor', http_build_query(['library_search' => '1']))->status);
+    }
+
     public function testFindFullTextNeedsAnAddressAndTakesOnlyAnAddress(): void
     {
         self::assertStringContainsString('name="library_unpaywall_email"', $this->request('GET', '/admin/settings', 'owner')->body);

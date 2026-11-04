@@ -24,6 +24,7 @@ use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\Merge;
+use Reporion\Service\Library\OnlineSearch;
 use Reporion\Service\Library\Related;
 use Reporion\Support\Flashcards;
 use Reporion\Support\LibraryFilter;
@@ -72,6 +73,7 @@ final class LibraryController
         private readonly ?\Closure $askable = null,
         private readonly ?Merge $merge = null,
         private readonly ?Related $related = null,
+        private readonly ?OnlineSearch $online = null,
     ) {
     }
 
@@ -158,6 +160,7 @@ final class LibraryController
             'libraryAsk' => $this->library->canAdd($principal) && $this->askable !== null && ($this->askable)(),
             'searched' => $hits !== null,
             // Sources that are probably one article (D60): the panel's groups, for an editor of the library
+            'onlineSearch' => $this->library->canAdd($principal) && $this->online !== null && $this->online->available(),
             'duplicates' => $this->library->canAdd($principal) && $this->merge !== null ? $this->library->duplicateGroups($principal) : [],
             'canAdd' => $this->library->canAdd($principal),
             'namespace' => $this->library->namespace(),
@@ -251,6 +254,71 @@ final class LibraryController
         $this->audit->record('library.fulltext', $principal->username, $request, $result['pid'], $result['path'], $result['rev'], extra: ['status' => $result['status'], 'host' => $result['host']]);
 
         return ApiResponse::json($result);
+    }
+
+    /** Searches a writer may make a minute (PubMed allows about three requests a second without a key; a search is two) */
+    public const SEARCHES_PER_MINUTE = 12;
+
+    /**
+     * GET /api/v1/library/online?q=: PubMed searched by the words typed, or a DOI / PMID looked up whole
+     * (Service\Library\OnlineSearch; opt-in `library.search`, off: 404). Editors of the library only.
+     * `{data: [{csl, tags, in_library: {pid, path, by, href}|null}], how: search|doi|pmid}`. A query with
+     * a patient's CNP: 422 `patient_data`, nothing sent; empty or over 200 characters: 422 `invalid`; the
+     * service not answering: 502 `failed`; more than 12 a minute a writer: 429. Audited `library.search`
+     * with how many came back, **never the words** (invariant 8).
+     */
+    public function online(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || $this->online === null || !$this->online->available() || !$this->library->canAdd($principal)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($this->throttle !== null && $this->throttle->hit('online:' . $principal->username, 60) > self::SEARCHES_PER_MINUTE) {
+            return ApiResponse::error(429, 'throttled', t('library.online.throttled'));
+        }
+        try {
+            $found = $this->online->find((string) ($request->query['q'] ?? ''), $principal);
+        } catch (LibraryException $e) {
+            return match ($e->reason) {
+                LibraryException::FAILED => ApiResponse::error(502, 'failed', t('library.online.failed')),
+                LibraryException::PATIENT_DATA => ApiResponse::error(422, 'patient_data', t('library.online.patient_data')),
+                LibraryException::INVALID => ApiResponse::error(422, 'invalid', t('library.online.invalid')),
+                default => $this->failure($e, $principal),
+            };
+        }
+        $this->audit->record('library.search', $principal->username, $request, extra: ['count' => \count($found['results']), 'how' => $found['how']]);
+        foreach ($found['results'] as &$result) {
+            if ($result['in_library'] !== null) {
+                $result['in_library']['href'] = $request->basePath . '/' . $result['in_library']['path'];
+            }
+        }
+        unset($result);
+
+        return ApiResponse::json(['data' => $found['results'], 'how' => $found['how']]);
+    }
+
+    /**
+     * POST /api/v1/library/online {records: [csl, ...], tags?}: the records picked from a search added
+     * as sources with no file (OnlineSearch::add(): cleaned as an import is, a duplicate skipped, the
+     * abstract and a retraction check made when the lookups are on). Editors of the library, search on
+     * (else 404); 1 to 10 records (else 422 `invalid`) → 201 `{added: [{key, path, pid, title, href}], skipped: [{title, reason}]}`
+     * (200 when nothing was added); audited `library.import` with counts
+     */
+    public function addOnline(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || $this->online === null || !$this->online->available() || !$this->library->canAdd($principal)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $tags = \is_array($fields['tags'] ?? null) ? array_values(array_filter($fields['tags'], 'is_string')) : [];
+        try {
+            $done = $this->online->add(\is_array($fields['records'] ?? null) ? $fields['records'] : [], $tags, $principal, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        }
+        $this->audit->record('library.import', $principal->username, $request, extra: ['added' => \count($done['added']), 'skipped' => \count($done['skipped']), 'via' => 'search']);
+        $done['added'] = array_map(static fn (array $a): array => $a + ['href' => $request->basePath . '/' . $a['path']], $done['added']);
+
+        return ApiResponse::json($done, $done['added'] !== [] ? 201 : 200);
     }
 
     /**

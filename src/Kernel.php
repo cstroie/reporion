@@ -628,6 +628,7 @@ final class Kernel
             static fn (): bool => $aiConfig->isConfigured() && $aiActions->special(self::libraryNamespace($config), 'ask-library') !== null,
             self::libraryMerge($config, $storage, $index, $audit),
             new \Reporion\Service\Library\Related($index, self::libraryNamespace($config), \Reporion\Service\Ai\Embedder::minScore($config)),
+            new \Reporion\Service\Library\OnlineSearch(self::library($config, $storage, $index, $audit), ($config['library']['search'] ?? false) === true ? new Lookup(Lookup::http()) : null),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -816,6 +817,10 @@ final class Kernel
             => $libraryController->duplicates($request, $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/fulltext', static fn (Request $request, array $params): Response
             => $libraryController->fulltext($request, $params['pid'], $session->principal($request)));
+        $router->get('/api/v1/library/online', static fn (Request $request, array $params): Response
+            => $libraryController->online($request, $session->principal($request)));
+        $router->post('/api/v1/library/online', static fn (Request $request, array $params): Response
+            => $libraryController->addOnline($request, $session->principal($request)));
         $router->get('/api/v1/library/{pid:[0-9A-Z]+}/related', static fn (Request $request, array $params): Response
             => $libraryController->related($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/merge', static fn (Request $request, array $params): Response

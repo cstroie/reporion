@@ -158,6 +158,7 @@ Apache:
 <p class="wk-opts">
 <label class="radio"><input type="checkbox" name="<?= $field('library.lookup') ?>" value="1"<?= $checked('library.lookup') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_lookup')) ?><?= $source('library.lookup') ?><small><?= $e(t('admin.settings.library_lookup_help')) ?></small></span></label>
 <label class="radio"><input type="checkbox" name="<?= $field('library.web_clip') ?>" value="1"<?= $checked('library.web_clip') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_web_clip')) ?><?= $source('library.web_clip') ?><small><?= $e(t('admin.settings.library_web_clip_help')) ?></small></span></label>
+<label class="radio"><input type="checkbox" name="<?= $field('library.search') ?>" value="1"<?= $checked('library.search') ?>><span class="dot"></span><span><?= $e(t('admin.settings.library_search')) ?><?= $source('library.search') ?><small><?= $e(t('admin.settings.library_search_help')) ?></small></span></label>
 </p>
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.library_unpaywall')) ?><?= $source('library.unpaywall_email') ?><input class="input" type="email" name="<?= $field('library.unpaywall_email') ?>" value="<?= $e((string) ($values['library.unpaywall_email'] ?? '')) ?>" maxlength="120" placeholder="<?= $e(t('admin.settings.library_unpaywall_hint')) ?>" autocomplete="off" spellcheck="false"><small><?= $e(t('admin.settings.library_unpaywall_help')) ?></small></label>

@@ -8,6 +8,8 @@
  *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
  * - the Find full text button on a source's card (`[data-lib-fulltext]`, POST /api/v1/library/{pid}/fulltext),
  *   its answer shown in `[data-lib-fulltext-status]`; the page reloads when a file was attached.
+ * - online (GET /library, an editor, `library.search` on): PubMed searched by the words typed
+ *   (GET /api/v1/library/online?q=), each result with Add (POST /api/v1/library/online {records}).
  * - duplicates (GET /library, an editor): groups of sources that look like one article; the radio
  *   picks the one to keep, Merge sends POST /api/v1/library/{keep}/merge {from} for each of the others.
  */
@@ -161,7 +163,73 @@
     });
   }
 
-  var TOOLS = { duplicates: mountDuplicates, related: mountRelated };
+  // ---- Add by search: PubMed asked by the words typed ----
+
+  function oneLine(csl) {
+    var authors = (csl.author || []).slice(0, 3).map(function (a) { return a.family ? a.family + (a.given ? ' ' + a.given : '') : (a.literal || ''); }).filter(Boolean).join(', ');
+    if ((csl.author || []).length > 3) authors += ', et al.';
+    var year = csl.issued && csl.issued['date-parts'] && csl.issued['date-parts'][0] ? csl.issued['date-parts'][0][0] : '';
+    var journal = csl['container-title-short'] || csl['container-title'] || '';
+    return [authors, journal, year].filter(Boolean).join(' · ');
+  }
+
+  function mountOnline(box) {
+    var cfg = config(box);
+    var s = cfg.strings || {};
+    var base = cfg.basePath || '';
+    var form = box.querySelector('[data-online-form]');
+    var status = box.querySelector('[data-online-status]');
+    var list = box.querySelector('[data-online-list]');
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var q = form.elements.q.value.trim();
+      if (!q) return;
+      list.textContent = '';
+      status.textContent = '';
+      status.appendChild(notice('info', s.searching));
+      api(base + '/api/v1/library/online?q=' + encodeURIComponent(q)).then(function (result) {
+        status.textContent = '';
+        if (!result.ok) { status.appendChild(notice('error', errorOf(result, s.failed))); return; }
+        var rows = result.json.data || [];
+        if (rows.length === 0) { status.appendChild(notice('info', s.none)); return; }
+        rows.forEach(function (row) {
+          var item = el('li', 'wk-lib-online-row');
+          var text = el('div');
+          text.appendChild(el('strong', '', row.csl.title || ''));
+          text.appendChild(el('div', 'wk-dim wk-text-sm', oneLine(row.csl)));
+          var button = el('button', 'btn btn-secondary btn-sm', s.add);
+          button.type = 'button';
+          if (row.in_library) {
+            var have = el('a', 'wk-chip', row.in_library.by === 'title' ? s.by_title : s.have);
+            have.href = row.in_library.href;
+            text.appendChild(have);
+            button.hidden = row.in_library.by !== 'title';
+          }
+          button.addEventListener('click', function () {
+            button.disabled = true;
+            button.textContent = s.adding;
+            post(base + '/api/v1/library/online', { records: [row.csl] }).then(function (added) {
+              if (!added.ok) { button.disabled = false; button.textContent = s.add; status.textContent = ''; status.appendChild(notice('error', errorOf(added, s.failed))); return; }
+              var done = (added.json.added || [])[0];
+              button.remove();
+              if (done) {
+                var open = el('a', 'wk-chip', s.added);
+                open.href = done.href;
+                text.appendChild(open);
+              } else {
+                text.appendChild(el('span', 'wk-dim wk-text-sm', s.skipped));
+              }
+            }, function () { button.disabled = false; button.textContent = s.add; status.textContent = ''; status.appendChild(notice('error', s.failed)); });
+          });
+          item.appendChild(text);
+          item.appendChild(button);
+          list.appendChild(item);
+        });
+      }, function () { status.textContent = ''; status.appendChild(notice('error', s.failed)); });
+    });
+  }
+
+  var TOOLS = { duplicates: mountDuplicates, related: mountRelated, online: mountOnline };
 
   function start() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-tools"]'), function (box) {

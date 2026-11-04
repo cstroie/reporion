@@ -577,6 +577,36 @@ final class LibraryTest extends HttpTestCase
         self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('reader', 'GET', '/library')->body, 'a reader cannot add');
     }
 
+    public function testSearchingPubmedIsOffUntilTurnedOnAndRefusesAPatientsNumberBeforeSendingAnything(): void
+    {
+        $cnp = \Reporion\Tests\Support\CnpTest::make(1, '850723');
+        foreach (['editor', 'owner'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/online?q=steatosis')->status, 'off');
+            self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/online', ['records' => [['title' => 'x y z']]])->status, 'off');
+        }
+        self::assertStringNotContainsString('data-tool="online"', $this->call('editor', 'GET', '/library')->body);
+
+        $this->config['library']['search'] = true;
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/online?q=steatosis')->status, $user ?? 'anonymous');
+            self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/online', ['records' => [['title' => 'x y z']]])->status, $user ?? 'anonymous');
+        }
+        self::assertStringContainsString('data-tool="online"', $this->call('editor', 'GET', '/library')->body);
+        self::assertStringNotContainsString('data-tool="online"', $this->call('reader', 'GET', '/library')->body);
+
+        // Refused before the service is asked (a request here would reach the network): the numbers and the empty
+        $refused = $this->call('editor', 'GET', '/api/v1/library/online?q=' . rawurlencode('steatosis ' . $cnp));
+        self::assertSame([422, 'patient_data'], [$refused->status, json_decode($refused->body, true)['error']['code']]);
+        self::assertSame(422, $this->call('editor', 'GET', '/api/v1/library/online?q=')->status);
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/online', ['records' => []])->status);
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/online', [])->status);
+
+        $audit = (string) @file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringNotContainsString('library.search', $audit);
+        self::assertStringNotContainsString($cnp, $audit);
+        self::assertStringNotContainsString('steatosis', $audit);
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

@@ -59,6 +59,8 @@ final class InstanceSettings
         'library.lookup' => 'bool',
         // Web clip (docs/library.md, phase 7): the server fetches a web page by the address a writer types; off unless an owner turns it on
         'library.web_clip' => 'bool',
+        // Add by search (D60): PubMed asked by the words a writer types (the one lookup that sends what was typed); off unless an owner turns it on
+        'library.search' => 'bool',
         // Find full text (D60): the e-mail address Unpaywall asks every caller to give, sent with a DOI; blank: the feature is off
         'library.unpaywall_email' => 'email',
         // The library's language for a notebook or source with no `language` of its own: the assistant's answers, the References heading

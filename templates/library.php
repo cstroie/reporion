@@ -81,6 +81,27 @@ $total = \count($entries);
 </section>
 <?php endif; ?>
 
+<?php if (($onlineSearch ?? false) === true): /* Add by search (D60): PubMed asked by the words typed */ ?>
+<details class="wk-panel wk-lib-online" data-island="library-tools" data-tool="online">
+<summary class="wk-eyebrow"><i class="ph ph-magnifying-glass-plus" aria-hidden="true"></i> <?= $e(t('library.online.title')) ?></summary>
+<p class="wk-dim wk-text-sm"><?= $e(t('library.online.lede')) ?></p>
+<form class="wk-lib-online-form" data-online-form>
+<div class="field"><label><?= $e(t('library.online.q')) ?>
+<span class="group"><input class="input" type="search" name="q" maxlength="200" required placeholder="<?= $e(t('library.online.q_hint')) ?>" autocomplete="off" spellcheck="false"><button class="btn btn-secondary" type="submit"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><?= $e(t('library.online.go')) ?></button></span>
+<small><?= $e(t('library.online.q_help')) ?></small></label></div>
+</form>
+<div data-online-status aria-live="polite"></div>
+<ul class="wk-lib-online-list" data-online-list></ul>
+<script type="application/json"><?= json_encode([
+    'basePath' => $basePath,
+    'strings' => [
+        'searching' => t('library.online.searching'), 'none' => t('library.online.none'), 'failed' => t('library.failed'),
+        'add' => t('library.online.add'), 'adding' => t('library.online.adding'), 'added' => t('library.online.added'), 'skipped' => t('library.online.skipped'),
+        'have' => t('library.online.have'), 'by_title' => t('library.online.by_title'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</details>
+<?php endif; ?>
 <?php if (($duplicates ?? []) !== []): /* Sources that look like one article (D60): keep one, fold the others into it */ ?>
 <details class="wk-panel wk-lib-dups" data-island="library-tools" data-tool="duplicates">
 <summary class="wk-eyebrow"><i class="ph ph-copy" aria-hidden="true"></i> <?= $e(t('library.dups.title')) ?><span class="wk-count"><?= \count($duplicates) ?></span></summary>

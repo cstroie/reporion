@@ -218,6 +218,81 @@ final class Lookup
         return array_filter($csl, static fn (mixed $v): bool => $v !== '' && $v !== []);
     }
 
+    /** The most records one search returns */
+    public const SEARCH_LIMIT = 10;
+
+    /**
+     * PubMed searched by words (D60: Add by search; opt-in `library.search`, and unlike every other
+     * lookup what is sent is what the writer typed): esearch, then esummary for the ids it gives. Each
+     * answer is a proposed record for the writer to add (D8), as an upload's. The caller has refused a
+     * query that holds a patient's CNP and says plainly in the screen that the words go to PubMed.
+     *
+     * @return list<array{csl: array<string, mixed>, tags: list<string>}> best match first
+     *
+     * @throws \RuntimeException when the service could not be reached or answered nonsense
+     */
+    public function search(string $query, int $limit = self::SEARCH_LIMIT): array
+    {
+        $query = trim((string) preg_replace('/\s+/u', ' ', $query));
+        if ($query === '') {
+            return [];
+        }
+        $found = ($this->fetch)(self::EUTILS . 'esearch.fcgi?db=pubmed&retmode=json&sort=relevance&retmax=' . max(1, min(self::SEARCH_LIMIT, $limit)) . '&term=' . rawurlencode($query));
+        $json = $found === null ? null : json_decode($found, true);
+        if (!\is_array($json)) {
+            throw new \RuntimeException('pubmed');
+        }
+        $ids = array_values(array_filter(\is_array($json['esearchresult']['idlist'] ?? null) ? $json['esearchresult']['idlist'] : [], static fn (mixed $id): bool => \is_string($id) && preg_match('/^\d{1,9}$/', $id) === 1));
+        if ($ids === []) {
+            return [];
+        }
+        $summary = ($this->fetch)(self::EUTILS . 'esummary.fcgi?db=pubmed&retmode=json&id=' . implode(',', $ids));
+        $result = $summary === null ? null : (json_decode($summary, true)['result'] ?? null);
+        if (!\is_array($result)) {
+            throw new \RuntimeException('pubmed');
+        }
+        $records = [];
+        foreach ($ids as $id) {
+            $row = $result[$id] ?? null;
+            if (!\is_array($row) || trim(strip_tags((string) ($row['title'] ?? ''))) === '') {
+                continue;
+            }
+            $csl = ['type' => 'article-journal', 'title' => trim(strip_tags((string) $row['title'])), 'PMID' => $id];
+            $authors = [];
+            foreach (\is_array($row['authors'] ?? null) ? $row['authors'] : [] as $author) {
+                $name = \is_array($author) ? trim((string) ($author['name'] ?? '')) : '';
+                if ($name === '') {
+                    continue;
+                }
+                // "Nobody A": the family name, then the initials
+                $authors[] = ($author['authtype'] ?? 'Author') === 'Author' && preg_match('/^(.+) ([A-Z]{1,4})$/u', $name, $m) === 1 ? ['family' => $m[1], 'given' => $m[2]] : ['literal' => $name];
+            }
+            if ($authors !== []) {
+                $csl['author'] = $authors;
+            }
+            foreach (['container-title' => 'fulljournalname', 'container-title-short' => 'source', 'volume' => 'volume', 'issue' => 'issue', 'page' => 'pages', 'ISSN' => 'issn'] as $to => $from) {
+                $value = trim((string) ($row[$from] ?? ''));
+                if ($value !== '') {
+                    $csl[$to] = $value;
+                }
+            }
+            if (preg_match('/\b(1[5-9]\d\d|20\d\d)\b/', (string) ($row['pubdate'] ?? ''), $m) === 1) {
+                $csl['issued'] = ['date-parts' => [[(int) $m[1]]]];
+            }
+            foreach (\is_array($row['articleids'] ?? null) ? $row['articleids'] : [] as $articleId) {
+                if (\is_array($articleId) && ($articleId['idtype'] ?? '') === 'doi' && ($doi = ArticleIds::normalizeDoi((string) ($articleId['value'] ?? ''))) !== null) {
+                    $csl['DOI'] = $doi;
+                }
+                if (\is_array($articleId) && ($articleId['idtype'] ?? '') === 'pmc' && preg_match('/^PMC\d+$/', (string) ($articleId['value'] ?? '')) === 1) {
+                    $csl['PMCID'] = (string) $articleId['value'];
+                }
+            }
+            $records[] = ['csl' => $csl, 'tags' => []];
+        }
+
+        return $records;
+    }
+
     /**
      * Where Unpaywall says a free copy of the article is (D60: Find full text): the DOI and the
      * owner's e-mail address (which Unpaywall asks every caller to give) are all that is sent. The

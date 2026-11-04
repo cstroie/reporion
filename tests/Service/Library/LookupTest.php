@@ -51,6 +51,48 @@ XML;
         self::assertSame([['type' => 'retraction']], $this->lookup(str_replace('<PublicationTypeList/>', '', str_replace('</Article>', '<PublicationTypeList><PublicationType>Retracted Publication</PublicationType></PublicationTypeList></Article>', self::PUBMED)))->pubmed('12345678')['notices']);
     }
 
+    private const ESEARCH = '{"esearchresult":{"count":"2","idlist":["12345678","23456789","not-an-id"]}}';
+
+    private const ESUMMARY = '{"result":{"uids":["12345678","23456789"],"12345678":{"uid":"12345678","pubdate":"2024 May","source":"J Synth Imaging","authors":[{"name":"Nobody A","authtype":"Author"},{"name":"Synthetic Imaging Group","authtype":"CollectiveName"}],"title":"A made-up <i>study</i> of test lesions.","volume":"3","issue":"2","pages":"11-4","fulljournalname":"Journal of Synthetic Imaging","issn":"0000-0000","articleids":[{"idtype":"pubmed","value":"12345678"},{"idtype":"doi","value":"10.9999/JSI.2024.0001"},{"idtype":"pmc","value":"PMC1234567"}]},"23456789":{"uid":"23456789","title":"   ","pubdate":"2023"}}}';
+
+    public function testSearchAsksPubmedForTheWordsAndMapsWhatComesBack(): void
+    {
+        $asked = [];
+        $lookup = new Lookup(function (string $url) use (&$asked): ?string {
+            $asked[] = $url;
+
+            return str_contains($url, 'esearch') ? self::ESEARCH : self::ESUMMARY;
+        });
+
+        $records = $lookup->search("  hepatic   steatosis\tMRI ");
+
+        self::assertCount(1, $records, 'the one with no title is dropped, the non-id never asked');
+        $csl = $records[0]['csl'];
+        self::assertSame(['article-journal', 'A made-up study of test lesions.', '12345678', '10.9999/jsi.2024.0001', 'PMC1234567'], [$csl['type'], $csl['title'], $csl['PMID'], $csl['DOI'], $csl['PMCID']]);
+        self::assertSame([['family' => 'Nobody', 'given' => 'A'], ['literal' => 'Synthetic Imaging Group']], $csl['author']);
+        self::assertSame(['Journal of Synthetic Imaging', 'J Synth Imaging', '3', '2', '11-4', 2024], [$csl['container-title'], $csl['container-title-short'], $csl['volume'], $csl['issue'], $csl['page'], $csl['issued']['date-parts'][0][0]]);
+        self::assertStringContainsString('term=hepatic%20steatosis%20MRI', $asked[0], 'whitespace folded, the words encoded');
+        self::assertStringContainsString('esummary.fcgi', $asked[1]);
+        self::assertStringContainsString('id=12345678,23456789&', $asked[1] . '&');
+    }
+
+    public function testSearchWithNothingFoundAsksNoSummaryAndAFailureIsSaid(): void
+    {
+        $asked = 0;
+        $none = new Lookup(function (string $url) use (&$asked): ?string {
+            ++$asked;
+
+            return '{"esearchresult":{"idlist":[]}}';
+        });
+        self::assertSame([], $none->search('nothing here'));
+        self::assertSame(1, $asked);
+        self::assertSame([], $none->search('   '));
+        self::assertSame(1, $asked, 'an empty query asks nothing');
+
+        $this->expectException(\RuntimeException::class);
+        (new Lookup(static fn (string $url): ?string => null))->search('words');
+    }
+
     public function testCrossrefIsMappedToARecord(): void
     {
         $found = $this->lookup(self::CROSSREF)->crossref('https://doi.org/10.9999/JSI.2024.0001');
