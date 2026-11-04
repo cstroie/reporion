@@ -72,8 +72,8 @@ include __DIR__ . '/notice.php';
 </p>
 <?php endif; ?>
 <?php if (($source['abstract'] ?? null) !== null): ?>
-<details class="wk-lib-cites wk-lib-abstract" data-lib-abstract>
-<summary class="wk-dim wk-text-sm"><i class="ph ph-article" aria-hidden="true"></i> <?= $e(t('library.abstract.title')) ?> <span class="wk-dim">· <?= $e(t('library.abstract.from_' . ($source['abstract']['from'] === 'record' ? 'record' : 'text'))) ?></span></summary>
+<details class="wk-disclosure wk-lib-abstract" data-lib-abstract>
+<summary><span><i class="ph ph-article" aria-hidden="true"></i> <?= $e(t('library.abstract.title')) ?></span> <span class="wk-dim wk-text-xs">· <?= $e(t('library.abstract.from_' . ($source['abstract']['from'] === 'record' ? 'record' : 'text'))) ?></span></summary>
 <div class="wk-lib-abstract-text wk-text-sm">
 <?php foreach (preg_split('/\n\s*\n/', $source['abstract']['text']) ?: [] as $paragraph): ?>
 <p><?= nl2br($e(trim($paragraph))) ?></p>
@@ -90,8 +90,8 @@ foreach (\Reporion\Service\Library\SourceAnalysis::TASKS as $savedTask => $saved
 }
 include __DIR__ . '/saved-analyses.php';
 ?>
-<details class="wk-lib-cites wk-lib-related" data-island="library-tools" data-tool="related">
-<summary class="wk-dim wk-text-sm"><i class="ph ph-graph" aria-hidden="true"></i> <?= $e(t('library.related.title')) ?></summary>
+<details class="wk-disclosure wk-lib-related" data-island="library-tools" data-tool="related">
+<summary><span><i class="ph ph-graph" aria-hidden="true"></i> <?= $e(t('library.related.title')) ?></span></summary>
 <ul class="wk-lib-related-list wk-text-sm" data-related-list aria-live="polite"></ul>
 <script type="application/json"><?= json_encode([
     'url' => $basePath . '/api/v1/library/' . $source['pid'] . '/related',
@@ -99,8 +99,8 @@ include __DIR__ . '/saved-analyses.php';
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>
 <?php if (($source['cites'] ?? null) !== null): ?>
-<details class="wk-lib-cites">
-<summary class="wk-dim wk-text-sm"><i class="ph ph-list-numbers" aria-hidden="true"></i> <?= $e(t('library.cites', [(string) \count($source['cites']['entries']), (string) $source['cites']['found']])) ?></summary>
+<details class="wk-disclosure">
+<summary><span><i class="ph ph-list-numbers" aria-hidden="true"></i> <?= $e(t('library.cites', [(string) \count($source['cites']['entries']), (string) $source['cites']['found']])) ?></span></summary>
 <ol class="wk-lib-cites-list wk-text-sm">
 <?php foreach ($source['cites']['entries'] as $entry): ?>
 <li>

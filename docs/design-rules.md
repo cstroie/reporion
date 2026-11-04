@@ -416,6 +416,29 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
 - Panels stack with `--space-6` between them; a panel does not nest another panel.
 - A `.wk-modal` has the same shape: a `<footer>` of actions, right-aligned.
 
+## Tool panels and disclosures (2026-11-05)
+
+The library's and the notebooks' collapsible features (Ask, Studio, Search PubMed, Possible duplicates)
+share one look, so a new one only needs the classes:
+
+- **`.wk-tools`** stacks tool panels with `--space-3` between them (and `--space-6` after the stack); it
+  hides itself when nothing is in it. One stack per page, above the content it works on.
+- **`<details class="wk-panel wk-tool">`**: its `<summary class="wk-eyebrow">` is the header (an icon, the
+  title, a `.wk-count` when there is one) with the Metadata panel's `▸`/`▾` caret and compact padding when
+  closed; open, the description (`p.wk-dim`) and the content follow as in any panel. A tool's field label
+  is its own name (`Your question`), never the panel's title again.
+- **`<details class="wk-disclosure">`** is the same inside a panel: a dim one-line summary (caret, icon, text)
+  that opens a block with `--space-3` above it (an abstract, related sources, what an article cites). The
+  summary's pieces are inline, so a long summary wraps as a sentence.
+- **A result's own sections** (a saved analysis, an answer) show a reference list as a footnote: a small
+  eyebrow heading, not the page's accent `h2` (`.wk-references` inside `.wk-saved-text`, `.wk-notebook-answer`,
+  `.wk-ask-answer`).
+- **A list's bar** (the library's text search, filters, collections, quick filter and tags) is one
+  `.wk-lib-bar` column with `--space-3` between its rows; a search form keeps its button beside the input
+  at every width.
+- **A label that holds a `.group`** (an input with its button) stacks like one that holds an input; the group
+  fills the width up to 36rem.
+
 ## Action rows (`.wk-actions`)
 
 `.wk-actions` is a row of buttons that act together: flex, `--space-2` apart, never wrapping,

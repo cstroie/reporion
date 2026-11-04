@@ -17,11 +17,11 @@ declare(strict_types=1);
 /** @var array<string, mixed> $frontmatter */
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
-<details class="wk-panel wk-notebook-ask" data-island="notebook-ask">
+<details class="wk-panel wk-tool wk-notebook-ask" data-island="notebook-ask">
 <summary class="wk-eyebrow"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('notebook.title')) ?></summary>
 <p class="wk-dim wk-text-sm"><?= $e(t('notebook.lede')) ?></p>
 <form class="wk-notebook-form" data-notebook-form>
-<div class="field"><label><?= $e(t('notebook.title')) ?>
+<div class="field"><label><?= $e(t('notebook.question')) ?>
 <textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('notebook.hint')) ?>"></textarea>
 </label></div>
 <footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button></footer>

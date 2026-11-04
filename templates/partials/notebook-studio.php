@@ -23,7 +23,7 @@ declare(strict_types=1);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $tasks = $notebookStudio['tasks'];
 ?>
-<details class="wk-panel wk-notebook-studio" data-island="notebook-studio">
+<details class="wk-panel wk-tool wk-notebook-studio" data-island="notebook-studio">
 <summary class="wk-eyebrow"><i class="ph ph-flask" aria-hidden="true"></i> <?= $e(t('studio.title')) ?></summary>
 <p class="wk-dim wk-text-sm"><?= $e(t('studio.lede')) ?></p>
 <div class="wk-lib-ai-tasks">

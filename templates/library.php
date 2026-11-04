@@ -60,7 +60,7 @@ $total = \count($entries);
 <div class="field"><label><?= $e(t('library.clip')) ?>
 <span class="group"><input class="input" type="url" name="url" maxlength="2000" required placeholder="<?= $e(t('library.clip_hint')) ?>" autocapitalize="off" spellcheck="false"><button class="btn btn-secondary" type="submit"><i class="ph ph-globe" aria-hidden="true"></i><?= $e(t('library.clip_go')) ?></button></span>
 <small><?= $e(t('library.clip_help')) ?></small></label></div>
-<p class="wk-dim wk-text-sm"><i class="ph ph-bookmark-simple" aria-hidden="true"></i> <a class="wk-chip" href="#" data-lib-bookmarklet draggable="true"><?= $e(t('library.bookmarklet')) ?></a> <?= $e(t('library.bookmarklet_help')) ?></p>
+<p class="wk-dim wk-text-sm wk-lib-bookmarklet"><i class="ph ph-bookmark-simple" aria-hidden="true"></i> <a class="wk-chip" href="#" data-lib-bookmarklet draggable="true"><?= $e(t('library.bookmarklet')) ?></a> <?= $e(t('library.bookmarklet_help')) ?></p>
 </form>
 <?php endif; ?>
 <div class="wk-lib-queue" data-lib-queue></div>
@@ -81,8 +81,10 @@ $total = \count($entries);
 </section>
 <?php endif; ?>
 
+<?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
+<div class="wk-tools">
 <?php if (($onlineSearch ?? false) === true): /* Add by search (D60): PubMed asked by the words typed */ ?>
-<details class="wk-panel wk-lib-online" data-island="library-tools" data-tool="online">
+<details class="wk-panel wk-tool wk-lib-online" data-island="library-tools" data-tool="online">
 <summary class="wk-eyebrow"><i class="ph ph-magnifying-glass-plus" aria-hidden="true"></i> <?= $e(t('library.online.title')) ?></summary>
 <p class="wk-dim wk-text-sm"><?= $e(t('library.online.lede')) ?></p>
 <form class="wk-lib-online-form" data-online-form>
@@ -102,8 +104,33 @@ $total = \count($entries);
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>
 <?php endif; ?>
+<?php if (($libraryAsk ?? false) === true): /* Ask the library (2026-11-02): every source, never reports; assets/js/notebook-ask.js */ ?>
+<details class="wk-panel wk-tool wk-notebook-ask" data-island="notebook-ask">
+<summary class="wk-eyebrow"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('library.ask.title')) ?></summary>
+<p class="wk-dim wk-text-sm"><?= $e(t('library.ask.lede')) ?></p>
+<form class="wk-notebook-form" data-notebook-form>
+<div class="field"><label><?= $e(t('library.ask.question')) ?>
+<textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('library.ask.hint')) ?>"></textarea>
+</label></div>
+<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button><button class="btn btn-ghost" type="button" data-notebook-clear hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('library.ask.clear')) ?></button></footer>
+</form>
+<div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
+<script type="application/json"><?= json_encode([
+    'basePath' => $basePath,
+    'endpoint' => '/api/v1/library/ask',
+    'history' => true,
+    'citationStyle' => \Reporion\Support\Citation::style(null),
+    'strings' => [
+        'asking' => t('notebook.asking'), 'failed' => t('notebook.failed'), 'sources' => t('notebook.sources'),
+        'whole' => t('notebook.whole'), 'passages' => t('library.ask.passages'), 'understood' => t('notebook.understood'),
+        'dropped' => t('notebook.dropped'), 'note' => t('notebook.note'),
+        'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</details>
+<?php endif; ?>
 <?php if (($duplicates ?? []) !== []): /* Sources that look like one article (D60): keep one, fold the others into it */ ?>
-<details class="wk-panel wk-lib-dups" data-island="library-tools" data-tool="duplicates">
+<details class="wk-panel wk-tool wk-lib-dups" data-island="library-tools" data-tool="duplicates">
 <summary class="wk-eyebrow"><i class="ph ph-copy" aria-hidden="true"></i> <?= $e(t('library.dups.title')) ?><span class="wk-count"><?= \count($duplicates) ?></span></summary>
 <p class="wk-dim wk-text-sm"><?= $e(t('library.dups.lede')) ?></p>
 <?php foreach ($duplicates as $n => $group): ?>
@@ -123,31 +150,8 @@ $total = \count($entries);
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>
 <?php endif; ?>
-<?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
-<?php if (($libraryAsk ?? false) === true): /* Ask the library (2026-11-02): every source, never reports; assets/js/notebook-ask.js */ ?>
-<details class="wk-panel wk-notebook-ask" data-island="notebook-ask">
-<summary class="wk-eyebrow"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('library.ask.title')) ?></summary>
-<p class="wk-dim wk-text-sm"><?= $e(t('library.ask.lede')) ?></p>
-<form class="wk-notebook-form" data-notebook-form>
-<div class="field"><label><?= $e(t('library.ask.title')) ?>
-<textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('library.ask.hint')) ?>"></textarea>
-</label></div>
-<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button><button class="btn btn-ghost" type="button" data-notebook-clear hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('library.ask.clear')) ?></button></footer>
-</form>
-<div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
-<script type="application/json"><?= json_encode([
-    'basePath' => $basePath,
-    'endpoint' => '/api/v1/library/ask',
-    'history' => true,
-    'citationStyle' => \Reporion\Support\Citation::style(null),
-    'strings' => [
-        'asking' => t('notebook.asking'), 'failed' => t('notebook.failed'), 'sources' => t('notebook.sources'),
-        'whole' => t('notebook.whole'), 'passages' => t('library.ask.passages'), 'understood' => t('notebook.understood'),
-        'dropped' => t('notebook.dropped'), 'note' => t('notebook.note'),
-        'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
-    ],
-], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
-</details>
+</div>
+<?php if (($libraryAsk ?? false) === true): ?>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/render-client.js')) ?>" defer></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/notebook-ask.js')) ?>" defer></script>
 <?php endif; ?>
@@ -168,6 +172,7 @@ $total = \count($entries);
 <?php endforeach; ?>
 </nav>
 </header>
+<div class="wk-lib-bar">
 <form class="wk-lib-search" method="get" action="<?= $e($basePath . '/library') ?>" role="search">
 <label class="group"><span class="group-addon"><i class="ph ph-text-aa" aria-hidden="true"></i></span><input class="input" type="search" name="q" value="<?= $e($query) ?>" maxlength="200" placeholder="<?= $e(t('library.search_hint')) ?>" aria-label="<?= $e(t('library.search')) ?>"></label>
 <?php if ($tag !== ''): ?><input type="hidden" name="tag" value="<?= $e($tag) ?>"><?php endif; ?>
@@ -214,6 +219,7 @@ $collectionQuery = array_filter(['q' => $query, 'tag' => $tag, 'sort' => $sort =
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
+</div>
 </div>
 <table class="table table-cards table-cards-compact wk-lib-table">
 <thead><tr><th><?= $e(t('library.col_article')) ?></th><th><?= $e(t('library.col_year')) ?></th><th><?= $e(t('library.col_journal')) ?></th><th><?= $e(t('library.col_cited')) ?></th><th><?= $e(t('library.col_tags')) ?></th></tr></thead>

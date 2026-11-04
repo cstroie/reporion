@@ -207,7 +207,9 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
 
 .field { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
 .field label { font-size: var(--text-sm); color: var(--color-dim); }
-.field > label:has(> .input) { display: flex; flex-direction: column; gap: var(--space-2); }
+.field > label:has(> .input, > .group, > .group-fill, > textarea) { display: flex; flex-direction: column; gap: var(--space-2); }
+.field > label > .group { align-self: stretch; max-width: 36rem; }
+.field > label > .group > .input { flex: 1 1 auto; }
 label > small:not(.wk-field-error), .radio > span > small { font-size: var(--text-2xs); color: var(--color-dimmer); }
 .radio > span > small { display: block; } /* a checkbox's help sits under its words */
 .input {
@@ -2232,12 +2234,42 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-ask-source p { margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; }
 .wk-ask-open { margin-top: var(--space-1); font-size: var(--text-xs); display: inline-flex; align-items: center; gap: var(--space-1); }
 
-/* The library (docs/library.md, phase 2): the upload with its proposed records, the list, a source's card */
+/* Tool panels and disclosures (2026-11-05, docs/design-rules.md): the library's and the notebooks' collapsible panels share one look.
+ * .wk-tools stacks .wk-tool panels (a <details class="wk-panel wk-tool"> whose <summary class="wk-eyebrow"> is its header, with the
+ * Metadata panel's caret and compact padding when closed); .wk-disclosure is the same idea inside a panel, a dim line that opens a block. */
+.wk-tools { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-6); }
+.wk-tools > .wk-panel { margin-bottom: 0; }
+.wk-tools:not(:has(> *)) { display: none; }
+details.wk-tool { padding: var(--space-3) var(--space-4); }
+details.wk-tool[open] { padding: var(--space-4); }
+details.wk-tool > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-2); }
+details.wk-tool > summary::-webkit-details-marker { display: none; }
+details.wk-tool > summary::before { content: "▸"; display: inline-block; width: 1.1em; line-height: 1; color: color-mix(in srgb, var(--color-text) 62%, transparent); }
+details.wk-tool[open] > summary::before { content: "▾"; }
+details.wk-tool[open] > summary { margin-bottom: var(--space-3); }
+details.wk-tool > p.wk-dim { margin: 0 0 var(--space-4); }
+details.wk-tool .wk-count { margin-left: var(--space-1); }
+.wk-disclosure { margin-top: var(--space-4); }
+.wk-disclosure > summary { cursor: pointer; display: block; color: var(--color-dim); font-size: var(--text-sm); list-style: none; }
+.wk-disclosure > summary::-webkit-details-marker { display: none; }
+.wk-disclosure > summary::before { content: "▸"; display: inline-block; width: 1.1em; font-size: .85em; }
+.wk-disclosure[open] > summary::before { content: "▾"; }
+.wk-disclosure > :not(summary) { margin-top: var(--space-3); margin-bottom: 0; }
+.wk-disclosure > ul, .wk-disclosure > ol { padding-left: var(--space-5); }
+/* A reference list inside a result (an analysis, an answer) is a footnote, not a section of its own */
+:is(.wk-saved-text, .wk-notebook-answer, .wk-ask-answer, .wk-lib-ai-answer) .wk-references { margin-top: var(--space-4); padding-top: var(--space-3); }
+:is(.wk-saved-text, .wk-notebook-answer, .wk-ask-answer, .wk-lib-ai-answer) .wk-references h2 { font-size: var(--text-xs); letter-spacing: .11em; text-transform: uppercase; color: var(--color-dim); border: 0; padding: 0; margin: 0 0 var(--space-2); }
+:is(.wk-saved-text, .wk-notebook-answer, .wk-ask-answer, .wk-lib-ai-answer) .wk-references h2::before, :is(.wk-saved-text, .wk-notebook-answer, .wk-ask-answer, .wk-lib-ai-answer) .wk-references h2::after { content: none; display: none; }
+
+/* The library (docs/library.md): the upload with its proposed records, the list, a source's card */
 .wk-lib-drop { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); border: 2px dashed var(--color-divider); border-radius: var(--radius-md); color: var(--color-dim); text-align: center; cursor: pointer; }
 .wk-lib-drop:hover, .wk-lib-drop:focus-within, .wk-lib-drop.is-over { border-color: var(--color-accent); color: var(--color-accent); }
 .wk-lib-drop .ph { font-size: 2rem; }
 .wk-lib-drop small { color: var(--color-dimmer); font-size: var(--text-2xs); max-width: 46rem; }
 .wk-lib-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.wk-lib-clip { margin-top: var(--space-4); }
+.wk-lib-clip .field { margin-bottom: var(--space-2); }
+.wk-lib-bookmarklet { margin: 0; line-height: 1.9; }
 .wk-lib-queue { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-4); }
 .wk-lib-queue:empty { display: none; }
 .wk-lib-item { padding: var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); min-width: 0; }
@@ -2255,77 +2287,96 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-lib-preview { margin: 0 0 var(--space-4); }
 .wk-lib-preview summary { cursor: pointer; color: var(--color-dim); font-size: var(--text-sm); }
 .wk-lib-preview p { margin: var(--space-2) 0 0; line-height: 1.5; }
-.wk-lib-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+/* The list's bar: the text search, the filters, the collections, the quick filter and the tags, one rhythm */
+.wk-lib-bar { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-4); }
+.wk-lib-bar > * { margin: 0; }
+.wk-lib-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .wk-lib-filter { flex: 1 1 18rem; max-width: 28rem; }
-/* The library's text search (2026-11-02): the form, and each article's best passage */
-.wk-lib-search { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
-.wk-lib-search .group { flex: 1 1 18rem; max-width: 36rem; }
+.wk-lib-search { display: flex; align-items: center; gap: var(--space-2); }
+.wk-lib-search .group { flex: 1 1 auto; min-width: 0; max-width: 36rem; }
+.wk-lib-search .btn { flex: none; }
 .wk-lib-snippet { display: block; margin-top: var(--space-1); overflow-wrap: anywhere; }
 .wk-lib-snippet mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
 .wk-lib-tags, .wk-lib-sort { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-lib-table th { white-space: nowrap; }
 .wk-lib-table td .wk-chip { margin: 0 var(--space-1) var(--space-1) 0; }
-.wk-lib-source .wk-panel-h { margin-bottom: var(--space-3); }
+.wk-lib-table .wk-src-flag { margin-left: var(--space-2); white-space: nowrap; }
+.wk-lib-collections { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-chip-row { display: inline-flex; align-items: center; gap: var(--space-1); }
+.wk-chip-row form { display: inline; margin: 0; }
+.wk-lib-filters > summary { cursor: pointer; display: flex; align-items: center; gap: var(--space-2); list-style: none; }
+.wk-lib-filters > summary::-webkit-details-marker { display: none; }
+.wk-lib-filters > summary::before { content: "▸"; display: inline-block; width: 1.1em; font-size: .85em; }
+.wk-lib-filters[open] > summary::before { content: "▾"; }
+.wk-lib-filter-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3) var(--space-4); align-items: end; margin-top: var(--space-3); }
+.wk-lib-filter-form .field { margin: 0; }
+.wk-lib-filter-form .wk-actions { grid-column: 1 / -1; justify-content: flex-start; }
+.wk-lib-save { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
+.wk-lib-save .field { margin: 0; }
+/* A source's card */
+.wk-lib-source .wk-panel-h { margin-bottom: var(--space-4); align-items: center; gap: var(--space-3); }
+.wk-lib-source .wk-panel-h hgroup { flex: 0 0 auto; }
+.wk-lib-source .wk-panel-h .wk-actions { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; }
 .wk-lib-ref { margin: 0 0 var(--space-2); line-height: 1.55; overflow-wrap: anywhere; }
 .wk-lib-ids { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.wk-comment-send { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: flex-end; margin-top: var(--space-2); }
-.wk-comment-send label { flex: 1 1 14rem; }
-.wk-comment-send p { flex-basis: 100%; margin: 0; }
-.wk-saved { margin-top: var(--space-3); }
+.wk-lib-flag { margin-bottom: var(--space-4); }
+.wk-lib-abstract-text { max-height: 28rem; overflow-y: auto; line-height: 1.55; }
+.wk-lib-abstract-text p { margin: 0 0 var(--space-2); }
+.wk-lib-cites-list { max-height: 28rem; overflow-y: auto; overflow-wrap: anywhere; }
+.wk-lib-cites-list li { margin-bottom: var(--space-2); }
+.wk-lib-related-list { line-height: 1.5; margin-bottom: 0; }
+.wk-lib-related-list li { margin-bottom: var(--space-1); }
+.wk-lib-ai { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-lib-ai-tasks { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0 0; }
+.wk-lib-ai-out { margin-top: var(--space-4); }
+.wk-lib-ai-answer { line-height: 1.55; overflow-wrap: anywhere; }
+.wk-lib-ai-out .field { margin: var(--space-2) 0; }
+.wk-lib-edit { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
+[data-lib-copy].is-done { color: var(--state-ok); }
+/* What the assistant kept beside a page: a sub-section of its card, rows that fold */
+.wk-saved { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-saved > .wk-eyebrow { margin-bottom: var(--space-2); }
 .wk-saved-item { border-top: 1px solid var(--color-divider); padding: var(--space-2) 0; }
+.wk-saved-item:first-of-type { border-top: 0; }
 .wk-saved-item > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
 .wk-saved-audio { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-2) 0; }
 .wk-saved-audio audio { max-width: 100%; }
-.wk-saved-text { margin-top: var(--space-2); line-height: 1.55; overflow-wrap: anywhere; }
+.wk-saved-text { margin-top: var(--space-3); line-height: 1.55; overflow-wrap: anywhere; }
 .wk-saved-text table { display: block; overflow-x: auto; }
-.wk-lib-cites { margin-top: var(--space-3); }
-.wk-lib-cites > summary { cursor: pointer; }
-.wk-lib-cites-list { margin: var(--space-2) 0 0; padding-left: var(--space-5); max-height: 28rem; overflow-y: auto; overflow-wrap: anywhere; }
-.wk-lib-cites-list li { margin-bottom: var(--space-2); }
-.wk-lib-abstract-text { margin-top: var(--space-2); max-height: 28rem; overflow-y: auto; }
-.wk-lib-abstract-text p { margin: 0 0 var(--space-2); }
-.wk-lib-ai { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
-.wk-lib-ai-tasks { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
-.wk-lib-ai-out { margin-top: var(--space-3); }
-.wk-lib-ai-answer { line-height: 1.55; overflow-wrap: anywhere; }
-.wk-lib-ai-out .field { margin: var(--space-2) 0; }
-.wk-notebook-ask > summary { cursor: pointer; }
-.wk-notebook-form { margin-top: var(--space-2); }
-.wk-notebook-out { margin-top: var(--space-3); }
+.wk-comment-send { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: flex-end; margin-top: var(--space-2); }
+.wk-comment-send label { flex: 1 1 14rem; }
+.wk-comment-send p { flex-basis: 100%; margin: 0; }
+/* The tools of the library and of a notebook: Ask, Studio, Search PubMed, duplicates */
+.wk-notebook-form .field { margin-bottom: var(--space-3); }
+.wk-notebook-form > footer { margin-top: 0; }
+.wk-notebook-out { margin-top: var(--space-4); }
 .wk-notebook-answer { line-height: 1.55; overflow-wrap: anywhere; }
 /* The answer as it is written, before the server renders it */
 .wk-notebook-live { white-space: pre-wrap; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
-.wk-notebook-sources { margin: var(--space-2) 0; }
-.wk-notebook-studio > summary { cursor: pointer; }
-.wk-studio-questions { margin: var(--space-2) 0; }
-.wk-studio-template { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
+.wk-notebook-sources { margin: var(--space-3) 0; }
+.wk-studio-questions { margin: var(--space-4) 0 0; }
+.wk-studio-questions .field { margin-bottom: var(--space-3); }
+.wk-studio-template { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
 .wk-studio-template pre { white-space: pre-wrap; }
 .wk-notebook-answer table { display: block; overflow-x: auto; }
-.wk-lib-edit { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
-[data-lib-copy].is-done { color: var(--state-ok); }
+.wk-lib-online-form .field { margin-bottom: var(--space-3); }
+.wk-lib-online-list { list-style: none; padding: 0; margin: var(--space-3) 0 0; }
+.wk-lib-online-row { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-start; padding: var(--space-3) 0; border-top: 1px solid var(--color-divider); }
+.wk-lib-online-row > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; align-items: flex-start; }
+.wk-lib-dup { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin: 0 0 var(--space-3); }
+.wk-lib-dup legend { padding: 0 var(--space-2); }
+.wk-lib-dup-row { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-2) 0; }
+.wk-lib-dup > footer { margin-top: var(--space-3); }
 /* [@key] citations and the References section (Service\Render, docs/library.md) */
 .wk-cite { white-space: nowrap; }
 .wk-cite a { text-decoration: none; }
 .wk-cite-raw, .wk-cite-missing { color: var(--state-warn, var(--color-dim)); border-bottom: 1px dotted currentColor; cursor: help; }
-.wk-lib-online-list { list-style: none; padding: 0; margin: var(--space-3) 0 0; }
-.wk-lib-online-row { display: flex; justify-content: space-between; gap: var(--space-3); align-items: flex-start; padding: var(--space-2) 0; border-top: 1px solid var(--color-divider); }
-.wk-lib-related-list { padding-left: var(--space-5); line-height: 1.5; }
-.wk-lib-collections { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
-.wk-chip-row { display: inline-flex; align-items: center; gap: var(--space-1); }
-.wk-chip-row form { display: inline; margin: 0; }
-.wk-lib-filters { margin: var(--space-2) 0; }
-.wk-lib-filter-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); align-items: end; margin-top: var(--space-3); }
-.wk-lib-filter-form .wk-actions { grid-column: 1 / -1; }
-.wk-lib-save { margin-top: var(--space-3); }
-.wk-lib-dups { margin-bottom: var(--space-4); }
-.wk-lib-dup { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3); margin: var(--space-3) 0; }
-.wk-lib-dup-row { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-1) 0; }
 .wk-cite-flag { color: var(--state-error); font-weight: 600; }
 .wk-cite-flag-concern { color: var(--state-warn); }
 .wk-cite-flag-corrected { color: var(--color-dim); }
 .wk-src-flag { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--state-error); }
 .wk-src-flag-concern { color: var(--state-warn); }
 .wk-src-flag-corrected { color: var(--color-dim); }
-.wk-lib-flag { margin-bottom: var(--space-3); }
 .wk-references { margin-top: var(--space-6); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
 .wk-reflist { padding-left: var(--space-5); line-height: 1.5; font-size: var(--text-sm); }
 .wk-reflist-apa { list-style: none; padding-left: 0; }
