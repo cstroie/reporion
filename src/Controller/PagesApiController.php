@@ -67,6 +67,8 @@ final class PagesApiController
         private readonly Render $render,
         private readonly Publishing $publishing,
         private readonly ExamAccessions $examAccessions,
+        // The library's namespace: a person's text there never holds a patient's CNP (2026-11-04)
+        private readonly string $libraryNamespace = 'library',
     ) {
     }
 
@@ -239,6 +241,9 @@ final class PagesApiController
         // A multi-exam report's exams get their accessions now, as on a save (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
         $meta = ConclusionSummary::fill($path, $meta, $body);
+        if (\Reporion\Service\Library\Library::refusesText($path, $meta, $body, $this->libraryNamespace)) {
+            return ApiResponse::error(422, 'patient_data', t('library.err_text_patient'));
+        }
         try {
             // Exclusive: a page there is a 409, never a quiet `{path}-2` (a repeated create)
             $record = $this->storage->create($path, $meta, $body, $principal->username, self::note($fields), exclusive: true);
@@ -303,6 +308,9 @@ final class PagesApiController
             $previousBody = null;
         }
         $meta = ConclusionSummary::fill($path, $meta, $body, $previousBody);
+        if (\Reporion\Service\Library\Library::refusesText($path, $meta, $body, $this->libraryNamespace, $previousBody)) {
+            return ApiResponse::error(422, 'patient_data', t('library.err_text_patient'));
+        }
         try {
             // A minor edit keeps its revision's note, as in the editor
             $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, $minor ? null : self::note($fields), minor: $minor);

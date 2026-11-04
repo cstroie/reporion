@@ -141,4 +141,109 @@ final class FullTextTest extends StorageTestCase
         $this->expectException(\RuntimeException::class);
         $lookup('<html>')->unpaywall('10.9999/x', 'a@example.org');
     }
+
+    /**
+     * The chain of free copies (2026-11-04): Lookup answers by the first key its URL holds, the web
+     * clip by the whole URL (status, content type, body); pandoc writes $jatsText for an XML
+     *
+     * @param array<string, string>                   $lookups
+     * @param array<string, array{int, string, string}> $files
+     */
+    private function chain(array $lookups, array $files, ?string $openAlexKey = null, string $jatsText = ''): Library
+    {
+        $lookup = new Lookup(function (string $url) use ($lookups): ?string {
+            $this->asked[] = $url;
+            foreach ($lookups as $needle => $body) {
+                if (str_contains($url, $needle)) {
+                    return $body;
+                }
+            }
+
+            return '';
+        });
+        $clip = new WebClip(1024 * 1024, static fn (string $host): array => ['93.184.216.34'], function (string $url) use ($files): array {
+            $this->fetched[] = $url;
+            [$status, $type, $body] = $files[$url] ?? [404, 'text/html', ''];
+
+            return ['status' => $status, 'headers' => ['Content-Type: ' . $type], 'body' => $body];
+        });
+        $pdfText = "A made-up study\n\nDOI 10.9999/made.1\n\n" . str_repeat('The text of the article, long enough to be a text. ', 8);
+        $runner = static function (array $argv, int $timeout, array $env) use ($pdfText, $jatsText): array {
+            $tool = basename($argv[0]);
+            if ($tool === 'pdftotext') {
+                file_put_contents((string) end($argv), $pdfText);
+
+                return [0, ''];
+            }
+            if ($tool === 'pandoc') {
+                file_put_contents($argv[(int) array_search('-o', $argv, true) + 1], $jatsText);
+
+                return [0, ''];
+            }
+
+            return [0, $tool === 'pdfinfo' && !\in_array('-meta', $argv, true) ? "Pages: 1\n" : ''];
+        };
+
+        return new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp', runner: $runner), new TempUploads($this->dataRoot), 'library', 50 * 1024 * 1024, $lookup, null, $clip, 'library@example.org', $openAlexKey);
+    }
+
+    private const TWO_COPIES = '{"best_oa_location":{"url_for_pdf":"https://publisher.example/made.pdf"},"oa_locations":[{"url_for_pdf":"https://publisher.example/made.pdf"},{"url_for_pdf":"https://repo.example.org/made.pdf"}]}';
+
+    private static function jats(string $doi): string
+    {
+        return '<?xml version="1.0"?><article><front><article-meta><article-id pub-id-type="pmcid">PMC123</article-id><article-id pub-id-type="doi">' . $doi . '</article-id></article-meta></front><body><p>Text.</p></body></article>';
+    }
+
+    public function testARefusingPublisherLeavesTheNextCopy(): void
+    {
+        $result = $this->chain(['unpaywall' => self::TWO_COPIES], [
+            'https://publisher.example/made.pdf' => [403, 'text/html', 'Forbidden'],
+            'https://repo.example.org/made.pdf' => [200, 'application/pdf', "%PDF-1.4\nmade-up"],
+        ])->findFullText('library:made2020', self::owner(), 'owner');
+
+        self::assertSame(['attached', 'repo.example.org'], [$result['status'], $result['host']]);
+        self::assertSame(['https://publisher.example/made.pdf', 'https://repo.example.org/made.pdf'], $this->fetched);
+        self::assertSame('pdf', $this->storage->read('library:made2020')->frontmatter['original']['ext']);
+    }
+
+    public function testEverythingRefusedSaysSoAndKeepsNothing(): void
+    {
+        $result = $this->chain(['unpaywall' => self::TWO_COPIES], [
+            'https://publisher.example/made.pdf' => [403, 'text/html', 'Forbidden'],
+        ])->findFullText('library:made2020', self::owner(), 'owner');
+
+        self::assertSame('refused', $result['status']);
+        self::assertArrayNotHasKey('original', $this->storage->read('library:made2020')->frontmatter);
+        self::assertNotEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI')), 'Europe PMC was asked by the DOI');
+        self::assertEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'openalex')), 'no key: OpenAlex is not asked');
+    }
+
+    public function testOpenAlexsOwnCopyIsFetchedWithTheKey(): void
+    {
+        $result = $this->chain([
+            'unpaywall' => self::TWO_COPIES,
+            'api.openalex.org/works/doi:10.9999%2Fmade.1?api_key=k3y-made-up' => '{"has_content":{"pdf":true},"content_urls":{"pdf":"https://content.openalex.org/works/W1.pdf"}}',
+        ], [
+            'https://publisher.example/made.pdf' => [403, 'text/html', 'Forbidden'],
+            'https://content.openalex.org/works/W1.pdf?api_key=k3y-made-up' => [200, 'application/pdf', "%PDF-1.4\nmade-up"],
+        ], 'k3y-made-up')->findFullText('library:made2020', self::owner(), 'owner');
+
+        self::assertSame(['attached', 'content.openalex.org'], [$result['status'], $result['host']]);
+    }
+
+    public function testEuropePmcsOpenTextIsTakenByThePmcidAndMustNameTheDoi(): void
+    {
+        $text = "# Introduction\n\n" . str_repeat('The open-access text of the made-up article, read from its XML. ', 8);
+        $this->storage->save('library:made2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => ['title' => 'A made-up study', 'DOI' => '10.9999/made.1', 'PMCID' => 'PMC123', 'issued' => ['date-parts' => [[2020]]]]], '', 1, 'owner');
+
+        $other = $this->chain(['unpaywall' => '', 'PMC123/fullTextXML' => self::jats('10.1111/other.2')], [], null, $text)->findFullText('library:made2020', self::owner(), 'owner');
+        self::assertSame('mismatch', $other['status'], 'the XML names another article');
+
+        $result = $this->chain(['unpaywall' => '', 'PMC123/fullTextXML' => self::jats('10.9999/made.1')], [], null, $text)->findFullText('library:made2020', self::owner(), 'owner');
+        self::assertSame(['attached', 'www.ebi.ac.uk'], [$result['status'], $result['host']]);
+        $page = $this->storage->read('library:made2020');
+        self::assertSame('xml', $page->frontmatter['original']['ext']);
+        self::assertStringContainsString('read from its XML', $page->body);
+        self::assertEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'search?query')), 'the record had its PMCID: no search');
+    }
 }

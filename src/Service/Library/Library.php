@@ -68,6 +68,8 @@ final class Library
         // Find full text (D60): the fetch of the free PDF Unpaywall names, and the address Unpaywall asks for; either missing: off
         private readonly ?WebClip $clip = null,
         private readonly ?string $unpaywallEmail = null,
+        // OpenAlex's key (`library.openalex_key`, 2026-11-04): its own copy of a PDF is tried when set
+        private readonly ?string $openAlexKey = null,
         // A notice written (checkNotice()) is audited `page.save`, as the pseudouser's with `on_behalf_of` (D41); null: tests that do not look
         private readonly ?\Reporion\Audit\AuditLog $audit = null,
     ) {
@@ -335,7 +337,8 @@ final class Library
      * another DOI is refused, and one the library holds already.
      *
      * @return array{pid: string, path: string, rev: int, status: string, host: ?string}
-     *               status: `attached`, `has_file`, `no_doi`, `none` (no free PDF), `not_pdf` (the address gave something else), `mismatch` (the file is another article),
+     *               status: `attached`, `has_file`, `no_doi`, `none` (no free copy), `not_pdf` (the address gave something else), `mismatch` (the file is another article),
+     *               `refused` (the copies found would not be sent to a program: a publisher's 403 or bot check),
      *               `duplicate` (the library has that file), `failed` (not reached or not readable)
      *
      * @throws LibraryException LOOKUP_OFF (Find full text is not set up), INVALID (not a source), PATIENT_DATA (the file holds a CNP: nothing is kept)
@@ -359,52 +362,120 @@ final class Library
         if ($doi === null) {
             return ['status' => 'no_doi'] + $result;
         }
+        // Where a free copy may be, in turn (2026-11-04): each PDF Unpaywall lists (a publisher may refuse a
+        // program, a repository not), OpenAlex's own copy of the PDF (with the library's key), then Europe
+        // PMC's open-access text as JATS XML (by the PMCID). Each is sent the identifier only
+        $reached = true;
+        $urls = [];
         try {
             $found = $this->lookup?->unpaywall($doi, (string) $this->unpaywallEmail);
+            $urls = $found['urls'] ?? ($found !== null ? [$found['url']] : []);
         } catch (\RuntimeException) {
-            return ['status' => 'failed'] + $result;
+            $reached = false;
         }
-        if ($found === null) {
-            return ['status' => 'none'] + $result;
+        $outcomes = [];
+        foreach ($urls as $url) {
+            $tried = $this->tryFullText($path, $page->pid, $doi, $url, 'pdf', $principal, $actor, $dryRun);
+            if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
+                return $tried + $result;
+            }
+            $outcomes[] = $tried;
         }
-        try {
-            $fetched = $this->clip?->fetch($found['url']);
-        } catch (LibraryException) {
-            return ['status' => 'failed'] + $result;
+        $openAlex = $this->openAlexKey !== null && $this->openAlexKey !== '' ? $this->lookup?->openAlexPdf($doi, $this->openAlexKey) : null;
+        if ($openAlex !== null) {
+            $tried = $this->tryFullText($path, $page->pid, $doi, $openAlex, 'pdf', $principal, $actor, $dryRun);
+            if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
+                return $tried + $result;
+            }
+            $outcomes[] = $tried;
         }
-        if ($fetched === null) {
-            return ['status' => 'failed'] + $result;
+        $pmcid = \is_string($csl['PMCID'] ?? null) && $csl['PMCID'] !== '' ? $csl['PMCID'] : $this->lookup?->europePmcId($doi);
+        $xml = $pmcid !== null ? $this->lookup?->europePmcXml($pmcid) : null;
+        if ($xml !== null) {
+            $tried = $this->tryFullText($path, $page->pid, $doi, $xml, 'xml', $principal, $actor, $dryRun);
+            if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
+                return $tried + $result;
+            }
+            $outcomes[] = $tried;
         }
-        $result['host'] = $fetched['host'];
-        if ($fetched['ext'] !== 'pdf' || !str_starts_with($fetched['bytes'], '%PDF')) {
-            return ['status' => 'not_pdf'] + $result;
+        if ($outcomes === []) {
+            return ['status' => $reached ? 'none' : 'failed'] + $result;
+        }
+        // What to say when nothing was got: another article, then not a PDF, then refused, then unreadable
+        $statuses = array_column($outcomes, 'status');
+        foreach (['mismatch', 'not_pdf', 'refused', 'failed'] as $status) {
+            if (\in_array($status, $statuses, true)) {
+                $host = $outcomes[array_search($status, $statuses, true)]['host'];
+
+                return ['status' => $status, 'host' => $host] + $result;
+            }
+        }
+
+        return ['status' => 'failed'] + $result;
+    }
+
+    /**
+     * One free copy tried for findFullText(): a PDF's address fetched by WebClip, or Europe PMC's JATS
+     * XML as given; read like an upload (the patient guard), checked to name this DOI, and attached
+     *
+     * @return array{status: string, host: ?string, rev?: int}
+     *
+     * @throws LibraryException PATIENT_DATA
+     */
+    private function tryFullText(string $path, string $pid, string $doi, string $source, string $kind, User $principal, string $actor, bool $dryRun): array
+    {
+        if ($kind === 'xml') {
+            $bytes = $source;
+            $host = 'www.ebi.ac.uk';
+            // The XML names its article: the DOI is read from it, not from pandoc's text (which drops the front matter)
+            $named = preg_match('~<article-id[^>]*pub-id-type="doi"[^>]*>\s*([^<\s]+)\s*<~', $bytes, $m) === 1 ? ArticleIds::normalizeDoi(html_entity_decode($m[1], ENT_QUOTES | ENT_XML1)) : null;
+            if ($named !== null && $named !== $doi) {
+                return ['status' => 'mismatch', 'host' => $host];
+            }
+        } else {
+            try {
+                $fetched = $this->clip?->fetch($source);
+            } catch (LibraryException) {
+                // A refusal (403, a bot check) or nothing answering: the next copy is tried
+                return ['status' => 'refused', 'host' => parse_url($source, PHP_URL_HOST) ?: null];
+            }
+            if ($fetched === null) {
+                return ['status' => 'refused', 'host' => parse_url($source, PHP_URL_HOST) ?: null];
+            }
+            $host = $fetched['host'];
+            if ($fetched['ext'] !== 'pdf' || !str_starts_with($fetched['bytes'], '%PDF')) {
+                return ['status' => 'not_pdf', 'host' => $host];
+            }
+            $bytes = $fetched['bytes'];
         }
         if ($dryRun) {
-            return $result;
+            return ['status' => 'attached', 'host' => $host];
         }
         try {
-            [$ext, $extracted] = $this->read($fetched['bytes'], 'fulltext.pdf');
+            [$ext, $extracted] = $this->read($bytes, 'fulltext.' . $kind);
         } catch (LibraryException $e) {
-            // A patient's document is never kept, and is said so; a file too big, a scan with no OCR, a broken PDF: not got
+            // A patient's document is never kept, and is said so; a file too big, a scan with no OCR, a broken file: not got
             if ($e->reason === LibraryException::PATIENT_DATA) {
                 throw $e;
             }
 
-            return ['status' => 'failed'] + $result;
+            return ['status' => 'failed', 'host' => $host];
         }
-        // A publisher's page can answer with another article, or a paywall: a DOI the file names that is not this one
-        $identified = Identify::propose($extracted)['csl']['DOI'] ?? null;
-        $named = \is_string($identified) ? ArticleIds::normalizeDoi($identified) : null;
-        if ($named !== null && $named !== $doi) {
-            return ['status' => 'mismatch'] + $result;
+        if ($kind === 'pdf') {
+            // A publisher's page can answer with another article, or a paywall: a DOI the file names that is not this one
+            $identified = Identify::propose($extracted)['csl']['DOI'] ?? null;
+            $named = \is_string($identified) ? ArticleIds::normalizeDoi($identified) : null;
+            if ($named !== null && $named !== $doi) {
+                return ['status' => 'mismatch', 'host' => $host];
+            }
         }
-        $duplicate = $this->duplicateOf([], hash('sha256', $fetched['bytes']), $principal, $page->pid);
+        $duplicate = $this->duplicateOf([], hash('sha256', $bytes), $principal, $pid);
         if ($duplicate !== null && $duplicate['by'] === 'file') {
-            return ['status' => 'duplicate'] + $result;
+            return ['status' => 'duplicate', 'host' => $host];
         }
-        $saved = $this->attach($path, $fetched['bytes'], $ext, substr($path, \strlen($this->namespace) + 1) . '.pdf', $extracted, [], $actor);
+        $saved = $this->attach($path, $bytes, $ext, substr($path, \strlen($this->namespace) + 1) . '.' . $ext, $extracted, [], $actor);
 
-        return ['rev' => $saved->rev] + $result;
+        return ['status' => 'attached', 'host' => $host, 'rev' => $saved->rev];
     }
 
     /**
@@ -982,6 +1053,19 @@ final class Library
         }
 
         return [$csl, $tags, $found === [] ? 'none' : implode('+', $found), SourceNotice::build($notices, $found, date('Y-m-d'))];
+    }
+
+    /**
+     * Whether a person's save to a page of the library (a source, or a page under the library's
+     * namespace: an abstract, an analysis) is refused for holding a patient's CNP (2026-11-04): the
+     * editor, the pages API and MCP check it, as the upload does. Only a text that changed: a save
+     * that keeps the text as it was is never held by it
+     */
+    public static function refusesText(string $path, array $frontmatter, string $body, string $namespace, ?string $previous = null): bool
+    {
+        $inLibrary = LibrarySource::isSource($frontmatter) || $path === $namespace || str_starts_with($path, $namespace . ':');
+
+        return $inLibrary && $body !== $previous && self::holdsPatientData($body);
     }
 
     /**

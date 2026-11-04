@@ -2269,6 +2269,7 @@ details.wk-tool .wk-count { margin-left: var(--space-1); }
 .wk-lib-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .wk-lib-add-top { display: flex; flex-direction: column; gap: var(--space-4); }
 .wk-lib-clip { margin-top: var(--space-4); }
+.wk-lib-clip .field > label > .group-fill { max-width: none; } /* the whole column, as Search PubMed's bar takes its panel */
 @media (min-width: 64rem) {
   .wk-lib-add-top { flex-direction: row; align-items: stretch; }
   .wk-lib-add-top > .wk-lib-drop { flex: 1 1 0; min-width: 0; justify-content: center; }
@@ -2277,6 +2278,8 @@ details.wk-tool .wk-count { margin-left: var(--space-1); }
 .wk-lib-bookmarklet { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: var(--space-1) var(--space-4); margin-top: var(--space-3); }
 .wk-lib-bookmarklet > h3 { grid-column: 1 / -1; margin: 0; }
 .wk-lib-bookmarklet small { font-size: var(--text-2xs); color: var(--color-dimmer); line-height: 1.5; }
+.wk-lib-bookmarklet > .wk-chip { align-self: center; }
+@media (max-width: 575px) { .wk-lib-bookmarklet { grid-template-columns: 1fr; justify-items: start; row-gap: var(--space-2); } .wk-lib-bookmarklet > .wk-chip { justify-self: center; margin: var(--space-2) 0; } } /* on a phone the link is centred, its help under it */
 .wk-lib-queue { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-4); }
 .wk-lib-queue:empty { display: none; }
 .wk-lib-item { min-width: 0; }
@@ -2295,32 +2298,38 @@ details.wk-tool .wk-count { margin-left: var(--space-1); }
 .wk-lib-preview { margin: 0 0 var(--space-4); }
 .wk-lib-preview summary { cursor: pointer; color: var(--color-dim); font-size: var(--text-sm); }
 .wk-lib-preview p { margin: var(--space-2) 0 0; line-height: 1.5; }
-/* The list's bar: the text search, the filters, the collections, the quick filter and the tags, one rhythm */
-.wk-lib-bar { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-4); }
+/* The list's bar (2026-11-04): one search row, the filters in one even row under it, then the
+ * collections and tags as labelled chip rows, then the search's result line; "Save view" (a modal) is in the panel header */
+.wk-lib-bar { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-5); }
 .wk-lib-bar > * { margin: 0; }
-.wk-lib-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.wk-lib-filter { flex: 1 1 18rem; max-width: 28rem; }
-.wk-lib-search { display: flex; align-items: center; gap: var(--space-2); }
-.wk-lib-search .group { flex: 1 1 auto; min-width: 0; max-width: 36rem; }
-.wk-lib-search .btn { flex: none; }
+.wk-lib-search { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-lib-search-row { display: flex; align-items: center; gap: var(--space-2); }
+.wk-lib-search-row > .group { flex: 1 1 auto; min-width: 0; }
+.wk-lib-search-row > .group > .input { flex: 1 1 auto; }
+.wk-lib-search-row > .btn { flex: none; }
+.wk-lib-search-help { color: var(--color-dimmer); font-size: var(--text-2xs); }
+.wk-lib-filter-form { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
+.wk-lib-filter-form .field { margin: 0; }
+.wk-lib-filter-form .field > label { gap: var(--space-1); font-size: var(--text-xs); }
+@media (max-width: 1023px) { .wk-lib-filter-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575px) { .wk-lib-filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Collections and tags: a fixed label column, the chips wrapping beside it */
+.wk-lib-facets { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-3) var(--space-4); align-items: baseline; padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-lib-facet-h { color: var(--color-dim); font-size: var(--text-xs); letter-spacing: .08em; text-transform: uppercase; }
+.wk-lib-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); min-width: 0; }
+#wk-lib-save-modal .field { margin: 0; }
 .wk-lib-snippet { display: block; margin-top: var(--space-1); overflow-wrap: anywhere; }
 .wk-lib-snippet mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
-.wk-lib-tags, .wk-lib-sort { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .wk-lib-table th { white-space: nowrap; }
+@media (min-width: 1024px) { .wk-lib-table td.wk-card-head { width: 42%; } .wk-lib-table .wk-lib-rowtags { min-width: 12rem; } }
+@media (max-width: 575px) { .wk-lib-search-row .wk-btn-label { display: none; } }
+table.table.table-cards-compact.wk-lib-table td.wk-lib-rowtags { flex-wrap: wrap; flex-basis: 100%; justify-content: flex-start; gap: 0; } /* in the phone's card the row's tags wrap on a line of their own; a table cell ignores both */
 .wk-lib-table td .wk-chip { margin: 0 var(--space-1) var(--space-1) 0; }
 .wk-lib-table .wk-src-flag { margin-left: var(--space-2); white-space: nowrap; }
-.wk-lib-collections { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-lib-file { display: inline-flex; align-items: center; gap: 2px; margin-left: var(--space-1); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-dim); white-space: nowrap; vertical-align: 1px; }
+.wk-lib-file:hover { color: var(--color-accent); }
 .wk-chip-row { display: inline-flex; align-items: center; gap: var(--space-1); }
 .wk-chip-row form { display: inline; margin: 0; }
-.wk-lib-filters > summary { cursor: pointer; display: flex; align-items: center; gap: var(--space-2); list-style: none; }
-.wk-lib-filters > summary::-webkit-details-marker { display: none; }
-.wk-lib-filters > summary::before { content: "▸"; display: inline-block; width: 1.1em; font-size: .85em; }
-.wk-lib-filters[open] > summary::before { content: "▾"; }
-.wk-lib-filter-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3) var(--space-4); align-items: end; margin-top: var(--space-3); }
-.wk-lib-filter-form .field { margin: 0; }
-.wk-lib-filter-form .wk-actions { grid-column: 1 / -1; justify-content: flex-start; }
-.wk-lib-save { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
-.wk-lib-save .field { margin: 0; }
 /* A source's card */
 .wk-lib-source .wk-panel-h { margin-bottom: var(--space-4); align-items: center; gap: var(--space-3); }
 .wk-lib-source .wk-panel-h hgroup { flex: 0 0 auto; }
@@ -2367,7 +2376,7 @@ details.wk-tool .wk-count { margin-left: var(--space-1); }
 .wk-studio-template { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
 .wk-studio-template pre { white-space: pre-wrap; }
 .wk-notebook-answer table { display: block; overflow-x: auto; }
-.wk-lib-online-form .field { margin-bottom: var(--space-3); }
+.wk-lib-online-form { margin-bottom: var(--space-3); }
 .wk-lib-online-list { list-style: none; padding: 0; margin: var(--space-3) 0 0; }
 .wk-lib-online-row { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-start; padding: var(--space-3) 0; border-top: 1px solid var(--color-divider); }
 .wk-lib-online-row > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; align-items: flex-start; }

@@ -418,7 +418,7 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
 
 ## Tool panels and disclosures (2026-11-05)
 
-The library's and the notebooks' collapsible features (Ask, Studio, Search PubMed, Possible duplicates)
+The library's and the notebooks' collapsible features (Ask, Studio, Possible duplicates)
 share one look, so a new one only needs the classes:
 
 - **`.wk-tools`** stacks tool panels with `--space-3` between them (and `--space-6` after the stack); it
@@ -433,9 +433,14 @@ share one look, so a new one only needs the classes:
 - **A result's own sections** (a saved analysis, an answer) show a reference list as a footnote: a small
   eyebrow heading, not the page's accent `h2` (`.wk-references` inside `.wk-saved-text`, `.wk-notebook-answer`,
   `.wk-ask-answer`).
-- **A list's bar** (the library's text search, filters, collections, quick filter and tags) is one
-  `.wk-lib-bar` column with `--space-3` between its rows; a search form keeps its button beside the input
-  at every width.
+- **A list's bar** (2026-11-04, the library) is one `.wk-lib-bar` column, `--space-4` between its rows:
+  the search as a full-width group (icon addon, input, primary *Search*; the quick filter is the same input,
+  narrowing the rows as one types) with *All articles* beside it when anything is set; one `<small>` of help;
+  the filters as **one even row** of labelled controls, each a select or a short input with no help of its
+  own (a select applies on change, a text on Enter); then the collections and tags as chip rows under one
+  label column (`.wk-lib-facets`); then the search's result line. The panel header's toolbar holds Sort (a
+  `.seg seg-sm` of links), *Save view* (a small ghost button, disabled until a search, tag, sort or filter is
+  set, that opens a `.wk-modal` asking only the collection's name) and Export (a `.wk-menu-wrap` menu); a row's original file is a small mono link after its title, not a chip among the tags.
 - **A label that holds a `.group`** (an input with its button) stacks like one that holds an input; the group
   fills the width up to 36rem.
 

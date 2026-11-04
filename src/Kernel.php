@@ -263,6 +263,8 @@ final class Kernel
             // Find full text (D60): Unpaywall's address set and the lookups on; the PDF is fetched with the web clip's safeguards
             \is_string($settings['unpaywall_email'] ?? null) && $settings['unpaywall_email'] !== '' ? new WebClip(max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024) : null,
             \is_string($settings['unpaywall_email'] ?? null) ? $settings['unpaywall_email'] : null,
+            // OpenAlex's own copy of a PDF (2026-11-04): tried by Find full text when the owner set a key
+            \is_string($settings['openalex_key'] ?? null) && $settings['openalex_key'] !== '' ? $settings['openalex_key'] : null,
             $audit,
         );
     }
@@ -645,7 +647,7 @@ final class Kernel
         );
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
-        $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
+        $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions, self::libraryNamespace($config));
         // The MCP server (D56): the wiki for MCP clients, by bearer token only
         $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
         $mcpAccess = \in_array($config['mcp']['access'] ?? 'local', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'local') : 'off';
@@ -757,7 +759,7 @@ final class Kernel
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
         $debugPanels = new DebugPanels(($config['debug']['panels'] ?? false) === true);
-        $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks, $editor, $debugPanels);
+        $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks, $editor, $debugPanels, self::libraryNamespace($config));
         $namespace = new NamespaceController($index, $storage, $render, $moves, $tags, $audit);
 
         $router = new Router();
@@ -846,6 +848,8 @@ final class Kernel
             => $libraryController->index($request, $session->principal($request)));
         $router->get('/api/v1/library/search', static fn (Request $request, array $params): Response
             => $libraryController->search($request, $session->principal($request)));
+        $router->get('/library/add', static fn (Request $request, array $params): Response
+            => $libraryController->add($request, $session->principal($request)));
         $router->get('/library/export', static fn (Request $request, array $params): Response
             => $libraryController->export($request, $session->principal($request)));
         $router->put('/api/v1/library/{pid:[0-9A-Z]+}/record', static fn (Request $request, array $params): Response

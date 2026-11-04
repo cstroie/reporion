@@ -69,6 +69,8 @@ final class NewPageController
         private readonly ?Hooks $hooks = null,
         private readonly ?EditorController $editor = null,
         private readonly ?DebugPanels $debugPanels = null,
+        // The library's namespace: a person's text there never holds a patient's CNP (2026-11-04)
+        private readonly string $libraryNamespace = 'library',
     ) {
     }
 
@@ -267,6 +269,9 @@ final class NewPageController
         }
         // No frontmatter typed: what the page itself says (decided 2026-09-27)
         $frontmatter ??= FrontmatterGuess::forNewPage($path, $body, $this->newReport?->modalityNamespaces() ?? []);
+        if (\Reporion\Service\Library\Library::refusesText($path, $frontmatter, $body, $this->libraryNamespace)) {
+            return $this->render($request, $principal, error: t('library.err_text_patient'), path: $path, document: $document, segments: $segments);
+        }
 
         try {
             // Exclusive: a page there is said so, with a link to it: never a quiet `{path}-2`

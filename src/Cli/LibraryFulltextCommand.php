@@ -32,16 +32,16 @@ final class LibraryFulltextCommand implements CommandInterface
     public static function help(): CommandHelp
     {
         return new CommandHelp(
-            summary: 'Finds the free PDF of library sources that have a DOI and no file, by Unpaywall, and attaches it.',
+            summary: 'Finds the free full text of library sources that have a DOI and no file (Unpaywall, OpenAlex, Europe PMC) and attaches it.',
             usage: '[<key>...] [--limit=<n>] [--actor=<username>] [--dry-run] [--json]',
             options: [
                 '<key>...' => 'the citation keys to try (default: every source with a DOI and no file)',
                 '--limit=<n>' => 'try at most n sources per run (the next run carries on with those still without a file)',
                 '--actor=<username>' => 'attribute the revisions to this user (default: cli)',
-                '--dry-run' => 'ask Unpaywall and fetch the file, but keep nothing',
+                '--dry-run' => 'ask the services and fetch the file, but keep nothing',
                 '--json' => 'print the results as JSON',
             ],
-            details: 'Only the DOI and the library\'s e-mail address go to Unpaywall; the PDF address it names is fetched with the web clip\'s safeguards (public addresses only, the size limit). A file that names another DOI, holds a patient\'s CNP or is the library\'s already is not kept. Needs the online lookups on and an e-mail address in Admin → Settings → Library.',
+            details: 'Only the DOI and the library\'s e-mail address go to Unpaywall; each PDF address it lists is fetched in turn with the web clip\'s safeguards (public addresses only, the size limit), then OpenAlex\'s own copy (the DOI and the key, when an OpenAlex key is set), then Europe PMC\'s open-access text by the PMCID. A refusal is reported as refused. A file that names another DOI, holds a patient\'s CNP or is the library\'s already is not kept. Needs the online lookups on and an e-mail address in Admin → Settings → Library.',
         );
     }
 

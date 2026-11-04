@@ -49,7 +49,7 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <div data-lib-fulltext-status aria-live="polite" data-strings="<?= $e((string) json_encode([
     'working' => t('library.fulltext_working'), 'failed' => t('library.failed'),
     'attached' => t('library.fulltext_attached'), 'none' => t('library.fulltext_none'), 'not_pdf' => t('library.fulltext_not_pdf'), 'mismatch' => t('library.fulltext_mismatch'),
-    'duplicate' => t('library.fulltext_duplicate'), 'has_file' => t('library.fulltext_has_file'), 'no_doi' => t('library.fulltext_no_doi'),
+    'duplicate' => t('library.fulltext_duplicate'), 'refused' => t('library.fulltext_refused'), 'has_file' => t('library.fulltext_has_file'), 'no_doi' => t('library.fulltext_no_doi'),
 ], JSON_UNESCAPED_UNICODE)) ?>"></div>
 <?php endif; ?>
 <?php if (($source['notice'] ?? null) !== null): ?>

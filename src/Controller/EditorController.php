@@ -305,6 +305,12 @@ final class EditorController
                 ? $this->renderNew($request, $path, $document, t('library.err_private'), $principal)
                 : $this->renderNewCurated($request, $path, $body, $frontmatter, t('library.err_private'), $principal, carried: isset($carried));
         }
+        // Never a patient's CNP in the library (D58), typed here as in an upload (2026-11-04)
+        if (\Reporion\Service\Library\Library::refusesText($path, $frontmatter, $body, $this->libraryNamespace)) {
+            return $this->isRawMode($request, [])
+                ? $this->renderNew($request, $path, $document, t('library.err_text_patient'), $principal)
+                : $this->renderNewCurated($request, $path, $body, $frontmatter, t('library.err_text_patient'), $principal, carried: isset($carried));
+        }
         // D16: public only with the acknowledgement, which only the Metadata view asks for
         if (($frontmatter['visibility'] ?? null) === 'public') {
             if ($this->isRawMode($request, [])) {
@@ -581,6 +587,12 @@ final class EditorController
             return $rawMode
                 ? $this->render($request, $record, error: t('library.err_private'), document: $document ?? '', conflictDocument: null, principal: $principal)
                 : $this->renderCurated($request, $record, error: t('library.err_private'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal);
+        }
+        // Never a patient's CNP in the library (D58), typed here as in an upload (2026-11-04)
+        if (\Reporion\Service\Library\Library::refusesText($path, $frontmatter, $body, $this->libraryNamespace, $record->body)) {
+            return $rawMode
+                ? $this->render($request, $record, error: t('library.err_text_patient'), document: $document ?? '', conflictDocument: null, principal: $principal)
+                : $this->renderCurated($request, $record, error: t('library.err_text_patient'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal);
         }
         if ($publishes && $rawMode) {
             return $this->render($request, $record, error: t('vis.err_raw_public'), document: $document ?? '', conflictDocument: null, principal: $principal);

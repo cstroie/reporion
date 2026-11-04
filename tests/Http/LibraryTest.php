@@ -121,13 +121,14 @@ final class LibraryTest extends HttpTestCase
 
         $editor = $this->call('editor', 'GET', '/library');
         self::assertSame(200, $editor->status);
-        self::assertStringContainsString('data-island="library-add"', $editor->body);
+        self::assertStringContainsString('href="/library/add" data-lib-add', $editor->body, 'an editor is offered the Add page');
+        self::assertStringNotContainsString('data-island="library-add"', $editor->body, 'adding is its own page');
         self::assertStringContainsString('A made-up study of test lesions', $editor->body);
         self::assertStringContainsString('Another made-up study of lesions', $editor->body);
 
         $reader = $this->call('reader', 'GET', '/library?tag=grading&sort=year');
         self::assertSame(200, $reader->status);
-        self::assertStringNotContainsString('data-island="library-add"', $reader->body, 'a viewer reads, never adds');
+        self::assertStringNotContainsString('/library/add', $reader->body, 'a viewer reads, never adds');
         self::assertStringContainsString('A made-up study of test lesions', $reader->body);
         self::assertStringNotContainsString('Another made-up study of lesions', $reader->body, 'filtered by its tag');
 
@@ -204,10 +205,10 @@ final class LibraryTest extends HttpTestCase
     public function testWebClipIsOffUntilTurnedOnAndRefusesALocalAddress(): void
     {
         self::assertSame(404, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'https://example.org/'])->status, 'off by default');
-        self::assertStringNotContainsString('data-lib-clip', $this->call('editor', 'GET', '/library')->body);
+        self::assertStringNotContainsString('data-lib-clip', $this->call('editor', 'GET', '/library/add')->body);
 
         $this->config['library']['web_clip'] = true;
-        self::assertStringContainsString('data-lib-clip', $this->call('editor', 'GET', '/library')->body);
+        self::assertStringContainsString('data-lib-clip', $this->call('editor', 'GET', '/library/add')->body);
         self::assertSame(404, $this->call('reader', 'POST', '/api/v1/library/clip', ['url' => 'https://example.org/'])->status, 'a reader adds nothing');
         self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'ftp://example.org/'])->status);
         $local = $this->call('editor', 'POST', '/api/v1/library/clip', ['url' => 'http://127.0.0.1/']);
@@ -523,8 +524,12 @@ final class LibraryTest extends HttpTestCase
         $recent = $this->call('editor', 'GET', '/library?year=2024-')->body;
         self::assertStringContainsString('A made-up study of test lesions', $recent);
         self::assertStringNotContainsString('Another made-up study', $recent);
-        self::assertStringContainsString('<details class="wk-lib-filters" open>', $recent);
+        self::assertStringContainsString('name="year" value="2024-"', $recent, 'the filters are always shown, with the value set');
         self::assertStringContainsString('name="kind" value="library"', $recent, 'the view can be saved as a collection');
+        self::assertStringContainsString('<dialog class="wk-modal" id="wk-lib-save-modal"', $recent, 'its name is asked in a modal');
+        $plain = $this->call('editor', 'GET', '/library')->body;
+        self::assertMatchesRegularExpression('~data-lib-save-open disabled~', $plain, 'nothing set: Save view is disabled');
+        self::assertStringNotContainsString('name="kind" value="library"', $plain);
         self::assertStringNotContainsString('Another made-up study', $this->call('editor', 'GET', '/library?file=yes&year=2024')->body);
         self::assertStringContainsString('made-up study', $this->call('editor', 'GET', '/library?uncited=1')->body);
 
@@ -566,15 +571,46 @@ final class LibraryTest extends HttpTestCase
         self::assertStringNotContainsString('data-lib-fulltext', $this->call('editor', 'GET', '/' . $page['path'])->body);
     }
 
+    public function testTextTypedIntoTheLibraryNeverHoldsAPatientsCnp(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $meta = ['title' => 'Abel', 'visibility' => 'private', 'csl' => ['title' => 'Grading white matter lesions']];
+        $storage->create('library:abel2020', $meta, "Text.\n", 'owner');
+        $cnp = \Reporion\Tests\Support\CnpTest::make(1, '850723');
+
+        $refused = $this->call('editor', 'PUT', '/api/v1/pages/library:abel2020', ['meta' => $meta, 'body' => "Text.\n\nSeen as " . $cnp . ".\n", 'base_rev' => 1]);
+        self::assertSame([422, 'patient_data'], [$refused->status, json_decode($refused->body, true)['error']['code']], 'the pages API (and MCP, through it)');
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/pages', ['path' => 'library:abel2020:notes', 'meta' => ['title' => 'Notes'], 'body' => $cnp . "\n"])->status, 'a page under the library too');
+        self::assertSame(1, $storage->read('library:abel2020')->rev, 'nothing saved');
+
+        $form = 'base_rev=1&body=' . rawurlencode("Text.\n\nSeen as " . $cnp . ".\n");
+        $editor = Kernel::boot($this->config)->handle(new Request('POST', '/library:abel2020/edit', cookies: ['reporion' => $this->cookie('editor')], body: $form));
+        self::assertStringContainsString('personal numeric code (CNP)', html_entity_decode($editor->body, ENT_QUOTES), 'the editor says so');
+        self::assertSame(1, $storage->read('library:abel2020')->rev);
+
+        self::assertSame(200, $this->call('editor', 'PUT', '/api/v1/pages/library:abel2020', ['meta' => $meta, 'body' => "Text, and more of it.\n", 'base_rev' => 1])->status, 'text with no CNP is saved');
+    }
+
+    public function testTheAddPageIsAnEditorsOnly(): void
+    {
+        $editor = $this->call('editor', 'GET', '/library/add');
+        self::assertSame(200, $editor->status);
+        self::assertStringContainsString('data-island="library-add"', $editor->body);
+        self::assertStringContainsString('href="/library"', $editor->body, 'the way back');
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/library/add')->status, $user ?? 'anonymous');
+        }
+    }
+
     public function testTheBookmarkletIsOfferedToAnEditorOnlyWhenTheWebClipIsOn(): void
     {
-        self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('editor', 'GET', '/library')->body, 'the web clip is off');
+        self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('editor', 'GET', '/library/add')->body, 'the web clip is off');
 
         $this->config['library']['web_clip'] = true;
-        $page = $this->call('editor', 'GET', '/library?clip=' . rawurlencode('https://example.org/article'))->body;
+        $page = $this->call('editor', 'GET', '/library/add?clip=' . rawurlencode('https://example.org/article'))->body;
         self::assertStringContainsString('data-lib-bookmarklet', $page);
         self::assertStringNotContainsString('https://example.org/article', $page, 'the address is read by the script, never echoed by the server');
-        self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('reader', 'GET', '/library')->body, 'a reader cannot add');
+        self::assertStringNotContainsString('https://example.org/article', $this->call('editor', 'GET', '/library?clip=' . rawurlencode('https://example.org/article'))->body, 'an old bookmarklet: forwarded by the script');
     }
 
     public function testSearchingPubmedIsOffUntilTurnedOnAndRefusesAPatientsNumberBeforeSendingAnything(): void
@@ -584,15 +620,17 @@ final class LibraryTest extends HttpTestCase
             self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/online?q=steatosis')->status, 'off');
             self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/online', ['records' => [['title' => 'x y z']]])->status, 'off');
         }
-        self::assertStringNotContainsString('data-tool="online"', $this->call('editor', 'GET', '/library')->body);
+        self::assertStringNotContainsString('data-tool="online"', $this->call('editor', 'GET', '/library/add')->body);
 
         $this->config['library']['search'] = true;
         foreach ([null, 'reader', 'other'] as $user) {
             self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/online?q=steatosis')->status, $user ?? 'anonymous');
             self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/online', ['records' => [['title' => 'x y z']]])->status, $user ?? 'anonymous');
         }
-        self::assertStringContainsString('data-tool="online"', $this->call('editor', 'GET', '/library')->body);
-        self::assertStringNotContainsString('data-tool="online"', $this->call('reader', 'GET', '/library')->body);
+        $add = $this->call('editor', 'GET', '/library/add')->body;
+        self::assertStringContainsString('data-tool="online"', $add);
+        self::assertStringContainsString('"fullText":false', $add, 'Find full text is not set up: an added record gets no PDF');
+        self::assertStringNotContainsString('data-tool="online"', $this->call('editor', 'GET', '/library')->body, 'on the Add page only');
 
         // Refused before the service is asked (a request here would reach the network): the numbers and the empty
         $refused = $this->call('editor', 'GET', '/api/v1/library/online?q=' . rawurlencode('steatosis ' . $cnp));

@@ -14,7 +14,7 @@ use Reporion\Support\SourceText;
  * An uploaded document's text (docs/library.md, pipeline step 2). Every tool runs as an argument
  * list in a private temporary directory, with a timeout, its stderr discarded (as groff, D42):
  * txt/md as they are; pdf through pdftotext, pdfinfo and pdftohtml (page 1's font sizes for the
- * title); docx/odt/rtf/html/epub through pandoc; doc/ppt/pptx/xls/xlsx/odp through LibreOffice
+ * title); docx/odt/rtf/html/epub and an article's JATS XML (PubMed Central's, Europe PMC's) through pandoc; doc/ppt/pptx/xls/xlsx/odp through LibreOffice
  * first (doc to docx, the others to pdf), or without it an old .doc by antiword or catdoc, .xls by
  * xls2csv and .ppt by catppt, as text. A PDF with no text layer (a scan) is read by OCR (docs/
  * library.md, phase 8): each page rendered by pdftoppm and read by tesseract (Romanian and
@@ -27,7 +27,7 @@ final class Extractor
     /** extension => how it is read */
     public const TYPES = [
         'pdf' => 'pdf', 'txt' => 'text', 'md' => 'markdown', 'markdown' => 'markdown',
-        'docx' => 'pandoc', 'odt' => 'pandoc', 'rtf' => 'pandoc', 'html' => 'pandoc', 'htm' => 'pandoc', 'epub' => 'pandoc',
+        'docx' => 'pandoc', 'odt' => 'pandoc', 'rtf' => 'pandoc', 'html' => 'pandoc', 'htm' => 'pandoc', 'epub' => 'pandoc', 'xml' => 'pandoc',
         'doc' => 'office', 'ppt' => 'office', 'pptx' => 'office', 'odp' => 'office', 'xls' => 'office', 'xlsx' => 'office', 'ods' => 'office',
     ];
 
@@ -49,7 +49,7 @@ final class Extractor
     /** The languages tesseract reads a scan in (its traineddata: tesseract-ocr-ron, tesseract-ocr-eng) */
     public const OCR_LANGUAGES = ['ron', 'eng'];
 
-    private const PANDOC_FORMATS = ['docx' => 'docx', 'odt' => 'odt', 'rtf' => 'rtf', 'html' => 'html', 'htm' => 'html', 'epub' => 'epub'];
+    private const PANDOC_FORMATS = ['docx' => 'docx', 'odt' => 'odt', 'rtf' => 'rtf', 'html' => 'html', 'htm' => 'html', 'epub' => 'epub', 'xml' => 'jats'];
 
     /** Fewer characters than this per page on average: a scan with no text layer */
     private const SCAN_CHARS_PER_PAGE = 25;

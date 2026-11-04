@@ -147,18 +147,9 @@
     var input = box.querySelector('[data-lib-files]');
     var drop = box.querySelector('[data-lib-drop]');
     var queue = box.querySelector('[data-lib-queue]');
-    var opener = document.querySelector('[data-lib-open]');
     var extensions = cfg.extensions || [];
     var waiting = [];
     var running = false;
-
-    if (opener) {
-      opener.addEventListener('click', function () {
-        box.hidden = false;
-        opener.setAttribute('aria-expanded', 'true');
-        drop.scrollIntoView({ block: 'nearest' });
-      });
-    }
 
     function card(file) {
       var item = el('article', 'wk-lib-item');
@@ -202,14 +193,12 @@
       var bookmarklet = box.querySelector('[data-lib-bookmarklet]');
       if (bookmarklet) {
         // Single quotes and no space: a double quote in a javascript: address is percent-encoded and breaks it
-        bookmarklet.href = 'javascript:(function(){window.location.href=\'' + window.location.origin + base + '/library?clip=\'+encodeURIComponent(window.location.href);})()';
+        bookmarklet.href = 'javascript:(function(){window.location.href=\'' + window.location.origin + base + '/library/add?clip=\'+encodeURIComponent(window.location.href);})()';
         bookmarklet.addEventListener('click', function (event) { event.preventDefault(); });
       }
       var params = new URLSearchParams(window.location.search);
       var prefilled = params.get('clip');
       if (prefilled && /^https?:\/\//i.test(prefilled)) {
-        box.hidden = false;
-        if (opener) opener.setAttribute('aria-expanded', 'true');
         clipForm.elements.url.value = prefilled;
         clipForm.elements.url.focus();
         params.delete('clip');
@@ -375,6 +364,20 @@
     var count = box.querySelector('[data-lib-count]');
     var none = box.querySelector('[data-lib-none]');
     var rows = Array.prototype.slice.call(box.querySelectorAll('[data-lib-row]'));
+    // A filter's select applies at once; the text fields apply on Enter
+    box.querySelectorAll('[data-lib-search] select').forEach(function (select) {
+      select.addEventListener('change', function () { select.form.submit(); });
+    });
+    // Save view: the collection's name asked in a modal (the dialog only exists when something is set)
+    var saveOpen = box.querySelector('[data-lib-save-open]');
+    var saveDialog = box.querySelector('[data-lib-save]');
+    if (saveOpen && saveDialog && typeof saveDialog.showModal === 'function') {
+      saveOpen.addEventListener('click', function () {
+        saveDialog.showModal();
+        var name = saveDialog.querySelector('input[name="name"]');
+        if (name) name.focus();
+      });
+    }
     if (!filter) return;
     var fold = function (text) { return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
     var texts = rows.map(function (row) { return fold(row.textContent); });
@@ -626,6 +629,12 @@
   }
 
   function start() {
+    // A bookmarklet made before /library/add (2026-11-04) opens /library?clip=: the address goes on to the Add page
+    var addLink = document.querySelector('[data-lib-add]');
+    if (addLink && new URLSearchParams(window.location.search).has('clip')) {
+      window.location.replace(addLink.href + window.location.search);
+      return;
+    }
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-add"]'), mountAdd);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-list"]'), mountList);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-record"]'), mountRecord);

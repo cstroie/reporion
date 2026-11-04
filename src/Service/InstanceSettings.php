@@ -63,6 +63,8 @@ final class InstanceSettings
         'library.search' => 'bool',
         // Find full text (D60): the e-mail address Unpaywall asks every caller to give, sent with a DOI; blank: the feature is off
         'library.unpaywall_email' => 'email',
+        // OpenAlex's API key (2026-11-04): Find full text tries OpenAlex's own copy of a PDF with it; blank: not
+        'library.openalex_key' => 'api_key',
         // The library's language for a notebook or source with no `language` of its own: the assistant's answers, the References heading
         'library.language' => 'library_language',
         // What one assistant request about the library may hold (docs/library.md, phase 5): the model's context, in tokens
@@ -427,6 +429,7 @@ final class InstanceSettings
             'timezone' => self::isTimezone($text) ? $text : $fail(),
             'bool' => \in_array($raw, [true, '1', 'on', 'yes'], true),
             'email' => $text === '' || (mb_strlen($text) <= 120 && filter_var($text, FILTER_VALIDATE_EMAIL) !== false) ? $text : $fail(),
+            'api_key' => $text === '' || preg_match('/^[A-Za-z0-9_-]{8,128}$/', $text) === 1 ? $text : $fail(),
             'library_language' => $text === '' ? 'ro' : (isset(\Reporion\Service\Ai\Context::LANGUAGES[$text]) ? $text : $fail()),
             'context_tokens' => $text === '' ? 32000 : (ctype_digit($text) && (int) $text >= 4000 && (int) $text <= 2_000_000 ? (int) $text : $fail()),
             'days' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 3650 ? (int) $text : $fail(),

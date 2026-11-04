@@ -160,15 +160,33 @@ final class LibraryController
             'libraryAsk' => $this->library->canAdd($principal) && $this->askable !== null && ($this->askable)(),
             'searched' => $hits !== null,
             // Sources that are probably one article (D60): the panel's groups, for an editor of the library
-            'onlineSearch' => $this->library->canAdd($principal) && $this->online !== null && $this->online->available(),
             'duplicates' => $this->library->canAdd($principal) && $this->merge !== null ? $this->library->duplicateGroups($principal) : [],
             'canAdd' => $this->library->canAdd($principal),
             'namespace' => $this->library->namespace(),
+            'basePath' => $request->basePath,
+        ] + ChromeVars::shell($request, $principal, $this->index, $this->library->namespace()), t('library.title')));
+    }
+
+    /**
+     * GET /library/add (2026-11-04): the page that adds articles, for an editor of the library: files
+     * dropped or chosen, an address clipped (when the web clip is on), PubMed searched (when
+     * `library.search` is on). Anyone else: the 404 of a page that is not there
+     */
+    public function add(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || !$this->library->canAdd($principal)) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/library-add.php', [
+            'onlineSearch' => $this->online !== null && $this->online->available(),
+            // Find full text (D60 6.) set up: a record added from PubMed with a DOI gets its free PDF at once
+            'fullText' => $this->library->fullTextOn(),
             'maxMb' => intdiv($this->library->maxBytes(), 1024 * 1024),
             'extensions' => array_keys(Extractor::TYPES),
             'webClip' => $this->clip !== null,
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, $this->library->namespace()), t('library.title')));
+        ] + ChromeVars::shell($request, $principal, $this->index, $this->library->namespace()), t('library.add')));
     }
 
     public function record(Request $request, string $pid, ?User $principal): Response

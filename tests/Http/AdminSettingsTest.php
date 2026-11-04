@@ -161,6 +161,10 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString('unpaywall_email: library@example.org', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'not an address']))->status);
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'a@example.org?x=1&y']))->status);
+        self::assertStringContainsString('name="library_openalex_key"', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_openalex_key' => 'k3y-made_up1']))->status);
+        self::assertStringContainsString('openalex_key: k3y-made_up1', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_openalex_key' => 'a key&x=1']))->status, 'a key is one token');
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', '')->status);
         self::assertStringContainsString('unpaywall_email: \'\'', (string) file_get_contents($this->dataRoot . '/settings.yaml'), 'blank: off');
     }

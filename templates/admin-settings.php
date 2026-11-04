@@ -162,6 +162,7 @@ Apache:
 </p>
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.library_unpaywall')) ?><?= $source('library.unpaywall_email') ?><input class="input" type="email" name="<?= $field('library.unpaywall_email') ?>" value="<?= $e((string) ($values['library.unpaywall_email'] ?? '')) ?>" maxlength="120" placeholder="<?= $e(t('admin.settings.library_unpaywall_hint')) ?>" autocomplete="off" spellcheck="false"><small><?= $e(t('admin.settings.library_unpaywall_help')) ?></small></label>
+<label><?= $e(t('admin.settings.library_openalex')) ?><?= $source('library.openalex_key') ?><input class="input wk-mono" type="text" name="<?= $field('library.openalex_key') ?>" value="<?= $e((string) ($values['library.openalex_key'] ?? '')) ?>" maxlength="128" placeholder="<?= $e(t('admin.settings.library_openalex_hint')) ?>" autocomplete="off" spellcheck="false"><small><?= $e(t('admin.settings.library_openalex_help')) ?></small></label>
 <label><?= $e(t('admin.settings.library_language')) ?><?= $source('library.language') ?><select class="input" name="<?= $field('library.language') ?>">
 <?php foreach (\Reporion\Service\Ai\Context::LANGUAGES as $code => $name): ?><option value="<?= $e($code) ?>"<?= ($values['library.language'] ?? 'ro') === $code ? ' selected' : '' ?>><?= $e($name) ?></option><?php endforeach; ?>
 </select><small><?= $e(t('admin.settings.library_language_help')) ?></small></label>

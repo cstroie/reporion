@@ -189,6 +189,7 @@ library:
   web_clip: false                  # true: the library's Add panel takes an address; the server fetches it (public addresses only, docs/library.md phase 7)
   search: false                    # true: the library's Search PubMed panel sends the words an editor types to PubMed (the one lookup that sends what was typed; a query holding a CNP is refused; D60, 2026-11-04)
   unpaywall_email: ''              # an address for Unpaywall, which asks every caller for one: with it (and `lookup`), a source with a DOI and no file gets Find full text; blank: off (D60)
+  openalex_key: ''                 # OpenAlex's API key: Find full text also tries OpenAlex's own copy of the PDF (the DOI and the key sent); blank: not asked (2026-11-04)
   language: ro                     # the library's language: the assistant's answers and the References heading for a notebook or source with no `language` (ro, en, fr, de, es, it, hu)
 debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)

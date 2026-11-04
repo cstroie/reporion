@@ -202,9 +202,11 @@ final class TextFlow
                 if ($line === '') {
                     continue;
                 }
-                // Lines of numbers alone (`[1]`, `[8] [9]`): the column a two-column page set apart
-                if (preg_match('/^(?:\[\d{1,4}\]\s*)+$/u', $line) === 1) {
-                    preg_match_all('/\[(\d{1,4})\]/', $line, $m);
+                // Lines of numbers alone (`[1]`, `[8] [9]`, or MDPI's `1.`): the column a two-column page set apart
+                // (a `14.` alone that does not follow the column's last number is an entry's page: it stays text)
+                if (preg_match('/^(?:\[\d{1,4}\]\s*)+$/u', $line) === 1
+                    || preg_match('/^(\d{1,4})\.(?:\s*\d{1,4}\.)*$/u', $line, $first) === 1 && ($numbers === [] ? $entries === [] : (int) $first[1] === end($numbers) + 1)) {
+                    preg_match_all('/(\d{1,4})/', $line, $m);
                     array_push($numbers, ...array_map('intval', $m[1]));
                     continue;
                 }
@@ -720,7 +722,8 @@ final class TextFlow
             return true;
         }
 
-        return preg_match('/[.\d)]$/u', $prev) === 1 && preg_match(self::AUTHOR, $line) === 1;
+        // An entry may end in the publisher's link marks (MDPI's `[CrossRef] [PubMed]`, 2026-11-04)
+        return preg_match('/(?:[.\d)]|\[[\p{L} ]{2,30}\])$/u', $prev) === 1 && preg_match(self::AUTHOR, $line) === 1;
     }
 
     /** @param list<string> $lines */

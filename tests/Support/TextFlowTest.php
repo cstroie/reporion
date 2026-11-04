@@ -174,4 +174,28 @@ final class TextFlowTest extends TestCase
         self::assertStringStartsWith('- Abel A.', $list['text']);
         self::assertStringContainsString("\n- Dunn D. Three. 2017.", $list['text']);
     }
+
+    public function testAColumnOfNumbersWithFullStopsPairsAndLinkMarksEndAnEntry(): void
+    {
+        // MDPI's layout: the numbers apart, each entry ending in its link marks (made-up entries)
+        $raw = "1.\n2.\n3.\n\nAbel, A.; Cole, C.; et al. A made-up study of\nlesions. Made-Up J. 2024, 84, 807–813. [CrossRef] [PubMed]\n"
+            . "Dunn, D.; Eves, E. Another made-up study of grading. Eur. J. Made-Up 2024, 281, 2167–2173. [CrossRef]\n[PubMed]\n"
+            . "Funk, F. A third made-up paper. Radiology 2023, 12, 1–9.";
+        $list = TextFlow::referenceList($raw);
+
+        self::assertTrue($list['paired']);
+        self::assertSame(3, $list['entries']);
+        $lines = explode("\n", $list['text']);
+        self::assertStringStartsWith('1. Abel, A.; Cole, C.; et al. A made-up study of lesions.', $lines[0]);
+        self::assertStringStartsWith('2. Dunn, D.; Eves, E.', $lines[1]);
+        self::assertStringEndsWith('\\[CrossRef\\] \\[PubMed\\]', $lines[1], 'its marks stay its own');
+        self::assertStringStartsWith('3. Funk, F.', $lines[2]);
+    }
+
+    public function testAPageNumberAloneInAnUnnumberedListStaysItsEntrysText(): void
+    {
+        $list = TextFlow::referenceList("Abel A. A made-up paper. Synth Rev 2019; 8(1):\n14.\nCole C. Two. 2016.");
+
+        self::assertSame("- Abel A. A made-up paper. Synth Rev 2019; 8(1): 14.\n- Cole C. Two. 2016.", $list['text']);
+    }
 }

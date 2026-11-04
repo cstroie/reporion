@@ -177,6 +177,22 @@
     var cfg = config(box);
     var s = cfg.strings || {};
     var base = cfg.basePath || '';
+    // A record just added that has a DOI: its free PDF asked of Unpaywall and attached (POST
+    // /api/v1/library/{pid}/fulltext, as Find full text on the source's page), the answer beside it
+    function fullText(done, text) {
+      var line = el('span', 'wk-dim wk-text-sm', s.ft_working);
+      text.appendChild(line);
+      post(base + '/api/v1/library/' + encodeURIComponent(done.pid) + '/fulltext').then(function (result) {
+        var answer = result.ok ? result.json.status : 'failed';
+        if (answer === 'attached') {
+          var chip = el('a', 'wk-chip wk-chip-on', s.ft_attached);
+          chip.href = done.href;
+          line.replaceWith(chip);
+          return;
+        }
+        line.textContent = s['ft_' + answer] || (result.ok ? '' : errorOf(result, s.ft_failed));
+      }, function () { line.textContent = s.ft_failed; });
+    }
     var form = box.querySelector('[data-online-form]');
     var status = box.querySelector('[data-online-status]');
     var list = box.querySelector('[data-online-list]');
@@ -216,6 +232,7 @@
                 var open = el('a', 'wk-chip', s.added);
                 open.href = done.href;
                 text.appendChild(open);
+                if (cfg.fullText && row.csl.DOI) fullText(done, text);
               } else {
                 text.appendChild(el('span', 'wk-dim wk-text-sm', s.skipped));
               }

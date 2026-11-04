@@ -24,6 +24,8 @@ final class Lookup
     private const CROSSREF = 'https://api.crossref.org/works/';
     private const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
     private const UNPAYWALL = 'https://api.unpaywall.org/v2/';
+    private const OPENALEX = 'https://api.openalex.org/works/doi:';
+    private const EUROPEPMC = 'https://www.ebi.ac.uk/europepmc/webservices/rest/';
 
     private const TYPES = [
         'journal-article' => 'article-journal', 'book' => 'book', 'monograph' => 'book', 'edited-book' => 'book', 'reference-book' => 'book',
@@ -37,7 +39,7 @@ final class Lookup
     }
 
     /**
-     * The real fetch: HTTPS to the two services only, one attempt, a short timeout, a size limit, a
+     * The real fetch: HTTPS to the services named here only (CrossRef, PubMed, Unpaywall, OpenAlex, Europe PMC), one attempt, a short timeout, a size limit, a
      * User-Agent that names the software and nobody's address
      *
      * @return Closure(string): ?string
@@ -46,14 +48,14 @@ final class Lookup
     {
         return static function (string $url) use ($timeoutSeconds): ?string {
             $host = parse_url($url, PHP_URL_HOST);
-            if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !\in_array($host, ['api.crossref.org', 'eutils.ncbi.nlm.nih.gov', 'api.unpaywall.org'], true)) {
+            if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !\in_array($host, ['api.crossref.org', 'eutils.ncbi.nlm.nih.gov', 'api.unpaywall.org', 'api.openalex.org', 'www.ebi.ac.uk'], true)) {
                 return null;
             }
             $context = stream_context_create(['http' => [
                 'method' => 'GET', 'timeout' => $timeoutSeconds, 'ignore_errors' => true, 'follow_location' => 0,
                 'header' => "User-Agent: Reporion library lookup\r\nAccept: application/json, application/xml\r\n",
             ]]);
-            $body = @file_get_contents($url, false, $context, 0, 2 * 1024 * 1024);
+            $body = @file_get_contents($url, false, $context, 0, 8 * 1024 * 1024); // an article's full-text XML can be a few MB
             $status = isset($http_response_header[0]) && preg_match('~^HTTP/\S+ (\d{3})~', $http_response_header[0], $m) === 1 ? (int) $m[1] : 0;
             if ($body === false || $status === 0) {
                 return null;
@@ -298,7 +300,7 @@ final class Lookup
      * owner's e-mail address (which Unpaywall asks every caller to give) are all that is sent. The
      * best open-access location with a PDF, else any with one.
      *
-     * @return array{url: string, version: string, license: string, host_type: string}|null null: no such DOI, or no free PDF
+     * @return array{url: string, version: string, license: string, host_type: string, urls: list<string>}|null null: no such DOI, or no free PDF
      *
      * @throws \RuntimeException when the service could not be reached or answered nonsense
      */
@@ -320,18 +322,77 @@ final class Lookup
             throw new \RuntimeException('unpaywall');
         }
         $locations = array_merge(\is_array($json['best_oa_location'] ?? null) ? [$json['best_oa_location']] : [], \is_array($json['oa_locations'] ?? null) ? $json['oa_locations'] : []);
+        $found = null;
+        $urls = [];
         foreach ($locations as $location) {
             if (\is_array($location) && \is_string($location['url_for_pdf'] ?? null) && preg_match('~^https?://~i', $location['url_for_pdf']) === 1) {
-                return [
+                $found ??= [
                     'url' => $location['url_for_pdf'],
                     'version' => \is_string($location['version'] ?? null) ? $location['version'] : '',
                     'license' => \is_string($location['license'] ?? null) ? $location['license'] : '',
                     'host_type' => \is_string($location['host_type'] ?? null) ? $location['host_type'] : '',
                 ];
+                $urls[] = $location['url_for_pdf'];
             }
         }
 
-        return null;
+        // Every location's PDF, the best first, each once: a publisher that refuses a program leaves a repository's copy
+        return $found !== null ? $found + ['urls' => array_values(array_unique($urls))] : null;
+    }
+
+    /**
+     * OpenAlex's own copy of a work's PDF (content.openalex.org, 2026-11-04): asked by the DOI and the
+     * library's OpenAlex key (Admin → Settings → Library, `library.openalex_key`; content downloads need
+     * one). The address of the PDF with the key, to be fetched by WebClip, or null when OpenAlex has none
+     * or was not reached (a fallback: it never fails Find full text by itself)
+     */
+    public function openAlexPdf(string $doi, string $key): ?string
+    {
+        $doi = ArticleIds::normalizeDoi($doi);
+        if ($doi === null || $key === '') {
+            return null;
+        }
+        $json = json_decode((string) ($this->fetch)(self::OPENALEX . rawurlencode($doi) . '?api_key=' . rawurlencode($key)), true);
+        $url = \is_array($json) && (($json['has_content']['pdf'] ?? false) === true) ? ($json['content_urls']['pdf'] ?? null) : null;
+        if (!\is_string($url) || preg_match('~^https://content\.openalex\.org/~', $url) !== 1) {
+            return null;
+        }
+
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'api_key=' . rawurlencode($key);
+    }
+
+    /**
+     * The PMCID of an open-access article in Europe PMC, asked by its DOI, or null (none, not open
+     * access, not reached)
+     */
+    public function europePmcId(string $doi): ?string
+    {
+        $doi = ArticleIds::normalizeDoi($doi);
+        if ($doi === null) {
+            return null;
+        }
+        $json = json_decode((string) ($this->fetch)(self::EUROPEPMC . 'search?query=' . rawurlencode('DOI:"' . $doi . '"') . '&format=json&resultType=lite'), true);
+        $hit = \is_array($json) ? ($json['resultList']['result'][0] ?? null) : null;
+        if (!\is_array($hit) || ($hit['isOpenAccess'] ?? '') !== 'Y' || !\is_string($hit['pmcid'] ?? null)) {
+            return null;
+        }
+
+        return preg_match('/^PMC\d+$/', $hit['pmcid']) === 1 ? $hit['pmcid'] : null;
+    }
+
+    /**
+     * An open-access article's full text as JATS XML from Europe PMC (`/{PMCID}/fullTextXML`), asked
+     * by its PMCID only, or null (not in the open-access set, not reached)
+     */
+    public function europePmcXml(string $pmcid): ?string
+    {
+        $pmcid = strtoupper(trim($pmcid));
+        if (preg_match('/^(PMC)?(\d+)$/', $pmcid, $m) !== 1) {
+            return null;
+        }
+        $body = ($this->fetch)(self::EUROPEPMC . 'PMC' . $m[2] . '/fullTextXML');
+
+        return \is_string($body) && str_contains(substr($body, 0, 2000), '<article') ? $body : null;
     }
 
     /**
