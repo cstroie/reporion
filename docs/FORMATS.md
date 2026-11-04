@@ -858,6 +858,10 @@ most 20, a name of at most 60 characters (the same name in any case replaces), `
 `/search`'s own parameters (`q`, `sort`, `ns`, `modality`, `region`, `site`, `device`, `status`,
 `tag`). Saved and removed with `POST /profile/views`, listed in the quick-navigation menu; not
 audited, like a pin. A view grants nothing: every search runs the visibility predicate when opened.
+A view with `"kind":"library"` (2026-11-04, D60) is a **collection of the library**: its `query` keeps
+only `/library`'s parameters (`q`, `tag`, `sort`, and `Support\LibraryFilter`'s `year`, `journal`, `file`,
+`notice`, `uncited`), it opens `/library?{query}` and shows in the menu with the books icon; a search
+view has no `kind` key.
 
 
 ## 10b. Groups:`data/groups/{name}.json` (D47, 2026-10-13)

@@ -79,7 +79,9 @@ final class QuickNav
             'fixed' => $fixed,
             'pinned' => array_map($tint, $pinned),
             // Saved views (2026-10-19): named searches, `/search?{query}`
-            'views' => array_map(static fn (array $view): array => ['href' => '/search?' . $view['query'], 'label' => $view['name'], 'icon' => 'funnel'], $principal->views),
+            'views' => array_map(static fn (array $view): array => ($view['kind'] ?? '') === 'library'
+                ? ['href' => '/library?' . $view['query'], 'label' => $view['name'], 'icon' => 'books']
+                : ['href' => '/search?' . $view['query'], 'label' => $view['name'], 'icon' => 'funnel'], $principal->views),
             'related' => array_map($tint, $related),
             'here' => $ns,
             'herePinned' => \in_array($ns, $principal->pins, true),

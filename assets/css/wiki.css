@@ -2306,6 +2306,13 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-cite { white-space: nowrap; }
 .wk-cite a { text-decoration: none; }
 .wk-cite-raw, .wk-cite-missing { color: var(--state-warn, var(--color-dim)); border-bottom: 1px dotted currentColor; cursor: help; }
+.wk-lib-collections { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
+.wk-chip-row { display: inline-flex; align-items: center; gap: var(--space-1); }
+.wk-chip-row form { display: inline; margin: 0; }
+.wk-lib-filters { margin: var(--space-2) 0; }
+.wk-lib-filter-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); align-items: end; margin-top: var(--space-3); }
+.wk-lib-filter-form .wk-actions { grid-column: 1 / -1; }
+.wk-lib-save { margin-top: var(--space-3); }
 .wk-lib-dups { margin-bottom: var(--space-4); }
 .wk-lib-dup { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3); margin: var(--space-3) 0; }
 .wk-lib-dup-row { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-1) 0; }

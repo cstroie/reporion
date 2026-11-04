@@ -551,7 +551,7 @@ final class Library
     /**
      * The library as its view lists it: every source $principal may see, with what the table shows
      *
-     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, ext: string, doi: string}>
+     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string}>
      */
     public function entries(User $principal): array
     {
@@ -575,6 +575,7 @@ final class Library
                 'cited' => \count($this->index->backlinks($row['pid'], $principal)),
                 'ext' => \is_array($meta['original'] ?? null) ? (string) ($meta['original']['ext'] ?? '') : '',
                 'doi' => \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : '',
+                'notice' => SourceNotice::clean($meta['notice'] ?? null)['status'] ?? null,
             ];
         }
 

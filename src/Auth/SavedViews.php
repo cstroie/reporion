@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Auth;
 
+use Reporion\Support\LibraryFilter;
+
 /**
  * An account's saved views (2026-10-19, Notion's): named searches, stored
  * as `views` in `data/users/{username}.json` (D36) and shown in the
@@ -13,6 +15,10 @@ namespace Reporion\Auth;
  * and nothing else: only its parameters are kept, so a view cannot carry
  * anything a search would not. Saving one grants nothing: every search
  * runs the visibility predicate (invariant 6).
+ *
+ * A view of kind `library` (2026-11-04, D60) is a collection of the library: `/library`'s own
+ * parameters (the text, the tag, the sort and Support\LibraryFilter's) and nothing else, opened at
+ * `/library?{query}`. Stored with `kind: library`; a search view has no `kind` key, as before.
  */
 final class SavedViews
 {
@@ -23,40 +29,53 @@ final class SavedViews
     /** `/search`'s parameters (SearchController, Index\Sqlite::FACETS) */
     private const KEYS = ['q', 'sort', 'ns', 'modality', 'region', 'site', 'device', 'status', 'tag'];
 
-    /** A view as stored, or null when $name or $query cannot be one */
-    public static function normalize(string $name, string $query): ?array
+    public const LIBRARY = 'library';
+
+    /** `/library`'s parameters (LibraryController::index(), Support\LibraryFilter) */
+    private const LIBRARY_KEYS = ['q', 'tag', 'sort', ...LibraryFilter::KEYS];
+
+    /** A view as stored, or null when $name or $query cannot be one; $kind `library` for a collection of the library */
+    public static function normalize(string $name, string $query, string $kind = ''): ?array
     {
         $name = trim((string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $name));
         if ($name === '' || mb_strlen($name) > self::NAME_MAX) {
             return null;
         }
         parse_str(ltrim($query, '?'), $fields);
+        $library = $kind === self::LIBRARY;
         $kept = [];
-        foreach (self::KEYS as $key) {
+        foreach ($library ? self::LIBRARY_KEYS : self::KEYS as $key) {
             $value = $fields[$key] ?? null;
             if (\is_string($value) && trim($value) !== '' && mb_strlen($value) <= 200) {
                 $kept[$key] = trim($value);
+            }
+        }
+        if ($library) {
+            // The filters as the library reads them: a value it cannot read is no filter
+            $kept = array_intersect_key($kept, array_flip(['q', 'tag', 'sort'])) + LibraryFilter::of($kept);
+            if (isset($kept['sort']) && !\in_array($kept['sort'], ['author', 'year', 'title'], true)) {
+                unset($kept['sort']);
             }
         }
         if ($kept === []) {
             return null;
         }
 
-        return ['name' => $name, 'query' => http_build_query($kept)];
+        return ['name' => $name, 'query' => http_build_query($kept)] + ($library ? ['kind' => self::LIBRARY] : []);
     }
 
     /**
      * A stored list made safe: each entry normalized, invalid ones dropped,
      * a later one of the same name gone, at most MAX kept
      *
-     * @return list<array{name: string, query: string}>
+     * @return list<array{name: string, query: string, kind?: string}>
      */
     public static function clean(mixed $raw): array
     {
         $views = [];
         foreach (\is_array($raw) ? $raw : [] as $entry) {
             $view = \is_array($entry) && \is_string($entry['name'] ?? null) && \is_string($entry['query'] ?? null)
-                ? self::normalize($entry['name'], $entry['query'])
+                ? self::normalize($entry['name'], $entry['query'], ($entry['kind'] ?? '') === self::LIBRARY ? self::LIBRARY : '')
                 : null;
             if ($view !== null && !\in_array(mb_strtolower($view['name']), array_map(static fn (array $v): string => mb_strtolower($v['name']), $views), true)) {
                 $views[] = $view;

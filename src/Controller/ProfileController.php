@@ -116,7 +116,8 @@ final class ProfileController
      * POST /profile/views {name, query} saves a view (2026-10-19): a named
      * search in the quick-navigation menu, one of the same name replaced;
      * {name, remove=1} removes it; then back to where the form was. Only
-     * `/search`'s own parameters are kept (Auth\SavedViews). Not audited,
+     * `/search`'s own parameters are kept (Auth\SavedViews), or `/library`'s with
+     * `kind=library` (a collection of the library, D60). Not audited,
      * like a pin: it changes this account's menu, not what it can reach.
      */
     public function saveView(Request $request, ?User $principal): Response
@@ -130,7 +131,7 @@ final class ProfileController
         if (($fields['remove'] ?? null) === '1') {
             $views = SavedViews::remove($principal->views, $name);
         } else {
-            $view = SavedViews::normalize($name, \is_string($fields['query'] ?? null) ? $fields['query'] : '');
+            $view = SavedViews::normalize($name, \is_string($fields['query'] ?? null) ? $fields['query'] : '', ($fields['kind'] ?? null) === SavedViews::LIBRARY ? SavedViews::LIBRARY : '');
             if ($view === null) {
                 return $back;
             }

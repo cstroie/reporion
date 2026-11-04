@@ -515,6 +515,31 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('"action":"page.delete"', $audit);
     }
 
+    public function testTheViewFiltersByYearAndFileAndASavedCollectionOpensFromTheMenu(): void
+    {
+        $this->add('editor', self::ARTICLE, 'study.md', ['mri']);
+        $this->add('editor', "# Another made-up study of lesions\n\n(c) 2019 Nowhere Press\n", 'old.md');
+
+        $recent = $this->call('editor', 'GET', '/library?year=2024-')->body;
+        self::assertStringContainsString('A made-up study of test lesions', $recent);
+        self::assertStringNotContainsString('Another made-up study', $recent);
+        self::assertStringContainsString('<details class="wk-lib-filters" open>', $recent);
+        self::assertStringContainsString('name="kind" value="library"', $recent, 'the view can be saved as a collection');
+        self::assertStringNotContainsString('Another made-up study', $this->call('editor', 'GET', '/library?file=yes&year=2024')->body);
+        self::assertStringContainsString('made-up study', $this->call('editor', 'GET', '/library?uncited=1')->body);
+
+        $form = Kernel::boot($this->config)->handle(new Request('POST', '/profile/views', cookies: ['reporion' => $this->cookie('editor')], body: http_build_query([
+            'name' => 'Recent MRI', 'kind' => 'library', 'query' => 'tag=mri&year=2020-&ns=reports&evil=1', 'return_to' => '/library?tag=mri&year=2020-',
+        ])));
+        self::assertSame(302, $form->status);
+        self::assertSame('/library?tag=mri&year=2020-', $form->headers['Location']);
+        self::assertSame([['name' => 'Recent MRI', 'query' => 'tag=mri&year=2020-', 'kind' => 'library']], (new FlatFileUserStore($this->dataRoot))->find('editor')?->views);
+
+        $page = $this->call('editor', 'GET', '/library')->body;
+        self::assertStringContainsString('href="/library?tag=mri&amp;year=2020-"><i class="ph ph-books" aria-hidden="true"></i> Recent MRI', $page, 'the collection chip');
+        self::assertStringContainsString('href="/library?tag=mri&amp;year=2020-"><i class="ph ph-books"></i>Recent MRI</a>', $page, 'and the quick menu');
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

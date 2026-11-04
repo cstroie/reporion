@@ -26,8 +26,10 @@ declare(strict_types=1);
 /** @var list<string> $extensions */
 $webClip = ($webClip ?? false) === true;
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
-$link = static function (array $query) use ($basePath, $tag, $sort): string {
-    $query += ['tag' => $tag, 'sort' => $sort];
+$filter = $filter ?? [];
+$collections = $collections ?? [];
+$link = static function (array $query) use ($basePath, $tag, $sort, $filter): string {
+    $query += ['tag' => $tag, 'sort' => $sort] + $filter;
     $query = array_filter($query, static fn (string $v, string $k): bool => $v !== '' && !($k === 'sort' && $v === \Reporion\Controller\LibraryController::SORTS[0]), ARRAY_FILTER_USE_BOTH);
 
     return $basePath . '/library' . ($query !== [] ? '?' . http_build_query($query) : '');
@@ -150,6 +152,35 @@ $total = \count($entries);
 <button class="btn btn-secondary" type="submit"><?= $e(t('library.search')) ?></button>
 <?php if ($searched): ?><a class="btn btn-ghost" href="<?= $e($link([])) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('library.search_clear')) ?></a><?php endif; ?>
 </form>
+<?php if ($collections !== []): /* Collections: saved views of the library (D60), opened here */ ?>
+<nav class="wk-lib-collections" aria-label="<?= $e(t('library.coll.title')) ?>"><span class="wk-dim wk-text-xs"><?= $e(t('library.coll.title')) ?></span>
+<?php foreach ($collections as $collection): ?>
+<span class="wk-chip wk-chip-row"><a href="<?= $e($basePath . '/library?' . $collection['query']) ?>"><i class="ph ph-books" aria-hidden="true"></i> <?= $e($collection['name']) ?></a>
+<form method="post" action="<?= $e($basePath) ?>/profile/views"><input type="hidden" name="name" value="<?= $e($collection['name']) ?>"><input type="hidden" name="remove" value="1"><input type="hidden" name="return_to" value="/library"><button type="submit" class="wk-tbtn wk-quick-x" title="<?= $e(t('library.coll.remove', [$collection['name']])) ?>"><i class="ph ph-x" aria-hidden="true"></i></button></form></span>
+<?php endforeach; ?>
+</nav>
+<?php endif; ?>
+<details class="wk-lib-filters"<?= $filter !== [] ? ' open' : '' ?>>
+<summary class="wk-dim wk-text-sm"><i class="ph ph-funnel" aria-hidden="true"></i> <?= $e(t('library.filters.title')) ?><?= $filter !== [] ? ' (' . \count($filter) . ')' : '' ?></summary>
+<form class="wk-lib-filter-form" method="get" action="<?= $e($basePath . '/library') ?>">
+<?php foreach (['q' => $query, 'tag' => $tag, 'sort' => $sort === \Reporion\Controller\LibraryController::SORTS[0] ? '' : $sort] as $keep => $value): ?><?php if ($value !== ''): ?><input type="hidden" name="<?= $keep ?>" value="<?= $e($value) ?>"><?php endif; ?><?php endforeach; ?>
+<div class="field"><label><?= $e(t('library.filters.year')) ?><input class="input wk-mono" type="text" name="year" value="<?= $e($filter['year'] ?? '') ?>" maxlength="9" placeholder="<?= $e(t('library.filters.year_hint')) ?>" inputmode="numeric"><small><?= $e(t('library.filters.year_help')) ?></small></label></div>
+<div class="field"><label><?= $e(t('library.filters.journal')) ?><input class="input" type="text" name="journal" value="<?= $e($filter['journal'] ?? '') ?>" maxlength="100" placeholder="<?= $e(t('library.filters.journal_hint')) ?>"></label></div>
+<div class="field"><label><?= $e(t('library.filters.file')) ?><select class="input" name="file"><?php foreach (['' => t('library.filters.any'), 'yes' => t('library.filters.file_yes'), 'no' => t('library.filters.file_no')] as $value => $label): ?><option value="<?= $e((string) $value) ?>"<?= ($filter['file'] ?? '') === (string) $value ? ' selected' : '' ?>><?= $e($label) ?></option><?php endforeach; ?></select></label></div>
+<div class="field"><label><?= $e(t('library.filters.notice')) ?><select class="input" name="notice"><?php foreach (['' => t('library.filters.any'), 'any' => t('library.filters.notice_any'), 'retracted' => t('library.notice.retracted'), 'concern' => t('library.notice.concern'), 'corrected' => t('library.notice.corrected')] as $value => $label): ?><option value="<?= $e((string) $value) ?>"<?= ($filter['notice'] ?? '') === (string) $value ? ' selected' : '' ?>><?= $e($label) ?></option><?php endforeach; ?></select></label></div>
+<label class="radio"><input type="checkbox" name="uncited" value="1"<?= isset($filter['uncited']) ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('library.filters.uncited')) ?></label>
+<footer class="wk-actions"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('library.filters.apply')) ?></button><?php if ($filter !== []): ?><a class="btn btn-ghost btn-sm" href="<?= $e($link(array_fill_keys(\Reporion\Support\LibraryFilter::KEYS, ''))) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('library.filters.clear')) ?></a><?php endif; ?></footer>
+</form>
+<?php
+$collectionQuery = array_filter(['q' => $query, 'tag' => $tag, 'sort' => $sort === \Reporion\Controller\LibraryController::SORTS[0] ? '' : $sort] + $filter, static fn (string $v): bool => $v !== '');
+?>
+<?php if ($collectionQuery !== []): ?>
+<form class="wk-lib-save" method="post" action="<?= $e($basePath) ?>/profile/views">
+<input type="hidden" name="kind" value="library"><input type="hidden" name="query" value="<?= $e(http_build_query($collectionQuery)) ?>"><input type="hidden" name="return_to" value="/library?<?= $e(http_build_query($collectionQuery)) ?>">
+<div class="field"><label><?= $e(t('library.coll.name')) ?><span class="group"><input class="input" type="text" name="name" maxlength="60" required placeholder="<?= $e(t('library.coll.name_hint')) ?>"><button class="btn btn-secondary" type="submit"><i class="ph ph-bookmark-simple" aria-hidden="true"></i><?= $e(t('library.coll.save')) ?></button></span><small><?= $e(t('library.coll.help')) ?></small></label></div>
+</form>
+<?php endif; ?>
+</details>
 <?php if ($searched): ?><p class="wk-dim wk-text-sm" role="status"><?= $e(t($total === 0 ? 'library.search_none' : 'library.search_found', [(string) $total, $query])) ?></p><?php endif; ?>
 <div class="wk-lib-tools">
 <label class="group wk-lib-filter"><span class="group-addon"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></span><input class="input" type="search" placeholder="<?= $e(t('library.filter_hint')) ?>" aria-label="<?= $e(t('library.filter')) ?>" data-lib-filter></label>

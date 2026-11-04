@@ -25,6 +25,7 @@ use Reporion\Service\Library\Library;
 use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\Merge;
 use Reporion\Support\Flashcards;
+use Reporion\Support\LibraryFilter;
 use Reporion\Service\Library\WebClip;
 use Reporion\Http\Throttle;
 use Reporion\Storage\FileTree;
@@ -116,6 +117,9 @@ final class LibraryController
         if ($tag !== '') {
             $entries = array_values(array_filter($entries, static fn (array $e): bool => \in_array($tag, $e['tags'], true)));
         }
+        // The year, journal, file, notice and uncited filters (D60); the tag counts above stay the whole library's
+        $filter = LibraryFilter::of($request->query);
+        $entries = LibraryFilter::apply($entries, $filter);
         $sort = \in_array($request->query['sort'] ?? null, self::SORTS, true) ? (string) $request->query['sort'] : self::SORTS[0];
         usort($entries, static fn (array $a, array $b): int => match ($sort) {
             'year' => [$b['year'] ?? 0, mb_strtolower($a['authors'])] <=> [$a['year'] ?? 0, mb_strtolower($b['authors'])],
@@ -144,6 +148,9 @@ final class LibraryController
             'tagCounts' => $counts,
             'tag' => $tag,
             'sort' => $sort,
+            'filter' => $filter,
+            // The collections this account saved (Auth\SavedViews, kind library): a name and the query it opens
+            'collections' => array_values(array_filter($principal->views, static fn (array $v): bool => ($v['kind'] ?? '') === 'library')),
             'query' => $query,
             // Ask the library (2026-11-02): for an editor of the library, when its prompt is there
             'libraryAsk' => $this->library->canAdd($principal) && $this->askable !== null && ($this->askable)(),
