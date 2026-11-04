@@ -24,6 +24,7 @@ use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\Merge;
+use Reporion\Service\Library\Related;
 use Reporion\Support\Flashcards;
 use Reporion\Support\LibraryFilter;
 use Reporion\Service\Library\WebClip;
@@ -70,6 +71,7 @@ final class LibraryController
         /** @var ?\Closure(): bool whether Ask the library is set up */
         private readonly ?\Closure $askable = null,
         private readonly ?Merge $merge = null,
+        private readonly ?Related $related = null,
     ) {
     }
 
@@ -217,6 +219,22 @@ final class LibraryController
         }
 
         return ApiResponse::json($result);
+    }
+
+    /**
+     * GET /api/v1/library/{pid}/related: sources related to this one (Service\Library\Related: cited by
+     * the same pages, near in meaning, sharing tags), at most 8, best first, each with why; the source
+     * and every one listed under the caller's visibility; a source the caller cannot read, anonymous: 404
+     */
+    public function related(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || $this->related === null || !str_starts_with((string) $row['path'], $this->library->namespace() . ':')) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $data = array_map(static fn (array $r): array => ['href' => $request->basePath . '/' . $r['path']] + $r, $this->related->of($pid, $principal));
+
+        return ApiResponse::json(['data' => $data]);
     }
 
     /**

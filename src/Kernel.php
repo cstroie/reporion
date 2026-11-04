@@ -624,6 +624,7 @@ final class Kernel
             // Ask the library's panel: the assistant on and the library's profile has the prompt
             static fn (): bool => $aiConfig->isConfigured() && $aiActions->special(self::libraryNamespace($config), 'ask-library') !== null,
             self::libraryMerge($config, $storage, $index, $audit),
+            new \Reporion\Service\Library\Related($index, self::libraryNamespace($config), \Reporion\Service\Ai\Embedder::minScore($config)),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -810,6 +811,8 @@ final class Kernel
             => $libraryController->clip($request, $session->principal($request)));
         $router->get('/api/v1/library/duplicates', static fn (Request $request, array $params): Response
             => $libraryController->duplicates($request, $session->principal($request)));
+        $router->get('/api/v1/library/{pid:[0-9A-Z]+}/related', static fn (Request $request, array $params): Response
+            => $libraryController->related($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/merge', static fn (Request $request, array $params): Response
             => $libraryController->merge($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/highlights', static fn (Request $request, array $params): Response

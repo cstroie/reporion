@@ -4,6 +4,8 @@
  * The library's tools (docs/library.md, D60), one island each on `[data-island="library-tools"]`,
  * told apart by `data-tool`; their config is the <script type="application/json"> inside the mount point:
  *
+ * - related (a source's page): the card's "Related sources" list, fetched when it is first opened
+ *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
  * - duplicates (GET /library, an editor): groups of sources that look like one article; the radio
  *   picks the one to keep, Merge sends POST /api/v1/library/{keep}/merge {from} for each of the others.
  */
@@ -93,7 +95,38 @@
     });
   }
 
-  var TOOLS = { duplicates: mountDuplicates };
+  // ---- Related sources: loaded when the card is opened ----
+
+  function mountRelated(box) {
+    var cfg = config(box);
+    var s = cfg.strings || {};
+    var list = box.querySelector('[data-related-list]');
+    var loaded = false;
+    box.addEventListener('toggle', function () {
+      if (!box.open || loaded) return;
+      loaded = true;
+      list.textContent = '';
+      list.appendChild(el('li', 'wk-dim', s.loading));
+      api(cfg.url).then(function (result) {
+        list.textContent = '';
+        if (!result.ok) { list.appendChild(el('li', 'wk-dim', errorOf(result, s.failed))); loaded = false; return; }
+        var rows = result.json.data || [];
+        if (rows.length === 0) { list.appendChild(el('li', 'wk-dim', s.none)); return; }
+        rows.forEach(function (row) {
+          var item = el('li');
+          var a = el('a', '', row.title);
+          a.href = row.href;
+          item.appendChild(a);
+          var by = [row.authors, row.year].filter(Boolean).join(' ');
+          var reasons = (row.why || []).map(function (w) { return s[w]; }).filter(Boolean).join(', ');
+          item.appendChild(el('span', 'wk-dim', ' ' + [by, reasons].filter(Boolean).join(' · ')));
+          list.appendChild(item);
+        });
+      }, function () { list.textContent = ''; list.appendChild(el('li', 'wk-dim', s.failed)); loaded = false; });
+    });
+  }
+
+  var TOOLS = { duplicates: mountDuplicates, related: mountRelated };
 
   function start() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-tools"]'), function (box) {

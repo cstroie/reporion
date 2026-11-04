@@ -80,6 +80,14 @@ foreach (\Reporion\Service\Library\SourceAnalysis::TASKS as $savedTask => $saved
 }
 include __DIR__ . '/saved-analyses.php';
 ?>
+<details class="wk-lib-cites wk-lib-related" data-island="library-tools" data-tool="related">
+<summary class="wk-dim wk-text-sm"><i class="ph ph-graph" aria-hidden="true"></i> <?= $e(t('library.related.title')) ?></summary>
+<ul class="wk-lib-related-list wk-text-sm" data-related-list aria-live="polite"></ul>
+<script type="application/json"><?= json_encode([
+    'url' => $basePath . '/api/v1/library/' . $source['pid'] . '/related',
+    'strings' => ['none' => t('library.related.none'), 'failed' => t('library.failed'), 'loading' => t('library.related.loading'), 'cited' => t('library.related.cited'), 'meaning' => t('library.related.meaning'), 'tags' => t('library.related.tags')],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</details>
 <?php if (($source['cites'] ?? null) !== null): ?>
 <details class="wk-lib-cites">
 <summary class="wk-dim wk-text-sm"><i class="ph ph-list-numbers" aria-hidden="true"></i> <?= $e(t('library.cites', [(string) \count($source['cites']['entries']), (string) $source['cites']['found']])) ?></summary>
@@ -138,3 +146,4 @@ include __DIR__ . '/saved-analyses.php';
 <?php endif; ?>
 </section>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/library.js')) ?>" defer></script>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/library-tools.js')) ?>" defer></script>

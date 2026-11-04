@@ -540,6 +540,22 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('href="/library?tag=mri&amp;year=2020-"><i class="ph ph-books"></i>Recent MRI</a>', $page, 'and the quick menu');
     }
 
+    public function testRelatedSourcesAreListedToWhoeverMayReadTheSource(): void
+    {
+        $one = $this->add('editor', self::ARTICLE, 'study.md', ['mri']);
+        $two = $this->add('editor', "# Another made-up study of lesions\n\n(c) 2019 Nowhere Press\n", 'old.md', ['mri']);
+
+        foreach ([null, 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/' . $one['pid'] . '/related')->status, $user ?? 'anonymous');
+        }
+        self::assertSame(404, $this->call('reader', 'GET', '/api/v1/library/ZZZZZZZZZZ/related')->status);
+        $related = json_decode($this->call('reader', 'GET', '/api/v1/library/' . $one['pid'] . '/related')->body, true);
+        self::assertSame([$two['path']], array_column($related['data'], 'path'));
+        self::assertSame(['tags'], $related['data'][0]['why']);
+        self::assertSame('/' . $two['path'], $related['data'][0]['href']);
+        self::assertStringContainsString('data-tool="related"', $this->call('reader', 'GET', '/' . $one['path'])->body);
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

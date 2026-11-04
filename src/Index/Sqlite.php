@@ -1651,6 +1651,60 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * A source's passage vectors (docs/library.md, D60: Related sources): the model and every passage's
+     * unit vector, in order; none when the source was not embedded
+     *
+     * @return array{model: string, vectors: list<list<float>>}|null
+     */
+    public function passageVectors(string $pid): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT model, dim, vec FROM passage_vectors WHERE pid = ? AND dim > 0 ORDER BY n');
+        $stmt->execute([$pid]);
+        $model = null;
+        $vectors = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $model ??= (string) $row['model'];
+            if ((string) $row['model'] === $model) {
+                $vectors[] = array_values(unpack('g*', (string) $row['vec']) ?: []);
+            }
+        }
+
+        return $model !== null && $vectors !== [] ? ['model' => $model, 'vectors' => $vectors] : null;
+    }
+
+    /**
+     * The library pages cited by the pages that cite $pid (co-citation, D60: Related sources), most
+     * shared pages first. Both the citing pages and the pages found are read under the caller's
+     * visibility (invariant 6): a private page's citations tell nothing to a caller who cannot read it.
+     *
+     * @return list<array{pid: string, shared: int}>
+     */
+    public function coCited(string $pid, string $libraryNamespace, ?User $principal, int $limit = 20): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare("SELECT DISTINCT l.src FROM links l JOIN pages p ON p.pid = l.src WHERE l.dst_pid = :pid AND l.kind = 'link'" . $clauseSql);
+        $stmt->execute(['pid' => $pid] + $clauseParams);
+        $citing = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if ($citing === []) {
+            return [];
+        }
+        $marks = [];
+        $params = ['pid' => $pid, 'lib' => Query::likeEscape($libraryNamespace) . ':%'] + $clauseParams;
+        foreach ($citing as $i => $src) {
+            $marks[] = ':s' . $i;
+            $params['s' . $i] = $src;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT l.dst_pid AS pid, COUNT(DISTINCT l.src) AS shared FROM links l JOIN pages p ON p.pid = l.dst_pid "
+            . "WHERE l.kind = 'link' AND l.dst_pid != :pid AND l.src IN (" . implode(', ', $marks) . ") AND p.path LIKE :lib ESCAPE '\\'" . $clauseSql
+            . ' GROUP BY l.dst_pid ORDER BY shared DESC, l.dst_pid LIMIT ' . max(1, $limit)
+        );
+        $stmt->execute($params);
+
+        return array_map(static fn (array $r): array => ['pid' => (string) $r['pid'], 'shared' => (int) $r['shared']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
      * The passages of $pids nearest to $query (cosine: unit vectors, a dot product), best first,
      * among the pages the caller can see (invariant 6: the visibility predicate picks the
      * candidates before any score); a score under $minScore is no match. Brute force in PHP, as
