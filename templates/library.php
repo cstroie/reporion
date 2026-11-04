@@ -60,6 +60,7 @@ $total = \count($entries);
 <div class="field"><label><?= $e(t('library.clip')) ?>
 <span class="group"><input class="input" type="url" name="url" maxlength="2000" required placeholder="<?= $e(t('library.clip_hint')) ?>" autocapitalize="off" spellcheck="false"><button class="btn btn-secondary" type="submit"><i class="ph ph-globe" aria-hidden="true"></i><?= $e(t('library.clip_go')) ?></button></span>
 <small><?= $e(t('library.clip_help')) ?></small></label></div>
+<p class="wk-dim wk-text-sm"><i class="ph ph-bookmark-simple" aria-hidden="true"></i> <a class="wk-chip" href="#" data-lib-bookmarklet draggable="true"><?= $e(t('library.bookmarklet')) ?></a> <?= $e(t('library.bookmarklet_help')) ?></p>
 </form>
 <?php endif; ?>
 <div class="wk-lib-queue" data-lib-queue></div>

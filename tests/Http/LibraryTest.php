@@ -566,6 +566,17 @@ final class LibraryTest extends HttpTestCase
         self::assertStringNotContainsString('data-lib-fulltext', $this->call('editor', 'GET', '/' . $page['path'])->body);
     }
 
+    public function testTheBookmarkletIsOfferedToAnEditorOnlyWhenTheWebClipIsOn(): void
+    {
+        self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('editor', 'GET', '/library')->body, 'the web clip is off');
+
+        $this->config['library']['web_clip'] = true;
+        $page = $this->call('editor', 'GET', '/library?clip=' . rawurlencode('https://example.org/article'))->body;
+        self::assertStringContainsString('data-lib-bookmarklet', $page);
+        self::assertStringNotContainsString('https://example.org/article', $page, 'the address is read by the script, never echoed by the server');
+        self::assertStringNotContainsString('data-lib-bookmarklet', $this->call('reader', 'GET', '/library')->body, 'a reader cannot add');
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

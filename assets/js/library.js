@@ -197,6 +197,24 @@
     // Web clip (phase 7, when an owner turned it on): an address, fetched and read by the server
     var clipForm = box.querySelector('[data-lib-clip]');
     if (clipForm) {
+      // The bookmarklet (D60): it only opens this page with the address filled in; nothing is fetched until Clip is pressed.
+      // Built here, from the address this page is on, so the server never has to guess its own
+      var bookmarklet = box.querySelector('[data-lib-bookmarklet]');
+      if (bookmarklet) {
+        bookmarklet.href = 'javascript:(function(){window.location.href=' + JSON.stringify(window.location.origin + base + '/library?clip=') + '+encodeURIComponent(window.location.href);})()';
+        bookmarklet.addEventListener('click', function (event) { event.preventDefault(); });
+      }
+      var params = new URLSearchParams(window.location.search);
+      var prefilled = params.get('clip');
+      if (prefilled && /^https?:\/\//i.test(prefilled)) {
+        box.hidden = false;
+        if (opener) opener.setAttribute('aria-expanded', 'true');
+        clipForm.elements.url.value = prefilled;
+        clipForm.elements.url.focus();
+        params.delete('clip');
+        var rest = params.toString();
+        window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''));
+      }
       clipForm.addEventListener('submit', function (event) {
         event.preventDefault();
         var url = clipForm.elements.url.value.trim();

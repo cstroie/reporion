@@ -2180,6 +2180,8 @@ return [
     'library.references_ro'    => 'Bibliografie',
     'library.references_en'    => 'References',
     'library.cite_missing'     => 'No source with this key in the library',
+    'library.bookmarklet'      => 'Save to the library',
+    'library.bookmarklet_help' => 'Drag this to your bookmarks bar. On an article\'s page, press it: the library opens with that address filled in, and you press Clip. Nothing is fetched until then.',
     'library.fulltext'         => 'Find full text',
     'library.fulltext_title'   => 'Ask Unpaywall for a free copy of this article by its DOI, and keep the PDF here',
     'library.fulltext_working' => 'Looking for a free copy…',
