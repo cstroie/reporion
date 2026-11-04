@@ -23,6 +23,7 @@ final class Lookup
 {
     private const CROSSREF = 'https://api.crossref.org/works/';
     private const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+    private const UNPAYWALL = 'https://api.unpaywall.org/v2/';
 
     private const TYPES = [
         'journal-article' => 'article-journal', 'book' => 'book', 'monograph' => 'book', 'edited-book' => 'book', 'reference-book' => 'book',
@@ -45,7 +46,7 @@ final class Lookup
     {
         return static function (string $url) use ($timeoutSeconds): ?string {
             $host = parse_url($url, PHP_URL_HOST);
-            if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !\in_array($host, ['api.crossref.org', 'eutils.ncbi.nlm.nih.gov'], true)) {
+            if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !\in_array($host, ['api.crossref.org', 'eutils.ncbi.nlm.nih.gov', 'api.unpaywall.org'], true)) {
                 return null;
             }
             $context = stream_context_create(['http' => [
@@ -215,6 +216,47 @@ final class Lookup
     private static function filled(array $csl): array
     {
         return array_filter($csl, static fn (mixed $v): bool => $v !== '' && $v !== []);
+    }
+
+    /**
+     * Where Unpaywall says a free copy of the article is (D60: Find full text): the DOI and the
+     * owner's e-mail address (which Unpaywall asks every caller to give) are all that is sent. The
+     * best open-access location with a PDF, else any with one.
+     *
+     * @return array{url: string, version: string, license: string, host_type: string}|null null: no such DOI, or no free PDF
+     *
+     * @throws \RuntimeException when the service could not be reached or answered nonsense
+     */
+    public function unpaywall(string $doi, string $email): ?array
+    {
+        $doi = ArticleIds::normalizeDoi($doi);
+        if ($doi === null) {
+            return null;
+        }
+        $body = ($this->fetch)(self::UNPAYWALL . rawurlencode($doi) . '?email=' . rawurlencode($email));
+        if ($body === null) {
+            throw new \RuntimeException('unpaywall');
+        }
+        if ($body === '') {
+            return null;
+        }
+        $json = json_decode($body, true);
+        if (!\is_array($json)) {
+            throw new \RuntimeException('unpaywall');
+        }
+        $locations = array_merge(\is_array($json['best_oa_location'] ?? null) ? [$json['best_oa_location']] : [], \is_array($json['oa_locations'] ?? null) ? $json['oa_locations'] : []);
+        foreach ($locations as $location) {
+            if (\is_array($location) && \is_string($location['url_for_pdf'] ?? null) && preg_match('~^https?://~i', $location['url_for_pdf']) === 1) {
+                return [
+                    'url' => $location['url_for_pdf'],
+                    'version' => \is_string($location['version'] ?? null) ? $location['version'] : '',
+                    'license' => \is_string($location['license'] ?? null) ? $location['license'] : '',
+                    'host_type' => \is_string($location['host_type'] ?? null) ? $location['host_type'] : '',
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**

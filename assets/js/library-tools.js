@@ -6,6 +6,8 @@
  *
  * - related (a source's page): the card's "Related sources" list, fetched when it is first opened
  *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
+ * - the Find full text button on a source's card (`[data-lib-fulltext]`, POST /api/v1/library/{pid}/fulltext),
+ *   its answer shown in `[data-lib-fulltext-status]`; the page reloads when a file was attached.
  * - duplicates (GET /library, an editor): groups of sources that look like one article; the radio
  *   picks the one to keep, Merge sends POST /api/v1/library/{keep}/merge {from} for each of the others.
  */
@@ -126,6 +128,39 @@
     });
   }
 
+  // ---- Find full text: Unpaywall's free PDF, attached to the record ----
+
+  function mountFulltext(button) {
+    var status = document.querySelector('[data-lib-fulltext-status]');
+    var s = {};
+    try { s = JSON.parse(status.getAttribute('data-strings')) || {}; } catch (e) { s = {}; }
+    button.addEventListener('click', function () {
+      button.disabled = true;
+      status.textContent = '';
+      status.appendChild(notice('info', s.working));
+      post(button.getAttribute('data-url')).then(function (result) {
+        status.textContent = '';
+        if (!result.ok) {
+          status.appendChild(notice('error', errorOf(result, s.failed)));
+          button.disabled = false;
+          return;
+        }
+        var answer = result.json.status;
+        if (answer === 'attached') {
+          status.appendChild(notice('ok', s.attached));
+          window.setTimeout(function () { window.location.reload(); }, 800);
+          return;
+        }
+        status.appendChild(notice(answer === 'failed' ? 'error' : 'warn', s[answer] || s.failed));
+        button.disabled = false;
+      }, function () {
+        status.textContent = '';
+        status.appendChild(notice('error', s.failed));
+        button.disabled = false;
+      });
+    });
+  }
+
   var TOOLS = { duplicates: mountDuplicates, related: mountRelated };
 
   function start() {
@@ -133,6 +168,7 @@
       var mount = TOOLS[box.getAttribute('data-tool')];
       if (mount) mount(box);
     });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lib-fulltext]'), mountFulltext);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

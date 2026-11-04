@@ -35,12 +35,22 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <?php if ($source['canLookup'] ?? false): ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-lookup title="<?= $e(t('library.lookup_title')) ?>"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.lookup')) ?></span></button>
 <?php endif; ?>
+<?php if ($source['canFulltext'] ?? false): ?>
+<button class="btn btn-ghost btn-sm" type="button" data-lib-fulltext data-url="<?= $e($basePath . '/api/v1/library/' . $source['pid'] . '/fulltext') ?>" title="<?= $e(t('library.fulltext_title')) ?>"><i class="ph ph-file-arrow-down" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.fulltext')) ?></span></button>
+<?php endif; ?>
 <?php if ($source['canEdit']): ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-edit><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.edit_record')) ?></span></button>
 <?php endif; ?>
 </div></header>
 <?php if ($source['canLookup'] ?? false): ?>
 <div data-lib-lookup-status aria-live="polite"></div>
+<?php endif; ?>
+<?php if ($source['canFulltext'] ?? false): ?>
+<div data-lib-fulltext-status aria-live="polite" data-strings="<?= $e((string) json_encode([
+    'working' => t('library.fulltext_working'), 'failed' => t('library.failed'),
+    'attached' => t('library.fulltext_attached'), 'none' => t('library.fulltext_none'), 'not_pdf' => t('library.fulltext_not_pdf'), 'mismatch' => t('library.fulltext_mismatch'),
+    'duplicate' => t('library.fulltext_duplicate'), 'has_file' => t('library.fulltext_has_file'), 'no_doi' => t('library.fulltext_no_doi'),
+], JSON_UNESCAPED_UNICODE)) ?>"></div>
 <?php endif; ?>
 <?php if (($source['notice'] ?? null) !== null): ?>
 <?php

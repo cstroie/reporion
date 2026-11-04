@@ -222,6 +222,38 @@ final class LibraryController
     }
 
     /**
+     * POST /api/v1/library/{pid}/fulltext: the free PDF of a source that has only its record
+     * (Library::findFullText(): the DOI and the library's address to Unpaywall, the PDF fetched with
+     * the web clip's safeguards, read like an upload and attached). Writers of the source, when
+     * Find full text is set up (else, and for anyone else, 404); at most 30 an hour a writer (429).
+     * `{pid, path, rev, status, host}`: status `attached`, `has_file`, `no_doi`, `none`, `not_pdf`,
+     * `mismatch`, `duplicate` or `failed` (200 whatever it says: it is the answer, not an error);
+     * a file holding a patient's CNP: 422 `patient_data`, nothing kept
+     */
+    public function fulltext(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || !$principal->canWrite((string) $row['path']) || !$this->library->fullTextOn()) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($this->throttle !== null && $this->throttle->hit('fulltext:' . $principal->username, 3600) > self::CLIPS_PER_HOUR) {
+            return ApiResponse::error(429, 'throttled', t('library.clip_throttled', [(string) self::CLIPS_PER_HOUR]));
+        }
+        @set_time_limit(WebClip::TIMEOUT * (WebClip::MAX_REDIRECTS + 2) + 60);
+        try {
+            $result = $this->library->findFullText((string) $row['path'], $principal, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        // The host only: an address's path or query may say anything
+        $this->audit->record('library.fulltext', $principal->username, $request, $result['pid'], $result['path'], $result['rev'], extra: ['status' => $result['status'], 'host' => $result['host']]);
+
+        return ApiResponse::json($result);
+    }
+
+    /**
      * GET /api/v1/library/{pid}/related: sources related to this one (Service\Library\Related: cited by
      * the same pages, near in meaning, sharing tags), at most 8, best first, each with why; the source
      * and every one listed under the caller's visibility; a source the caller cannot read, anonymous: 404

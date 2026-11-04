@@ -222,6 +222,11 @@ final class Application
 
             return new LibraryRelookupCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
+        $app->register('library:fulltext', LibraryFulltextCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryFulltextCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
+        });
         $app->register('library:duplicates', LibraryDuplicatesCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

@@ -556,6 +556,16 @@ final class LibraryTest extends HttpTestCase
         self::assertStringContainsString('data-tool="related"', $this->call('reader', 'GET', '/' . $one['path'])->body);
     }
 
+    public function testFindFullTextIsNotThereUntilItIsSetUp(): void
+    {
+        $page = $this->add('editor', self::ARTICLE, 'study.md');
+
+        foreach ([null, 'reader', 'other', 'editor', 'owner'] as $user) {
+            self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/' . $page['pid'] . '/fulltext')->status, ($user ?? 'anonymous') . ': off, so nothing is sent anywhere');
+        }
+        self::assertStringNotContainsString('data-lib-fulltext', $this->call('editor', 'GET', '/' . $page['path'])->body);
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

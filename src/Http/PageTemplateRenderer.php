@@ -55,6 +55,8 @@ final class PageTemplateRenderer
         private readonly bool $speaks = false,
         // The online lookups are on: a source's card offers Look up online (2026-10-31)
         private readonly bool $lookup = false,
+        // Find full text is set up (the lookups on and Unpaywall's address): a source with a DOI and no file offers it (D60)
+        private readonly bool $fullText = false,
     ) {
     }
 
@@ -170,6 +172,8 @@ final class PageTemplateRenderer
                 : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
             'canLookup' => $this->lookup && $currentRev === null && $principal->canWrite($record->path),
+            // Find full text (D60): set up, a DOI and no file yet
+            'canFulltext' => $this->fullText && $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null) && \is_string(($record->frontmatter['csl'] ?? [])['DOI'] ?? null),
             // What it cites (phase 7): its reference list against the records the caller reads (the index only)
             'cites' => $this->cites($record, $principal),
             // What the assistant made of it before, kept beside it, for any reader of the source

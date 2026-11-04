@@ -717,7 +717,7 @@ final class DoctorCommand implements CommandInterface
     private function checkLibraryLookup(): CheckResult
     {
         $label = 'Library online lookups (CrossRef, PubMed) and web clip';
-        $on = array_keys(array_filter(['lookups' => $this->config['library']['lookup'] ?? false, 'web clip' => $this->config['library']['web_clip'] ?? false], static fn (mixed $v): bool => $v === true));
+        $on = array_keys(array_filter(['lookups' => $this->config['library']['lookup'] ?? false, 'web clip' => $this->config['library']['web_clip'] ?? false, 'full text' => (($this->config['library']['lookup'] ?? false) === true && ($this->config['library']['unpaywall_email'] ?? '') !== '')], static fn (mixed $v): bool => $v === true));
         if ($on === []) {
             return CheckResult::pass($label, 'off');
         }

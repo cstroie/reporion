@@ -65,6 +65,9 @@ final class Library
         // The online lookups (Admin → Settings → Library, off by default): null sends nothing anywhere
         private readonly ?Lookup $lookup = null,
         ?Abstracts $abstracts = null,
+        // Find full text (D60): the fetch of the free PDF Unpaywall names, and the address Unpaywall asks for; either missing: off
+        private readonly ?WebClip $clip = null,
+        private readonly ?string $unpaywallEmail = null,
     ) {
         $this->abstracts = $abstracts ?? new Abstracts($storage);
     }
@@ -314,6 +317,92 @@ final class Library
         }
 
         return $result;
+    }
+
+    /** Whether Find full text is on: the online lookups, Unpaywall's address and the fetch (Admin → Settings → Library) */
+    public function fullTextOn(): bool
+    {
+        return $this->lookup !== null && $this->clip !== null && $this->unpaywallEmail !== null && $this->unpaywallEmail !== '';
+    }
+
+    /**
+     * The free PDF of a source that has only its record (Zotero's "Find available PDF"): the DOI and
+     * the library's address go to Unpaywall; the PDF it names is fetched by WebClip's safeguards
+     * (public addresses only, the size limit, redirects checked) and read like an upload (the patient
+     * guard, OCR for a scan), then attached as for a record that took its file. A file that names
+     * another DOI is refused, and one the library holds already.
+     *
+     * @return array{pid: string, path: string, rev: int, status: string, host: ?string}
+     *               status: `attached`, `has_file`, `no_doi`, `none` (no free PDF), `not_pdf` (the address gave something else), `mismatch` (the file is another article),
+     *               `duplicate` (the library has that file), `failed` (not reached or not readable)
+     *
+     * @throws LibraryException LOOKUP_OFF (Find full text is not set up), INVALID (not a source), PATIENT_DATA (the file holds a CNP: nothing is kept)
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function findFullText(string $path, User $principal, string $actor, bool $dryRun = false): array
+    {
+        if (!$this->fullTextOn()) {
+            throw new LibraryException(LibraryException::LOOKUP_OFF);
+        }
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $result = ['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev, 'status' => 'attached', 'host' => null];
+        if (\is_array($page->frontmatter['original'] ?? null)) {
+            return ['status' => 'has_file'] + $result;
+        }
+        $csl = self::cleanCsl(\is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : []);
+        $doi = \is_string($csl['DOI'] ?? null) ? ArticleIds::normalizeDoi($csl['DOI']) : null;
+        if ($doi === null) {
+            return ['status' => 'no_doi'] + $result;
+        }
+        try {
+            $found = $this->lookup?->unpaywall($doi, (string) $this->unpaywallEmail);
+        } catch (\RuntimeException) {
+            return ['status' => 'failed'] + $result;
+        }
+        if ($found === null) {
+            return ['status' => 'none'] + $result;
+        }
+        try {
+            $fetched = $this->clip?->fetch($found['url']);
+        } catch (LibraryException) {
+            return ['status' => 'failed'] + $result;
+        }
+        if ($fetched === null) {
+            return ['status' => 'failed'] + $result;
+        }
+        $result['host'] = $fetched['host'];
+        if ($fetched['ext'] !== 'pdf' || !str_starts_with($fetched['bytes'], '%PDF')) {
+            return ['status' => 'not_pdf'] + $result;
+        }
+        if ($dryRun) {
+            return $result;
+        }
+        try {
+            [$ext, $extracted] = $this->read($fetched['bytes'], 'fulltext.pdf');
+        } catch (LibraryException $e) {
+            // A patient's document is never kept, and is said so; a file too big, a scan with no OCR, a broken PDF: not got
+            if ($e->reason === LibraryException::PATIENT_DATA) {
+                throw $e;
+            }
+
+            return ['status' => 'failed'] + $result;
+        }
+        // A publisher's page can answer with another article, or a paywall: a DOI the file names that is not this one
+        $identified = Identify::propose($extracted)['csl']['DOI'] ?? null;
+        $named = \is_string($identified) ? ArticleIds::normalizeDoi($identified) : null;
+        if ($named !== null && $named !== $doi) {
+            return ['status' => 'mismatch'] + $result;
+        }
+        $duplicate = $this->duplicateOf([], hash('sha256', $fetched['bytes']), $principal, $page->pid);
+        if ($duplicate !== null && $duplicate['by'] === 'file') {
+            return ['status' => 'duplicate'] + $result;
+        }
+        $saved = $this->attach($path, $fetched['bytes'], $ext, substr($path, \strlen($this->namespace) + 1) . '.pdf', $extracted, [], $actor);
+
+        return ['rev' => $saved->rev] + $result;
     }
 
     /**

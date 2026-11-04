@@ -260,6 +260,9 @@ final class Kernel
             max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024,
             ($settings['lookup'] ?? false) === true ? new Lookup(Lookup::http()) : null,
             new Abstracts($storage, $audit),
+            // Find full text (D60): Unpaywall's address set and the lookups on; the PDF is fetched with the web clip's safeguards
+            \is_string($settings['unpaywall_email'] ?? null) && $settings['unpaywall_email'] !== '' ? new WebClip(max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024) : null,
+            \is_string($settings['unpaywall_email'] ?? null) ? $settings['unpaywall_email'] : null,
         );
     }
 
@@ -565,7 +568,7 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true);
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true, ($config['library']['lookup'] ?? false) === true && \is_string($config['library']['unpaywall_email'] ?? null) && $config['library']['unpaywall_email'] !== '');
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
@@ -811,6 +814,8 @@ final class Kernel
             => $libraryController->clip($request, $session->principal($request)));
         $router->get('/api/v1/library/duplicates', static fn (Request $request, array $params): Response
             => $libraryController->duplicates($request, $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/fulltext', static fn (Request $request, array $params): Response
+            => $libraryController->fulltext($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/library/{pid:[0-9A-Z]+}/related', static fn (Request $request, array $params): Response
             => $libraryController->related($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/merge', static fn (Request $request, array $params): Response

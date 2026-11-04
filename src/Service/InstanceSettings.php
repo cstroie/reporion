@@ -59,6 +59,8 @@ final class InstanceSettings
         'library.lookup' => 'bool',
         // Web clip (docs/library.md, phase 7): the server fetches a web page by the address a writer types; off unless an owner turns it on
         'library.web_clip' => 'bool',
+        // Find full text (D60): the e-mail address Unpaywall asks every caller to give, sent with a DOI; blank: the feature is off
+        'library.unpaywall_email' => 'email',
         // The library's language for a notebook or source with no `language` of its own: the assistant's answers, the References heading
         'library.language' => 'library_language',
         // What one assistant request about the library may hold (docs/library.md, phase 5): the model's context, in tokens
@@ -422,6 +424,7 @@ final class InstanceSettings
             'path' => preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $text) === 1 ? $text : $fail(),
             'timezone' => self::isTimezone($text) ? $text : $fail(),
             'bool' => \in_array($raw, [true, '1', 'on', 'yes'], true),
+            'email' => $text === '' || (mb_strlen($text) <= 120 && filter_var($text, FILTER_VALIDATE_EMAIL) !== false) ? $text : $fail(),
             'library_language' => $text === '' ? 'ro' : (isset(\Reporion\Service\Ai\Context::LANGUAGES[$text]) ? $text : $fail()),
             'context_tokens' => $text === '' ? 32000 : (ctype_digit($text) && (int) $text >= 4000 && (int) $text <= 2_000_000 ? (int) $text : $fail()),
             'days' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 3650 ? (int) $text : $fail(),

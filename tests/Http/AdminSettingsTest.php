@@ -145,6 +145,18 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'xx']))->status, 'a language the assistant does not know');
     }
 
+    public function testFindFullTextNeedsAnAddressAndTakesOnlyAnAddress(): void
+    {
+        self::assertStringContainsString('name="library_unpaywall_email"', $this->request('GET', '/admin/settings', 'owner')->body);
+
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'library@example.org']))->status);
+        self::assertStringContainsString('unpaywall_email: library@example.org', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
+        self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'not an address']))->status);
+        self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'a@example.org?x=1&y']))->status);
+        self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', '')->status);
+        self::assertStringContainsString('unpaywall_email: \'\'', (string) file_get_contents($this->dataRoot . '/settings.yaml'), 'blank: off');
+    }
+
     public function testTheReportsSectionIsSaved(): void
     {
         $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => "MR = rm\nCT = ct\n"]));
