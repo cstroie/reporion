@@ -57,8 +57,8 @@ final class MergeTest extends StorageTestCase
         $this->source('keep2020', ['title' => 'A made-up study of lesions', 'DOI' => '10.9999/x', 'issued' => ['date-parts' => [[2020]]]], ['tags' => ['mri']]);
         $this->source('dup2020', ['title' => 'A made-up study of lesions', 'DOI' => '10.9999/x', 'PMID' => '123', 'container-title' => 'J Synth', 'abstract' => str_repeat('word ', 50), 'issued' => ['date-parts' => [[2020]]]],
             ['tags' => ['lesions', 'mri'], 'original' => ['sha256' => str_repeat('a', 64), 'ext' => 'pdf', 'bytes' => 10, 'name' => 'x.pdf', 'pages' => 2, 'text' => true]], "The text of the article.\n");
-        $this->storage->create('library:dup2020:source-points', ['title' => 'Points', 'visibility' => 'private', 'analysis' => ['prompt' => 'source-points', 'of' => 'x']], 'Points.', 'owner');
-        $this->storage->create('wiki:note', ['title' => 'N', 'visibility' => 'private'], "See [@dup2020, p. 2] and [@keep2020; @dup2020].\n", 'owner');
+        $this->storage->create('library:dup2020:source-points', ['title' => 'Points', 'visibility' => 'private', 'analysis' => ['prompt' => 'source-points', 'of' => 'x']], 'Points about [@dup2020].', 'owner');
+        $this->storage->create('wiki:note', ['title' => 'N', 'visibility' => 'private', 'sources' => ['dup2020', 'keep2020']], "See [@dup2020, p. 2] and [@keep2020; @dup2020].\n", 'owner');
         $this->storage->create('reports:mri:site:signed', ['title' => 'R', 'visibility' => 'private'], "Prior art [@dup2020].\n", 'owner');
         $this->storage->sign('reports:mri:site:signed', 'dr.a', []);
         $dupPid = $this->storage->read('library:dup2020')->pid;
@@ -74,6 +74,9 @@ final class MergeTest extends StorageTestCase
         self::assertSame(1, $done['relinked']);
         self::assertSame(1, $done['left_signed']);
         self::assertSame("See [@keep2020, p. 2] and [@keep2020; @keep2020].\n", $this->storage->read('wiki:note')->body);
+        self::assertSame(['keep2020'], $this->storage->read('wiki:note')->frontmatter['sources'], 'a notebook\'s sources list follows too, without the key twice');
+        // Only the one unsigned page is re-cited: not the signed one, and not the other's own analysis on its way to the trash
+        self::assertSame(1, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"reason":"link-fixup"'));
 
         // The other is in the trash, its analysis with it, and its old path leads to the survivor
         try {
@@ -101,6 +104,20 @@ final class MergeTest extends StorageTestCase
         self::assertSame([], $done['changed']);
         self::assertSame($rev, $this->storage->read('library:keep2020')->rev, 'nothing to add: no revision');
         self::assertSame('library:keep2020', $this->storage->redirectTarget('library:dup2020'));
+    }
+
+    public function testAMergedKeyIsNeverGivenToAnotherArticleAndSoANewOneGetsTheNextLetter(): void
+    {
+        $csl = ['title' => 'A made-up study of lesions', 'DOI' => '10.9999/x', 'author' => [['family' => 'Nobody', 'given' => 'Ann']], 'issued' => ['date-parts' => [[2020]]]];
+        $this->source('keep2020', $csl);
+        $this->source('nobody2020', $csl);
+        $this->merge->merge('library:keep2020', 'library:nobody2020', self::owner(), 'owner');
+        $import = json_encode([['id' => 'nobody2020', 'title' => 'A quite different made-up article', 'author' => [['family' => 'Nobody', 'given' => 'Bob']], 'issued' => ['date-parts' => [[2020]]]]]);
+
+        $done = $this->library->importRecords((string) $import, self::owner(), 'owner');
+
+        self::assertSame(['nobody2020b'], array_column($done['added'], 'key'), 'the typed key is taken by the redirect, and so is the made one');
+        self::assertSame('library:keep2020', $this->storage->redirectTarget('library:nobody2020'), 'signed pages citing it still find the survivor');
     }
 
     public function testTheGraverNoticeSurvives(): void

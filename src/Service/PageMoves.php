@@ -186,6 +186,13 @@ final class PageMoves
             if (\in_array($path, $map, true)) {
                 continue;
             }
+            // A page that is itself going away (a source merged into another, Library\Merge: it and its saved analyses are
+            // trashed next) is not re-cited: that would write revisions nobody reads
+            foreach (array_keys($map) as $gone) {
+                if ($path === $gone || str_starts_with((string) $path, $gone . ':')) {
+                    continue 2;
+                }
+            }
             try {
                 $page = $this->storage->read($path);
             } catch (RuntimeException) {
@@ -193,7 +200,7 @@ final class PageMoves
                 continue;
             }
             $body = self::rewriteCitations(self::rewriteMany($page->body, $map), $keys);
-            $frontmatter = self::rewriteReferences($page->frontmatter, $map);
+            $frontmatter = self::rewriteSources(self::rewriteReferences($page->frontmatter, $map), $keys);
             if ($body === $page->body && $frontmatter === $page->frontmatter) {
                 continue;
             }
@@ -238,6 +245,27 @@ final class PageMoves
         }
 
         return $keys;
+    }
+
+    /**
+     * A notebook's `sources` list (library keys, FORMATS §3j) with the renamed keys named by their new ones, a key listed twice once
+     *
+     * @param array<string, mixed>  $frontmatter
+     * @param array<string, string> $keys        old key => new key
+     *
+     * @return array<string, mixed>
+     */
+    public static function rewriteSources(array $frontmatter, array $keys): array
+    {
+        if ($keys === [] || !\is_array($frontmatter['sources'] ?? null)) {
+            return $frontmatter;
+        }
+        $renamed = array_map(static fn (mixed $k): mixed => \is_string($k) && isset($keys[$k]) ? $keys[$k] : $k, $frontmatter['sources']);
+        if ($renamed !== $frontmatter['sources']) {
+            $frontmatter['sources'] = array_values(array_unique($renamed, SORT_REGULAR));
+        }
+
+        return $frontmatter;
     }
 
     /**

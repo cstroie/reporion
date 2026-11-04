@@ -68,6 +68,8 @@ final class Library
         // Find full text (D60): the fetch of the free PDF Unpaywall names, and the address Unpaywall asks for; either missing: off
         private readonly ?WebClip $clip = null,
         private readonly ?string $unpaywallEmail = null,
+        // A notice written (checkNotice()) is audited `page.save`, as the pseudouser's with `on_behalf_of` (D41); null: tests that do not look
+        private readonly ?\Reporion\Audit\AuditLog $audit = null,
     ) {
         $this->abstracts = $abstracts ?? new Abstracts($storage);
     }
@@ -411,6 +413,7 @@ final class Library
      * The answer is kept as the page's `notice` (one revision by $actor, none when it says what is
      * kept already); a source that the services no longer flag loses it. Nothing else of the record
      * is touched (relookup() does that). With $dryRun the services are asked and nothing is written.
+     * The revision is audited `page.save` with `with: notice`, and `on_behalf_of` when $actor is a pseudouser run by someone.
      *
      * @return array{pid: string, status: string, notice: ?string}
      *               status: `flagged` (a notice was written or changed), `cleared` (one was removed), `unchanged`, `no_id`, `none` (not found), `failed` (not reached);
@@ -420,7 +423,7 @@ final class Library
      * @throws \Reporion\Exception\RevisionConflictException
      * @throws \Reporion\Exception\PageNotFoundException
      */
-    public function checkNotice(string $path, string $actor, bool $dryRun = false): array
+    public function checkNotice(string $path, string $actor, bool $dryRun = false, ?string $onBehalfOf = null): array
     {
         if ($this->lookup === null) {
             throw new LibraryException(LibraryException::LOOKUP_OFF);
@@ -449,7 +452,8 @@ final class Library
         }
         $frontmatter = $page->frontmatter;
         $notice !== null ? $frontmatter['notice'] = $notice : $frontmatter = array_diff_key($frontmatter, ['notice' => 1]);
-        $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: notice (' . ($notice['status'] ?? 'none') . ')');
+        $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: notice (' . ($notice['status'] ?? 'none') . ')');
+        $this->audit?->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['with' => 'notice', 'status' => $notice['status'] ?? 'none'] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
 
         return $result;
     }
@@ -1220,9 +1224,16 @@ final class Library
         return CitationKey::make($csl, fn (string $k): bool => $this->keyTaken($k));
     }
 
+    /**
+     * A key is taken by a source, and by a key that redirects to one (a source merged into another, or renamed):
+     * a signed page citing the old key still finds its record through the redirect (Citations::record()), so
+     * the key must not name a different article
+     */
     private function keyTaken(string $key): bool
     {
-        return $this->storage->isPathTaken($this->namespace . ':' . $key);
+        $path = $this->namespace . ':' . $key;
+
+        return $this->storage->isPathTaken($path) || $this->storage->redirectTarget($path) !== null;
     }
 
     /** @return list<string> */

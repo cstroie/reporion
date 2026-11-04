@@ -608,4 +608,17 @@ BIB;
 
         self::assertSame('retracted', $this->storage->read($page->path)->frontmatter['notice']['status'] ?? null);
     }
+
+    public function testANoticeWrittenIsAuditedAsASaveByWhoWroteIt(): void
+    {
+        $audit = new \Reporion\Audit\AuditLog($this->dataRoot . '/audit');
+        $asked = [];
+        $library = new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp'), new TempUploads($this->dataRoot), 'library', 50 * 1024 * 1024, new \Reporion\Service\Library\Lookup(self::retracted($asked)), audit: $audit);
+
+        [$page] = $library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+
+        $lines = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertMatchesRegularExpression('/"actor":"owner","action":"page.save","pid":"' . $page->pid . '".*"with":"notice","status":"retracted"/', $lines);
+        self::assertStringNotContainsString('on_behalf_of', $lines, 'a person wrote it, not a pseudouser');
+    }
 }

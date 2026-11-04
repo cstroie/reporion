@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Service\Maintenance;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Library\Extractor;
 use Reporion\Service\Library\Library;
@@ -44,7 +45,7 @@ final class LibraryNoticesTaskTest extends StorageTestCase
                 : '{"message":{"type":"journal-article","title":["X"]}}') : '{"esearchresult":{"idlist":[]}}';
         }) : null;
 
-        return new LibraryNoticesTask(new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp'), new TempUploads($this->dataRoot), 'library', 50 * 1024 * 1024, $lookup), $this->dataRoot . '/maintenance/library-notices.json');
+        return new LibraryNoticesTask(new Library($this->storage, $this->index, new Extractor($this->dataRoot . '/tmp'), new TempUploads($this->dataRoot), 'library', 50 * 1024 * 1024, $lookup, audit: new AuditLog($this->dataRoot . '/audit')), $this->dataRoot . '/maintenance/library-notices.json');
     }
 
     public function testACheckSaysWhatWouldChangeAndWritesNothing(): void
@@ -69,6 +70,11 @@ final class LibraryNoticesTaskTest extends StorageTestCase
         $page = $this->storage->read('library:bb');
         self::assertSame('retracted', $page->frontmatter['notice']['status']);
         self::assertSame('system:librarian', ($page->revlog[\count($page->revlog) - 1]['by'] ?? null));
+
+        // The pseudouser's revision is audited with the person who ran it (D41)
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertMatchesRegularExpression('/"actor":"system:librarian","action":"page.save".*"with":"notice","status":"retracted","on_behalf_of":"owner"/', $audit);
+        self::assertSame(1, substr_count($audit, '"with":"notice"'));
 
         $asked = $this->asked;
         $again = $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));

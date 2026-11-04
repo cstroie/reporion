@@ -34,6 +34,23 @@ final class PageMovesCitationsTest extends StorageTestCase
         );
     }
 
+    public function testANotebooksSourcesListFollowsARenamedKeyAndNeverListsOneTwice(): void
+    {
+        self::assertSame(['title' => 'N', 'sources' => ['new2020', 'other2020']], PageMoves::rewriteSources(['title' => 'N', 'sources' => ['old2020', 'other2020', 'new2020']], ['old2020' => 'new2020']));
+        self::assertSame(['sources' => ['a']], PageMoves::rewriteSources(['sources' => ['a']], []));
+        self::assertSame(['title' => 'N'], PageMoves::rewriteSources(['title' => 'N'], ['old2020' => 'new2020']));
+
+        $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+        $storage = new FileTree($this->dataRoot, $index);
+        $csl = ['title' => 'T', 'issued' => ['date-parts' => [[2020]]]];
+        $storage->create('library:old2020', ['title' => 'T', 'visibility' => 'private', 'csl' => $csl], 'Text.', 'u');
+        $storage->create('wiki:notebook', ['title' => 'N', 'visibility' => 'private', 'sources' => ['old2020']], "Text.\n", 'u');
+
+        (new PageMoves($storage, new AuditLog($this->dataRoot . '/audit')))->move('library:old2020', 'library:new2020', 'u');
+
+        self::assertSame(['new2020'], $storage->read('wiki:notebook')->frontmatter['sources']);
+    }
+
     public function testNoRenamedKeysLeavesTheBodyAndARenamedOneIsRewritten(): void
     {
         $body = 'A [@old2020].';

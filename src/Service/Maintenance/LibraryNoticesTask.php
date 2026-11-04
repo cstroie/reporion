@@ -93,7 +93,7 @@ final class LibraryNoticesTask implements MaintenanceTask, ProgressAware
             @set_time_limit(60);
             $this->tell('start', ['n' => $n + 1, 'total' => \count($paths), 'label' => $path]);
             try {
-                $done = $this->library->checkNotice($path, SystemActor::LIBRARIAN, !$apply);
+                $done = $this->library->checkNotice($path, SystemActor::LIBRARIAN, !$apply, $actor);
             } catch (LibraryException|RuntimeException|\Reporion\Exception\PageNotFoundException) {
                 $report->count('unreadable');
                 $this->tell('done', ['status' => 'unreadable']);

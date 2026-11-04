@@ -263,6 +263,7 @@ final class Kernel
             // Find full text (D60): Unpaywall's address set and the lookups on; the PDF is fetched with the web clip's safeguards
             \is_string($settings['unpaywall_email'] ?? null) && $settings['unpaywall_email'] !== '' ? new WebClip(max(1, (int) ($settings['max_mb'] ?? 50)) * 1024 * 1024) : null,
             \is_string($settings['unpaywall_email'] ?? null) ? $settings['unpaywall_email'] : null,
+            $audit,
         );
     }
 

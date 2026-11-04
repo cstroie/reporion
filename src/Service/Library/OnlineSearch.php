@@ -110,7 +110,7 @@ final class OnlineSearch
             try {
                 $this->library->fillAbstract($added['path'], SystemActor::LIBRARIAN, $this->library->lookupOn(), false, $actor);
                 if ($this->library->lookupOn()) {
-                    $this->library->checkNotice($added['path'], SystemActor::LIBRARIAN);
+                    $this->library->checkNotice($added['path'], SystemActor::LIBRARIAN, false, $actor);
                 }
             } catch (\Throwable) {
                 // Added all the same: library:abstracts and library:notices find them later
