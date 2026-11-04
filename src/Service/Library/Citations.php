@@ -42,7 +42,16 @@ final class Citations implements CitationSource
         try {
             $frontmatter = $this->storage->read($this->path($key))->frontmatter;
         } catch (PageNotFoundException) {
-            return $this->seen[$key] = null;
+            // A source merged into another (Library::merge): its old key still names the one it was merged into
+            $target = $this->storage->redirectTarget($this->path($key));
+            try {
+                $frontmatter = $target !== null && str_starts_with($target, $this->namespace . ':') ? $this->storage->read($target)->frontmatter : null;
+            } catch (PageNotFoundException) {
+                $frontmatter = null;
+            }
+            if ($frontmatter === null) {
+                return $this->seen[$key] = null;
+            }
         }
 
         $this->notices[$key] = LibrarySource::isSource($frontmatter) ? SourceNotice::clean($frontmatter['notice'] ?? null)['status'] ?? null : null;

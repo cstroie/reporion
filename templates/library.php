@@ -78,6 +78,27 @@ $total = \count($entries);
 </section>
 <?php endif; ?>
 
+<?php if (($duplicates ?? []) !== []): /* Sources that look like one article (D60): keep one, fold the others into it */ ?>
+<details class="wk-panel wk-lib-dups" data-island="library-tools" data-tool="duplicates">
+<summary class="wk-eyebrow"><i class="ph ph-copy" aria-hidden="true"></i> <?= $e(t('library.dups.title')) ?><span class="wk-count"><?= \count($duplicates) ?></span></summary>
+<p class="wk-dim wk-text-sm"><?= $e(t('library.dups.lede')) ?></p>
+<?php foreach ($duplicates as $n => $group): ?>
+<fieldset class="wk-lib-dup" data-dup-group>
+<legend class="wk-dim wk-text-sm"><?= $e(t('library.dups.same_' . ($group['by'][0] ?? 'title'))) ?></legend>
+<?php foreach ($group['sources'] as $i => $source): ?>
+<label class="radio wk-lib-dup-row"><input type="radio" name="keep-<?= $n ?>" value="<?= $e($source['pid']) ?>"<?= $i === 0 ? ' checked' : '' ?>><span class="dot"></span>
+<span><a href="<?= $e($basePath . '/' . $source['path']) ?>"><?= $e($source['title']) ?></a> <span class="wk-dim wk-text-sm"><?= $e(trim($source['authors'] . ' ' . ($source['year'] ?? ''))) ?> · <code>[@<?= $e($source['key']) ?>]</code><?= $source['cited'] > 0 ? ' · ' . $e(t('library.dups.cited', [(string) $source['cited']])) : '' ?><?= $source['has_original'] ? ' · ' . $e(t('library.dups.file')) : '' ?></span></span></label>
+<?php endforeach; ?>
+<footer class="wk-actions"><button class="btn btn-secondary btn-sm" type="button" data-dup-merge><i class="ph ph-git-merge" aria-hidden="true"></i><?= $e(t('library.dups.merge')) ?></button></footer>
+</fieldset>
+<?php endforeach; ?>
+<div data-dup-status aria-live="polite"></div>
+<script type="application/json"><?= json_encode([
+    'basePath' => $basePath,
+    'strings' => ['confirm' => t('library.dups.confirm'), 'merging' => t('library.dups.merging'), 'merged' => t('library.dups.merged'), 'failed' => t('library.failed')],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</details>
+<?php endif; ?>
 <?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
 <?php if (($libraryAsk ?? false) === true): /* Ask the library (2026-11-02): every source, never reports; assets/js/notebook-ask.js */ ?>
 <details class="wk-panel wk-notebook-ask" data-island="notebook-ask">
@@ -160,3 +181,4 @@ $total = \count($entries);
 <?php endif; ?>
 </div>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/library.js')) ?>" defer></script>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/library-tools.js')) ?>" defer></script>

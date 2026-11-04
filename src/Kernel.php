@@ -418,6 +418,16 @@ final class Kernel
     }
 
     /**
+     * Two library sources that are one article folded into one (D60): the web's endpoint and library:merge
+     */
+    public static function libraryMerge(array $config, FileTree $storage, IndexInterface $index, AuditLog $audit): \Reporion\Service\Library\Merge
+    {
+        $analyses = new Analyses($storage, $index);
+
+        return new \Reporion\Service\Library\Merge(self::library($config, $storage, $index, $audit), $storage, $audit, new PageMoves($storage, $audit, self::libraryNamespace($config), $analyses), $analyses);
+    }
+
+    /**
      * library:notices: each library source asked of CrossRef and PubMed for a retraction, for Admin →
      * Maintenance and the CLI
      */
@@ -613,6 +623,7 @@ final class Kernel
             new LibrarySearch($index, self::libraryNamespace($config)),
             // Ask the library's panel: the assistant on and the library's profile has the prompt
             static fn (): bool => $aiConfig->isConfigured() && $aiActions->special(self::libraryNamespace($config), 'ask-library') !== null,
+            self::libraryMerge($config, $storage, $index, $audit),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -797,6 +808,10 @@ final class Kernel
             => $libraryController->upload($request, $session->principal($request)));
         $router->post('/api/v1/library/clip', static fn (Request $request, array $params): Response
             => $libraryController->clip($request, $session->principal($request)));
+        $router->get('/api/v1/library/duplicates', static fn (Request $request, array $params): Response
+            => $libraryController->duplicates($request, $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/merge', static fn (Request $request, array $params): Response
+            => $libraryController->merge($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/highlights', static fn (Request $request, array $params): Response
             => $libraryController->highlight($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/analyze', static fn (Request $request, array $params): Response

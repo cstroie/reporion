@@ -239,7 +239,7 @@ transaction and no journal line. Media bytes are still written first, `link()`-o
 
 **Move:** journal → rename the page file → rename the zip → state transaction (path, `move` row,
 `redirect` row for the old path, every older redirect to the same pid kept) → index → done.
-**Delete:** both files into `trash/{pid}/`, `trashed_at` set, index row removed. **Restore:**
+**Delete:** both files into `trash/{pid}/`, `trashed_at` set, index row removed; `FileTree::delete($path, $actor, $mergedInto)` (a library source merged into another, D60) also writes a `redirect` row from the old path to the surviving page's pid in the same state transaction, the journal's intent carrying `into` so a replay finishes it; restoring the page drops the redirect. **Restore:**
 back to the stored path (refused if it is taken). **Purge:** files and rows removed; signed
 pages need the override and audit entry (D3b, unchanged).
 

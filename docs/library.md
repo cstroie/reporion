@@ -346,6 +346,7 @@ What Zotero, Mendeley, Paperpile and EndNote do that a clinical team needs, buil
 
 1. **Journal abbreviations.** Vancouver and AMA print the NLM abbreviation (`N Engl J Med`): PubMed's `MedlineTA` is kept as `container-title-short`, and any short title is printed without periods.
 2. **Retractions and corrections.** A source's `notice` (FORMATS §3o) is read from CrossRef and PubMed by identifier; a banner on its card (error for retracted, warning for an expression of concern, info for a correction), a mark on its `[@key]` citations and its References entry on screen only; `bin/reporion library:notices` and Admin → Maintenance refresh them (a source answered within 30 days is passed over, `--all` asks again; `data/maintenance/library-notices.json` is a status note, not data), *Look up online* and a new upload check one source. Needs the lookups on.
+3. **Merge duplicates.** `GET /library` lists, for an editor, sources that share a DOI, PMID, original file or title and year (*Possible duplicates*: keep one, fold the others in); `library:duplicates` and `library:merge <keep> <from>` do the same from the shell. The one kept takes the fields, tags, file and text the other lacked (and the graver notice); the other goes to the trash, with its saved analyses, and its old key redirects to the kept one; unsigned pages citing it are re-cited, a signed one keeps its `[@old]`, which still resolves. Its comments go to the trash with it.
 
 ## Long sources
 

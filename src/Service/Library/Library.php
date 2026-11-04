@@ -385,6 +385,170 @@ final class Library
     }
 
     /**
+     * Sources that are probably one article, found without asking anyone: those that share a DOI, a
+     * PMID, an original file or a title and year (a record edited by hand, or an import, can make
+     * them; an upload is refused at the door). Groups of two or more, the biggest first, at most 50.
+     *
+     * @return list<array{by: list<string>, sources: list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, has_original: bool, cited: int, tags: list<string>}>}>
+     */
+    public function duplicateGroups(User $principal): array
+    {
+        $rows = [];
+        $parent = [];
+        $owner = [];
+        $find = static function (int $i) use (&$parent): int {
+            while ($parent[$i] !== $i) {
+                $parent[$i] = $parent[$parent[$i]];
+                $i = $parent[$i];
+            }
+
+            return $i;
+        };
+        foreach ($this->index->listNamespaceMeta($this->namespace, $principal) as $row) {
+            // Direct children only: `{key}:abstract` and the analyses are pages under a source, not sources
+            if (!LibrarySource::isSource($row['meta']) || str_contains(substr($row['path'], \strlen($this->namespace) + 1), ':')) {
+                continue;
+            }
+            $i = \count($rows);
+            $rows[] = $row;
+            $parent[$i] = $i;
+            foreach (self::identities($row['meta']) as $key) {
+                if (isset($owner[$key])) {
+                    $parent[$find($i)] = $find($owner[$key]);
+                } else {
+                    $owner[$key] = $i;
+                }
+            }
+        }
+        $clusters = [];
+        foreach (array_keys($rows) as $i) {
+            $clusters[$find($i)][] = $i;
+        }
+        $out = [];
+        foreach ($clusters as $members) {
+            if (\count($members) < 2) {
+                continue;
+            }
+            // What they share: an identity two of the members hold
+            $seen = [];
+            $by = [];
+            foreach ($members as $i) {
+                foreach (self::identities($rows[$i]['meta']) as $kind => $key) {
+                    isset($seen[$key]) ? $by[$kind] = true : $seen[$key] = true;
+                }
+            }
+            $sources = [];
+            foreach ($members as $i) {
+                $row = $rows[$i];
+                $csl = \is_array($row['meta']['csl'] ?? null) ? $row['meta']['csl'] : [];
+                $sources[] = [
+                    'pid' => $row['pid'],
+                    'path' => $row['path'],
+                    'key' => substr($row['path'], \strlen($this->namespace) + 1),
+                    'title' => $row['title'] !== '' ? $row['title'] : (string) ($csl['title'] ?? ''),
+                    'authors' => Citation::authorsShort($csl),
+                    'year' => Citation::year($csl),
+                    'has_original' => \is_array($row['meta']['original'] ?? null),
+                    'cited' => \count($this->index->backlinks($row['pid'], $principal)),
+                    'tags' => array_values(array_filter(\is_array($row['meta']['tags'] ?? null) ? $row['meta']['tags'] : [], 'is_string')),
+                ];
+            }
+            // The one cited most, then the one with the file, first: the usual one to keep
+            usort($sources, static fn (array $a, array $b): int => [$b['cited'], $b['has_original'], $a['key']] <=> [$a['cited'], $a['has_original'], $b['key']]);
+            $out[] = ['by' => array_keys($by), 'sources' => $sources];
+        }
+        usort($out, static fn (array $a, array $b): int => \count($b['sources']) <=> \count($a['sources']) ?: strcmp($a['sources'][0]['key'], $b['sources'][0]['key']));
+
+        return \array_slice($out, 0, 50);
+    }
+
+    /**
+     * What makes a source the same article as another: its DOI, PMID, original file, and its folded
+     * title with the year (a title alone is not enough)
+     *
+     * @param array<string, mixed> $meta a source's frontmatter
+     *
+     * @return array<string, string> kind (doi, pmid, file, title) => the value, only the kinds it has
+     */
+    private static function identities(array $meta): array
+    {
+        $csl = \is_array($meta['csl'] ?? null) ? $meta['csl'] : [];
+        $doi = \is_string($csl['DOI'] ?? null) ? ArticleIds::normalizeDoi($csl['DOI']) : null;
+        $title = \is_string($csl['title'] ?? null) ? Slug::fold($csl['title']) : '';
+        $year = Citation::year($csl);
+
+        return array_filter([
+            'doi' => $doi !== null ? 'doi:' . $doi : null,
+            'pmid' => \is_scalar($csl['PMID'] ?? null) && (string) $csl['PMID'] !== '' ? 'pmid:' . $csl['PMID'] : null,
+            'file' => \is_array($meta['original'] ?? null) && \is_string($meta['original']['sha256'] ?? null) ? 'file:' . $meta['original']['sha256'] : null,
+            'title' => mb_strlen($title) >= 12 && $year !== null ? 'title:' . $title . '|' . $year : null,
+        ]);
+    }
+
+    /**
+     * What a merge keeps (Merge): $into's record with the fields it lacks taken from $from's, the
+     * union of the tags, the original and the text of $from when $into has none, the worse notice.
+     * One revision of $into when something changed; its abstract page made if it has none.
+     * Nothing of $from is touched: Merge moves its citations and trashes it afterwards.
+     *
+     * @return array{page: PageRecord, changed: list<string>}
+     *
+     * @throws LibraryException INVALID (not a source, or the same one)
+     * @throws \Reporion\Exception\RevisionConflictException
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function mergeRecords(string $into, string $from, string $actor): array
+    {
+        $keep = $this->storage->read($into);
+        $other = $this->storage->read($from);
+        if ($into === $from || $keep->pid === $other->pid || !LibrarySource::isSource($keep->frontmatter) || !LibrarySource::isSource($other->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $mine = \is_array($keep->frontmatter['csl'] ?? null) ? $keep->frontmatter['csl'] : [];
+        $theirs = \is_array($other->frontmatter['csl'] ?? null) ? $other->frontmatter['csl'] : [];
+        $csl = self::cleanCsl($mine + $theirs);
+        $mine = self::cleanCsl($mine);
+        $frontmatter = $keep->frontmatter;
+        $frontmatter['csl'] = $csl;
+        $frontmatter['title'] = $csl['title'];
+        $changed = array_values(array_filter(array_keys($csl), static fn (string $field): bool => ($mine[$field] ?? null) !== $csl[$field]));
+        $tags = self::cleanTags(array_merge(
+            array_values(array_filter(\is_array($keep->frontmatter['tags'] ?? null) ? $keep->frontmatter['tags'] : [], 'is_string')),
+            array_values(array_filter(\is_array($other->frontmatter['tags'] ?? null) ? $other->frontmatter['tags'] : [], 'is_string')),
+        ));
+        $before = array_values(array_filter(\is_array($keep->frontmatter['tags'] ?? null) ? $keep->frontmatter['tags'] : [], 'is_string'));
+        if ($tags !== $before) {
+            $frontmatter['tags'] = $tags;
+            $changed[] = 'tags';
+        }
+        // The file, and the text read from it, of a source that had none
+        $body = $keep->body;
+        if (!\is_array($keep->frontmatter['original'] ?? null) && \is_array($other->frontmatter['original'] ?? null)) {
+            $frontmatter['original'] = $other->frontmatter['original'];
+            $changed[] = 'original';
+            if (trim($body) === '') {
+                $body = $other->body;
+            }
+        }
+        // The graver notice of the two
+        $a = SourceNotice::clean($keep->frontmatter['notice'] ?? null);
+        $b = SourceNotice::clean($other->frontmatter['notice'] ?? null);
+        if ($b !== null && ($a === null || array_search($b['status'], SourceNotice::STATUSES, true) < array_search($a['status'], SourceNotice::STATUSES, true))) {
+            $frontmatter['notice'] = $b;
+            $changed[] = 'notice';
+        }
+        $page = $keep;
+        if ($changed !== []) {
+            $page = $this->storage->save($into, $frontmatter, $body, $keep->rev, $actor, 'library: merged with ' . substr($from, \strlen($this->namespace) + 1));
+        }
+        if (!$this->abstracts->has($page)) {
+            $this->keepAbstract($page, $actor);
+        }
+
+        return ['page' => $page, 'changed' => $changed];
+    }
+
+    /**
      * The library as its view lists it: every source $principal may see, with what the table shows
      *
      * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, ext: string, doi: string}>

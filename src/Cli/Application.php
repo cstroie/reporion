@@ -222,6 +222,17 @@ final class Application
 
             return new LibraryRelookupCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
+        $app->register('library:duplicates', LibraryDuplicatesCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryDuplicatesCommand(Kernel::library($config, $storage, $index, $audit()));
+        });
+        $app->register('library:merge', LibraryMergeCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+            $library = Kernel::library($config, $storage, $index, $audit());
+
+            return new LibraryMergeCommand(Kernel::libraryMerge($config, $storage, $index, $audit()), $library);
+        });
         $app->register('library:import', LibraryImportCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

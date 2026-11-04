@@ -23,6 +23,7 @@ use Reporion\Service\Library\Highlights;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\Library;
 use Reporion\Service\Library\LibrarySearch;
+use Reporion\Service\Library\Merge;
 use Reporion\Support\Flashcards;
 use Reporion\Service\Library\WebClip;
 use Reporion\Http\Throttle;
@@ -67,6 +68,7 @@ final class LibraryController
         private readonly ?LibrarySearch $search = null,
         /** @var ?\Closure(): bool whether Ask the library is set up */
         private readonly ?\Closure $askable = null,
+        private readonly ?Merge $merge = null,
     ) {
     }
 
@@ -146,6 +148,8 @@ final class LibraryController
             // Ask the library (2026-11-02): for an editor of the library, when its prompt is there
             'libraryAsk' => $this->library->canAdd($principal) && $this->askable !== null && ($this->askable)(),
             'searched' => $hits !== null,
+            // Sources that are probably one article (D60): the panel's groups, for an editor of the library
+            'duplicates' => $this->library->canAdd($principal) && $this->merge !== null ? $this->library->duplicateGroups($principal) : [],
             'canAdd' => $this->library->canAdd($principal),
             'namespace' => $this->library->namespace(),
             'maxMb' => intdiv($this->library->maxBytes(), 1024 * 1024),
@@ -206,6 +210,53 @@ final class LibraryController
         }
 
         return ApiResponse::json($result);
+    }
+
+    /**
+     * GET /api/v1/library/duplicates: sources that are probably one article (a shared DOI, PMID,
+     * original file, or title and year), groups of two or more, the one to keep first; an editor of
+     * the library only (Library::duplicateGroups(), under the caller's visibility)
+     */
+    public function duplicates(Request $request, ?User $principal): Response
+    {
+        if ($principal === null || !$this->library->canAdd($principal)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $groups = $this->library->duplicateGroups($principal);
+        foreach ($groups as &$group) {
+            foreach ($group['sources'] as &$source) {
+                $source['href'] = $request->basePath . '/' . $source['path'];
+            }
+            unset($source);
+        }
+        unset($group);
+
+        return ApiResponse::json(['data' => $groups, 'page' => ['total' => \count($groups), 'limit' => 50]]);
+    }
+
+    /**
+     * POST /api/v1/library/{pid}/merge {from: pid}: the source `from` merged into this one (Service\Library\Merge):
+     * writers of both (anyone else 404), the library's editors; `{pid, path, rev, changed, relinked, left_signed, subpages}`
+     */
+    public function merge(Request $request, string $pid, ?User $principal): Response
+    {
+        $fields = $request->json();
+        $keep = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        $other = $principal !== null && \is_string($fields['from'] ?? null) ? $this->index->findByPid($fields['from'], $principal) : null;
+        if ($principal === null || $this->merge === null || $keep === null || $other === null || !$principal->canWrite((string) $keep['path']) || !$principal->canWrite((string) $other['path'])) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            $done = $this->merge->merge((string) $keep['path'], (string) $other['path'], $principal, $principal->username, $request);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return ApiResponse::json(['pid' => $done['into']->pid, 'path' => $done['into']->path, 'rev' => $done['into']->rev, 'href' => $request->basePath . '/' . $done['into']->path] + array_diff_key($done, ['into' => 1, 'from_pid' => 1]));
     }
 
     /**

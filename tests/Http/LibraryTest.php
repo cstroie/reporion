@@ -477,6 +477,44 @@ final class LibraryTest extends HttpTestCase
      *
      * @return array<string, mixed> the confirmed page
      */
+    public function testTwoSourcesOfOneArticleAreListedAndMergedByAnEditorOnly(): void
+    {
+        $first = $this->add('editor', "# A made-up study of test lesions\n\nJ Synth Imaging 2024;3:11-14.\n\nFirst copy of the text.\n", 'a.md', ['mri']);
+        $second = $this->add('editor', "# A made-up study of test lesions\n\nJ Synth Imaging 2024;3:11-14.\n\nSecond copy of the text, a different file.\n", 'b.md', ['lesions']);
+        self::assertNotSame($first['key'], $second['key']);
+        $cites = $this->call('editor', 'POST', '/api/v1/pages', ['path' => 'library:review', 'frontmatter' => ['title' => 'Review'], 'body' => 'See [@' . $second['key'] . "].\n"]);
+        self::assertSame(201, $cites->status);
+
+        // Only an editor of the library sees the groups; the library page lists them too
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/duplicates')->status, $user ?? 'anonymous');
+        }
+        $groups = json_decode($this->call('editor', 'GET', '/api/v1/library/duplicates')->body, true);
+        self::assertSame(1, $groups['page']['total']);
+        self::assertSame(['title'], $groups['data'][0]['by']);
+        self::assertCount(2, $groups['data'][0]['sources']);
+        self::assertStringContainsString('data-tool="duplicates"', $this->call('editor', 'GET', '/library')->body);
+        self::assertStringNotContainsString('data-tool="duplicates"', $this->call('reader', 'GET', '/library')->body);
+
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/' . $first['pid'] . '/merge', ['from' => $second['pid']])->status, $user ?? 'anonymous');
+        }
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/' . $first['pid'] . '/merge', ['from' => $first['pid']])->status);
+
+        $merged = $this->call('editor', 'POST', '/api/v1/library/' . $first['pid'] . '/merge', ['from' => $second['pid']]);
+        self::assertSame(200, $merged->status);
+        $result = json_decode($merged->body, true);
+        self::assertSame([$first['path'], 1], [$result['path'], $result['relinked']]);
+
+        $redirected = $this->call('editor', 'GET', '/' . $second['path']);
+        self::assertContains($redirected->status, [301, 302, 303, 307, 308]);
+        self::assertStringContainsString($first['path'], (string) ($redirected->headers['Location'] ?? ''));
+        self::assertSame(0, json_decode($this->call('editor', 'GET', '/api/v1/library/duplicates')->body, true)['page']['total']);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"action":"library.merge"', $audit);
+        self::assertStringContainsString('"action":"page.delete"', $audit);
+    }
+
     private function add(string $user, string $bytes, string $name, array $tags = []): array
     {
         $proposal = json_decode($this->upload($user, $bytes, $name)->body, true);

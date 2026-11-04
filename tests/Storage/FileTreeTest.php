@@ -597,6 +597,52 @@ final class FileTreeTest extends StorageTestCase
         self::assertSame('signed', $this->row($signed->pid)['status']);
     }
 
+    public function testADeleteMergedIntoAnotherPageLeavesARedirectToItAndRestoringDropsIt(): void
+    {
+        $storage = $this->storage();
+        $keep = $storage->create('docs:keep', $this->frontmatter(), 'one', 'owner');
+        $gone = $storage->create('docs:gone', $this->frontmatter(), 'two', 'owner');
+
+        $storage->delete('docs:gone', 'owner', $keep->pid);
+
+        self::assertSame('docs:keep', $storage->redirectTarget('docs:gone'));
+        self::assertSame([$gone->pid], array_column($storage->trash(), 'pid'));
+        $storage->restore($gone->pid, 'owner');
+        self::assertNull($storage->redirectTarget('docs:gone'), 'the page is back at its path: no redirect');
+        self::assertSame("two\n", $storage->read('docs:gone')->body);
+    }
+
+    public function testAPageIsMergedOnlyIntoAnotherLivePage(): void
+    {
+        $storage = $this->storage();
+        $keep = $storage->create('docs:keep', $this->frontmatter(), 'one', 'owner');
+        $storage->create('docs:gone', $this->frontmatter(), 'two', 'owner');
+
+        foreach ([$keep->pid . 'X', (string) $storage->read('docs:gone')->pid] as $bad) {
+            try {
+                $storage->delete('docs:gone', 'owner', $bad);
+                self::fail('refused');
+            } catch (\InvalidArgumentException) {
+            }
+        }
+        self::assertSame("two\n", $storage->read('docs:gone')->body, 'nothing was deleted');
+    }
+
+    public function testReplayFinishesAMergeDeleteWithItsRedirect(): void
+    {
+        $storage = $this->storage();
+        $keep = $storage->create('docs:keep', $this->frontmatter(), 'one', 'owner');
+        $gone = $storage->create('docs:gone', $this->frontmatter(), 'two', 'owner');
+        // Stopped after the page file moved to the trash, before the state was written
+        mkdir($this->dataRoot . '/trash/' . $gone->pid, 0775, true);
+        rename($this->dataRoot . '/pages/docs/gone.md', $this->dataRoot . '/trash/' . $gone->pid . '/page.md');
+        (new Journal($this->dataRoot . '/journal'))->appendIntent('delete', $gone->pid, 'docs:gone', 1, null, '', 'owner', ['into' => $keep->pid]);
+
+        self::assertSame('recovered', $storage->replayJournal()[0]['outcome']);
+        self::assertSame('docs:keep', $storage->redirectTarget('docs:gone'));
+        self::assertSame([$gone->pid], array_column($storage->trash(), 'pid'));
+    }
+
     public function testAccessionCountersAreAllocatedInTheStateDatabase(): void
     {
         $storage = $this->storage();

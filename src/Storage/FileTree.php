@@ -512,17 +512,26 @@ final class FileTree implements StorageInterface
         }
     }
 
-    /** Soft delete: the page file and its attic zip into trash/{pid}/, the row marked trashed */
-    public function delete(string $path, string $actor): void
+    /**
+     * Soft delete: the page file and its attic zip into trash/{pid}/, the row marked trashed.
+     * With $mergedInto (a pid) the old path becomes a redirect to that page, in the same state
+     * transaction and the same journal line (a library source merged into another, D60): the old
+     * `[@key]` of a signed page still finds a record; restoring the page, or a new page at the path, drops the redirect.
+     */
+    public function delete(string $path, string $actor, ?string $mergedInto = null): void
     {
-        $this->locked(function () use ($path, $actor): void {
+        $target = $mergedInto !== null ? $this->state->pageByPid($mergedInto) : null;
+        if ($mergedInto !== null && ($target === null || $target['trashed_at'] !== null || $mergedInto === (string) $this->liveRow($path)['pid'])) {
+            throw new InvalidArgumentException('A page is merged into another live page');
+        }
+        $this->locked(function () use ($path, $actor, $mergedInto): void {
             $row = $this->liveRow($path);
             $pid = (string) $row['pid'];
             $rev = (int) $row['rev'];
 
             $journal = $this->journal();
-            $journal->appendIntent('delete', $pid, $path, $rev, null, (string) $row['file_sha'], $actor);
-            $this->finishDelete($row, $path, $actor, self::now());
+            $journal->appendIntent('delete', $pid, $path, $rev, null, (string) $row['file_sha'], $actor, $mergedInto !== null ? ['into' => $mergedInto] : []);
+            $this->finishDelete($row, $path, $actor, self::now(), $mergedInto);
             $journal->appendDone($pid, $rev, 'delete');
         });
     }
@@ -1148,7 +1157,7 @@ final class FileTree implements StorageInterface
     }
 
     /** @param array<string, mixed> $row */
-    private function finishDelete(array $row, string $path, string $actor, string $ts): void
+    private function finishDelete(array $row, string $path, string $actor, string $ts, ?string $mergedInto = null): void
     {
         $pid = (string) $row['pid'];
         $trash = $this->trashDir($pid);
@@ -1159,7 +1168,12 @@ final class FileTree implements StorageInterface
         AtomicWriter::put($trash . '/' . self::TRASH_PATH, $path . "\n");
         $this->moveFile($this->pageFile($path), $trash . '/' . self::TRASH_PAGE);
         $this->moveFile($this->atticFile($path), $trash . '/' . self::TRASH_ATTIC);
-        $this->state->transaction(fn () => $this->state->updatePage($pid, ['trashed_at' => $ts, 'trashed_by' => $actor]));
+        $this->state->transaction(function () use ($pid, $ts, $actor, $path, $mergedInto): void {
+            $this->state->updatePage($pid, ['trashed_at' => $ts, 'trashed_by' => $actor]);
+            if ($mergedInto !== null) {
+                $this->state->setRedirect($path, $mergedInto);
+            }
+        });
         $this->index->remove($pid);
     }
 
@@ -1257,7 +1271,8 @@ final class FileTree implements StorageInterface
                     return 'discarded';
                 }
                 if ($row['trashed_at'] === null) {
-                    $this->finishDelete($row, $path, $actor, $ts);
+                    $into = \is_string($intent['into'] ?? null) && preg_match('/^[0-9A-Za-z]+$/', $intent['into']) === 1 && $this->state->pageByPid($intent['into']) !== null ? $intent['into'] : null;
+                    $this->finishDelete($row, $path, $actor, $ts, $into);
                 }
 
                 return 'recovered';
