@@ -17,6 +17,13 @@ interface CitationSource
      */
     public function record(string $key): ?array;
 
+    /**
+     * What became of the article after it was published (Support\SourceNotice): `retracted`, `concern`,
+     * `corrected`, or null for nothing to report (or no such source). Shown on screen to a reader who can open the library
+     * page, never in print or an export.
+     */
+    public function notice(string $key): ?string;
+
     /** The page path of the source, to link to for a reader who may open it */
     public function path(string $key): string;
 }

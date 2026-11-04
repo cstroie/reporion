@@ -25,11 +25,27 @@ final class RenderCitationsTest extends TestCase
                 };
             }
 
+            public function notice(string $key): ?string
+            {
+                return $key === 'abel2020' ? 'retracted' : null;
+            }
+
             public function path(string $key): string
             {
                 return 'library:' . $key;
             }
         });
+    }
+
+    public function testARetractedSourceIsMarkedOnScreenToAReaderWhoCanOpenItNeverInAnExport(): void
+    {
+        $screen = self::render()->toHtml('A [@abel2020] and [@nobody2024].', citeLinks: true)->html;
+        self::assertStringContainsString('wk-cite-ref wk-cite-flag wk-cite-flag-retracted', $screen);
+        self::assertStringContainsString('<span class="wk-src-flag wk-src-flag-retracted">Retracted</span>', $screen);
+        self::assertSame(1, substr_count($screen, 'wk-cite-flag-retracted'), 'only the retracted one');
+
+        $export = self::render()->toHtml('A [@abel2020] and [@nobody2024].')->html;
+        self::assertStringNotContainsString('flag', $export, 'print, PDF and ODT are rendered without links: and without the mark');
     }
 
     public function testTheReferencesHeadingFollowsTheLibrarysLanguageWhenThePageHasNone(): void
@@ -38,6 +54,11 @@ final class RenderCitationsTest extends TestCase
             public function record(string $key): ?array
             {
                 return ['type' => 'article-journal', 'title' => 'A study', 'issued' => ['date-parts' => [[2024]]]];
+            }
+
+            public function notice(string $key): ?string
+            {
+                return null;
             }
 
             public function path(string $key): string

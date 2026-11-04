@@ -86,7 +86,7 @@ final class Application
             $audit(),
             (string) $config['paths']['data'],
             (int) ($config['pages']['trash_purge_days'] ?? 30),
-            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::tagReviewTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index), Kernel::libraryAbstractsTask($config, $storage, $index, $audit())],
+            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::tagReviewTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index), Kernel::libraryAbstractsTask($config, $storage, $index, $audit()), Kernel::libraryNoticesTask($config, $storage, $index, $audit())],
         );
         $app->register('index:verify', IndexVerifyCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -115,6 +115,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new LibraryAbstractsCommand($maintenance($storage, $index));
+        });
+        $app->register('library:notices', LibraryNoticesCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryNoticesCommand($maintenance($storage, $index));
         });
         // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
         $app->register('pages:apply-patient-csv', PagesApplyPatientCsvCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {

@@ -675,6 +675,19 @@ abstract:
 ```
 
 It is made when the source is added (upload, `library:add`, an import whose record has one, a record taking its file) and by `library:abstracts` for older sources; a re-lookup that brings another `csl.abstract` makes its next revision. *From the text* only when the text marks it plainly (`Support\SourceAbstract`: a heading `Abstract`, `Summary` or `Rezumat` in the first quarter, up to the next heading, a structured abstract's short part headings followed, 80–500 words), else none. Never written when it holds a CNP. A writer may correct it: the marker stays and the corrected text is used. The one-line summary, *Problem, idea, evidence* and *Key points* read it instead of the article (`SourceAnalysis::ABSTRACT_TASKS`, one request); the other analyses, Ask the notebook and Studio read the article. It moves and goes to the trash with its source (`Analyses::under()`); a page at that path without `abstract`, or a signed one, is never written over.
+A source the publisher or the indexers say was **retracted, put under an expression of concern or corrected** (2026-11-04, D60) carries a `notice`; one with nothing to report has none:
+
+```yaml
+notice:
+  status: retracted          # retracted | concern | corrected: the worst of the items
+  items:                     # at most 10: type retraction | concern | correction, date (YYYY[-MM[-DD]]) and the notice's own doi when CrossRef gave them
+    - {type: retraction, date: 2010-02-06, doi: 10.1016/s0140-6736(10)60175-4}
+  found: 2026-11-04          # the day it was written
+  from: crossref+pubmed      # where it was read
+```
+
+It is read from CrossRef's `updated-by` (Retraction Watch's records are in it) and PubMed's `Retracted Publication` type and `CommentsCorrections` (`RetractionIn`, `PartialRetractionIn`, `ExpressionOfConcernIn`, `ErratumIn`, `CorrectedandRepublishedIn`), by the DOI or PMID only (`Service\Library\Lookup`, `Support\SourceNotice`), when the source is added, by *Look up online* and by `library:notices`. A notice that says the same as before is not rewritten (`found` is not compared). It is not a CSL field and not `status` (reserved for `draft|signed|archived`); a citation of the source is marked on screen to a reader who can open the library (never in print or an export).
+
 ## 4. Share tokens
 
 *Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,

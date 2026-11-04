@@ -23,6 +23,7 @@ use Reporion\Support\HtmlMeta;
 use Reporion\Support\Cnp;
 use Reporion\Support\LibrarySource;
 use Reporion\Support\Slug;
+use Reporion\Support\SourceNotice;
 use Reporion\Support\SourceText;
 
 /**
@@ -267,7 +268,7 @@ final class Library
         if (!isset($before['DOI']) && !isset($before['PMID'])) {
             return ['status' => 'no_id'] + $result;
         }
-        [$found, $mesh, $how] = $this->lookedUp($before);
+        [$found, $mesh, $how, $notice] = $this->lookedUp($before);
         $result['how'] = $how;
         if ($how === 'failed' || $how === 'none') {
             return ['status' => $how] + $result;
@@ -282,6 +283,11 @@ final class Library
         $have = array_values(array_filter(\is_array($page->frontmatter['tags'] ?? null) ? $page->frontmatter['tags'] : [], 'is_string'));
         $tags = self::cleanTags(array_merge($have, $mesh));
         $added = array_values(array_diff($tags, $have));
+        // What the services say became of the article (retraction, correction); `notice` is no CSL field
+        $storedNotice = SourceNotice::clean($page->frontmatter['notice'] ?? null);
+        if (!SourceNotice::same($storedNotice, $notice)) {
+            $changed[] = 'notice';
+        }
         $result['changed'] = $changed;
         $result['tags'] = $added;
         if ($changed === [] && $added === []) {
@@ -297,6 +303,9 @@ final class Library
         if ($tags !== []) {
             $frontmatter['tags'] = $tags;
         }
+        if (\in_array('notice', $changed, true)) {
+            $notice !== null ? $frontmatter['notice'] = $notice : $frontmatter = array_diff_key($frontmatter, ['notice' => 1]);
+        }
         $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: lookup (' . implode(', ', $changed) . ')');
         $result['rev'] = $saved->rev;
         // The abstract the lookup brought replaces the one kept (its page's history keeps the old)
@@ -305,6 +314,74 @@ final class Library
         }
 
         return $result;
+    }
+
+    /**
+     * Whether a source has been retracted, corrected or put under an expression of concern, asked of
+     * CrossRef (its DOI) and PubMed (its PMID, or the one PubMed has for the DOI): the identifier only.
+     * The answer is kept as the page's `notice` (one revision by $actor, none when it says what is
+     * kept already); a source that the services no longer flag loses it. Nothing else of the record
+     * is touched (relookup() does that). With $dryRun the services are asked and nothing is written.
+     *
+     * @return array{pid: string, status: string, notice: ?string}
+     *               status: `flagged` (a notice was written or changed), `cleared` (one was removed), `unchanged`, `no_id`, `none` (not found), `failed` (not reached);
+     *               notice: the source's status after (`retracted`, `concern`, `corrected`), null for none
+     *
+     * @throws LibraryException LOOKUP_OFF, INVALID (not a source)
+     * @throws \Reporion\Exception\RevisionConflictException
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function checkNotice(string $path, string $actor, bool $dryRun = false): array
+    {
+        if ($this->lookup === null) {
+            throw new LibraryException(LibraryException::LOOKUP_OFF);
+        }
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $stored = SourceNotice::clean($page->frontmatter['notice'] ?? null);
+        $result = ['pid' => $page->pid, 'status' => 'unchanged', 'notice' => $stored['status'] ?? null];
+        $csl = self::cleanCsl(\is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : []);
+        if (!isset($csl['DOI']) && !isset($csl['PMID'])) {
+            return ['status' => 'no_id'] + $result;
+        }
+        [, , $how, $notice] = $this->lookedUp($csl);
+        if ($how === 'failed' || $how === 'none') {
+            return ['status' => (string) $how] + $result;
+        }
+        $result['notice'] = $notice['status'] ?? null;
+        if (SourceNotice::same($stored, $notice)) {
+            return $result;
+        }
+        $result['status'] = $notice !== null ? 'flagged' : 'cleared';
+        if ($dryRun) {
+            return $result;
+        }
+        $frontmatter = $page->frontmatter;
+        $notice !== null ? $frontmatter['notice'] = $notice : $frontmatter = array_diff_key($frontmatter, ['notice' => 1]);
+        $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: notice (' . ($notice['status'] ?? 'none') . ')');
+
+        return $result;
+    }
+
+    /**
+     * A source just made, checked for a notice when the lookups are on: a failure there leaves it as it is
+     * (library:notices finds it later)
+     */
+    private function flagNotice(PageRecord $page, string $actor): PageRecord
+    {
+        if ($this->lookup === null) {
+            return $page;
+        }
+        try {
+            if ($this->checkNotice($page->path, $actor)['status'] === 'flagged') {
+                return $this->storage->read($page->path);
+            }
+        } catch (\Throwable) {
+        }
+
+        return $page;
     }
 
     /**
@@ -531,7 +608,7 @@ final class Library
             $this->keepAbstract($saved, $actor);
         }
 
-        return $saved;
+        return $this->flagNotice($saved, $actor);
     }
 
     /** The most records one import takes */
@@ -607,30 +684,34 @@ final class Library
      *
      * @param array<string, mixed> $csl
      *
-     * @return array{0: array<string, mixed>, 1: list<string>, 2: ?string} the record, MeSH terms as tags, what was done
+     * @return array{0: array<string, mixed>, 1: list<string>, 2: ?string, 3: ?array<string, mixed>} the record, MeSH terms as
+     *               tags, what was done, and the notice the services give it (retracted, concern, corrected: Support\SourceNotice), null for none
      */
     private function lookedUp(array $csl): array
     {
         if ($this->lookup === null) {
-            return [$csl, [], null];
+            return [$csl, [], null, null];
         }
         $doi = \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : null;
         $pmid = \is_scalar($csl['PMID'] ?? null) ? (string) $csl['PMID'] : null;
         if ($doi === null && $pmid === null) {
-            return [$csl, [], 'none'];
+            return [$csl, [], 'none', null];
         }
         $found = [];
         $tags = [];
+        $notices = [];
         try {
             $crossref = $doi !== null ? $this->lookup->crossref($doi) : null;
             if ($crossref !== null) {
                 $found[] = 'crossref';
                 $csl = $crossref['csl'] + $csl;
+                $notices = array_merge($notices, $crossref['notices']);
             }
             $pmid ??= $doi !== null ? $this->lookup->pmidOf($doi) : null;
             $pubmed = $pmid !== null ? $this->lookup->pubmed($pmid) : null;
             if ($pubmed !== null) {
                 $found[] = 'pubmed';
+                $notices = array_merge($notices, $pubmed['notices']);
                 $csl = ($crossref !== null ? $csl + $pubmed['csl'] : $pubmed['csl'] + $csl);
                 // PubMed's abstract over CrossRef's: structured, and seldom cut short (owner, 2026-11-01)
                 if (\is_string($pubmed['csl']['abstract'] ?? null) && trim($pubmed['csl']['abstract']) !== '') {
@@ -639,10 +720,10 @@ final class Library
                 $tags = $pubmed['tags'];
             }
         } catch (\RuntimeException) {
-            return [$csl, $tags, 'failed'];
+            return [$csl, $tags, 'failed', null];
         }
 
-        return [$csl, $tags, $found === [] ? 'none' : implode('+', $found)];
+        return [$csl, $tags, $found === [] ? 'none' : implode('+', $found), SourceNotice::build($notices, $found, date('Y-m-d'))];
     }
 
     /**
@@ -751,7 +832,7 @@ final class Library
         }
         $this->keepAbstract($page, $actor);
 
-        return $page;
+        return $this->flagNotice($page, $actor);
     }
 
     /**

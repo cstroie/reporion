@@ -10,6 +10,7 @@ use Closure;
 use DOMDocument;
 use DOMXPath;
 use Reporion\Support\ArticleIds;
+use Reporion\Support\SourceNotice;
 
 /**
  * The online lookups of docs/library.md (phase 4, opt-in: Admin → Settings → Library): a DOI to
@@ -62,7 +63,8 @@ final class Lookup
     }
 
     /**
-     * @return array{csl: array<string, mixed>, tags: list<string>}|null null: no such DOI
+     * @return array{csl: array<string, mixed>, tags: list<string>, notices: list<array<string, string>>}|null null: no such DOI;
+     *               notices: what CrossRef's `updated-by` says became of it (Support\SourceNotice)
      *
      * @throws \RuntimeException when the service could not be reached or answered nonsense
      */
@@ -113,11 +115,12 @@ final class Lookup
             }
         }
 
-        return ['csl' => self::filled($csl), 'tags' => []];
+        return ['csl' => self::filled($csl), 'tags' => [], 'notices' => SourceNotice::fromCrossref($message['updated-by'] ?? null)];
     }
 
     /**
-     * @return array{csl: array<string, mixed>, tags: list<string>}|null null: no such PMID
+     * @return array{csl: array<string, mixed>, tags: list<string>, notices: list<array<string, string>>}|null null: no such PMID;
+     *               notices: PubMed's retraction, concern and erratum marks (Support\SourceNotice)
      *
      * @throws \RuntimeException when the service could not be reached or answered nonsense
      */
@@ -190,7 +193,16 @@ final class Lookup
             $mesh[] = trim($descriptor->textContent);
         }
 
-        return ['csl' => self::filled($csl), 'tags' => $mesh];
+        $publicationTypes = [];
+        foreach ($x->query('//PubmedArticle[1]//PublicationTypeList/PublicationType') ?: [] as $type) {
+            $publicationTypes[] = trim($type->textContent);
+        }
+        $refTypes = [];
+        foreach ($x->query('//PubmedArticle[1]//CommentsCorrectionsList/CommentsCorrections') ?: [] as $ref) {
+            $refTypes[] = $ref instanceof \DOMElement ? $ref->getAttribute('RefType') : '';
+        }
+
+        return ['csl' => self::filled($csl), 'tags' => $mesh, 'notices' => SourceNotice::fromPubmed($publicationTypes, $refTypes)];
     }
 
     /**

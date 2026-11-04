@@ -18,7 +18,7 @@ final class CitationNode extends AbstractInline
 {
     /**
      * @param list<array{key: string, locator: string}> $items
-     * @param list<array{key: string, label: string, href: ?string, number: ?int}>|null $resolved set by Render
+     * @param list<array{key: string, label: string, href: ?string, number: ?int, notice?: ?string}>|null $resolved set by Render
      */
     public function __construct(
         public readonly array $items,

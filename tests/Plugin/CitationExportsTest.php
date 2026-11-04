@@ -33,6 +33,11 @@ final class CitationExportsTest extends TestCase
                 return ['type' => 'article-journal', 'title' => 'Study ' . $key, 'author' => [['family' => 'Nobody', 'given' => 'A']], 'issued' => ['date-parts' => [[2020]]]];
             }
 
+            public function notice(string $key): ?string
+            {
+                return null;
+            }
+
             public function path(string $key): string
             {
                 return 'library:' . $key;

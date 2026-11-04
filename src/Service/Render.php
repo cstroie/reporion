@@ -207,6 +207,7 @@ final class Render
         /** @var array<string, array<string, mixed>> $cited */
         $cited = [];
         $numbers = [];
+        $notices = [];
         $unknown = [];
         foreach ($nodes as $node) {
             $node->style = $style;
@@ -221,7 +222,9 @@ final class Render
                 }
                 $cited[$key] = $csl;
                 $numbers[$key] ??= \count($numbers) + 1;
-                $node->resolved[] = ['key' => $key, 'label' => Citation::apaLabel($csl), 'href' => null, 'number' => $numbers[$key]];
+                // A retraction, an expression of concern or a correction is marked for a reader who can open the source (never in print or an export, which have no link either)
+                $notices[$key] ??= $linkBase !== null ? $this->citations->notice($key) : null;
+                $node->resolved[] = ['key' => $key, 'label' => Citation::apaLabel($csl), 'href' => null, 'number' => $numbers[$key], 'notice' => $notices[$key]];
             }
         }
         if ($cited === []) {
@@ -234,7 +237,9 @@ final class Render
             if ($linkBase !== null) {
                 $text = '<a class="wk-ref-src" href="' . htmlspecialchars($linkBase . '/' . $this->citations->path($key), ENT_QUOTES) . '">' . $text . '</a>';
             }
-            $entries[$key] = '<li id="ref-' . $key . '">' . $text . '</li>';
+            $notice = $notices[$key] ?? null;
+            $badge = $notice !== null ? ' <span class="wk-src-flag wk-src-flag-' . $notice . '">' . htmlspecialchars(t('library.notice.' . $notice), ENT_QUOTES) . '</span>' : '';
+            $entries[$key] = '<li id="ref-' . $key . '">' . $text . $badge . '</li>';
         }
         if ($style === 'apa') {
             uksort($entries, static fn (string $a, string $b): int => strcasecmp(Citation::format('apa', $cited[$a]), Citation::format('apa', $cited[$b])));

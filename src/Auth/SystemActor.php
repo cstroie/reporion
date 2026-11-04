@@ -30,7 +30,7 @@ final class SystemActor
     public const AI = 'system:ai';
     /** Instance housekeeping that rewrites pages: tags:prune */
     public const ADMIN = 'system:admin';
-    /** The library's housekeeping: library:abstracts (a source's abstract page) */
+    /** The library's housekeeping: library:abstracts (a source's abstract page), library:notices (its retraction notice) */
     public const LIBRARIAN = 'system:librarian';
 
     /** @return list<string> */

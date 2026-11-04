@@ -40,6 +40,17 @@ XML;
         });
     }
 
+    public function testCrossrefAndPubmedReportWhatBecameOfTheArticle(): void
+    {
+        $crossref = '{"message":{"type":"journal-article","title":["T"],"updated-by":[{"DOI":"10.9999/RETR.2010","type":"retraction","label":"Retraction","source":"retraction-watch","updated":{"date-parts":[[2010,2,6]]}}]}}';
+        self::assertSame([['type' => 'retraction', 'date' => '2010-02-06', 'doi' => '10.9999/retr.2010']], $this->lookup($crossref)->crossref('10.1234/x')['notices']);
+
+        $pubmed = str_replace('<MedlineJournalInfo>', '<CommentsCorrectionsList><CommentsCorrections RefType="RetractionIn"><RefSource>Made up 2010</RefSource></CommentsCorrections><CommentsCorrections RefType="CommentIn"/></CommentsCorrectionsList><MedlineJournalInfo>', self::PUBMED);
+        self::assertSame([['type' => 'retraction']], $this->lookup($pubmed)->pubmed('12345678')['notices']);
+        self::assertSame([], $this->lookup(self::PUBMED)->pubmed('12345678')['notices']);
+        self::assertSame([['type' => 'retraction']], $this->lookup(str_replace('<PublicationTypeList/>', '', str_replace('</Article>', '<PublicationTypeList><PublicationType>Retracted Publication</PublicationType></PublicationTypeList></Article>', self::PUBMED)))->pubmed('12345678')['notices']);
+    }
+
     public function testCrossrefIsMappedToARecord(): void
     {
         $found = $this->lookup(self::CROSSREF)->crossref('https://doi.org/10.9999/JSI.2024.0001');

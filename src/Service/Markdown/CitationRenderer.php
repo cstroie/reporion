@@ -35,7 +35,8 @@ final class CitationRenderer implements NodeRendererInterface
                 $parts[] = new HtmlElement('span', ['class' => 'wk-cite-missing', 'title' => t('library.cite_missing')], htmlspecialchars('@' . $item['key'], ENT_QUOTES));
                 continue;
             }
-            $link = (string) new HtmlElement('a', ['class' => 'wk-cite-ref', 'href' => '#ref-' . $item['key']], htmlspecialchars($apa ? $item['label'] : (string) $item['number'], ENT_QUOTES));
+            $notice = $item['notice'] ?? null;
+            $link = (string) new HtmlElement('a', ['class' => 'wk-cite-ref' . ($notice !== null ? ' wk-cite-flag wk-cite-flag-' . $notice : ''), 'href' => '#ref-' . $item['key']] + ($notice !== null ? ['title' => t('library.notice.' . $notice)] : []), htmlspecialchars($apa ? $item['label'] : (string) $item['number'], ENT_QUOTES));
             $locators = $locators || $locator !== '';
             $parts[] = $link . ($locator !== '' ? htmlspecialchars(', ' . $locator, ENT_QUOTES) : '');
         }

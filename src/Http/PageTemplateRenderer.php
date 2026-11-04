@@ -162,6 +162,8 @@ final class PageTemplateRenderer
                 'bytes' => (int) ($record->frontmatter['original']['bytes'] ?? 0),
             ] : null,
             'path' => $record->path,
+            // A retraction, an expression of concern or a correction (library:notices, Lookup): a banner on the card
+            'notice' => \Reporion\Support\SourceNotice::clean($record->frontmatter['notice'] ?? null),
             // The analyses the assistant can make of it (docs/library.md, phase 5): those whose prompt page the serving profile has
             'aiTasks' => $currentRev === null && $principal->canWrite($record->path) && $this->aiActions !== null
                 ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))

@@ -42,6 +42,15 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <?php if ($source['canLookup'] ?? false): ?>
 <div data-lib-lookup-status aria-live="polite"></div>
 <?php endif; ?>
+<?php if (($source['notice'] ?? null) !== null): ?>
+<?php
+$noticeKind = ['retracted' => 'error', 'concern' => 'warn', 'corrected' => 'info'][$source['notice']['status']];
+$noticeText = t('library.notice.banner_' . $source['notice']['status']);
+$noticeItems = array_map(static fn (array $i): string => t('library.notice.type_' . $i['type']) . (isset($i['date']) ? ' · ' . $i['date'] : '') . (isset($i['doi']) ? ' · doi:' . $i['doi'] : ''), $source['notice']['items']);
+$noticeClass = 'wk-lib-flag';
+include __DIR__ . '/notice.php';
+?>
+<?php endif; ?>
 <p class="wk-lib-ref" data-lib-ref><?= $e($source['citation']) ?></p>
 <?php if ($doi !== '' || $pmid !== '' || $source['original'] !== null): ?>
 <p class="wk-dim wk-text-xs wk-mono wk-lib-ids">

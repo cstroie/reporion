@@ -530,4 +530,82 @@ BIB;
         self::assertSame('A made-up study of test lesions', $proposal['csl']['title']);
         self::assertSame('J Synth', $proposal['csl']['container-title']);
     }
+
+    /** A fetch answering CrossRef with an `updated-by` retraction (and counting what was asked) */
+    private static function retracted(array &$asked, bool $flagged = true): \Closure
+    {
+        return function (string $url) use (&$asked, $flagged): ?string {
+            $asked[] = $url;
+
+            return str_contains($url, 'crossref')
+                ? '{"message":{"type":"journal-article","title":["A made-up study of test lesions"],"issued":{"date-parts":[[2024]]}' . ($flagged ? ',"updated-by":[{"DOI":"10.9999/retr.1","type":"retraction","label":"Retraction","source":"retraction-watch","updated":{"date-parts":[[2025,2,6]]}}]' : '') . '}}'
+                : ($url !== '' && str_contains($url, 'esearch') ? '{"esearchresult":{"idlist":[]}}' : '');
+        };
+    }
+
+    public function testASourceTheServicesCallRetractedKeepsAFlagAndLosesItWhenTheyStopSayingSo(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $asked = [];
+
+        $first = $this->withLookup(self::retracted($asked))->checkNotice($page->path, 'system:librarian');
+
+        self::assertSame(['flagged', 'retracted'], [$first['status'], $first['notice']]);
+        $now = $this->storage->read($page->path);
+        self::assertSame($page->rev + 1, $now->rev);
+        self::assertSame('retracted', $now->frontmatter['notice']['status']);
+        self::assertSame('2025-02-06', $now->frontmatter['notice']['items'][0]['date']);
+        self::assertSame($page->body, $now->body);
+        foreach ($asked as $url) {
+            self::assertStringNotContainsString('made-up', $url, 'the identifier only');
+        }
+
+        // The same answer again: no new revision
+        self::assertSame('unchanged', $this->withLookup(self::retracted($asked))->checkNotice($page->path, 'system:librarian')['status']);
+        self::assertSame($now->rev, $this->storage->read($page->path)->rev);
+
+        // A dry run asks and writes nothing
+        $dry = $this->withLookup(self::retracted($asked, false))->checkNotice($page->path, 'system:librarian', dryRun: true);
+        self::assertSame(['cleared', null], [$dry['status'], $dry['notice']]);
+        self::assertArrayHasKey('notice', $this->storage->read($page->path)->frontmatter);
+
+        $gone = $this->withLookup(self::retracted($asked, false))->checkNotice($page->path, 'system:librarian');
+        self::assertSame('cleared', $gone['status']);
+        self::assertArrayNotHasKey('notice', $this->storage->read($page->path)->frontmatter);
+    }
+
+    public function testNoIdentifierNotReachedAndLookupsOffChangeNothing(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $this->storage->create('library:nodoi', ['title' => 'No identifier', 'visibility' => 'private', 'csl' => ['title' => 'No identifier']], '', 'owner', 'x');
+        $asked = [];
+
+        self::assertSame('no_id', $this->withLookup(self::retracted($asked))->checkNotice('library:nodoi', 'owner')['status']);
+        self::assertSame([], $asked);
+        self::assertSame('failed', $this->withLookup(static fn (string $url): ?string => null)->checkNotice($page->path, 'owner')['status']);
+        self::assertArrayNotHasKey('notice', $this->storage->read($page->path)->frontmatter);
+
+        $this->expectExceptionObject(new LibraryException(LibraryException::LOOKUP_OFF));
+        $this->library->checkNotice($page->path, 'owner');
+    }
+
+    public function testALookupRunAgainFlagsTheNoticeInTheSameRevision(): void
+    {
+        [$page] = $this->library->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+        $asked = [];
+
+        $result = $this->withLookup(self::retracted($asked))->relookup($page->path, self::owner(), 'owner');
+
+        self::assertSame('updated', $result['status']);
+        self::assertContains('notice', $result['changed']);
+        self::assertSame('retracted', $this->storage->read($page->path)->frontmatter['notice']['status']);
+    }
+
+    public function testASourceAddedWithTheLookupsOnIsCheckedAtOnce(): void
+    {
+        $asked = [];
+        [$page] = $this->withLookup(self::retracted($asked))->add(self::ARTICLE, 'study.md', self::owner(), 'owner');
+
+        self::assertSame('retracted', $this->storage->read($page->path)->frontmatter['notice']['status'] ?? null);
+    }
 }

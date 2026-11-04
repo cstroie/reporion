@@ -11,6 +11,7 @@ use Reporion\Service\Markdown\CitationSource;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\CitationKey;
 use Reporion\Support\LibrarySource;
+use Reporion\Support\SourceNotice;
 
 /**
  * The library as Render's citation source: `[@key]` is the page `{library}:{key}` (docs/library.md).
@@ -22,6 +23,9 @@ final class Citations implements CitationSource
 {
     /** @var array<string, ?array<string, mixed>> */
     private array $seen = [];
+
+    /** @var array<string, ?string> */
+    private array $notices = [];
 
     public function __construct(private readonly StorageInterface $storage, private readonly string $namespace)
     {
@@ -41,7 +45,16 @@ final class Citations implements CitationSource
             return $this->seen[$key] = null;
         }
 
+        $this->notices[$key] = LibrarySource::isSource($frontmatter) ? SourceNotice::clean($frontmatter['notice'] ?? null)['status'] ?? null : null;
+
         return $this->seen[$key] = LibrarySource::isSource($frontmatter) && \is_array($frontmatter['csl'] ?? null) ? $frontmatter['csl'] : null;
+    }
+
+    public function notice(string $key): ?string
+    {
+        $this->record($key);
+
+        return $this->notices[$key] ?? null;
     }
 
     public function path(string $key): string

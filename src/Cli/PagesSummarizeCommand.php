@@ -70,7 +70,7 @@ class PagesSummarizeCommand implements CommandInterface
         }
         $apply = !\in_array('--dry-run', $args, true);
         $actor = null;
-        $raw = ['overwrite' => \in_array('--overwrite', $args, true), 'force' => \in_array('--force', $args, true), 'offline' => \in_array('--offline', $args, true)];
+        $raw = ['overwrite' => \in_array('--overwrite', $args, true), 'force' => \in_array('--force', $args, true), 'offline' => \in_array('--offline', $args, true), 'all' => \in_array('--all', $args, true)];
         foreach ($args as $arg) {
             if (str_starts_with($arg, '--actor=') && \strlen($arg) > 8) {
                 $actor = substr($arg, 8);

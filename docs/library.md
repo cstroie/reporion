@@ -340,6 +340,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    earlier file stays in `data/sources/`; a failure replaces nothing. *Not built:*
    per-voice language checks (the owner picks voices that speak the notebook's language), an audio overview of a single source.
 
+## Reference-manager features (2026-11-04, D60)
+
+What Zotero, Mendeley, Paperpile and EndNote do that a clinical team needs, built one by one; CSL styles and annotating the PDF itself were left out on purpose.
+
+1. **Journal abbreviations.** Vancouver and AMA print the NLM abbreviation (`N Engl J Med`): PubMed's `MedlineTA` is kept as `container-title-short`, and any short title is printed without periods.
+2. **Retractions and corrections.** A source's `notice` (FORMATS §3o) is read from CrossRef and PubMed by identifier; a banner on its card (error for retracted, warning for an expression of concern, info for a correction), a mark on its `[@key]` citations and its References entry on screen only; `bin/reporion library:notices` and Admin → Maintenance refresh them (a source answered within 30 days is passed over, `--all` asks again; `data/maintenance/library-notices.json` is a status note, not data), *Look up online* and a new upload check one source. Needs the lookups on.
+
 ## Long sources
 
 The context is adaptive (owner, 2026-10-30): `library.context_tokens` (default 32 000). A source

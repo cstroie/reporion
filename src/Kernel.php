@@ -99,6 +99,7 @@ use Reporion\Service\Maintenance\SummarizeTask;
 use Reporion\Service\Maintenance\TagReviewTask;
 use Reporion\Service\Maintenance\TagTask;
 use Reporion\Service\Maintenance\LibraryAbstractsTask;
+use Reporion\Service\Maintenance\LibraryNoticesTask;
 use Reporion\Service\Maintenance\VectorsTask;
 use Reporion\Service\NamespaceDefaults;
 use Reporion\Service\NewReport;
@@ -416,6 +417,15 @@ final class Kernel
         return new LibraryAbstractsTask(self::library($config, $storage, $index, $audit));
     }
 
+    /**
+     * library:notices: each library source asked of CrossRef and PubMed for a retraction, for Admin →
+     * Maintenance and the CLI
+     */
+    public static function libraryNoticesTask(array $config, FileTree $storage, Sqlite $index, AuditLog $audit): LibraryNoticesTask
+    {
+        return new LibraryNoticesTask(self::library($config, $storage, $index, $audit), (string) $config['paths']['data'] . '/maintenance/library-notices.json');
+    }
+
     public static function newReport(array $config, string $rootDir, Sqlite $index, FileTree $storage, Accessions $accessions, Loader $schemas): NewReport
     {
         return new NewReport(
@@ -586,7 +596,7 @@ final class Kernel
             return $ask instanceof AskController && $ask->available();
         }, self::libraryNamespace($config));
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit)]);
+        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit), self::libraryNoticesTask($config, $storage, $index, $audit)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
