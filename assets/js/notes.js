@@ -718,9 +718,10 @@
     show('editor');
     el.editorNone.hidden = true;
     el.editorNote.hidden = false;
-    setPreview(false);
     el.title.value = note.title || '';
     el.text.value = note.body;
+    // A note with text opens rendered (reading); a new, empty one opens for typing. The button, or a click on the text, edits
+    if (note.body) showRendered(); else setPreview(false);
     el.tagInput.value = '';
     renderTags(note);
     showConflict(note);
@@ -734,7 +735,10 @@
     var note = state.notes[state.current];
     if (!note) { closeEditor(); return; }
     // Only text the writer has not touched since is replaced
-    if (document.activeElement !== el.text && el.text.value !== note.body) el.text.value = note.body;
+    if (document.activeElement !== el.text && el.text.value !== note.body) {
+      el.text.value = note.body;
+      if (el.preview.getAttribute('aria-pressed') === 'true') showRendered();
+    }
     if (document.activeElement !== el.title && el.title.value !== (note.title || '')) el.title.value = note.title || '';
     renderTags(note);
     showConflict(note);
@@ -811,13 +815,14 @@
     el.previewPane.hidden = !on;
   }
 
-  el.preview.addEventListener('click', function () {
-    if (el.preview.getAttribute('aria-pressed') === 'true') { setPreview(false); return; }
-    flushSave();
+  // The note rendered as HTML by the server's renderer (the one parser, invariant 4); offline, the text as typed
+  function showRendered() {
     setPreview(true);
     el.previewPane.textContent = '';
-    api('POST', '/render', { markdown: el.text.value, breaks: true }).then(function (r) {
-      if (r.status === 200 && r.data) el.previewPane.innerHTML = r.data.html; // the server's renderer, escaped there
+    var asked = el.text.value;
+    api('POST', '/render', { markdown: asked, breaks: true }).then(function (r) {
+      if (el.text.value !== asked || el.previewPane.hidden) return; // edited or left meanwhile
+      if (r.status === 200 && r.data) el.previewPane.innerHTML = r.data.html; // escaped there
       else throw new Error('render ' + r.status);
     }).catch(function () {
       var pre = document.createElement('pre');
@@ -826,6 +831,19 @@
       el.previewPane.appendChild(pre);
       notice('info', t('notes.preview_offline'), false);
     });
+  }
+
+  el.preview.addEventListener('click', function () {
+    if (el.preview.getAttribute('aria-pressed') === 'true') { setPreview(false); el.text.focus(); return; }
+    flushSave();
+    showRendered();
+  });
+
+  // A click on the rendered text (not on a link) goes back to editing
+  el.previewPane.addEventListener('click', function (event) {
+    if (event.target.closest('a') || String(window.getSelection()) !== '') return;
+    setPreview(false);
+    el.text.focus();
   });
 
   el.del.addEventListener('click', function () {
