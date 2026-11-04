@@ -201,7 +201,8 @@
       // Built here, from the address this page is on, so the server never has to guess its own
       var bookmarklet = box.querySelector('[data-lib-bookmarklet]');
       if (bookmarklet) {
-        bookmarklet.href = 'javascript:(function(){window.location.href=' + JSON.stringify(window.location.origin + base + '/library?clip=') + '+encodeURIComponent(window.location.href);})()';
+        // Single quotes and no space: a double quote in a javascript: address is percent-encoded and breaks it
+        bookmarklet.href = 'javascript:(function(){window.location.href=\'' + window.location.origin + base + '/library?clip=\'+encodeURIComponent(window.location.href);})()';
         bookmarklet.addEventListener('click', function (event) { event.preventDefault(); });
       }
       var params = new URLSearchParams(window.location.search);
