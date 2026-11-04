@@ -49,6 +49,7 @@ $total = \count($entries);
 <?php if ($canAdd): ?>
 <section class="wk-panel wk-lib-add" data-island="library-add" hidden>
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-upload-simple" aria-hidden="true"></i> <?= $e(t('library.add')) ?></h2><p class="wk-dim"><?= $e(t('library.add_lede')) ?></p></hgroup></header>
+<div class="wk-lib-add-top">
 <label class="wk-lib-drop" data-lib-drop>
 <i class="ph ph-file-arrow-up" aria-hidden="true"></i>
 <span><?= $e(t('library.drop')) ?></span>
@@ -60,9 +61,14 @@ $total = \count($entries);
 <div class="field"><label><?= $e(t('library.clip')) ?>
 <span class="group"><input class="input" type="url" name="url" maxlength="2000" required placeholder="<?= $e(t('library.clip_hint')) ?>" autocapitalize="off" spellcheck="false"><button class="btn btn-secondary" type="submit"><i class="ph ph-globe" aria-hidden="true"></i><?= $e(t('library.clip_go')) ?></button></span>
 <small><?= $e(t('library.clip_help')) ?></small></label></div>
-<p class="wk-dim wk-text-sm wk-lib-bookmarklet"><i class="ph ph-bookmark-simple" aria-hidden="true"></i> <a class="wk-chip" href="#" data-lib-bookmarklet draggable="true"><?= $e(t('library.bookmarklet')) ?></a> <?= $e(t('library.bookmarklet_help')) ?></p>
+<div class="wk-lib-bookmarklet">
+<h3 class="wk-eyebrow"><i class="ph ph-bookmark-simple" aria-hidden="true"></i> <?= $e(t('library.bookmarklet_title')) ?></h3>
+<a class="wk-chip" href="#" data-lib-bookmarklet draggable="true"><?= $e(t('library.bookmarklet')) ?></a>
+<small><?= $e(t('library.bookmarklet_help')) ?></small>
+</div>
 </form>
 <?php endif; ?>
+</div>
 <div class="wk-lib-queue" data-lib-queue></div>
 <template data-lib-form-template><?php $libraryFormMode = 'add'; include __DIR__ . '/partials/library-record-form.php'; ?></template>
 <script type="application/json"><?= json_encode([
@@ -156,7 +162,7 @@ $total = \count($entries);
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/notebook-ask.js')) ?>" defer></script>
 <?php endif; ?>
 <?php if ($total === 0 && $tag === '' && !$searched): ?>
-<?php $noticeKind = 'info'; $noticeText = t($canAdd ? 'library.empty_add' : 'library.empty'); include __DIR__ . '/partials/notice.php'; ?>
+<?php $noticeKind = 'info'; $noticeText = t($canAdd ? 'library.empty_add' : 'library.empty'); $noticeId = 'wk-lib-empty'; include __DIR__ . '/partials/notice.php'; ?>
 <?php else: ?>
 <section class="wk-panel wk-lib-list" data-island="library-list">
 <header class="wk-panel-h">

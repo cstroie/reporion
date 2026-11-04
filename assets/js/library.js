@@ -156,7 +156,7 @@
       opener.addEventListener('click', function () {
         box.hidden = false;
         opener.setAttribute('aria-expanded', 'true');
-        input.click();
+        drop.scrollIntoView({ block: 'nearest' });
       });
     }
 
@@ -330,6 +330,9 @@
           if (result.status === 201) {
             form.remove();
             say(slot, 'ok', s.added, [base + '/' + result.json.path, s.open]);
+            // The list is rendered by the server and is not refreshed: the "library is empty" card is no longer true
+            var empty = document.getElementById('wk-lib-empty');
+            if (empty) empty.hidden = true;
             return;
           }
           var fields = result.json && result.json.error && result.json.error.fields;

@@ -2200,6 +2200,7 @@ return [
     'library.online.patient_data' => 'That looks like a patient\'s personal numeric code (CNP). Nothing was sent: the library is for literature.',
     'library.online.invalid'   => 'Type some words, a DOI or a PMID (200 characters at most).',
     'library.online.throttled' => 'Too many searches a minute. Wait a moment.',
+    'library.bookmarklet_title' => 'Bookmarklet',
     'library.bookmarklet'      => 'Save to the library',
     'library.bookmarklet_help' => 'Drag this to your bookmarks bar. On an article\'s page, press it: the library opens with that address filled in, and you press Clip. Nothing is fetched until then.',
     'library.fulltext'         => 'Find full text',
