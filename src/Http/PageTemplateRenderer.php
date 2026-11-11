@@ -57,6 +57,8 @@ final class PageTemplateRenderer
         private readonly bool $lookup = false,
         // Find full text is set up (the lookups on and Unpaywall's address): a source with a DOI and no file offers it (D60)
         private readonly bool $fullText = false,
+        // A source's passage picker (2026-11-11): the pages citing it that take passages (Highlights::notebooks())
+        private readonly ?\Reporion\Service\Library\Highlights $highlights = null,
     ) {
     }
 
@@ -153,6 +155,7 @@ final class PageTemplateRenderer
         // A library source (docs/library.md): its reference, its original, its record to correct
         $vars['librarySource'] = LibrarySource::isSource($record->frontmatter) ? [
             'pid' => $record->pid,
+            'notebooks' => $principal !== null && $currentRev === null ? ($this->highlights?->notebooks($record->pid, $principal) ?? []) : [],
             'key' => substr($record->path, (int) strrpos($record->path, ':') + 1),
             'rev' => $record->rev,
             'citation' => Citation::vancouver(\is_array($record->frontmatter['csl'] ?? null) ? $record->frontmatter['csl'] : ['title' => $title]),

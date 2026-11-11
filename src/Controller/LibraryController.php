@@ -429,6 +429,33 @@ final class LibraryController
     }
 
     /**
+     * POST /api/v1/library/{pid}/passages {quote, to} (2026-11-11): the text selected in the
+     * source, verbatim, added to the page `to` as `> quote [@key, p. N]` at the end of its
+     * `## Passages` section (Highlights::passage()), one revision by the caller; a source or page
+     * the caller may not reach 404; a passage too long, holding a CNP, or a page that takes none 422
+     */
+    public function passage(Request $request, string $pid, ?User $principal): Response
+    {
+        $fields = $request->json();
+        if ($principal === null || $this->highlights === null || !\is_string($fields['quote'] ?? null) || !\is_string($fields['to'] ?? null)) {
+            return ApiResponse::error($principal === null ? 404 : 422, $principal === null ? 'not_found' : 'invalid_body', $principal === null ? 'Not found.' : '"quote" and "to" (strings) are required.');
+        }
+        try {
+            $sent = $this->highlights->passage($pid, $fields['quote'], $fields['to'], $principal);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', t('library.highlight_not_found'));
+        } catch (LibraryException $e) {
+            return ApiResponse::error(422, $e->reason === LibraryException::PATIENT_DATA ? 'patient_data' : 'refused', t('library.passage_refused'));
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        }
+        $row = $this->index->findByPath($sent['path'], $principal);
+        $this->audit->record('page.save', $principal->username, $request, (string) ($row['pid'] ?? ''), $sent['path'], $sent['rev'], extra: ['passage_from' => $pid]);
+
+        return ApiResponse::json(['path' => $sent['path'], 'rev' => $sent['rev'], 'page' => $sent['page'], 'href' => $request->basePath . '/' . $sent['path']]);
+    }
+
+    /**
      * GET /library/audio/{pid}: a kept audio overview's file (`audio` on the kept `studio-audio`
      * page, docs/library.md phase 8), under that page's visibility (anything else 404), with
      * `Range` so the player can seek: one byte range a request, 206 with `Content-Range`

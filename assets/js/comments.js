@@ -28,6 +28,9 @@
     var quoteEl = box.querySelector('[data-comments-quote]');
     var status = box.querySelector('[data-comments-status]');
     var quote = '';
+    // A library source's selection, whole (up to 4000 characters), for Add passage (2026-11-11)
+    var passage = '';
+    var passageBox = box.querySelector('[data-passage]');
 
     function el(tag, cls, text) {
       var node = document.createElement(tag);
@@ -150,6 +153,8 @@
     }
 
     function setQuote(text) {
+      passage = String(text).replace(/\s+/g, ' ').trim().slice(0, 4000);
+      if (passageBox) passageBox.hidden = passage === '';
       quote = String(text).replace(/\s+/g, ' ').trim().slice(0, 300);
       if (quoteEl) {
         quoteEl.hidden = quote === '';
@@ -186,6 +191,38 @@
           if (status) status.textContent = '';
           load();
         }, function () { failed(null); });
+      });
+    }
+
+    // The selection added verbatim to a notebook's Passages section: `> text [@key, p. N]`
+    if (passageBox && cfg.highlight) {
+      var to = passageBox.querySelector('[data-passage-to]');
+      var otherBox = passageBox.querySelector('[data-passage-other]');
+      var other = passageBox.querySelector('[data-passage-path]');
+      var add = passageBox.querySelector('[data-passage-add]');
+      var said = passageBox.querySelector('[data-passage-said]');
+      var last = '';
+      try { last = window.localStorage.getItem('reporion.library.passageTo') || ''; } catch (e) { last = ''; }
+      if (last && Array.prototype.some.call(to.options, function (o) { return o.value === last; })) to.value = last;
+      else if (last && to.options.length === 1) other.value = last;
+      function choose() { otherBox.hidden = to.value !== ''; }
+      to.addEventListener('change', choose);
+      choose();
+      add.addEventListener('click', function () {
+        var target = to.value || other.value.trim();
+        if (!target) { other.focus(); return; }
+        if (!passage) return;
+        add.disabled = true;
+        said.textContent = '';
+        call('POST', cfg.basePath + '/api/v1/library/' + cfg.highlight.pid + '/passages', { quote: passage, to: target }).then(function (r) {
+          add.disabled = false;
+          if (!r.ok) { said.textContent = r.json && r.json.error ? r.json.error.message : (s.failed || ''); return; }
+          try { window.localStorage.setItem('reporion.library.passageTo', target); } catch (e) { /* no storage */ }
+          var a = el('a', '', r.json.path);
+          a.href = r.json.href;
+          said.appendChild(document.createTextNode((s.sent || '%s').split('%s')[0]));
+          said.appendChild(a);
+        }, function () { add.disabled = false; said.textContent = s.failed || ''; });
       });
     }
 

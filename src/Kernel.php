@@ -571,7 +571,8 @@ final class Kernel
         $commonMin = Embedder::commonMin($config);
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true, ($config['library']['lookup'] ?? false) === true && \is_string($config['library']['unpaywall_email'] ?? null) && $config['library']['unpaywall_email'] !== '');
+        $highlights = new Highlights($storage, $index, new Comments($storage, $audit), self::libraryNamespace($config));
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true, ($config['library']['lookup'] ?? false) === true && \is_string($config['library']['unpaywall_email'] ?? null) && $config['library']['unpaywall_email'] !== '', $highlights);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');
@@ -622,7 +623,7 @@ final class Kernel
             $storage,
             $index,
             $audit,
-            new Highlights($storage, $index, new Comments($storage, $audit), self::libraryNamespace($config)),
+            $highlights,
             // Web clip (phase 7): off unless an owner turns it on
             ($config['library']['web_clip'] ?? false) === true ? new WebClip(max(1, (int) ($config['library']['max_mb'] ?? 50)) * 1024 * 1024) : null,
             $throttle,
@@ -830,6 +831,8 @@ final class Kernel
             => $libraryController->merge($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/highlights', static fn (Request $request, array $params): Response
             => $libraryController->highlight($request, $params['pid'], $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/passages', static fn (Request $request, array $params): Response
+            => $libraryController->passage($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/analyze', static fn (Request $request, array $params): Response
             => $libraryAi->analyze($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/ask', static fn (Request $request, array $params): Response

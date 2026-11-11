@@ -318,6 +318,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    quote stands in the source (whitespace folded, the extracted text's escapes undone), none when it is not found (a quote cut with
    "…" at 300 characters is looked for without it). Never into a report, a page naming a patient, a library source or a signed page.
    No assistant. *Not built:* highlight colours, a list of a source's highlights apart from its comments.
+   *Passages, 2026-11-11 (owner's request):* no comment needed: with text selected in a source, the comments panel offers **Add passage**
+   (`POST /api/v1/library/{pid}/passages`, `Highlights::passage()`): the selection **verbatim** (whitespace folded, up to 4000 characters, not the
+   comment quote's 300; a CNP refuses it) as `> text [@key, p. N]`. The picker lists the pages citing the source that the caller writes and
+   that take passages (`Highlights::notebooks()`, the source's backlinks under visibility), then *Another page…*; the last one is remembered in
+   this browser. Passages and highlights now go **at the end of the page's `## Passages` section**, made at the end of the page when it has none
+   (`Highlights::intoSection()`), and never into a saved analysis either. One revision by the writer (note `Highlight from [@key]`, audit
+   `passage_from`). No assistant.
    *Step 4 built 2026-10-30:* **Web clip**, opt-in (Admin → Settings → Library, `library.web_clip`, off by default): the Add panel
    takes an address, `POST /api/v1/library/clip` fetches it (`Service\Library\WebClip`) and the upload's own reading and proposal
    follow (the same patient guard, duplicates and lookups), with `URL`, `accessed` and, for a page with no DOI, `type: webpage`.

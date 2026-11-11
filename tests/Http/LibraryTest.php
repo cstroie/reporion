@@ -189,7 +189,7 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(200, $sent->status, $sent->body);
         self::assertSame(['path' => 'wiki:notebook', 'rev' => 2, 'page' => 2, 'href' => '/wiki:notebook'], json_decode($sent->body, true));
         $page = $storage->read('wiki:notebook');
-        self::assertSame("# Notebook\n\n> Lesions were graded \\[0–3\\] in 128 patients. [@abel2020, p. 2]\n\nOur \\*grading\\* too\n", $page->body);
+        self::assertSame("# Notebook\n\n## Passages\n\n> Lesions were graded \\[0–3\\] in 128 patients. [@abel2020, p. 2]\n\nOur \\*grading\\* too\n", $page->body, 'in the Passages section (2026-11-11)');
         $revlog = $page->revlog;
         self::assertSame('Highlight from [@abel2020]', end($revlog)['note'] ?? null);
         self::assertStringContainsString('"highlight_from":"' . $source->pid . '"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
@@ -200,6 +200,46 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(404, $send('other', 'wiki:notebook')->status, 'no read on the source');
         self::assertSame(404, $send(null, 'wiki:notebook')->status);
         self::assertSame(2, $storage->read('wiki:notebook')->rev);
+    }
+
+    /** A passage (2026-11-11): the selection itself, verbatim, into a notebook's Passages section; no comment */
+    public function testAPassageGoesVerbatimIntoThePassagesSectionOfANotebookCitingTheSource(): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('library', GrantRole::Viewer), new Grant('wiki', GrantRole::Editor)]);
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $source = $storage->create('library:abel2020', ['title' => 'Abel', 'visibility' => 'private', 'csl' => ['title' => 'Abel']], "*— p. 1 —*\n\nFirst page.\n\n*— p. 2 —*\n\nAge groups for head exams: 0 - < 3 months, 3 months - < 1 y.\n", 'owner');
+        $storage->create('wiki:notebook', ['title' => 'Notebook', 'visibility' => 'private'], "# Notebook\n\nIntro [@abel2020].\n\n## Passages\n\n> Earlier. [@abel2020, p. 1]\n\n## Notes\n\nMine.\n", 'owner');
+        $storage->create('wiki:other', ['title' => 'Other', 'visibility' => 'private'], "# Other\n", 'owner');
+        $storage->create('wiki:cites', ['title' => 'Cites', 'visibility' => 'private'], "Cites [@abel2020].\n", 'owner');
+        $storage->create('wiki:plain', ['title' => 'Plain', 'visibility' => 'private'], "No citation.\n", 'owner');
+        $storage->create('wiki:cites:studio-overview', ['title' => 'Overview', 'visibility' => 'private', 'analysis' => ['prompt' => 'studio-overview', 'of' => 'X']], "Says [@abel2020].\n", 'owner');
+        $add = fn (?string $user, string $quote, string $to): Response => $this->call($user, 'POST', '/api/v1/library/' . $source->pid . '/passages', ['quote' => $quote, 'to' => $to]);
+        $long = str_repeat('word ', 700);
+
+        $added = $add('writer', "Age groups for head exams:\n0 - < 3 months, 3 months - < 1 y.", 'wiki:notebook');
+
+        self::assertSame(200, $added->status, $added->body);
+        self::assertSame(['path' => 'wiki:notebook', 'rev' => 2, 'page' => 2, 'href' => '/wiki:notebook'], json_decode($added->body, true));
+        self::assertSame("# Notebook\n\nIntro [@abel2020].\n\n## Passages\n\n> Earlier. [@abel2020, p. 1]\n\n> Age groups for head exams: 0 - \\< 3 months, 3 months - \\< 1 y. [@abel2020, p. 2]\n\n## Notes\n\nMine.\n", $storage->read('wiki:notebook')->body, 'at the end of its section, word for word');
+        self::assertStringContainsString('"passage_from":"' . $source->pid . '"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+
+        self::assertSame(200, $add('writer', trim($long), 'wiki:other')->status, 'longer than a comment\'s quote');
+        self::assertStringEndsWith("## Passages\n\n> " . trim($long) . " [@abel2020]\n", $storage->read('wiki:other')->body, 'a section made when there is none; no page when the text is not found');
+        self::assertSame(422, $add('writer', str_repeat('a', \Reporion\Service\Library\Highlights::MAX_PASSAGE + 1), 'wiki:other')->status);
+        self::assertSame(422, $add('writer', 'CNP ' . \Reporion\Tests\Support\CnpTest::make(1, '800115'), 'wiki:other')->status);
+        self::assertSame(422, $add('writer', '', 'wiki:other')->status);
+        self::assertNotSame(200, $add('owner', 'x', 'library:abel2020')->status, 'never a library source');
+        self::assertSame(404, $add('reader', 'x', 'wiki:notebook')->status, 'no write on the page');
+        self::assertSame(404, $add('other', 'x', 'wiki:notebook')->status, 'no read on the source');
+        self::assertSame(404, $add(null, 'x', 'wiki:notebook')->status);
+
+        // The picker: the pages citing the source that the caller writes
+        $view = $this->call('writer', 'GET', '/library:abel2020')->body;
+        self::assertMatchesRegularExpression('~<select class="input" data-passage-to>.*<option value="wiki:notebook">Notebook</option>~s', $view);
+        self::assertStringContainsString('<option value="wiki:cites">', $view);
+        self::assertStringNotContainsString('<option value="wiki:plain">', $view, 'not citing it');
+        self::assertStringNotContainsString('<option value="wiki:cites:studio-overview">', $view, 'a saved analysis takes no passage');
+        self::assertNotSame(200, $add('writer', 'x', 'wiki:cites:studio-overview')->status);
     }
 
     public function testWebClipIsOffUntilTurnedOnAndRefusesALocalAddress(): void

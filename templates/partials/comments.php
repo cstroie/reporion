@@ -7,8 +7,9 @@
  *
  * Variables in scope: string $basePath, $path; ?array{username: string, owner: bool} $commenter;
  * bool $commentsInRail (the editor's: no heading, its section summary names it and holds the count);
- * ?array{pid: string} $librarySource (the page view's, when the page is a library source: a comment
- * quoting it may be sent to a page, phase 7).
+ * ?array{pid: string, notebooks?: list<array{path: string, title: string}>} $librarySource (the page
+ * view's, when the page is a library source: a comment quoting it may be sent to a page, phase 7;
+ * the selection itself added verbatim to a notebook's Passages, 2026-11-11, the pages citing it offered).
  */
 
 declare(strict_types=1);
@@ -34,6 +35,20 @@ $commentsInRail = ($commentsInRail ?? false) === true;
 <div class="wk-recall-row"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-paper-plane-right" aria-hidden="true"></i><?= htmlspecialchars(t('comments.add'), ENT_QUOTES) ?></button></div>
 <p class="wk-mono wk-dim" data-comments-status aria-live="polite"></p>
 </form>
+<?php if (!$commentsInRail && ($librarySource ?? null) !== null): ?>
+<div class="wk-comment-send wk-passage" data-passage hidden>
+<label class="wk-text-sm"><?= htmlspecialchars(t('library.passage_to'), ENT_QUOTES) ?>
+<select class="input" data-passage-to>
+<?php foreach ($librarySource['notebooks'] ?? [] as $nb): ?><option value="<?= htmlspecialchars($nb['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($nb['title'], ENT_QUOTES) ?></option><?php endforeach; ?>
+<option value=""><?= htmlspecialchars(t('library.passage_other'), ENT_QUOTES) ?></option>
+</select>
+<small class="wk-dim"><?= htmlspecialchars(t('library.passage_help'), ENT_QUOTES) ?></small></label>
+<label class="wk-text-sm" data-passage-other hidden><?= htmlspecialchars(t('library.highlight_to'), ENT_QUOTES) ?>
+<input class="input" type="text" data-passage-path spellcheck="false" autocapitalize="off" placeholder="<?= htmlspecialchars(t('library.highlight_to_hint'), ENT_QUOTES) ?>"></label>
+<div class="wk-recall-row"><button class="btn btn-secondary btn-sm" type="button" data-passage-add title="<?= htmlspecialchars(t('library.passage_title'), ENT_QUOTES) ?>"><i class="ph ph-quotes" aria-hidden="true"></i><?= htmlspecialchars(t('library.passage_add'), ENT_QUOTES) ?></button></div>
+<p class="wk-mono wk-dim" data-passage-said aria-live="polite"></p>
+</div>
+<?php endif; ?>
 <script type="application/json"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
