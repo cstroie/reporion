@@ -220,6 +220,10 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    under the caller (invariant 6), not from the system-side citation records. **Adaptive:** the page and its sources go whole when they fit `library.context_tokens`;
    otherwise passages (about 1200 characters, cut as `SourceChunks`, each with the page marker in force) are chosen by the question's words and those the
    `notebook-terms` prompt adds in English and in the question's language (`AskExpansion::parse()`, `RecallTerms`), at most 4 a source, until the budget is full.
+   Since 2026-11-11 (a question on the age bands of paediatric head CT found nothing in two guidelines that hold them): the question's two- and three-letter
+   words are kept (`age`, `CT`, `DRL`; `SourceAsk::terms()`), each word adds its British or American spelling (`Support\SpellingVariants`: `pediatric` ↔
+   `paediatric`), the passages found by words are ranked by how many search words each holds, the question's own counting twice (bm25 order only breaks ties),
+   and a notebook of few sources takes an even share of the 24 passages (two sources: 12 each) instead of 4.
    The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default

@@ -22,7 +22,7 @@ use Reporion\Support\SourcePassages;
  * finds an English article's passage by meaning when it shares no word with it, so a few places
  * are kept for what only meaning finds. A vector is used only for the text it was made from (its
  * sha against the passage cut now, Support\SourcePassages). At most PER_SOURCE passages a text,
- * until the budget is full.
+ * more for a notebook of few sources (find()), until the budget is full.
  */
 final class PassageSearch
 {
@@ -37,8 +37,8 @@ final class PassageSearch
 
     /** Passages asked of the vectors */
     private const SEMANTIC = 40;
-    /** Passages asked of passage_fts */
-    private const WORDS = 120;
+    /** Passages asked of passage_fts, then ranked again by how many search words each holds */
+    private const WORDS = 300;
     /** The most passages one answer is given (a notebook citing many sources, the whole library) */
     public const MAX_PASSAGES = 24;
 
@@ -107,17 +107,34 @@ final class PassageSearch
      * ($own, cut and scored here, as choose()) and the library sources' passages, by words from
      * passage_fts and by meaning from passage_vectors, only of $pids (a notebook's sources) or of
      * every source the caller can see (null: Ask the library). No source is read whole. At most
-     * $max passages, PER_SOURCE a source, within $budget characters.
+     * $max passages within $budget characters, PER_SOURCE a source, or an even share of $max when
+     * a notebook cites few sources (two sources: twelve each), so a long guideline is not cut to
+     * four passages while the budget stays empty (2026-11-11).
+     *
+     * The passages found by words are ranked by how many of the search words each holds, the
+     * question's own ($primary) counting twice, full-text order breaking ties: bm25 over a wide OR
+     * puts first the passages that repeat the commonest word (`head` in a guideline on head CT),
+     * not the one that answers (`Age groups for head exams: …`).
      *
      * @param list<array{key: ?string, path: string, title: string, text: string}> $own
      * @param ?list<string> $pids
-     * @param list<string>  $terms folded
+     * @param list<string>  $terms   folded
      * @param string        $meaning already safe to send; '' for words only
+     * @param list<string>  $primary folded, the terms of $terms the question itself has
      *
      * @return array{passages: list<array{key: ?string, path: string, title: string, page: ?int, text: string}>, semantic: int, failed: bool}
      */
-    public function find(array $own, ?array $pids, array $terms, int $budget, string $meaning, ?User $principal, int $max = self::MAX_PASSAGES): array
+    public function find(array $own, ?array $pids, array $terms, int $budget, string $meaning, ?User $principal, int $max = self::MAX_PASSAGES, array $primary = []): array
     {
+        $weight = array_fill_keys($primary, 2);
+        $score = static function (string $text) use ($terms, $weight): int {
+            $sum = 0;
+            foreach (RecallTerms::matched($terms, RecallTerms::fold($text)) as $term) {
+                $sum += $weight[$term] ?? 1;
+            }
+
+            return $sum;
+        };
         $all = [];
         $ownIds = [];
         foreach ($own as $t => $text) {
@@ -125,20 +142,22 @@ final class PassageSearch
             foreach (SourcePassages::cut($text['text']) as $p) {
                 $id = 'own' . $t . ':' . $p['n'];
                 $all[$id] = ['path' => $text['path'], 'key' => $text['key'], 'title' => $text['title'], 'page' => $p['page'], 'text' => $p['text']];
-                $score = \count(RecallTerms::matched($terms, RecallTerms::fold($p['text'])));
-                if ($score > 0) {
-                    $scored[] = ['id' => $id, 'score' => $score];
+                $points = $score($p['text']);
+                if ($points > 0) {
+                    $scored[] = ['id' => $id, 'score' => $points];
                 }
             }
             usort($scored, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
             $ownIds = [...$ownIds, ...array_column($scored, 'id')];
         }
-        $sourceIds = [];
-        foreach ($this->index?->passagesAbout($terms, $pids, $principal, self::WORDS) ?? [] as $p) {
+        $scored = [];
+        foreach ($this->index?->passagesAbout($terms, $pids, $principal, self::WORDS) ?? [] as $rank => $p) {
             $id = $p['pid'] . ':' . $p['n'];
             $all[$id] = ['path' => $p['path'], 'key' => null, 'title' => $p['title'], 'page' => $p['page'], 'text' => $p['text']];
-            $sourceIds[] = $id;
+            $scored[] = ['id' => $id, 'score' => $score($p['text']), 'rank' => $rank];
         }
+        usort($scored, static fn (array $a, array $b): int => [$b['score'], $a['rank']] <=> [$a['score'], $b['rank']]);
+        $sourceIds = array_column($scored, 'id');
         // The notebook's own passages and the sources' by turns: neither crowds the other out
         $keyword = [];
         for ($i = 0, $n = max(\count($ownIds), \count($sourceIds)); $i < $n; ++$i) {
@@ -167,13 +186,16 @@ final class PassageSearch
             }
         }
 
-        return $this->pack($keyword, $meaningIds, $all, $budget, $max) + ['failed' => $failed];
+        $texts = \count($own) + \count($pids ?? []);
+        $perSource = $pids !== null && $texts > 0 ? max(self::PER_SOURCE, intdiv($max, $texts)) : self::PER_SOURCE;
+
+        return $this->pack($keyword, $meaningIds, $all, $budget, $max, $perSource) + ['failed' => $failed];
     }
 
     /**
      * The two rankings fused by rank and packed: the best passage by words first (so a small
      * budget is never all meaning), then the places kept for what only meaning finds, then the
-     * rest, PER_SOURCE a source (by path), within $budget characters and $max passages; in fused order
+     * rest, $perSource a source (by path), within $budget characters and $max passages; in fused order
      *
      * @param list<string> $keyword
      * @param list<string> $meaning
@@ -181,7 +203,7 @@ final class PassageSearch
      *
      * @return array{passages: list<array{key: ?string, path: string, title: string, page: ?int, text: string}>, semantic: int}
      */
-    private function pack(array $keyword, array $meaning, array $all, int $budget, int $max): array
+    private function pack(array $keyword, array $meaning, array $all, int $budget, int $max, int $perSource = self::PER_SOURCE): array
     {
         $rrf = [];
         foreach ([$keyword, $meaning] as $list) {
@@ -196,14 +218,14 @@ final class PassageSearch
         $chosen = [];
         $used = 0;
         $per = [];
-        $take = function (array $ids, int $limit) use (&$chosen, &$used, &$per, $all, $budget, $max): int {
+        $take = function (array $ids, int $limit) use (&$chosen, &$used, &$per, $all, $budget, $max, $perSource): int {
             $taken = 0;
             foreach ($ids as $id) {
                 if ($taken >= $limit || \count($chosen) >= $max) {
                     break;
                 }
                 $p = $all[$id];
-                if (isset($chosen[$id]) || ($per[$p['path']] ?? 0) >= self::PER_SOURCE || $used + mb_strlen($p['text']) > $budget) {
+                if (isset($chosen[$id]) || ($per[$p['path']] ?? 0) >= $perSource || $used + mb_strlen($p['text']) > $budget) {
                     continue;
                 }
                 $per[$p['path']] = ($per[$p['path']] ?? 0) + 1;

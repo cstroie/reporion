@@ -20,7 +20,8 @@ final class AskExpansion
     public const MAX_QUESTION = 1_000;
 
     /**
-     * @return array{question: string, terms: list<string>} question '' when the answer has none (keywords only)
+     * @return array{question: string, terms: list<string>, lines: list<string>} question '' when the answer has none (keywords only);
+     *         lines: the keyword lines as written (a caller keeping words `terms` leaves out: `age`, `CT`)
      */
     public static function parse(string $answer): array
     {
@@ -47,6 +48,6 @@ final class AskExpansion
             }
         }
 
-        return ['question' => $question, 'terms' => \array_slice(array_keys($terms), 0, self::MAX_TERMS)];
+        return ['question' => $question, 'terms' => \array_slice(array_keys($terms), 0, self::MAX_TERMS), 'lines' => \array_slice($lines, 0, self::MAX_TERMS)];
     }
 }

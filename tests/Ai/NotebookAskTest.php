@@ -164,6 +164,40 @@ final class NotebookAskTest extends HttpTestCase
         self::assertStringContainsString('Fazekas grading', $sent);
     }
 
+    /**
+     * The case of 2026-11-11: a question in American English with short words (`age`, `CT`) about
+     * a guideline in British English whose every page says head, CT and examination. The passage
+     * that answers is found (coverage beats repetition), and a notebook of two sources takes more
+     * than PER_SOURCE passages of each when the budget has room.
+     */
+    public function testTheAnswerHidingAmongRepeatedWordsIsFoundInAFewLargeSources(): void
+    {
+        $this->config['library'] = ['context_tokens' => 6000];
+        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $storage = $this->storage();
+        $csl = ['type' => 'report', 'title' => 'Guideline', 'issued' => ['date-parts' => [[2018]]]];
+        foreach (['guide2018' => 7, 'other2017' => -1] as $key => $answerPage) {
+            $text = '';
+            foreach (range(1, 14) as $page) {
+                $text .= "*— p. {$page} —*\n\n" . ($page === $answerPage
+                    ? "For paediatric head CT, age is the grouping parameter. Age groups for head exams: 0 - < 3 months, 3 months - < 1 y, 1 - < 6 y, ≥6y.\n\n" . str_repeat("Further notes on page {$page} of the survey. ", 14)
+                    : ($page % 2 === 0
+                        ? str_repeat("Weight bands suit body exams; bands of {$page} kg. ", 14)
+                        : str_repeat("Head exams {$page}: the head phantom and head protocols. ", 12))) . "\n\n";
+            }
+            $storage->create('library:' . $key, ['title' => 'Guide ' . $key, 'visibility' => 'private', 'csl' => $csl], $text, 'owner');
+        }
+        $storage->create('wiki:doses', ['title' => 'Doses', 'visibility' => 'private'], "# Doses\n\n[@guide2018]\n[@other2017]\n", 'owner');
+
+        $data = json_decode($this->ask('writer', ['path' => 'wiki:doses', 'question' => 'What are the age bands for pediatric head CT exams?'])->body, true)['data'];
+
+        self::assertFalse($data['whole']);
+        $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString('Age groups for head exams', $sent);
+        self::assertMatchesRegularExpression('~<source id="1" key="guide2018"[^>]*>[^<]*Age groups for head exams~', $sent, 'the passage that answers comes first');
+        self::assertGreaterThan(\Reporion\Service\Library\PassageSearch::PER_SOURCE, \count(array_keys(array_column($data['sources'], 'key'), 'other2017')), 'two sources: more than four passages of one');
+    }
+
     public function testTheAnswerIsStreamedAfterItsSources(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];

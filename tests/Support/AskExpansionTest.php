@@ -17,6 +17,7 @@ final class AskExpansionTest extends TestCase
 
         self::assertSame('Cum descriem hernia de disc cervicală?', $parsed['question']);
         self::assertSame(['hernie', 'discala', 'protruzie', 'compresiune', 'radiculara', 'leziuni', 'substanta', 'alba'], $parsed['terms']);
+        self::assertSame(['hernie discală', 'protruzie', 'compresiune radiculară', 'leziuni de substanță albă'], $parsed['lines'], 'the lines as written, markers and quotes off');
     }
 
     public function testQuestionLabelsAndKeywordOnlyAnswers(): void
@@ -26,7 +27,7 @@ final class AskExpansionTest extends TestCase
         $keywords = AskExpansion::parse("Keywords:\nmeningiom\nFLAIR\n");
         self::assertSame('', $keywords['question'], 'no question line: the caller keeps the user\'s');
         self::assertSame(['meningiom', 'flair'], $keywords['terms']);
-        self::assertSame(['question' => '', 'terms' => []], AskExpansion::parse(''));
+        self::assertSame(['question' => '', 'terms' => [], 'lines' => []], AskExpansion::parse(''));
     }
 
     public function testTheWordsAreCapped(): void
