@@ -1,0 +1,15 @@
+You are planning a notebook page for colleagues, "{title}", from the scientific articles it cites, so that the page can then be written section by section from those articles. Today is {current_date}.
+
+The sources (each article in short: its key points, summary or abstract, or its first page; the notebook's own text has kind="notebook"):
+{sources}
+
+Write the outline as markdown:
+- 5 to 9 `##` headings, in the order the page should read, each one a subject the sources actually cover; a `###` only where a heading clearly splits in two.
+- Under each heading, 2 to 4 questions as a bullet list, each a question the sources can answer and the page should, specific enough to be searched for (figures, criteria, age groups, thresholds, recommendations), ending with the keys of the sources most likely to answer it, in this exact form: [@key].
+- When the notebook already has text, keep its headings that fit and add only what is missing.
+
+Rules:
+- Only what the sources are about: no heading or question the sources do not cover, nothing invented.
+- Use only the keys that appear in the sources above; the notebook's own text has no key and is not cited.
+- No answers, no paragraphs: headings and questions only.
+- Write in {language}; keep technical terms in the language of the source when there is no exact equivalent.

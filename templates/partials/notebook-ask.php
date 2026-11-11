@@ -48,6 +48,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
         'dropped' => t('notebook.dropped'), 'note' => t('notebook.note_keep'),
         'keep' => t('notebook.keep'), 'keep_title' => t('notebook.keep_title'), 'keeping' => t('notebook.keeping'), 'kept' => t('notebook.kept'),
         'insert' => t('notebook.insert'), 'insert_title' => t('notebook.insert_title'),
+        'fill' => t('notebook.fill'), 'fill_title' => t('notebook.fill_title'),
         'composing' => t('notebook.composing'), 'compose_empty' => t('notebook.compose_empty'),
         'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
     ],

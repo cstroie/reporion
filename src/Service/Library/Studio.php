@@ -38,6 +38,10 @@ use Reporion\Support\TemplateDraft;
  *   writer's topic and the notebook's words, or are nearest in meaning (PassageSearch), one request
  *   on them. A template is about one exam, a focused question, where retrieval does well; no
  *   condensing, so no request limit.
+ * - outline (2026-11-11): one request, always: each source in short (its kept key points, summary or
+ *   abstract: Analyses::briefOf(); else its first OPENING characters) and the notebook's own text,
+ *   each cut to an even share of the budget. A plan of headings and questions needs what each
+ *   source is about, not all it says; each section is then filled by Ask the notebook.
  * - compare: one request per source (its row, the questions over that source alone, whole or
  *   from its notes), the table assembled here, each row citing its own key.
  * - check: the page's own text and the sources whole, or their passages holding the page's words
@@ -53,6 +57,8 @@ final class Studio
     /** The tasks: task => its reserved prompt */
     public const TASKS = [
         'overview' => 'studio-overview',
+        // 2026-11-11: the headings a notebook could have, with questions under each, from the sources in short
+        'outline' => 'studio-outline',
         'glossary' => 'studio-glossary',
         'faq' => 'studio-faq',
         'timeline' => 'studio-timeline',
@@ -72,6 +78,9 @@ final class Studio
     public const MAX_QUESTIONS = 8;
     public const MAX_QUESTION = 200;
 
+    /** An outline's look at a source with nothing kept: its first characters */
+    public const OPENING = 3_000;
+
     /** The share of the budget the page's own text may take in a check */
     private const CHECK_PAGE_SHARE = 0.5;
 
@@ -84,6 +93,8 @@ final class Studio
         private readonly string $defaultLanguage = 'ro',
         // The audio overview's script language, the voices' (`ai.speech_language`; '' the notebook's)
         private readonly string $speechLanguage = '',
+        // The outline reads each source in short, from what is kept (Analyses::briefOf())
+        private readonly ?Analyses $analyses = null,
     ) {
     }
 
@@ -194,6 +205,18 @@ final class Studio
                 $requests += $n === 0 ? 0 : ($n > 1 ? $n + 1 : 1);
             }
             $whole = $requests === \count(array_filter($texts, static fn (array $t): bool => $t['text'] !== ''));
+        } elseif ($task === 'outline') {
+            $texts = $own['text'] !== '' ? [$own] : [];
+            foreach ($sources as $source) {
+                $brief = $this->analyses?->briefOf($source['record'], $principal);
+                $texts[] = ['key' => $source['key'], 'path' => $source['path'], 'title' => $source['title'], 'text' => $brief ?? trim(mb_substr($source['text'], 0, self::OPENING))];
+            }
+            $share = intdiv($budget, max(1, \count($texts)));
+            foreach ($texts as $i => $t) {
+                $texts[$i]['text'] = mb_substr($t['text'], 0, $share);
+            }
+            $whole = true;
+            $requests = 1;
         } elseif ($task === 'check') {
             $page = $own['text'];
             if ($page === '' || mb_strlen($page) > (int) ($budget * self::CHECK_PAGE_SHARE)) {

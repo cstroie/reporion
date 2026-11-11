@@ -65,12 +65,12 @@
       buttons.forEach(function (b) { b.disabled = on; });
     }
 
-    function rendered(markdown, cls) {
+    function rendered(markdown, cls, then) {
       var body = el('div', cls + ' wk-prose');
       var extra = { citation_style: cfg.citationStyle || '', language: cfg.language || '' };
       if (window.ReporionRender) {
         window.ReporionRender.html(base, markdown, false, false, extra)
-          .then(function (html) { body.innerHTML = html; }, function () { body.textContent = markdown; });
+          .then(function (html) { body.innerHTML = html; if (then) then(body); }, function () { body.textContent = markdown; });
       } else {
         body.textContent = markdown;
       }
@@ -146,7 +146,8 @@
         line.appendChild(player);
         out.appendChild(line);
       }
-      out.appendChild(rendered(markdown, 'wk-notebook-answer'));
+      // An outline: each section's questions one click from Ask this notebook (notebook-ask.js)
+      out.appendChild(rendered(markdown, 'wk-notebook-answer', data.task === 'outline' && window.ReporionNotebookAsk ? window.ReporionNotebookAsk.decorate : null));
       if (data.dropped > 0) out.appendChild(notice('info', (s.dropped || '%s').replace('%s', data.dropped)));
       if (data.saved) {
         var kept = el('p', 'wk-dim wk-text-xs');

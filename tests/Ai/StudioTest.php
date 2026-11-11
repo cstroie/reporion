@@ -105,6 +105,27 @@ final class StudioTest extends HttpTestCase
         self::assertStringContainsString('in Romanian', $user);
     }
 
+    /** The outline (2026-11-11): one request on each source in short, never its whole text */
+    public function testTheOutlineReadsEachSourceInShortInOneRequestAndIsKept(): void
+    {
+        $storage = $this->storage();
+        $storage->create('ai:profiles:wiki:special:studio-outline', ['title' => 'outline', 'format' => 'text', 'visibility' => 'private'], "OUTLINE of {title}\n{sources}\n", 'owner');
+        $this->config['library'] = ['context_tokens' => 4000];
+        $long = $storage->read('library:long2021');
+        $storage->create('library:long2021:source-points', ['title' => 'Points', 'visibility' => 'private', 'analysis' => ['prompt' => 'source-points', 'of' => $long->pid, 'of_rev' => 1, 'of_sha' => 'x', 'provider' => '', 'at' => '2026-11-11T10:00:00+02:00']], "- Fazekas grades white matter lesions.\n", 'owner');
+
+        $data = $this->data($this->studio('writer', ['path' => 'wiki:two', 'task' => 'outline']));
+
+        self::assertSame('outline', $data['task']);
+        self::assertSame(1, $this->server->requests(), 'one request, never condensed part by part');
+        $user = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString('OUTLINE of Two', $user);
+        self::assertStringContainsString('Fazekas grades white matter lesions', $user, 'the kept key points stand for the source');
+        self::assertStringNotContainsString('Page 2 filler', $user, 'not the whole article');
+        self::assertStringContainsString('graded in 128 patients', $user, 'a source with nothing kept: its opening');
+        self::assertSame('wiki:two:studio-outline', $storage->read('wiki:two:studio-outline')->path, 'kept like any Studio text');
+    }
+
     public function testEachStudioTextIsKeptBesideTheNotebookAndListedInItsPanel(): void
     {
         $data = $this->data($this->studio('writer', ['path' => 'wiki:notebook', 'task' => 'overview']));

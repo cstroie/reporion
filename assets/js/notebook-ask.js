@@ -289,8 +289,52 @@
     });
   }
 
+  /*
+   * Studio's outline (2026-11-11): each heading followed by questions gets an Ask button that puts
+   * the heading and its questions in this page's Ask box (citation marks left out), opens it and
+   * moves to it; the writer asks, then keeps or inserts the answer. Called for a kept outline here,
+   * and by notebook-studio.js for one just made.
+   */
+  function decorate(container) {
+    var ask = document.querySelector('[data-island="notebook-ask"]');
+    var field = ask && ask.querySelector('textarea[name="question"]');
+    if (!container || !field) return;
+    var cfgEl = ask.querySelector(':scope > script[type="application/json"]');
+    var strings = {};
+    try { strings = (JSON.parse(cfgEl.textContent) || {}).strings || {}; } catch (e) { strings = {}; }
+    Array.prototype.forEach.call(container.querySelectorAll('h2, h3'), function (heading) {
+      if (heading.querySelector('[data-outline-ask]')) return;
+      var questions = [];
+      for (var next = heading.nextElementSibling; next && !/^H[1-6]$/.test(next.tagName); next = next.nextElementSibling) {
+        if (next.tagName !== 'UL' && next.tagName !== 'OL') continue;
+        Array.prototype.forEach.call(next.children, function (li) {
+          var text = li.textContent.replace(/\[\d+(?:\s*[,–-]\s*\d+)*\]/g, '').replace(/\[@[^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
+          if (text.indexOf('?') !== -1) questions.push(text);
+        });
+      }
+      if (questions.length === 0) return;
+      var title = heading.textContent.trim();
+      var button = el('button', 'btn btn-ghost btn-sm wk-outline-ask');
+      button.type = 'button';
+      button.setAttribute('data-outline-ask', '');
+      button.title = strings.fill_title || '';
+      button.innerHTML = '<i class="ph ph-chats-circle" aria-hidden="true"></i>';
+      button.appendChild(document.createTextNode(strings.fill || 'Ask'));
+      button.addEventListener('click', function () {
+        field.value = (title + '\n' + questions.join('\n')).slice(0, 1000);
+        ask.open = true;
+        ask.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        field.focus();
+      });
+      heading.appendChild(document.createTextNode(' '));
+      heading.appendChild(button);
+    });
+  }
+  window.ReporionNotebookAsk = { decorate: decorate };
+
   function start() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="notebook-ask"]'), mount);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-saved-prompt="studio-outline"] .wk-saved-text'), decorate);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

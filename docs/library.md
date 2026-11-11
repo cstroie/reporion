@@ -236,6 +236,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    points, else its kept summary, else its abstract page; then the notebook's Studio overview, timeline, comparison, glossary and questions; then its
    kept answers; every text's headings moved below its section (fenced code left alone). It writes nothing: the draft goes to the editor through the
    same hand-off as *Insert* and is saved only by the writer (`assisted: compose`).
+   *Outline, 2026-11-11 (owner's request):* Studio's **Outline** (`studio-outline`, research target) asks for 5–9 `##` headings with 2–4
+   questions under each, each question ending with the keys likely to answer it. It is **one request** on each source in short
+   (`Analyses::briefOf()`: its kept key points, else summary, else abstract page; else its first 3000 characters, `Studio::OPENING`) and
+   the notebook's own text, each cut to an even share of the budget: a plan needs what each source is about, not all it says. Kept like
+   any Studio text (`{notebook}:studio-outline`). Each heading with questions gets an **Ask** button (`notebook-ask.js`, also on a kept
+   outline) that puts the heading and its questions in *Ask this notebook*: a section is filled by one targeted ask, then kept or
+   inserted. Together: Outline → Ask per section → Keep → Compose a draft.
    The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default
@@ -255,7 +262,7 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    `assets/js/notebook-studio.js`), the same gate (an editor of the page and of the library, never a report or a page naming a
    patient), one button per task whose prompt page the serving profile has: seven reserved prompts `studio-overview` (the
    systematization), `studio-glossary`, `studio-faq`, `studio-timeline`, `studio-compare`, `studio-check`, `studio-template`
-   (generic target, the research target since 2026-11-01; D15 amended). The sources are read under the caller (`NotebookAsk::sources()`), the answer is in the notebook's
+   (generic target, the research target since 2026-11-01; D15 amended), and since 2026-11-11 `studio-outline`. The sources are read under the caller (`NotebookAsk::sources()`), the answer is in the notebook's
    `language` and cites `[@key]`; citations of keys not sent are taken out; shown with Copy, rendered by the server, **never written**.
    *As built:* overview, glossary, FAQ, timeline and template send the notebook and its sources whole when they fit
    `library.context_tokens`, else each text longer than its share is condensed part by part (`source-part`, in the notebook's

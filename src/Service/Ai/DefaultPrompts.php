@@ -96,6 +96,7 @@ final class DefaultPrompts
         'ask-library' => ['kind' => self::SPECIAL, 'title' => 'Ask the library', 'file' => 'ask-library.txt', 'targets' => self::RESEARCH_ONLY],
         'notebook-terms' => ['kind' => self::SPECIAL, 'title' => 'Ask the notebook: search words', 'file' => 'notebook-terms.txt', 'model' => 'lite', 'targets' => self::RESEARCH_ONLY],
         'studio-overview' => ['kind' => self::SPECIAL, 'title' => 'Studio: overview of the subject', 'file' => 'studio-overview.txt', 'targets' => self::RESEARCH_ONLY],
+        'studio-outline' => ['kind' => self::SPECIAL, 'title' => 'Studio: an outline of headings and questions', 'file' => 'studio-outline.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-glossary' => ['kind' => self::SPECIAL, 'title' => 'Studio: glossary', 'file' => 'studio-glossary.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-faq' => ['kind' => self::SPECIAL, 'title' => 'Studio: questions and answers', 'file' => 'studio-faq.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-timeline' => ['kind' => self::SPECIAL, 'title' => 'Studio: timeline', 'file' => 'studio-timeline.txt', 'targets' => self::RESEARCH_ONLY],

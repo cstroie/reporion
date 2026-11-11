@@ -166,6 +166,23 @@ final class Analyses
     }
 
     /**
+     * What a library source is in short, from what is kept (2026-11-11: Compose, Studio's
+     * outline): its key points, else its summary, else its abstract page; null when none is kept
+     * that the caller reads
+     */
+    public function briefOf(PageRecord $source, ?User $principal): ?string
+    {
+        foreach ($this->shown($source, $principal, ['source-points', 'summary']) as $kept) {
+            if (trim($kept['text']) !== '') {
+                return trim($kept['text']);
+            }
+        }
+        $abstract = $this->abstractShown($source, $principal)['text'] ?? null;
+
+        return \is_string($abstract) && trim($abstract) !== '' ? trim($abstract) : null;
+    }
+
+    /**
      * The abstract page of $page (Abstracts), when the caller reads it, for its card
      *
      * @return ?array{path: string, text: string, from: string}

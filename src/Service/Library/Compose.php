@@ -22,9 +22,6 @@ use Reporion\Storage\StorageInterface;
  */
 final class Compose
 {
-    /** What a source gives, the first one kept */
-    private const SOURCE_PARTS = ['source-points', 'summary'];
-
     /** The notebook's Studio texts that read as part of a page, in this order (the check, template, cards and audio do not) */
     private const STUDIO_PARTS = ['studio-overview' => 'studio.overview', 'studio-timeline' => 'studio.timeline', 'studio-compare' => 'studio.compare', 'studio-glossary' => 'studio.glossary', 'studio-faq' => 'studio.faq'];
 
@@ -48,12 +45,7 @@ final class Compose
             } catch (PageNotFoundException) {
                 continue;
             }
-            $text = null;
-            foreach ($this->analyses->shown($record, $principal, self::SOURCE_PARTS) as $kept) {
-                $text = $kept['text'];
-                break;
-            }
-            $text ??= $this->analyses->abstractShown($record, $principal)['text'] ?? null;
+            $text = $this->analyses->briefOf($record, $principal);
             if ($text !== null && trim($text) !== '') {
                 $sources[] = '### ' . $cited['title'] . ' [@' . $cited['key'] . "]\n\n" . self::demote($text, 3);
             }

@@ -698,7 +698,7 @@ final class Kernel
             $assistant,
             new SourceAnalysis($aiActions, $assistant, $libraryTokens, new Abstracts($storage)),
             $notebookAsk,
-            new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens, self::libraryLanguage($config), \is_string($config['ai']['speech_language'] ?? null) ? $config['ai']['speech_language'] : ''),
+            new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens, self::libraryLanguage($config), \is_string($config['ai']['speech_language'] ?? null) ? $config['ai']['speech_language'] : '', new Analyses($storage, $index)),
             self::libraryNamespace($config),
             $storage,
             $index,
