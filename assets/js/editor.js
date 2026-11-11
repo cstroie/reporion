@@ -309,7 +309,8 @@
       showStatus();
     }
 
-    openDB().then(function (d) {
+    // Settled once the local draft is known: offered, dropped, or none (the hand-off below waits for it)
+    var draftChecked = openDB().then(function (d) {
       db = d;
       return dbGet(db, path);
     }).then(function (draft) {
@@ -1866,6 +1867,52 @@
         } : null
       });
     }
+
+    /*
+     * Text handed over by another page (2026-11-11: Ask the notebook's *Insert*, Compose): one
+     * sessionStorage entry `reporion.editor.insert` {path, text, assisted}, read for this page
+     * only and once. It waits until a draft offered back (the local one, the server's autosave)
+     * is restored or discarded, then is added at the end of the text as an undoable edit, and
+     * the save's note says `assisted: {assisted}` (D8). Never into a report's exam panes.
+     */
+    (function handOff() {
+      var raw = null;
+      try { raw = window.sessionStorage.getItem('reporion.editor.insert'); } catch (e) { return; }
+      var given = null;
+      try { given = JSON.parse(raw || 'null'); } catch (e) { given = null; }
+      if (!given || given.path !== path || typeof given.text !== 'string' || given.text.trim() === '') return;
+      function apply() {
+        try { window.sessionStorage.removeItem('reporion.editor.insert'); } catch (e) { /* kept: nothing else to do */ }
+        if (exams) return;
+        var value = docArea.value;
+        var lead = value.trim() === '' || (F && textarea === docArea && value.length <= F.bodyStart(value)) ? '' : (/\n\n$/.test(value) ? '' : (/\n$/.test(value) ? '\n' : '\n\n'));
+        var at = value.length;
+        applyEdit({ from: at, to: at, insert: lead + given.text.trim() + '\n', selStart: at + lead.length, selEnd: at + lead.length }, docArea);
+        reveal(docArea, at + lead.length);
+        var id = typeof given.assisted === 'string' && /^[a-z0-9][a-z0-9_-]{0,31}$/.test(given.assisted) ? given.assisted : '';
+        if (id && applied.indexOf(id) === -1) applied.push(id);
+        if (aiAssisted) aiAssisted.value = applied.join(',');
+      }
+      draftChecked.then(function () {
+        var waits = [];
+        if (draftBanner && !draftBanner.hidden) waits.push(restoreBtn, draftDismiss);
+        // The server's autosave: Restore reloads the page (the entry is still there then), Discard stays
+        if (autoBanner && !autoBanner.hidden) waits.push(autoDiscard);
+        waits = waits.filter(Boolean);
+        if (waits.length === 0) { apply(); return; }
+        var done = false;
+        waits.forEach(function (button) {
+          button.addEventListener('click', function () {
+            if (done) return;
+            if (button === autoDiscard && draftBanner && !draftBanner.hidden) return;
+            if ((button === restoreBtn || button === draftDismiss) && autoBanner && !autoBanner.hidden) return;
+            done = true;
+            // After the button's own handler has put its text in place
+            window.setTimeout(apply, 0);
+          });
+        });
+      });
+    }());
 
     // The writing aids (D51): assets/js/editor-aids.js, given the pane in front,
     // the whole text, the exam in front, and a way to find a line and to edit

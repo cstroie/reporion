@@ -260,7 +260,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t(($saveStaysOpen ?? false) ? 'editor.close' : 'editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
-<?php if ($ai !== null || $recallAi): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
+<input type="hidden" name="ai_assisted" id="editor-ai-assisted" value="">
 </form>
 </div>
 <?php if ($rail): ?>

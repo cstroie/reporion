@@ -224,6 +224,13 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    words are kept (`age`, `CT`, `DRL`; `SourceAsk::terms()`), each word adds its British or American spelling (`Support\SpellingVariants`: `pediatric` ↔
    `paediatric`), the passages found by words are ranked by how many search words each holds, the question's own counting twice (bm25 order only breaks ties),
    and a notebook of few sources takes an even share of the 24 passages (two sources: 12 each) instead of 4.
+   *Kept answers, 2026-11-11 (owner's request; amends "shown, never written"):* under an answer, **Keep** adds it to the notebook's kept answers,
+   `{notebook}:answers` (`POST /api/v1/notebook/keep`, `Service\Library\KeptAnswers`): a saved analysis like Studio's texts (`Analyses::append()`),
+   one `## question` entry each with its citations and the day, the writer's revision (`assisted: answers`), private, moving and going to the trash with
+   the notebook; the answer comes back from the browser, so citations of keys the notebook does not cite are taken out again and a CNP refuses it.
+   **Insert into the notebook** opens the editor with `## question` and the answer added at the end of the page (sessionStorage
+   `reporion.editor.insert`, read once by `editor.js` after any draft offered back is restored or discarded), saved only by the writer's Save,
+   whose note says `assisted: ask` (D8). The panel links the kept answers once there are any. Ask the library keeps nothing.
    The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default

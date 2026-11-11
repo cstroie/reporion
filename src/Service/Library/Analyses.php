@@ -62,6 +62,31 @@ final class Analyses
      */
     public function save(PageRecord $of, string $prompt, string $label, string $text, User $by, string $provider, array $extra = [], ?string $from = null): ?array
     {
+        return $this->write($of, $prompt, $label, static fn (?string $there): string => $text, $by, $provider, $extra, $from);
+    }
+
+    /**
+     * Adds $entry at the end of the analysis $prompt of $of (Ask the notebook's kept answers,
+     * 2026-11-11): a new page holding it alone, or a new revision of the one there, written on the
+     * revision it was read at (a keep at the same moment is a conflict, never an entry lost)
+     *
+     * @return ?array{path: string, rev: int, pid: string, created: bool} null: a page there that is not a saved analysis, or signed
+     *
+     * @throws \Reporion\Exception\RevisionConflictException another keep came first
+     */
+    public function append(PageRecord $of, string $prompt, string $label, string $entry, User $by, string $provider): ?array
+    {
+        return $this->write($of, $prompt, $label, static fn (?string $there): string => ($there !== null && trim($there) !== '' ? rtrim($there) . "\n\n" : '') . trim($entry), $by, $provider, [], null);
+    }
+
+    /**
+     * @param \Closure(?string): string $text the new body from the one there (null: none yet)
+     * @param array<string, mixed> $extra
+     *
+     * @return ?array{path: string, rev: int, pid: string, created: bool}
+     */
+    private function write(PageRecord $of, string $prompt, string $label, \Closure $text, User $by, string $provider, array $extra, ?string $from): ?array
+    {
         $path = self::pathFor($of->path, $prompt);
         $title = $label . ': ' . (\is_string($of->frontmatter['title'] ?? null) && $of->frontmatter['title'] !== '' ? $of->frontmatter['title'] : substr($of->path, (int) strrpos($of->path, ':') + 1));
         $frontmatter = ['title' => $title, 'visibility' => 'private'] + array_filter($extra, static fn (mixed $v): bool => $v !== null && $v !== '') + [self::KEY => [
@@ -73,11 +98,11 @@ final class Analyses
             'provider' => $provider,
             'at' => date('c'),
         ] + ($from !== null && $from !== 'text' ? ['from' => $from] : [])];
-        $body = rtrim($text) . "\n";
         $note = 'assisted: ' . $prompt;
         try {
             $there = $this->storage->read($path);
         } catch (PageNotFoundException) {
+            $body = rtrim($text(null)) . "\n";
             $made = $this->storage->create($path, $frontmatter, $body, $by->username, $note, exclusive: true);
 
             return ['path' => $made->path, 'rev' => $made->rev, 'pid' => $made->pid, 'created' => true];
@@ -85,6 +110,7 @@ final class Analyses
         if (!self::isAnalysis($there->frontmatter) || $there->status === 'signed') {
             return null;
         }
+        $body = rtrim($text($there->body)) . "\n";
         $saved = $this->storage->save($path, $frontmatter, $body, $there->rev, $by->username, $note);
 
         return ['path' => $saved->path, 'rev' => $saved->rev, 'pid' => $saved->pid, 'created' => false];

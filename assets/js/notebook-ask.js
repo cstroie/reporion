@@ -7,7 +7,10 @@
  * listed as soon as they are known, the answer shows as it is written, and when it is done it is
  * rendered by the server (POST /api/v1/render, render-client.js) in the page's citation style, so
  * its [@key, p. N] become numbered citations and References. Ask the library keeps the last turns
- * in the browser (`history`). Nothing is saved.
+ * in the browser (`history`). Nothing is saved unless the writer chooses, in a notebook (`keep`,
+ * 2026-11-11): *Keep* posts the answer to /api/v1/notebook/keep (the kept answers beside the page),
+ * *Insert* hands it to the editor (sessionStorage `reporion.editor.insert`, read once by editor.js),
+ * which adds it at the end of the page for the writer to save.
  */
 (function () {
   'use strict';
@@ -58,6 +61,7 @@
     var out = box.querySelector('[data-notebook-out]');
     var button = box.querySelector('[data-notebook-ask]');
     var clear = box.querySelector('[data-notebook-clear]');
+    var keptLink = box.querySelector('[data-notebook-kept]');
     var history = [];
 
     function sourcesList(sources, whole) {
@@ -76,7 +80,62 @@
       return read;
     }
 
-    function show(data) {
+    // Keep and Insert, for an answer of a notebook
+    function actions(question, answer) {
+      var bar = el('footer', 'wk-actions');
+      var keep = el('button', 'btn btn-ghost btn-sm');
+      keep.type = 'button';
+      keep.title = s.keep_title || '';
+      keep.innerHTML = '<i class="ph ph-bookmark-simple" aria-hidden="true"></i>';
+      keep.appendChild(document.createTextNode(s.keep || 'Keep'));
+      keep.addEventListener('click', function () {
+        if (keep.disabled) return;
+        keep.disabled = true;
+        keep.lastChild.textContent = s.keeping || '';
+        fetch((cfg.basePath || '') + '/api/v1/notebook/keep', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ path: cfg.path, question: question, answer: answer })
+        }).then(function (r) {
+          return r.json().then(function (j) {
+            if (!r.ok || !j.data) throw new Error(j.error && j.error.message);
+            var done = el('a', 'btn btn-ghost btn-sm');
+            done.href = j.data.href;
+            done.innerHTML = '<i class="ph ph-check" aria-hidden="true"></i>';
+            done.appendChild(document.createTextNode(s.kept || ''));
+            bar.replaceChild(done, keep);
+            if (keptLink) {
+              keptLink.querySelector('a').href = j.data.href;
+              keptLink.hidden = false;
+            }
+          });
+        }).catch(function (err) {
+          keep.disabled = false;
+          keep.lastChild.textContent = s.keep || 'Keep';
+          out.appendChild(notice('error', (err && err.message) || s.failed));
+        });
+      });
+      bar.appendChild(keep);
+      if (cfg.editHref && window.sessionStorage) {
+        var insert = el('button', 'btn btn-ghost btn-sm');
+        insert.type = 'button';
+        insert.title = s.insert_title || '';
+        insert.innerHTML = '<i class="ph ph-note-pencil" aria-hidden="true"></i>';
+        insert.appendChild(document.createTextNode(s.insert || ''));
+        insert.addEventListener('click', function () {
+          try {
+            window.sessionStorage.setItem('reporion.editor.insert', JSON.stringify({ path: cfg.path, text: '## ' + question.replace(/\s+/g, ' ').replace(/^#+\s*/, '') + '\n\n' + answer, assisted: 'ask' }));
+          } catch (e) {
+            return;
+          }
+          window.location.href = cfg.editHref;
+        });
+        bar.appendChild(insert);
+      }
+      return bar;
+    }
+
+    function show(data, question) {
       out.textContent = '';
       if (data.understood) out.appendChild(el('p', 'wk-dim wk-text-sm', (s.understood || '%s').replace('%s', data.understood)));
       (data.notices || []).forEach(function (n) { out.appendChild(notice('info', n)); });
@@ -91,6 +150,7 @@
         body.textContent = data.answer || '';
       }
       if (data.dropped > 0) out.appendChild(notice('info', (s.dropped || '%s').replace('%s', data.dropped)));
+      if (cfg.keep && cfg.path && data.answer && question) out.appendChild(actions(question, data.answer));
       out.appendChild(sourcesList(data.sources, data.whole));
       out.appendChild(el('p', 'wk-dim wk-text-xs', s.note + (data.provider ? ' · ' + data.provider + ' · ' + ((data.ms || 0) / 1000).toFixed(1) + ' s' : '')));
     }
@@ -143,7 +203,7 @@
         var type = r.headers.get('Content-Type') || '';
         if (type.indexOf('text/event-stream') === -1 || !r.body || !window.TextDecoder) {
           return r.json().then(function (j) {
-            if (r.ok && j.data) { show(j.data); remember(question, j.data); return; }
+            if (r.ok && j.data) { show(j.data, question); remember(question, j.data); return; }
             failed(j.error && j.error.message);
           });
         }
@@ -172,7 +232,7 @@
                 live.textContent += ev.data.text || '';
               } else if (ev.event === 'done') {
                 ended = true;
-                show(ev.data);
+                show(ev.data, question);
                 remember(question, ev.data);
               } else if (ev.event === 'error') {
                 ended = true;

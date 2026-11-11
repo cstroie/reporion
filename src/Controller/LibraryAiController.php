@@ -21,6 +21,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\AudioOverview;
 use Reporion\Support\AudioScript;
+use Reporion\Service\Library\KeptAnswers;
 use Reporion\Service\Library\LibraryAsk;
 use Reporion\Service\Library\NotebookAsk;
 use Reporion\Storage\PageRecord;
@@ -230,6 +231,37 @@ final class LibraryAiController
         }
 
         return $this->answered($request, ($fields['stream'] ?? false) === true, fn (?\Closure $event): array => $this->notebooks->ask($page, $question, $principal, $request, $event));
+    }
+
+    /**
+     * POST /api/v1/notebook/keep {path, question, answer} (2026-11-11): an answer of Ask the
+     * notebook kept in the notebook's `answers` page (KeptAnswers), the writer's revision, audited
+     * as theirs with `assisted: answers`; the same gate as the ask (others 404); 422 for a bad or
+     * patient text, 409 when another keep came first or the page there is not a kept-answers page
+     */
+    public function keepAnswer(Request $request, ?User $principal): Response
+    {
+        $fields = $request->json();
+        $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
+        $page = $principal !== null && $path !== '' ? $this->notebook($path, $principal) : null;
+        if ($principal === null || $page === null || $this->analyses === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $question = \is_string($fields['question'] ?? null) ? $fields['question'] : '';
+        $answer = \is_string($fields['answer'] ?? null) ? $fields['answer'] : '';
+        try {
+            $saved = (new KeptAnswers($this->analyses))->keep($page, $question, $answer, array_column($this->notebooks->cited($page, $principal), 'key'), $principal);
+        } catch (LibraryException $e) {
+            return ApiResponse::error(422, $e->reason, $e->reason === LibraryException::PATIENT_DATA ? t('notebook.err_keep_patient') : t('notebook.err_keep'));
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('notebook.err_keep_conflict'));
+        }
+        if ($saved === null) {
+            return ApiResponse::error(409, 'conflict', t('notebook.err_keep_conflict'));
+        }
+        $this->audit?->record($saved['created'] ? 'page.create' : 'page.save', $principal->username, $request, $saved['pid'], $saved['path'], $saved['rev'], extra: ['assisted' => [KeptAnswers::PROMPT]]);
+
+        return ApiResponse::json(['data' => ['path' => $saved['path'], 'href' => $request->basePath . '/' . $saved['path'], 'rev' => $saved['rev'], 'created' => $saved['created'], 'dropped' => $saved['dropped']]], $saved['created'] ? 201 : 200);
     }
 
     /**

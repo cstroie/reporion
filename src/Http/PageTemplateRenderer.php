@@ -186,7 +186,10 @@ final class PageTemplateRenderer
             && !\Reporion\Service\Library\Analyses::isAnalysis($record->frontmatter)
             && $principal->canWrite($record->path) && $principal->canWrite($this->libraryNamespace)
             && (InternalLink::citedKeys($record->body) !== [] || (\is_array($record->frontmatter['sources'] ?? null) && $record->frontmatter['sources'] !== []));
-        $vars['notebookAsk'] = $notebook && $this->aiActions?->special($record->path, 'ask-notebook') !== null ? ['path' => $record->path] : null;
+        // Its kept answers (2026-11-11): the page beside it, when there is one the caller reads
+        $kept = $notebook ? ($this->analyses?->shown($record, $principal, [\Reporion\Service\Library\KeptAnswers::PROMPT]) ?? []) : [];
+        $vars['notebookAsk'] = $notebook && $this->aiActions?->special($record->path, 'ask-notebook') !== null
+            ? ['path' => $record->path, 'kept' => $kept !== [] ? $request->basePath . '/' . $kept[0]['path'] : null] : null;
         // Studio (phase 6): the same gate, the tasks whose prompt page the serving profile has
         $studioTasks = $notebook && $this->aiActions !== null
             ? array_values(array_filter(array_keys(\Reporion\Service\Library\Studio::TASKS), fn (string $task): bool => ($task !== 'audio' || $this->speaks) && $this->aiActions->special($record->path, \Reporion\Service\Library\Studio::TASKS[$task]) !== null))
