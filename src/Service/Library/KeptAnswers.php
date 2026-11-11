@@ -44,7 +44,7 @@ final class KeptAnswers
      */
     public function keep(PageRecord $notebook, string $question, string $answer, array $keys, User $by, ?string $day = null): ?array
     {
-        $question = trim((string) preg_replace('/\s+/u', ' ', $question));
+        $question = trim($question);
         $answer = trim($answer);
         if ($question === '' || mb_strlen($question) > self::MAX_QUESTION) {
             throw new LibraryException(LibraryException::INVALID);
@@ -61,11 +61,21 @@ final class KeptAnswers
         return $saved === null ? null : $saved + ['dropped' => $dropped];
     }
 
-    /** One kept answer: the question as a `##` heading (one line, no heading marks of its own), the answer, the day */
+    /**
+     * One kept answer: the question as a `##` heading (one line, no heading marks of its own), the
+     * answer, the day. A section's questions from Studio's outline (a heading, then lines each a
+     * question: capital first, `?` last) keep the heading as the heading and the questions as a
+     * list under it; any other line break is a wrapped question, joined
+     */
     public static function entry(string $question, string $answer, string $day): string
     {
-        $heading = ltrim(trim((string) preg_replace('/\s+/u', ' ', $question)), '# ');
+        $lines = array_values(array_filter(array_map(static fn (string $l): string => trim((string) preg_replace('/\s+/u', ' ', $l)), preg_split('/\R/u', trim($question)) ?: []), static fn (string $l): bool => $l !== ''));
+        $rest = \array_slice($lines, 1);
+        $listed = $rest !== [] && !str_ends_with($lines[0], '?')
+            && array_filter($rest, static fn (string $l): bool => preg_match('/^\p{Lu}.*\?$/u', $l) !== 1) === [];
+        $heading = ltrim($listed ? $lines[0] : implode(' ', $lines), '# ');
+        $list = $listed ? implode("\n", array_map(static fn (string $l): string => '- ' . $l, $rest)) . "\n\n" : '';
 
-        return '## ' . $heading . "\n\n" . trim($answer) . "\n\n*" . $day . "*\n";
+        return '## ' . $heading . "\n\n" . $list . trim($answer) . "\n\n*" . $day . "*\n";
     }
 }

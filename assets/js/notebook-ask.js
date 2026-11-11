@@ -80,6 +80,15 @@
       return read;
     }
 
+    // The question as KeptAnswers::entry() writes it: a heading, and an outline section's questions as a list
+    function entry(question) {
+      var lines = question.split(/\r?\n/).map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+      var rest = lines.slice(1);
+      var listed = rest.length > 0 && !/\?$/.test(lines[0]) && rest.every(function (l) { return /^[A-ZĂÂÎȘŞȚŢ].*\?$/.test(l); });
+      var heading = (listed ? lines[0] : lines.join(' ')).replace(/^#+\s*/, '');
+      return '## ' + heading + '\n\n' + (listed ? rest.map(function (l) { return '- ' + l; }).join('\n') + '\n\n' : '');
+    }
+
     // Hands text to the editor of this page (editor.js reads it once) and opens it
     function toEditor(text, assisted) {
       try {
@@ -169,7 +178,7 @@
         insert.innerHTML = '<i class="ph ph-note-pencil" aria-hidden="true"></i>';
         insert.appendChild(document.createTextNode(s.insert || ''));
         insert.addEventListener('click', function () {
-          toEditor('## ' + question.replace(/\s+/g, ' ').replace(/^#+\s*/, '') + '\n\n' + answer, 'ask');
+          toEditor(entry(question) + answer, 'ask');
         });
         bar.appendChild(insert);
       }
@@ -322,6 +331,7 @@
       button.appendChild(document.createTextNode(strings.fill || 'Ask'));
       button.addEventListener('click', function () {
         field.value = (title + '\n' + questions.join('\n')).slice(0, 1000);
+        field.rows = Math.min(8, questions.length + 2);
         ask.open = true;
         ask.scrollIntoView({ behavior: 'smooth', block: 'start' });
         field.focus();

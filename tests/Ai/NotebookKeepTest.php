@@ -79,6 +79,12 @@ final class NotebookKeepTest extends HttpTestCase
         self::assertStringContainsString('assisted: answers', json_encode($kept->revlog) ?: '');
     }
 
+    public function testAnOutlineSectionKeepsItsHeadingAndListsItsQuestions(): void
+    {
+        self::assertSame("## Age groups\n\n- What age groups are used?\n- Why age, not weight?\n\nFour.\n\n*2026-11-11*\n", KeptAnswers::entry("Age groups\nWhat age groups are used?\n  Why age, not weight?", 'Four.', '2026-11-11'));
+        self::assertSame("## What are the age bands for head CT?\n\nFour.\n\n*2026-11-11*\n", KeptAnswers::entry("What are the age bands\nfor head CT?", 'Four.', '2026-11-11'), 'a wrapped question is joined');
+    }
+
     public function testOnlyAnEditorOfTheNotebookAndOfTheLibraryKeepsAndNeverAPatientText(): void
     {
         $body = ['path' => 'wiki:doses', 'question' => 'Q?', 'answer' => 'A.'];
