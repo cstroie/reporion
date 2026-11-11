@@ -836,6 +836,8 @@ final class Kernel
             => $libraryAi->askLibrary($request, $session->principal($request)));
         $router->post('/api/v1/notebook/ask', static fn (Request $request, array $params): Response
             => $libraryAi->askNotebook($request, $session->principal($request)));
+        $router->post('/api/v1/notebook/compose', static fn (Request $request, array $params): Response
+            => $libraryAi->compose($request, $session->principal($request)));
         $router->post('/api/v1/notebook/keep', static fn (Request $request, array $params): Response
             => $libraryAi->keepAnswer($request, $session->principal($request)));
         $router->post('/api/v1/notebook/studio', static fn (Request $request, array $params): Response

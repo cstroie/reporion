@@ -8,6 +8,8 @@
  * and link as in the page. Nothing is saved unless the writer chooses (2026-11-11): *Keep* adds the
  * answer to the notebook's kept answers beside it (POST /api/v1/notebook/keep), *Insert* opens the
  * editor with it added at the end of the page, saved only by the writer's Save (`assisted: ask`).
+ * *Compose a draft* (POST /api/v1/notebook/compose) hands the editor a draft put together from what
+ * is kept beside the page and its sources, no assistant asked (`assisted: compose`).
  *
  * Variables in scope: array{path: string, kept: ?string} $notebookAsk; string $basePath; array<string, mixed> $frontmatter
  */
@@ -29,7 +31,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button></footer>
 </form>
 <div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
-<p class="wk-text-sm" data-notebook-kept<?= $notebookAsk['kept'] === null ? ' hidden' : '' ?>><a href="<?= $e($notebookAsk['kept'] ?? '') ?>"><i class="ph ph-bookmarks" aria-hidden="true"></i> <?= $e(t('notebook.kept_link')) ?></a></p>
+<footer class="wk-actions wk-notebook-more">
+<a class="btn btn-ghost btn-sm" data-notebook-kept href="<?= $e($notebookAsk['kept'] ?? '') ?>"<?= $notebookAsk['kept'] === null ? ' hidden' : '' ?>><i class="ph ph-bookmarks" aria-hidden="true"></i><?= $e(t('notebook.kept_link')) ?></a>
+<button class="btn btn-ghost btn-sm" type="button" data-notebook-compose title="<?= $e(t('notebook.compose_title')) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= $e(t('notebook.compose')) ?></button>
+</footer>
 <script type="application/json"><?= json_encode([
     'basePath' => $basePath,
     'path' => $notebookAsk['path'],
@@ -43,6 +48,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
         'dropped' => t('notebook.dropped'), 'note' => t('notebook.note_keep'),
         'keep' => t('notebook.keep'), 'keep_title' => t('notebook.keep_title'), 'keeping' => t('notebook.keeping'), 'kept' => t('notebook.kept'),
         'insert' => t('notebook.insert'), 'insert_title' => t('notebook.insert_title'),
+        'composing' => t('notebook.composing'), 'compose_empty' => t('notebook.compose_empty'),
         'step_terms' => t('notebook.step_terms'), 'step_searching' => t('notebook.step_searching'), 'step_answering' => t('notebook.step_answering'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>

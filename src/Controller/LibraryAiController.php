@@ -21,6 +21,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Service\Library\Analyses;
 use Reporion\Service\Library\AudioOverview;
 use Reporion\Support\AudioScript;
+use Reporion\Service\Library\Compose;
 use Reporion\Service\Library\KeptAnswers;
 use Reporion\Service\Library\LibraryAsk;
 use Reporion\Service\Library\NotebookAsk;
@@ -262,6 +263,24 @@ final class LibraryAiController
         $this->audit?->record($saved['created'] ? 'page.create' : 'page.save', $principal->username, $request, $saved['pid'], $saved['path'], $saved['rev'], extra: ['assisted' => [KeptAnswers::PROMPT]]);
 
         return ApiResponse::json(['data' => ['path' => $saved['path'], 'href' => $request->basePath . '/' . $saved['path'], 'rev' => $saved['rev'], 'created' => $saved['created'], 'dropped' => $saved['dropped']]], $saved['created'] ? 201 : 200);
+    }
+
+    /**
+     * POST /api/v1/notebook/compose {path} (2026-11-11): the notebook's draft put together from
+     * what is kept (Compose: its sources' key points, summaries or abstracts, its Studio texts,
+     * its kept answers), no model asked, nothing written: the browser hands it to the editor.
+     * The same gate as the ask (others 404)
+     */
+    public function compose(Request $request, ?User $principal): Response
+    {
+        $fields = $request->json();
+        $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
+        $page = $principal !== null && $path !== '' ? $this->notebook($path, $principal) : null;
+        if ($principal === null || $page === null || $this->analyses === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return ApiResponse::json(['data' => (new Compose($this->storage, $this->analyses, $this->notebooks))->draft($page, $principal)]);
     }
 
     /**

@@ -231,6 +231,11 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    **Insert into the notebook** opens the editor with `## question` and the answer added at the end of the page (sessionStorage
    `reporion.editor.insert`, read once by `editor.js` after any draft offered back is restored or discarded), saved only by the writer's Save,
    whose note says `assisted: ask` (D8). The panel links the kept answers once there are any. Ask the library keeps nothing.
+   *Compose a draft, 2026-11-11 (owner's request):* the panel's **Compose a draft** (`POST /api/v1/notebook/compose`, `Service\Library\Compose`)
+   puts together what is already kept, **no model asked**: under *Sources*, each cited source the caller reads as `### title [@key]` with its kept key
+   points, else its kept summary, else its abstract page; then the notebook's Studio overview, timeline, comparison, glossary and questions; then its
+   kept answers; every text's headings moved below its section (fenced code left alone). It writes nothing: the draft goes to the editor through the
+   same hand-off as *Insert* and is saved only by the writer (`assisted: compose`).
    The answer cites `[@key, p. N]`; **a citation of a key that was not sent is taken out** (`NotebookAsk::onlySent()`), so a source the model remembers but was not
    given never renders as a valid citation; it is rendered by the server in the page's citation style. No passage holding the question's words: no model call
    (as Ask the archive). No follow-up turns yet (each question stands alone). `library.context_tokens` is set in Admin → Settings → Library (4000–2 000 000, default

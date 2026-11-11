@@ -103,8 +103,60 @@ final class NotebookKeepTest extends HttpTestCase
     {
         $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/wiki:doses', cookies: ['reporion' => $this->cookie('writer')]))->body;
 
-        self::assertMatchesRegularExpression('~<p class="wk-text-sm" data-notebook-kept hidden>~', $view());
+        self::assertMatchesRegularExpression('~data-notebook-kept href=""\s+hidden>~', $view());
+        self::assertStringContainsString('data-notebook-compose', $view());
         $this->keep('writer', ['path' => 'wiki:doses', 'question' => 'Q?', 'answer' => 'A.']);
-        self::assertMatchesRegularExpression('~<p class="wk-text-sm" data-notebook-kept><a href="/wiki:doses:answers">~', $view());
+        self::assertMatchesRegularExpression('~data-notebook-kept href="/wiki:doses:answers">~', $view());
+    }
+
+    /** @return array<string, mixed> */
+    private function compose(?string $user, string $path = 'wiki:doses'): array
+    {
+        $response = Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/notebook/compose', cookies: $user === null ? [] : ['reporion' => $this->cookie($user)], body: (string) json_encode(['path' => $path])));
+
+        return ['status' => $response->status] + (json_decode($response->body, true)['data'] ?? []);
+    }
+
+    public function testComposeIsEmptyUntilSomethingIsKept(): void
+    {
+        self::assertSame(['status' => 200, 'text' => '', 'parts' => 0], $this->compose('writer'));
+        self::assertSame(404, $this->compose('libreader')['status']);
+        self::assertSame(404, $this->compose(null)['status']);
+        self::assertSame(404, $this->compose('owner', 'wiki:patient')['status']);
+    }
+
+    public function testComposePutsTheKeptTextsTogetherWithoutWritingAnything(): void
+    {
+        $storage = $this->storage();
+        $source = $storage->read('library:guide2018');
+        $notebook = $storage->read('wiki:doses');
+        $analysis = static fn (string $prompt, string $of): array => ['visibility' => 'private', 'analysis' => ['prompt' => $prompt, 'of' => $of, 'of_rev' => 1, 'of_sha' => 'x', 'provider' => '', 'at' => '2026-11-11T10:00:00+02:00']];
+        $storage->create('library:guide2018:summary', ['title' => 'Summary'] + $analysis('summary', $source->pid), "A summary, not chosen.\n", 'owner');
+        $storage->create('library:guide2018:source-points', ['title' => 'Points'] + $analysis('source-points', $source->pid), "# Key points\n\n- Head exams by age.\n", 'owner');
+        $storage->create('wiki:doses:studio-overview', ['title' => 'Overview'] + $analysis('studio-overview', $notebook->pid), "## Scope\n\nDRLs for children [@guide2018].\n\n```\n# not a heading\n```\n", 'owner');
+        $storage->create('wiki:doses:studio-check', ['title' => 'Check'] + $analysis('studio-check', $notebook->pid), "Not part of a page.\n", 'owner');
+        $this->keep('writer', ['path' => 'wiki:doses', 'question' => 'Age bands?', 'answer' => 'Four [@guide2018].']);
+        $revs = $storage->read('wiki:doses')->rev;
+
+        $data = $this->compose('writer');
+
+        self::assertSame(3, $data['parts'], 'the source, the overview, the answers');
+        $text = $data['text'];
+        self::assertStringStartsWith("## Sources\n\n### A made-up guideline [@guide2018]\n\n#### Key points\n\n- Head exams by age.", $text, 'the key points first, below the source\'s title');
+        self::assertStringNotContainsString('not chosen', $text);
+        self::assertStringContainsString("## Overview\n\n### Scope\n\nDRLs for children [@guide2018].", $text);
+        self::assertStringContainsString("```\n# not a heading\n```", $text, 'fenced code as it is');
+        self::assertStringNotContainsString('Not part of a page', $text);
+        self::assertStringContainsString("## Kept answers\n\n### Age bands?\n\nFour [@guide2018].", $text);
+        self::assertLessThan(strpos($text, '## Kept answers'), strpos($text, '## Overview'));
+        self::assertSame($revs, $this->storage()->read('wiki:doses')->rev, 'nothing written');
+    }
+
+    public function testDemoteMovesHeadingsBelowALevel(): void
+    {
+        self::assertSame("### A\n\n#### B", \Reporion\Service\Library\Compose::demote("# A\n\n## B", 2));
+        self::assertSame("#### A", \Reporion\Service\Library\Compose::demote('#### A', 2), 'already below');
+        self::assertSame('plain', \Reporion\Service\Library\Compose::demote('plain', 2));
+        self::assertSame("###### A\n\n###### B", \Reporion\Service\Library\Compose::demote("#### A\n\n###### B", 5), 'never past 6');
     }
 }

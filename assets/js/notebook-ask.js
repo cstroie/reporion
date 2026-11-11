@@ -80,6 +80,52 @@
       return read;
     }
 
+    // Hands text to the editor of this page (editor.js reads it once) and opens it
+    function toEditor(text, assisted) {
+      try {
+        window.sessionStorage.setItem('reporion.editor.insert', JSON.stringify({ path: cfg.path, text: text, assisted: assisted }));
+      } catch (e) {
+        return false;
+      }
+      window.location.href = cfg.editHref;
+      return true;
+    }
+
+    var compose = box.querySelector('[data-notebook-compose]');
+    if (compose && cfg.editHref && cfg.path) {
+      var composeLabel = compose.lastChild.textContent;
+      compose.addEventListener('click', function () {
+        if (compose.disabled) return;
+        compose.disabled = true;
+        compose.lastChild.textContent = s.composing || composeLabel;
+        fetch((cfg.basePath || '') + '/api/v1/notebook/compose', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ path: cfg.path })
+        }).then(function (r) {
+          return r.json().then(function (j) {
+            if (!r.ok || !j.data) throw new Error(j.error && j.error.message);
+            if (!j.data.text) {
+              out.hidden = false;
+              out.textContent = '';
+              out.appendChild(notice('info', s.compose_empty));
+              return;
+            }
+            toEditor(j.data.text, 'compose');
+          });
+        }).catch(function (err) {
+          out.hidden = false;
+          out.textContent = '';
+          out.appendChild(notice('error', (err && err.message) || s.failed));
+        }).then(function () {
+          compose.disabled = false;
+          compose.lastChild.textContent = composeLabel;
+        });
+      });
+    } else if (compose) {
+      compose.hidden = true;
+    }
+
     // Keep and Insert, for an answer of a notebook
     function actions(question, answer) {
       var bar = el('footer', 'wk-actions');
@@ -105,7 +151,7 @@
             done.appendChild(document.createTextNode(s.kept || ''));
             bar.replaceChild(done, keep);
             if (keptLink) {
-              keptLink.querySelector('a').href = j.data.href;
+              keptLink.href = j.data.href;
               keptLink.hidden = false;
             }
           });
@@ -123,12 +169,7 @@
         insert.innerHTML = '<i class="ph ph-note-pencil" aria-hidden="true"></i>';
         insert.appendChild(document.createTextNode(s.insert || ''));
         insert.addEventListener('click', function () {
-          try {
-            window.sessionStorage.setItem('reporion.editor.insert', JSON.stringify({ path: cfg.path, text: '## ' + question.replace(/\s+/g, ' ').replace(/^#+\s*/, '') + '\n\n' + answer, assisted: 'ask' }));
-          } catch (e) {
-            return;
-          }
-          window.location.href = cfg.editHref;
+          toEditor('## ' + question.replace(/\s+/g, ' ').replace(/^#+\s*/, '') + '\n\n' + answer, 'ask');
         });
         bar.appendChild(insert);
       }
