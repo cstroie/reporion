@@ -572,7 +572,7 @@ final class Kernel
         // Why a report has no Similar reports: normal (its tag) or a stock conclusion
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
         $highlights = new Highlights($storage, $index, new Comments($storage, $audit), self::libraryNamespace($config));
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true, ($config['library']['lookup'] ?? false) === true && \is_string($config['library']['unpaywall_email'] ?? null) && $config['library']['unpaywall_email'] !== '', $highlights);
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded, self::libraryNamespace($config), new Analyses($storage, $index), Speaker::fromConfig($config) !== null, ($config['library']['lookup'] ?? false) === true, ($config['library']['lookup'] ?? false) === true && \is_string($config['library']['unpaywall_email'] ?? null) && $config['library']['unpaywall_email'] !== '', $highlights, new \Reporion\Service\HeadChildren($index, $storage, $render));
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $schemas = new Loader($rootDir . '/resources/schema');

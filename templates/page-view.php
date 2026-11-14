@@ -151,6 +151,7 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <?= $contentHtml ?>
 </div>
 </div>
+<?php include __DIR__ . '/partials/children.php'; ?>
 </div>
 </div>
 </div>

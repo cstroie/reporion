@@ -115,6 +115,7 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 <div class="wk-prose">
 <?= $contentHtml ?>
 </div>
+<?php include __DIR__ . '/partials/children.php'; ?>
 </div>
 </div>
 </div>

@@ -2432,3 +2432,9 @@ body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inhe
 .wk-drop { position: fixed; inset: var(--space-4); z-index: 50; display: flex; align-items: center; justify-content: center; gap: var(--space-3); border: 2px dashed var(--color-accent); border-radius: var(--radius-lg, 12px); background: color-mix(in srgb, var(--color-bg) 88%, transparent); color: var(--color-accent); font-size: var(--text-lg, 1.125rem); pointer-events: none; }
 .wk-drop[hidden] { display: none; }
 .wk-drop .ph { font-size: 1.75em; }
+
+/* Head pages (D61): what a page shows of the namespace of its name (templates/partials/children.php) */
+.wk-children { margin-top: var(--space-5); }
+.wk-children-toc ul { list-style: none; margin: 0; padding-left: var(--space-4); }
+.wk-children-toc > ul { padding-left: 0; }
+.wk-chapter { margin-top: var(--space-5); border-top: 1px solid var(--color-divider); padding-top: var(--space-4); }

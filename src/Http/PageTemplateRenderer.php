@@ -59,6 +59,8 @@ final class PageTemplateRenderer
         private readonly bool $fullText = false,
         // A source's passage picker (2026-11-11): the pages citing it that take passages (Highlights::notebooks())
         private readonly ?\Reporion\Service\Library\Highlights $highlights = null,
+        // Head pages (D61): what a page shows of the namespace of its name
+        private readonly ?\Reporion\Service\HeadChildren $headChildren = null,
     ) {
     }
 
@@ -112,6 +114,10 @@ final class PageTemplateRenderer
             'signature' => $signature,
         ];
 
+        $vars['headChildren'] = $currentRev === null ? $this->headChildren($record, $principal, $request->basePath) : null;
+        if (($vars['headChildren']['mode'] ?? null) === 'chapters') {
+            $vars['toc'] = [...$vars['toc'], ...$vars['headChildren']['toc']];
+        }
         $vars['backlinks'] = $this->index->backlinks($record->pid, $principal);
         // The page's comments (D52): for whoever is signed in and reads it; loaded by assets/js/comments.js
         $vars['comments'] = $principal !== null;
@@ -266,6 +272,26 @@ final class PageTemplateRenderer
      *
      * @return list<array{prompt: string, path: string, text: string, at: string, provider: string, stale: bool, html: string}>
      */
+    /**
+     * The head page's children (D61) in its `children` mode; null when none the caller lists
+     *
+     * @return ?array{mode: string, ns: string, nodes: list<array<string, mixed>>, chapters: list<array<string, mixed>>, toc: list<array<string, mixed>>}
+     */
+    private function headChildren(PageRecord $record, ?User $principal, string $basePath): ?array
+    {
+        if ($this->headChildren === null || !\Reporion\Support\HeadPage::applies($record->path) || isset($record->frontmatter['patient'])) {
+            return null;
+        }
+        $mode = \Reporion\Support\HeadPage::childrenMode($record->frontmatter);
+        $nodes = $this->headChildren->tree($record->path, $principal, $mode === 'toc' ? \Reporion\Service\HeadChildren::MAX_DEPTH : 1);
+        if ($nodes === []) {
+            return null;
+        }
+        $chapters = $mode === 'chapters' ? $this->headChildren->chapters($record->path, $principal, $basePath) : ['chapters' => [], 'toc' => []];
+
+        return ['mode' => $mode, 'ns' => $record->path, 'nodes' => $nodes, 'chapters' => $chapters['chapters'], 'toc' => $chapters['toc']];
+    }
+
     private function rendered(array $saved, array $frontmatter, string $basePath, ?User $principal): array
     {
         $style = array_intersect_key($frontmatter, ['citation_style' => true, 'language' => true]);
