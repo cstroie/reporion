@@ -212,6 +212,16 @@ final class PageTemplateRenderer
         if ($record->pid !== '') {
             // The left panel: the namespace's pages the caller may read, newest exam first (listWorklist(), invariant 6)
             $vars['worklist'] = $this->index->listWorklist(ChromeVars::namespaceOf($record->path), $principal, self::WORKLIST_ROWS, byStudyDate: true);
+            // Head pages (D61): a crumb whose page the caller reads links to it, not to the listing
+            $ancestors = [];
+            $parts = explode(':', $record->path);
+            for ($i = 1; $i < \count($parts); ++$i) {
+                $level = implode(':', \array_slice($parts, 0, $i));
+                if (\Reporion\Support\HeadPage::applies($level)) {
+                    $ancestors[] = $level;
+                }
+            }
+            $vars['headerHeads'] = $ancestors !== [] ? array_map('strval', array_keys($this->index->findByPaths($ancestors, $principal))) : [];
             $vars += ChromeVars::pageHeader(
                 $principal,
                 $record->path,

@@ -92,6 +92,16 @@ final class HeadPageViewTest extends HttpTestCase
         self::assertStringNotContainsString('class="wk-children"', $this->get('/reports:mri:site', true)->body);
     }
 
+    public function testACrumbLinksToItsHeadPageWhenThereIsOne(): void
+    {
+        $this->head('list');
+        $page = $this->get('/wiki:guide:part:deep', true);
+
+        self::assertStringContainsString('<a href="/wiki:guide">guide</a>', $page->body);
+        self::assertStringContainsString('<a href="/wiki:guide:part">part</a>', $page->body);
+        self::assertStringContainsString('<a href="/wiki:">wiki</a>', $page->body, 'no head page: the listing');
+    }
+
     private function head(string $mode, string $visibility = 'private'): void
     {
         $this->storage()->create('wiki:guide', ['title' => 'Ghid', 'visibility' => $visibility, 'children' => $mode, 'sort' => 'name'], "# Ghid\n\nCapul.", 'owner');

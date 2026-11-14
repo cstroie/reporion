@@ -53,7 +53,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 ?>
 <header class="wk-doc-head wk-pagehead">
 <?php
-$trail = \Reporion\Http\Breadcrumb::namespaceTrail($basePath, implode(':', $crumbs));
+$trail = \Reporion\Http\Breadcrumb::namespaceTrail($basePath, implode(':', $crumbs), $headerHeads ?? []);
 $trail[] = ['label' => $leaf];
 $copyId = $headerPid !== ''
     ? '<button type="button" class="wk-tbtn" title="' . htmlspecialchars(t('page.copy_id'), ENT_QUOTES) . '" data-copy-id="' . htmlspecialchars($headerPid, ENT_QUOTES) . '" data-copied="' . htmlspecialchars(t('page.copied'), ENT_QUOTES) . '"><i class="ph ph-copy"></i></button>'

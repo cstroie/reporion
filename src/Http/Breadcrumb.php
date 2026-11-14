@@ -20,16 +20,20 @@ final class Breadcrumb
     /**
      * Every level of $ns, each linked to its listing (the root, Spaces, is not
      * a crumb: the quick-nav has it); the caller appends what comes after (the page, or the screen it is on).
+     * A level in $heads (head pages the caller reads, D61) links to its page instead.
+     *
+     * @param list<string> $heads
      *
      * @return list<array{label: string, href: string}>
      */
-    public static function namespaceTrail(string $basePath, string $ns): array
+    public static function namespaceTrail(string $basePath, string $ns, array $heads = []): array
     {
         $trail = [];
         $prefix = [];
         foreach ($ns === '' ? [] : explode(':', $ns) as $segment) {
             $prefix[] = $segment;
-            $trail[] = ['label' => $segment, 'href' => $basePath . '/' . implode(':', $prefix) . ':'];
+            $level = implode(':', $prefix);
+            $trail[] = ['label' => $segment, 'href' => $basePath . '/' . $level . (\in_array($level, $heads, true) ? '' : ':')];
         }
 
         return $trail;
