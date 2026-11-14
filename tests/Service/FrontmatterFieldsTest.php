@@ -32,7 +32,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         // sub-namespace card tint), meaningless on a report; 'sort' is
         // curated beside it: how a namespace lists its pages
         // 'sources' closes the list: the library sources a notebook page is about (docs/library.md)
-        self::assertSame(['title', 'tags', 'summary', 'format', 'priority', 'sort', 'sources'], array_column($result['fields'], 'key'));
+        self::assertSame(['title', 'tags', 'summary', 'format', 'priority', 'sort', 'children', 'sources'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['exams'], 'no exam cards on a page that is not a report');
         self::assertSame('public', $result['visibility']);
@@ -215,5 +215,17 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         $changes = $this->fields->changesFrom(['title' => 'X'], ['title'], ['patient' => ['name' => 'X']], self::PATH);
 
         self::assertArrayNotHasKey('patient', $changes);
+    }
+
+    public function testChildrenOffersTheHeadPageModesListFirst(): void
+    {
+        $field = null;
+        foreach ($this->fields->forPage('wiki:guide', [], null)['fields'] as $f) {
+            if ($f['key'] === 'children') {
+                $field = $f;
+            }
+        }
+        self::assertNotNull($field);
+        self::assertSame(['', 'chapters', 'toc', 'none'], array_column($field['options'], 'value'));
     }
 }

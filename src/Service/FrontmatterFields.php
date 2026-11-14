@@ -65,7 +65,7 @@ final class FrontmatterFields
     /** Curated in addition, only on a non-report page: the mirror of
      *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
      *  Controller\NamespaceController) means nothing on a report */
-    private const NAMESPACE = ['priority' => 'select', 'sort' => 'select'];
+    private const NAMESPACE = ['priority' => 'select', 'sort' => 'select', 'children' => 'select'];
 
     /** Curated in addition, on a non-report page: the library sources it is about
      *  (`sources: [key, …]`, docs/library.md), read by Ask the notebook and Studio */
@@ -244,6 +244,8 @@ final class FrontmatterFields
             // D40: Markdown is the key left out
             $key === 'format' => [['value' => '', 'label' => t('details.format_markdown')], ['value' => BodyFormat::TEXT, 'label' => t('details.format_text')]],
             $key === 'sort' => [['value' => '', 'label' => t('details.sort_unset')], ['value' => 'title', 'label' => t('details.sort_title')], ['value' => 'name', 'label' => t('details.sort_name')], ['value' => 'updated', 'label' => t('details.sort_updated')]],
+            // Head pages (D61): how the pages of the namespace of its name show under it
+            $key === 'children' => array_map(static fn (string $mode): array => ['value' => $mode === \Reporion\Support\HeadPage::DEFAULT_MODE ? '' : $mode, 'label' => t('details.children_' . $mode)], \Reporion\Support\HeadPage::MODES),
             $key === 'priority' => [['value' => '', 'label' => t('details.priority_unset')], ['value' => 'low', 'label' => t('details.priority_low')], ['value' => 'medium', 'label' => t('details.priority_medium')], ['value' => 'high', 'label' => t('details.priority_high')]],
             \is_array($def['values'] ?? null) => array_map(static fn (string $v): array => ['value' => $v, 'label' => $v], array_map('strval', $def['values'])),
             default => [],
