@@ -34,6 +34,9 @@ declare(strict_types=1);
 <?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php else: ?>
 <p class="wk-m0 wk-mb-4"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
+<?php if (($subtreeCount ?? 0) > 0): ?>
+<p class="wk-m0 wk-mb-4"><?= htmlspecialchars(t('page.delete_confirm_subtree', [$subtreeCount]), ENT_QUOTES) ?></p>
+<?php endif; ?>
 <?php endif; ?>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>

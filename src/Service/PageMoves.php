@@ -12,7 +12,10 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\Request;
 use Reporion\Storage\FileTree;
+use Reporion\Exception\SubtreeMoveException;
 use Reporion\Support\CitationKey;
+use Reporion\Support\HeadPage;
+use Reporion\Support\ReportPath;
 use Reporion\Storage\PageRecord;
 use RuntimeException;
 
@@ -41,25 +44,79 @@ final class PageMoves
     }
 
     /**
-     * What moves with a page: its saved analyses and abstract (Analyses::under()); for a library
-     * source (`{library}:{key}`) every page under it too, at any depth (2026-11-01, owner's
-     * request: the source's subnamespace follows its new key). Read before the page moves.
+     * What moves with a page: its saved analyses and abstract (Analyses::under()); for a head page
+     * (D61, any page outside the reports tree) every page under it too, at any depth (was: a
+     * library source only, 2026-11-01). Read before the page moves.
      *
      * @return list<string>
      */
     private function along(string $from): array
     {
         $children = $this->analyses?->under($from) ?? [];
-        $library = $this->libraryNamespace . ':';
-        if (str_starts_with($from, $library) && !str_contains(substr($from, \strlen($library)), ':')) {
-            foreach ($this->storage->allPaths() as $path) {
-                if (str_starts_with((string) $path, $from . ':') && !\in_array((string) $path, $children, true)) {
-                    $children[] = (string) $path;
-                }
+        foreach (self::subtree($this->storage, $from) as $path) {
+            if (!\in_array($path, $children, true)) {
+                $children[] = $path;
             }
         }
 
         return $children;
+    }
+
+    /**
+     * Every page under the head page $head (D61), at any depth; none in the reports tree
+     *
+     * @return list<string>
+     */
+    public static function subtree(FileTree $storage, string $head): array
+    {
+        if (!HeadPage::applies($head)) {
+            return [];
+        }
+        $paths = [];
+        foreach ($storage->allPaths() as $path) {
+            if (str_starts_with((string) $path, $head . ':')) {
+                $paths[] = (string) $path;
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Refuses, before anything is written, a subtree that cannot go along: a signed page or a
+     * report under the head, or (when $to is given) a path it would move to that is taken
+     *
+     * @param list<string> $children
+     *
+     * @throws SubtreeMoveException
+     */
+    public static function assertCanGoAlong(FileTree $storage, array $children, string $from, ?string $to, string $verb = 'move'): void
+    {
+        $locked = 0;
+        $taken = 0;
+        foreach ($children as $child) {
+            try {
+                $record = $storage->read($child);
+            } catch (PageNotFoundException) {
+                continue;
+            }
+            if (ReportPath::isReport($child) || $record->status === 'signed') {
+                ++$locked;
+            }
+            if ($to !== null) {
+                try {
+                    $storage->read($to . substr($child, \strlen($from)));
+                    ++$taken;
+                } catch (PageNotFoundException) {
+                }
+            }
+        }
+        if ($locked > 0) {
+            throw new SubtreeMoveException($verb === 'delete' ? 'signed_delete' : 'signed', $locked);
+        }
+        if ($taken > 0) {
+            throw new SubtreeMoveException('taken', $taken);
+        }
     }
 
     /**
@@ -91,6 +148,35 @@ final class PageMoves
     }
 
     /**
+     * Trashes a page with what goes along (D61): its saved analyses and abstract, and for a head
+     * page every page under it, each audited `page.delete` (`with: subtree`, the head's pid).
+     * Refused whole (SubtreeMoveException) when a page under it is signed or a report.
+     *
+     * @return array{deleted: PageRecord, along: int}
+     */
+    public function trash(string $path, string $actor, ?Request $request = null): array
+    {
+        $deleted = $this->storage->read($path);
+        $subtree = self::subtree($this->storage, $path);
+        self::assertCanGoAlong($this->storage, $subtree, $path, null, 'delete');
+        $this->storage->delete($path, $actor);
+        $this->audit->record('page.delete', $actor, $request, $deleted->pid, $deleted->path, $deleted->rev);
+        $along = (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $actor, $this->audit, $request);
+        foreach ($subtree as $child) {
+            try {
+                $page = $this->storage->read($child);
+                $this->storage->delete($child, $actor);
+                $this->audit->record('page.delete', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['with' => 'subtree', 'head' => $deleted->pid]);
+                ++$along;
+            } catch (RuntimeException) {
+                // Gone meanwhile (an analysis trashed just before): the head is in the trash all the same
+            }
+        }
+
+        return ['deleted' => $deleted, 'along' => $along];
+    }
+
+    /**
      * Moves, fixes links, and audits all of it (page.move, plus a page.save
      * per fixed page); $request is null from the CLI.
      *
@@ -99,6 +185,7 @@ final class PageMoves
     public function move(string $from, string $to, string $actor, ?Request $request = null): array
     {
         $children = $this->along($from);
+        self::assertCanGoAlong($this->storage, $children, $from, $to);
         $moved = $this->storage->move($from, $to, $actor);
         $along = $this->moveAnalyses($children, $from, $moved->path, $actor, $request);
         ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $this->relink([$from => $moved->path] + $along, $actor, 'link to moved page');
@@ -137,6 +224,7 @@ final class PageMoves
         foreach ($moves as $from => $to) {
             $children = $this->along((string) $from);
             try {
+                self::assertCanGoAlong($this->storage, $children, (string) $from, $to);
                 $record = $this->storage->move((string) $from, $to, $actor);
             } catch (InvalidArgumentException|PageNotFoundException $e) {
                 $failed[(string) $from] = $e->getMessage();
@@ -183,9 +271,7 @@ final class PageMoves
         $skipped = 0;
         $keys = $this->renamedKeys($map);
         foreach ($this->storage->allPaths() as $path) {
-            if (\in_array($path, $map, true)) {
-                continue;
-            }
+            // A page that moved is relinked too: a head's subtree (D61) points at itself
             // A page that is itself going away (a source merged into another, Library\Merge: it and its saved analyses are
             // trashed next) is not re-cited: that would write revisions nobody reads
             foreach (array_keys($map) as $gone) {

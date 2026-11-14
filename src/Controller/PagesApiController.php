@@ -488,13 +488,13 @@ final class PagesApiController
             if ($purge && $deleted->meta['signatures'] !== [] && ($request->query['include_signed'] ?? null) !== '1') {
                 return ApiResponse::error(422, 'signed', 'Signed content is purged only with include_signed=1 (D3b).');
             }
-            $this->storage->delete($path, $principal->username);
+            // With its saved analyses, and for a head page (D61) the pages under it
+            $this->moves->trash($path, $principal->username, $request);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (\Reporion\Exception\SubtreeMoveException $e) {
+            return ApiResponse::error(409, 'subtree_signed', $e->getMessage());
         }
-        $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
-        // The assistant's saved analyses of it go with it (Service\Library\Analyses)
-        (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
         if ($purge) {
             $this->storage->purge($deleted->pid, $principal->username, includeSigned: true);
             $this->audit->record('page.purge', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev, extra: ['signed' => $deleted->meta['signatures'] !== []]);
@@ -607,6 +607,9 @@ final class PagesApiController
             $result = $this->moves->move($path, $to, $principal->username, $request);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (\Reporion\Exception\SubtreeMoveException $e) {
+            // D61: a head page's subtree that cannot follow it (signed, a report, a taken path): nothing moved
+            return ApiResponse::error(409, 'subtree_' . $e->reason, $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             return ApiResponse::error(422, 'invalid_target', $e->getMessage());
         }

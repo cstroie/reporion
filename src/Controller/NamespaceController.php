@@ -132,11 +132,8 @@ final class NamespaceController
                     continue;
                 }
                 try {
-                    $page = $this->storage->read($path);
-                    $this->storage->delete($path, $principal->username);
-                    $this->audit->record('page.delete', $principal->username, $request, $page->pid, $page->path, $page->rev);
-                    // The assistant's saved analyses of it go with it (Service\Library\Analyses)
-                    (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
+                    // With its saved analyses, and for a head page (D61) the pages under it (refused whole: counted failed)
+                    $this->moves->trash((string) $path, $principal->username, $request);
                     ++$deleted;
                 } catch (InvalidArgumentException | PageNotFoundException | RuntimeException) {
                     // Pages under it, gone meanwhile, or a write that failed: counted, and the

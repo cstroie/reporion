@@ -231,6 +231,8 @@ final class PageController
                 'path' => $path,
                 'title' => $title,
                 'trashPurgeDays' => $this->trashPurgeDays,
+                // Head pages (D61): the pages under it go too
+                'subtreeCount' => \count(\Reporion\Service\PageMoves::subtree($this->storage, $path)),
                 'basePath' => $request->basePath,
                 'error' => $error,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
@@ -254,12 +256,13 @@ final class PageController
             throw new PageNotFoundException();
         }
 
-        $deleted = $this->storage->read($path);
-        // A page and a namespace of the same name are a file and a directory (D54): the pages under it stay
-        $this->storage->delete($path, $principal->username);
-        $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
-        // Except the assistant's saved analyses of it: they go with it (Service\Library\Analyses)
-        (new \Reporion\Service\Library\Analyses($this->storage))->trashWith($path, $principal->username, $this->audit, $request);
+        // A head page (D61) takes the pages under it to the trash, with its saved analyses; refused whole
+        // when one under it is signed or a report
+        try {
+            $this->moves->trash($path, $principal->username, $request);
+        } catch (\Reporion\Exception\SubtreeMoveException $e) {
+            return $this->renderDeleteConfirm($request, $path, $principal, $e->getMessage(), 409);
+        }
 
         // Land on the parent namespace index: the page just vanished from
         // its listing (Storage::delete() removes it from the index as part
