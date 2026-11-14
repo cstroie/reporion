@@ -42,8 +42,11 @@ final class NamespaceSort
         if ($ns === '') {
             return null;
         }
-        $rows = $index->findByPaths([$ns, $ns . ':_index'], $principal);
-        $row = $rows[$ns] ?? $rows[$ns . ':_index'] ?? null;
+        $row = null;
+        $rows = $index->findByPaths(HeadPage::descriptionPaths($ns), $principal);
+        foreach (HeadPage::descriptionPaths($ns) as $candidate) {
+            $row ??= $rows[$candidate] ?? null;
+        }
 
         return $row !== null ? self::modeOf((string) ($row['meta_json'] ?? '')) : null;
     }

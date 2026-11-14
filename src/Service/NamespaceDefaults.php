@@ -8,6 +8,7 @@ namespace Reporion\Service;
 
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
+use Reporion\Support\HeadPage;
 use Reporion\Support\Visibility;
 
 /**
@@ -39,10 +40,10 @@ final class NamespaceDefaults
         array_pop($parts);
         while ($parts !== []) {
             $ns = implode(':', $parts);
-            $levels[] = [$ns, $ns . ':_index'];
+            $levels[] = HeadPage::descriptionPaths($ns);
             array_pop($parts);
         }
-        $levels[] = ['_index'];
+        $levels[] = HeadPage::descriptionPaths('');
         $rows = $this->index->findByPaths(array_merge(...$levels), $principal);
         foreach ($levels as $candidates) {
             foreach ($candidates as $candidate) {
