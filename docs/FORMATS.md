@@ -739,8 +739,9 @@ form, the path and the template already supply those values (§3i-b, §15). A pa
 is an ordinary page with no effect.
 
 **Namespace description page and starting visibility** (phase 16 F, 2026-10-10; `Service\NamespaceDefaults`). The page named
-like a namespace (`reports:mri:mioveni` for `reports:mri:mioveni:`), else `{ns}:_index`, is its
-description. Its `visibility` is the level the editor's picker starts on for a new page underneath
+like a namespace (`reports:mri:mioveni` for `reports:mri:mioveni:`), its **head page** (D61, `Support\HeadPage`), is its
+description; `{ns}:_index` is read only where no head page exists, and is moved to the head page the
+first time its *Edit description* is opened. Its `visibility` is the level the editor's picker starts on for a new page underneath
 (nearest ancestor wins; none, or one the creator cannot see, means `private`). It is read when the
 editor opens and never written into the new page by anything but Save: `public` still needs the
 acknowledgement (D16), and creators without a picker (API, CLI, `/new`, copies, joins,
@@ -753,6 +754,11 @@ then title in the template pickers). It orders the namespace page's table (and i
 `title`/`name`), the New-report template picker and the editor's template picker. Text compares as
 Romanian (`ș` after `s`), numbers by value, without regard to case. Not inherited: each namespace
 names its own. Edited in the Metadata view of the description page, beside `priority`.
+
+The head page's `children` (D61, 2026-11-14; `Support\HeadPage::childrenMode()`) says how the pages of its
+namespace show under its text: `list` (cards; the default, also for an unset or unknown value), `toc`
+(a nested outline), `chapters` (each page rendered in turn, also in print, PDF, ODT and EPUB) or `none`
+(a count). Not in the reports tree. Edited in the Details panel as *Pages under it*.
 
 ## 6. Audit lines:`data/audit/YYYY-MM.ndjson`
 

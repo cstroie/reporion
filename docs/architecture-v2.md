@@ -370,7 +370,10 @@ signing are all touched).
    `attic_orphan`, and stray page files as `path_drift` / `duplicate_pid` / `stray_files`),
    `pages:repair-paths` rejoins or adopts stray page files, doctor walks `*.md` with the
    status from the state DB, and the trash count is a query. A page with pages under it is
-   deleted alone (the 409 `has_children` is gone). The tests move to `FileTree`.
+   deleted alone (the 409 `has_children` is gone). The tests move to `FileTree`. *Amended by
+   D61 (2026-11-14):* outside the reports tree a head page moves and goes to the trash with its
+   subtree, page by page through `Service\PageMoves`, refused whole before any write when a page
+   under it is signed or a report or a target is taken; Storage still moves one page at a time.
    *Done 2026-10-20.*
 7. Backup and rsync with the `VACUUM INTO` snapshot (`Databases::snapshotState()`): the
    archive carries `data/reporion.sqlite` as a copy taken just before, never the live file or
