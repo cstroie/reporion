@@ -146,8 +146,9 @@ final class NewReport
             $rows = $this->index->listRecent($principal, ['ns' => $templateNs], 200);
             // The namespace's own `sort` (its description page) when it has one
             $mode = NamespaceSort::modeFor($this->index, $templateNs, $principal);
+            // The exam each template names (its `##`, D45): the form fills the exam title on a pick
             $templates[$code] = array_map(
-                static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
+                fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? ''), 'exam' => $this->templateExamAt((string) $row['path'])],
                 NamespaceSort::sort($rows, $mode)
             );
             if ($mode === null) {
@@ -507,6 +508,16 @@ final class NewReport
         }
 
         return TemplateHeadings::exam($template->body) ?? PageTitle::of($template->frontmatter, $template->body);
+    }
+
+    /** The `##` exam heading of a template already listed under the caller's visibility, or '' */
+    private function templateExamAt(string $path): string
+    {
+        try {
+            return TemplateHeadings::exam($this->storage->read($path)->body) ?? '';
+        } catch (RuntimeException) {
+            return '';
+        }
     }
 
     /** A template page the caller can read, or null */

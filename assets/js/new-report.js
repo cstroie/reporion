@@ -134,16 +134,21 @@
 
     form.addEventListener('input', update);
     form.addEventListener('change', update);
-    // A template's regions are its exam's default (D45): ticked when the exam has none yet, the user may change them
+    // A template's regions and `##` exam are its exam's default (D45): a pick sets them, the user may change them after
     form.addEventListener('change', function (event) {
       var select = event.target;
       if (!select || !select.hasAttribute || !select.hasAttribute('data-nr-template')) return;
       var option = select.options[select.selectedIndex];
-      var wanted = option ? (option.getAttribute('data-region') || '').split(', ').filter(Boolean) : [];
+      if (!option || !option.value) return;
       var card = select.closest('[data-nr-exam]') || form;
-      var boxes = Array.prototype.slice.call(card.querySelectorAll('input[type=checkbox][name$="regions[]"]'));
-      if (!wanted.length || boxes.some(function (box) { return box.checked; })) return;
-      boxes.forEach(function (box) { box.checked = wanted.indexOf(box.value) !== -1; });
+      var wanted = (option.getAttribute('data-region') || '').split(',').map(function (r) { return r.trim(); }).filter(Boolean);
+      if (wanted.length) {
+        card.querySelectorAll('input[type=checkbox][name$="regions[]"]').forEach(function (box) { box.checked = wanted.indexOf(box.value) !== -1; });
+      }
+      var exam = option.getAttribute('data-exam') || '';
+      var title = card.querySelector('input[name="title"], input[name$="[title]"]');
+      if (exam && title) title.value = exam;
+      update();
     });
     update();
 

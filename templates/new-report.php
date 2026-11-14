@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 /** @var array<string, mixed> $draft */
 /** @var array<string, string> $errors */
-/** @var array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string, region: string}>>} $options */
+/** @var array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string, region: string, exam: string}>>} $options */
 /** @var bool $needsConfirm */
 /** @var string $basePath */
 
@@ -167,7 +167,7 @@ $count = \count($exams);
 <div class="wk-form-grid">
 <label class="wk-span-all"><?= $e(t('newr.title_field')) ?><input class="input" type="text" name="<?= $name('title') ?>" value="<?= $e((string) $row['title']) ?>" placeholder="<?= $e(t('newr.title_hint')) ?>"><small class="wk-dim"><?= $e(t('newr.title_field_help')) ?></small><?= $n === 0 ? $err('title') : $err('more.' . ($n - 1)) ?></label>
 <label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>"<?= $n === 0 ? $inv('time') : '' ?> value="<?= $e((string) $row['time']) ?>"><small class="wk-dim"><?= $e(t('newr.time_help')) ?></small><?= $n === 0 ? $err('time') : '' ?></label>
-<label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>" data-region="<?= $e($template['region']) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
+<label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>" data-region="<?= $e($template['region']) ?>" data-exam="<?= $e((string) ($template['exam'] ?? '')) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div class="wk-region-grid">
 <?php foreach ($options['regions'] as $region): ?>
