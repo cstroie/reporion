@@ -102,6 +102,19 @@ final class HeadPageViewTest extends HttpTestCase
         self::assertStringContainsString('<a href="/wiki:">wiki</a>', $page->body, 'no head page: the listing');
     }
 
+    public function testEditingTheDescriptionAdoptsTheLegacyIndex(): void
+    {
+        $pid = $this->storage()->read('wiki:guide:_index')->pid;
+        self::assertStringContainsString('href="/wiki:guide/edit"', $this->get('/wiki:guide:', true)->body);
+
+        self::assertSame(200, $this->get('/wiki:guide/edit', true)->status);
+
+        $head = $this->storage()->read('wiki:guide');
+        self::assertSame($pid, $head->pid, 'the same page, history and all');
+        self::assertStringContainsString('Vechi.', $head->body);
+        self::assertStringContainsString('href="/wiki:guide"', $this->get('/wiki:guide:', true)->body, 'Open page');
+    }
+
     private function head(string $mode, string $visibility = 'private'): void
     {
         $this->storage()->create('wiki:guide', ['title' => 'Ghid', 'visibility' => $visibility, 'children' => $mode, 'sort' => 'name'], "# Ghid\n\nCapul.", 'owner');

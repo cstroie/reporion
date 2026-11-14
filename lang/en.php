@@ -1832,6 +1832,7 @@ return [
     'ns.reserved_page'     => 'page',
     'ns.index_card_note'   => 'namespace description · %s',
     'ns.template_card_note' => 'template page for this namespace',
+    'ns.open_head' => 'Open page',
     'ns.description_edit'  => 'Edit description',
     'ns.description_add'   => 'Add description',
     'ns.description_add_help' => 'Describe this namespace: a page with the same name, shown at the top here',

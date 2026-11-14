@@ -95,8 +95,12 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php /* The namespace's description is a page of the same name */ ?>
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
+<?php if ($descriptionPath !== null && $descriptionPath === $ns && \Reporion\Support\HeadPage::applies($ns)): ?>
+<?php /* Head pages (D61): the namespace's page, with its children as it shows them */ ?>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>"><i class="ph ph-file-text"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.open_head'), ENT_QUOTES) ?></span></a>
+<?php endif; ?>
 <?php if ($ns !== '' && $nsDescriptionHtml !== null && $descriptionPath !== null): ?>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></span></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <?php $newLabel = htmlspecialchars(t(($newIsReport ?? false) ? 'ns.new_report' : 'ns.new_page'), ENT_QUOTES); ?>
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?><?= $ns === '' ? '' : '/' . htmlspecialchars($ns, ENT_QUOTES) ?>/new" title="<?= $newLabel ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $newLabel ?></span></a>

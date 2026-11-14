@@ -33,6 +33,7 @@ use Reporion\Service\Snippets;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\HeadPage;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ExamTemplates;
@@ -109,7 +110,28 @@ final class EditorController
         private readonly ?NamespaceDefaults $defaults = null,
         /** Where the `@` picker finds the sources `[@key]` cites (docs/library.md) */
         private readonly string $libraryNamespace = 'library',
+        /** Head pages (D61): an older `{ns}:_index` becomes the head page the first time it is edited */
+        private readonly ?\Reporion\Service\PageMoves $moves = null,
     ) {
+    }
+
+    /**
+     * D61's transparent migration: opening the head page `a:b` that does not exist yet, while the
+     * older description `a:b:_index` does, moves that page to `a:b` (pid, history and a redirect
+     * kept, links fixed) so the edit lands on the description already written. Only for a writer of both.
+     */
+    private function adoptLegacyDescription(string $path, User $principal): void
+    {
+        $legacy = $path . ':' . HeadPage::LEGACY_LEAF;
+        if ($this->moves === null || !HeadPage::applies($path) || !$principal->canWrite($path) || !$principal->canWrite($legacy)
+            || $this->index->findByPath($legacy, $principal) === null) {
+            return;
+        }
+        try {
+            $this->moves->move($legacy, $path, $principal->username);
+        } catch (\InvalidArgumentException|PageNotFoundException) {
+            // Taken meanwhile, or gone: the editor opens on the head as it is
+        }
     }
 
     /** The library's namespace for the editor's `@` picker, when the writer may read it; '' otherwise */
@@ -133,6 +155,9 @@ final class EditorController
         // A page not written yet (decided 2026-09-27): the editor opens on
         // its path and the first Save creates it, so revision 1 is what the
         // user wrote: never an empty scaffold
+        if ($this->index->findByPath($path, $principal) === null) {
+            $this->adoptLegacyDescription($path, $principal);
+        }
         if ($this->index->findByPath($path, $principal) === null) {
             if (!$this->mayCreate($path, $principal)) {
                 throw new PageNotFoundException();

@@ -729,7 +729,7 @@ final class Kernel
         $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
         $compare = new CompareController($storage, $index, $patientStudies, $render, $aiActions);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index), self::libraryNamespace($config));
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index), self::libraryNamespace($config), $moves);
         $export = new ExportController(
             $storage,
             $index,
