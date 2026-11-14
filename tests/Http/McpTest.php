@@ -158,6 +158,22 @@ final class McpTest extends HttpTestCase
         self::assertStringContainsString('More.', $stale['content'][0]['text'], 'the current text comes back');
         self::assertSame(2, $this->storage()->read('notes:new')->rev);
 
+        $meta = $this->tool($write, 'update_meta', ['path' => 'notes:new', 'base_rev' => 2, 'set' => ['tags' => ['templates'], 'modality' => ['MR']], 'note' => 'tags'])['result'];
+        self::assertSame(3, $meta['structuredContent']['rev']);
+        $page = $this->storage()->read('notes:new');
+        self::assertSame(['templates'], $page->frontmatter['tags']);
+        self::assertSame(['MR'], $page->frontmatter['modality']);
+        self::assertStringContainsString('More.', $page->body, 'the text is kept');
+        self::assertSame(4, $this->tool($write, 'update_meta', ['path' => 'notes:new', 'base_rev' => 3, 'unset' => ['modality']])['result']['structuredContent']['rev']);
+        self::assertArrayNotHasKey('modality', $this->storage()->read('notes:new')->frontmatter);
+        foreach (['status' => 'signed', 'visibility' => 'public', 'pid' => 'X', 'patient' => ['name' => 'x']] as $key => $value) {
+            self::assertTrue($this->tool($write, 'update_meta', ['path' => 'notes:new', 'base_rev' => 4, 'set' => [$key => $value]])['result']['isError'], $key . ' is not changed here');
+        }
+        self::assertTrue($this->tool($write, 'update_meta', ['path' => 'notes:new', 'base_rev' => 4])['result']['isError'], 'nothing to change');
+        self::assertTrue($this->tool($write, 'update_meta', ['path' => 'notes:new', 'base_rev' => 2, 'set' => ['tags' => ['x']]])['result']['isError'], 'stale');
+        self::assertTrue($this->tool($write, 'update_meta', ['path' => 'reports:mri:mioveni:a', 'base_rev' => 1, 'set' => ['tags' => ['x']]])['result']['isError'], 'never a report');
+        self::assertSame(4, $this->storage()->read('notes:new')->rev);
+
         self::assertTrue($this->tool($write, 'update_page', ['path' => 'reports:mri:mioveni:a', 'body' => 'x', 'base_rev' => 1])['result']['isError'], 'never a report');
         self::assertTrue($this->tool($write, 'create_page', ['path' => 'reports:mri:mioveni:b', 'body' => 'x'])['result']['isError']);
         self::assertTrue($this->tool($write, 'update_page', ['path' => 'docs:howto', 'body' => 'x', 'base_rev' => 1])['result']['isError'], 'a viewer grant writes nothing');

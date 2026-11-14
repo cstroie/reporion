@@ -39,6 +39,8 @@ final class McpController
      */
     public const ACCESS = ['off', 'local', 'token', 'on'];
     private const LIMIT = 20;
+    /** Frontmatter keys update_meta may set or remove: never pid, status, patient, visibility (D16's acknowledged step), signatures or a library record */
+    public const META_KEYS = ['title', 'tags', 'modality', 'region', 'summary', 'checklist', 'sort', 'children', 'language', 'author'];
 
     public function __construct(
         private readonly IndexInterface $index,
@@ -164,13 +166,13 @@ final class McpController
             'search' => $this->search($arg('query'), trim($arg('namespace'), ':'), $principal),
             'get_page' => $this->page(trim($arg('path'), ':'), $arg('pid'), $principal, $request->basePath),
             'list_namespace' => $this->listing(trim($arg('namespace'), ':'), $principal),
-            'create_page', 'update_page' => [null, 0],
+            'create_page', 'update_page', 'update_meta' => [null, 0],
             default => [null, -1],
         };
         if ($count === -1) {
             return self::failure($id, -32602, 'Unknown tool');
         }
-        if ($name === 'create_page' || $name === 'update_page') {
+        if ($name === 'create_page' || $name === 'update_page' || $name === 'update_meta') {
             return $this->write($id, $name, $args, $request, $principal);
         }
         $this->audit->record('mcp.call', $principal->username, $request, \is_string($payload['pid'] ?? null) ? $payload['pid'] : null, extra: ['tool' => $name, 'results' => $count]);
@@ -260,6 +262,15 @@ final class McpController
                     'note' => $string('A short note for the revision history: what changed'),
                 ], 'required' => ['path', 'body', 'base_rev']],
                 'annotations' => $write],
+            ['name' => 'update_meta', 'description' => 'Change some frontmatter keys of an existing page, as a new revision; the text is kept. Read it with get_page first and pass its rev as base_rev. Only these keys: ' . implode(', ', self::META_KEYS) . '. `set` gives new values (a whole value: a list replaces the list), `unset` names keys to remove. Not for signed pages, reports or pages about a patient.',
+                'inputSchema' => ['type' => 'object', 'properties' => [
+                    'path' => $string('The page path'),
+                    'base_rev' => ['type' => 'integer', 'description' => 'The rev get_page returned'],
+                    'set' => ['type' => 'object', 'description' => 'Keys and their new values, e.g. {"tags": ["templates"], "modality": ["MR"]}'],
+                    'unset' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Keys to remove'],
+                    'note' => $string('A short note for the revision history: what changed'),
+                ], 'required' => ['path', 'base_rev']],
+                'annotations' => $write],
         ];
     }
 
@@ -285,8 +296,21 @@ final class McpController
         }
         $path = \is_string($args['path'] ?? null) ? trim($args['path'], " :") : '';
         $body = \is_string($args['body'] ?? null) ? $args['body'] : null;
-        if ($path === '' || $body === null) {
+        if ($path === '' || ($body === null && $tool !== 'update_meta')) {
             return $refuse('path and body are required.');
+        }
+        $set = [];
+        $unset = [];
+        if ($tool === 'update_meta') {
+            $set = \is_array($args['set'] ?? null) ? $args['set'] : [];
+            $unset = \is_array($args['unset'] ?? null) ? array_values(array_filter($args['unset'], 'is_string')) : [];
+            if ($set === [] && $unset === []) {
+                return $refuse('Nothing to change: give set or unset.');
+            }
+            $other = array_diff([...array_map('strval', array_keys($set)), ...$unset], self::META_KEYS);
+            if ($other !== []) {
+                return $refuse('Not a key this tool changes: ' . implode(', ', $other) . '. Allowed: ' . implode(', ', self::META_KEYS) . '.');
+            }
         }
         if (ReportPath::isReport($path) || ReportPath::isReportNamespace($path)) {
             return $refuse('Reports are written in Reporion\'s editor, not here.');
@@ -321,14 +345,19 @@ final class McpController
             if ($record->status === 'signed') {
                 return $refuse('This page is signed: a change is a correction, made and signed again in Reporion.');
             }
-            $response = $this->pages->save(self::inner($request, 'PUT', '/api/v1/pages/' . $path, ['meta' => $record->frontmatter, 'body' => $body, 'base_rev' => $baseRev, 'note' => $note]), $path, $principal);
+            $meta = $record->frontmatter;
+            if ($tool === 'update_meta') {
+                $meta = array_diff_key(array_replace($meta, $set), array_flip($unset));
+                $body = $record->body;
+            }
+            $response = $this->pages->save(self::inner($request, 'PUT', '/api/v1/pages/' . $path, ['meta' => $meta, 'body' => $body, 'base_rev' => $baseRev, 'note' => $note]), $path, $principal);
         }
 
         $answer = json_decode($response->body, true);
         $answer = \is_array($answer) ? $answer : [];
         $this->audit->record('mcp.call', $principal->username, $request, \is_string($answer['pid'] ?? null) ? $answer['pid'] : null, outcome: $response->status < 300 ? 'ok' : 'refused', extra: ['tool' => $tool, 'status' => $response->status]);
         if ($response->status === 409 && \is_array($answer['current'] ?? null)) {
-            return self::result($id, ['content' => [['type' => 'text', 'text' => 'Not saved: the page changed since base_rev. Its current revision and text follow; merge your change into it and call update_page again with this rev.' . "\n\n" . json_encode(['rev' => $answer['current']['rev'] ?? null, 'body' => $answer['current']['body'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]], 'isError' => true]);
+            return self::result($id, ['content' => [['type' => 'text', 'text' => 'Not saved: the page changed since base_rev. Its current revision and text follow; merge your change into it and call ' . $tool . ' again with this rev.' . "\n\n" . json_encode(['rev' => $answer['current']['rev'] ?? null, 'body' => $answer['current']['body'] ?? null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]], 'isError' => true]);
         }
         if ($response->status >= 300) {
             $message = \is_string($answer['error']['message'] ?? null) ? $answer['error']['message'] : 'Not saved.';
