@@ -115,6 +115,22 @@ final class HeadPageViewTest extends HttpTestCase
         self::assertStringContainsString('href="/wiki:guide"', $this->get('/wiki:guide:', true)->body, 'Open page');
     }
 
+    public function testAChaptersHeadPrintsItsPages(): void
+    {
+        $this->head('chapters');
+        $printed = $this->get('/export/wiki:guide.html', true);
+
+        self::assertSame(200, $printed->status);
+        self::assertStringContainsString('<h2>Introducere</h2>', $printed->body);
+        self::assertStringContainsString('<h3>Adânc</h3>', $printed->body, 'a sub-head\'s page one level down');
+        self::assertStringNotContainsString('href="/wiki:guide:intro"', $printed->body, 'no links on paper');
+        $pdf = $this->get('/export/wiki:guide.pdf', true);
+        self::assertSame(200, $pdf->status);
+        if (($out = getenv('HEAD_PDF_OUT')) !== false) {
+            file_put_contents($out, $pdf->body);
+        }
+    }
+
     private function head(string $mode, string $visibility = 'private'): void
     {
         $this->storage()->create('wiki:guide', ['title' => 'Ghid', 'visibility' => $visibility, 'children' => $mode, 'sort' => 'name'], "# Ghid\n\nCapul.", 'owner');

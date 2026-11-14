@@ -105,7 +105,10 @@ final class PrintView
      *
      * @return array<string, mixed>
      */
-    public function pageVars(PageRecord $record): array
+    /**
+     * @param list<array{record: PageRecord, level: int}> $chapters a `chapters` head's pages (D61), in reading order
+     */
+    public function pageVars(PageRecord $record, array $chapters = []): array
     {
         $title = PageTitle::of($record->frontmatter, $record->body);
         $last = $record->revlog[array_key_last($record->revlog)] ?? [];
@@ -123,6 +126,15 @@ final class PrintView
             // Paper and export files: links to other pages keep their text only (invariant 8)
             'bodyHtml' => $this->render->body($body, $record->frontmatter, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
+            'chaptersHtml' => implode("\n", array_map(function (array $chapter): string {
+                $page = $chapter['record'];
+                $title = PageTitle::of($page->frontmatter, $page->body);
+                $body = $title !== '' && TitleFromHeading::first($page->body) === $title ? TitleFromHeading::withoutFirst($page->body) : $page->body;
+                $h = 'h' . min(6, max(2, $chapter['level']));
+
+                return '<div class="chapter"><' . $h . '>' . htmlspecialchars($title !== '' ? $title : t('print.untitled'), ENT_QUOTES) . '</' . $h . '>'
+                    . HeadChildren::demote($this->render->body($body, $page->frontmatter, unlinkPages: true, mediaSrc: $this->embedder($page))->html, (int) substr($h, 1) - 1) . '</div>';
+            }, $chapters)),
         ];
     }
 

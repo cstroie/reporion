@@ -48,6 +48,7 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
 
 <div class="body">
 <?= $bodyHtml /* Render::toHtml() output: raw HTML already escaped there */ ?>
+<?= $chaptersHtml ?? '' /* a `chapters` head's pages (D61), rendered the same way */ ?>
 </div>
 
 <table class="sig">

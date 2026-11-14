@@ -106,7 +106,7 @@ final class HeadChildren
                     continue;
                 }
                 $rendered = $this->render->body(self::withoutTitle($record->body), $record->frontmatter, $basePath);
-                $html = (string) preg_replace('/(<h[1-6][^>]*?\sid=")/', '$1' . $id . '-', $rendered->html);
+                $html = self::demote((string) preg_replace('/(<h[1-6][^>]*?\sid=")/', '$1' . $id . '-', $rendered->html), $level - 1);
                 $toc[] = ['level' => $level, 'text' => $node['title'], 'slug' => $id];
                 foreach ($rendered->toc as $entry) {
                     if ($entry['level'] === 2) {
@@ -125,6 +125,12 @@ final class HeadChildren
         }
 
         return ['chapters' => $chapters, 'toc' => $toc];
+    }
+
+    /** $html with every heading $by levels down (at most h6): a chapter's sections sit under its title */
+    public static function demote(string $html, int $by): string
+    {
+        return $by <= 0 ? $html : (string) preg_replace_callback('#<(/?)h([1-6])(?=[\s>])#', static fn (array $m): string => '<' . $m[1] . 'h' . min(6, (int) $m[2] + $by), $html);
     }
 
     /** $body without its leading `#` title: the chapter heading carries it */

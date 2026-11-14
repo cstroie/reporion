@@ -60,7 +60,40 @@ final class ExportController
         private readonly OdtExport $odt,
         private readonly AuditLog $audit,
         private readonly array $options,
+        /** Head pages (D61): a `chapters` head prints its pages after its text */
+        private readonly ?\Reporion\Service\HeadChildren $headChildren = null,
     ) {
+    }
+
+    /**
+     * A `chapters` head's pages the caller lists (D61), in reading order, sub-heads' after their head
+     *
+     * @return list<array{record: PageRecord, level: int}>
+     */
+    private function chapters(PageRecord $record, ?User $principal): array
+    {
+        if ($this->headChildren === null || \Reporion\Support\HeadPage::childrenMode($record->frontmatter) !== 'chapters') {
+            return [];
+        }
+        $out = [];
+        $walk = function (array $nodes, int $level) use (&$walk, &$out): void {
+            foreach ($nodes as $node) {
+                if ($node['page']) {
+                    try {
+                        $page = $this->storage->read((string) $node['path']);
+                    } catch (PageNotFoundException) {
+                        continue;
+                    }
+                    if (!isset($page->frontmatter['patient'])) {
+                        $out[] = ['record' => $page, 'level' => $level];
+                    }
+                }
+                $walk($node['children'], $level + 1);
+            }
+        };
+        $walk($this->headChildren->tree($record->path, $principal, \Reporion\Service\HeadChildren::MAX_DEPTH), 2);
+
+        return $out;
     }
 
     /**
@@ -284,7 +317,7 @@ final class ExportController
     private function document(PageRecord $record, ?User $principal, array $extra = []): string
     {
         $isReport = ReportPath::isReport($record->path);
-        $vars = ($isReport ? $this->printView->vars($record, $this->pseudonymise($principal)) : $this->printView->pageVars($record)) + $extra;
+        $vars = ($isReport ? $this->printView->vars($record, $this->pseudonymise($principal)) : $this->printView->pageVars($record, $this->chapters($record, $principal))) + $extra;
 
         return View::render(\dirname(__DIR__, 2) . '/templates/print/' . ($isReport ? 'report' : 'page') . '.php', $vars);
     }

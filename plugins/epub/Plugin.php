@@ -17,10 +17,10 @@ use Reporion\Plugin\Container;
 use Reporion\Plugin\Hooks;
 use Reporion\Plugin\PluginInterface;
 use Reporion\Service\PrintView;
+use Reporion\Service\HeadChildren;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
-use Reporion\Support\NamespaceSort;
 use Reporion\Support\ReportPath;
 
 /**
@@ -74,20 +74,21 @@ final class Plugin implements PluginInterface
         // `ns:_index` describes the namespace `ns`; any other page is the namespace of its own name
         $segments = explode(':', $record->path);
         $ns = end($segments) === '_index' ? implode(':', \array_slice($segments, 0, -1)) : $record->path;
-        $rows = $ns === '' ? [] : NamespaceSort::sort($this->index->listNamespace($ns, $principal), NamespaceSort::modeFor($this->index, $ns, $principal));
-
+        // The head page's children (D61, Service\HeadChildren: the listing predicate, its `sort`, no reports,
+        // no analyses), sub-heads' pages following their head in reading order
         $chapters = [];
-        foreach ($rows as $child) {
-            $path = (string) $child['path'];
-            if ($path === $record->path || str_ends_with($path, ':_index') || ReportPath::isReport($path)) {
-                continue;
+        $walk = function (array $nodes) use (&$walk, &$chapters, $record): void {
+            foreach ($nodes as $node) {
+                if ($node['page'] && $node['path'] !== $record->path) {
+                    $page = $this->storage->read((string) $node['path']);
+                    if (!isset($page->frontmatter['patient'])) {
+                        $chapters[] = $this->section($page);
+                    }
+                }
+                $walk($node['children']);
             }
-            $page = $this->storage->read($path);
-            if (isset($page->frontmatter['patient'])) {
-                continue;
-            }
-            $chapters[] = $this->section($page);
-        }
+        };
+        $walk($ns === '' ? [] : (new HeadChildren($this->index, $this->storage, $this->render))->tree($ns, $principal, HeadChildren::MAX_DEPTH));
         if ($chapters === []) {
             throw new PageNotFoundException();
         }

@@ -126,3 +126,6 @@ td.sig-right { width: 40%; text-align: right; font-size: 7.5pt; color: #6b6b78; 
 .sig-title { font-size: 7.5pt; }
 .sig-img { height: 14mm; }
 .verify { font-family: DejaVu Sans Mono, monospace; font-size: 6.5pt; }
+
+/* Head pages (D61): a `chapters` head's pages, after its text */
+.chapter { margin-top: 8mm; }

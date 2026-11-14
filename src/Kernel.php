@@ -745,6 +745,7 @@ final class Kernel
             new OdtExport(),
             $audit,
             (array) ($config['export'] ?? []),
+            new \Reporion\Service\HeadChildren($index, $storage, $render),
         );
         $profile = new ProfileController($users, $index, $audit, $apiTokens, $groups);
         $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
