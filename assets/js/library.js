@@ -359,6 +359,43 @@
     });
   }
 
+  // ---- the reader's own marks: a star and where their reading stands, on a row and on a source's card ----
+
+  var MARK_ORDER = ['', 'toread', 'reading', 'read'];
+  var MARK_ICONS = { '': 'circle-dashed', toread: 'bookmark-simple', reading: 'book-open', read: 'check-circle' };
+
+  function mountMark(box) {
+    var star = box.querySelector('[data-mark-star]');
+    var status = box.querySelector('[data-mark-status]');
+    var labels = {};
+    try { labels = JSON.parse(box.getAttribute('data-labels')) || {}; } catch (e) { labels = {}; }
+    function draw(state) {
+      box.setAttribute('data-status', state.status);
+      star.classList.toggle('is-on', state.star);
+      star.setAttribute('aria-pressed', state.star ? 'true' : 'false');
+      status.firstElementChild.className = 'ph ph-' + (MARK_ICONS[state.status] || MARK_ICONS['']);
+      status.title = labels[state.status] || '';
+      status.setAttribute('aria-label', status.title);
+    }
+    function send(change) {
+      star.disabled = status.disabled = true;
+      fetch(box.getAttribute('data-url'), {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(change)
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (json) {
+        star.disabled = status.disabled = false;
+        if (json) draw({ status: json.status || '', star: json.star === true });
+      }, function () { star.disabled = status.disabled = false; });
+    }
+    star.addEventListener('click', function () { send({ star: star.getAttribute('aria-pressed') !== 'true' }); });
+    status.addEventListener('click', function () {
+      var next = MARK_ORDER[(MARK_ORDER.indexOf(box.getAttribute('data-status') || '') + 1) % MARK_ORDER.length];
+      send({ status: next });
+    });
+  }
+
   // ---- library-list ----
 
   function mountList(box) {
@@ -408,6 +445,76 @@
       if (img.complete && img.naturalWidth === 0 && img.currentSrc) plain();
       else img.addEventListener('error', plain);
     });
+    // Tags as folders: a row dragged onto a tag files the article there; onto New tag, under the name typed
+    var drop = box.querySelector('[data-lib-drop]');
+    if (drop) {
+      var dropStrings = {};
+      try { dropStrings = JSON.parse(drop.getAttribute('data-strings')) || {}; } catch (e) { dropStrings = {}; }
+      var said = drop.querySelector('[data-drop-said]');
+      var fresh = drop.querySelector('[data-drop-new]');
+      var carried = null;
+      var file = function (row, tag, chip) {
+        tag = tag.trim().toLowerCase();
+        if (!row || tag === '') return;
+        fetch(drop.getAttribute('data-url') + row.getAttribute('data-pid') + '/tags', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ add: [tag] })
+        }).then(function (r) { return r.json().then(function (json) { return { ok: r.ok, json: json }; }); }).then(function (r) {
+          if (!r.ok) { said.textContent = r.json && r.json.error ? r.json.error.message : (dropStrings.failed || ''); return; }
+          said.textContent = (dropStrings.added || '%s').replace('%s', tag);
+          if (!r.json.changed) return;
+          // The row shows its new tag; the tag's count grows (a new tag appears with the next load)
+          var cell = row.querySelector('.wk-lib-rowtags');
+          if (cell) { cell.appendChild(el('span', 'wk-chip', tag)); cell.appendChild(document.createTextNode(' ')); }
+          var n = chip ? chip.querySelector('.wk-dim') : null;
+          if (n) n.textContent = String((parseInt(n.textContent, 10) || 0) + 1);
+        }, function () { said.textContent = dropStrings.failed || ''; });
+      };
+      rows.forEach(function (row) {
+        row.addEventListener('dragstart', function (event) {
+          carried = row;
+          drop.classList.add('is-dropping');
+          event.dataTransfer.effectAllowed = 'copy';
+          event.dataTransfer.setData('text/plain', '[@' + row.getAttribute('data-key') + ']');
+        });
+        row.addEventListener('dragend', function () {
+          drop.classList.remove('is-dropping');
+          drop.querySelectorAll('.is-over').forEach(function (n) { n.classList.remove('is-over'); });
+        });
+      });
+      var target = function (event) { return event.target.closest ? event.target.closest('[data-drop-tag], [data-drop-new]') : null; };
+      drop.addEventListener('dragover', function (event) {
+        var over = carried ? target(event) : null;
+        if (!over) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        over.classList.add('is-over');
+      });
+      drop.addEventListener('dragleave', function (event) {
+        var over = target(event);
+        if (over) over.classList.remove('is-over');
+      });
+      drop.addEventListener('drop', function (event) {
+        var over = carried ? target(event) : null;
+        if (!over) return;
+        event.preventDefault();
+        over.classList.remove('is-over');
+        if (over.hasAttribute('data-drop-tag')) { file(carried, over.getAttribute('data-drop-tag'), over); carried = null; return; }
+        // New tag: the name is typed, Enter files the article under it
+        fresh.pending = carried;
+        fresh.value = '';
+        fresh.focus();
+      });
+      if (fresh) {
+        fresh.addEventListener('keydown', function (event) {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          if (fresh.pending && fresh.value.trim() !== '') { file(fresh.pending, fresh.value, null); fresh.pending = null; fresh.value = ''; fresh.blur(); }
+        });
+      }
+    }
     // Opened lately: kept in this browser by the reader (library-reader.js), shown as a strip of covers
     var recentBox = box.querySelector('[data-lib-recent]');
     if (recentBox) {
@@ -561,6 +668,55 @@
 
   function mountRecord(box) {
     var cfg = config(box);
+    // The page's three tabs: Overview (this card, Ask this paper), Text (the reader), Notes (comments
+    // and highlights). A link into the text (#p12, a heading) opens Text; #notes opens Notes.
+    var tabs = document.querySelector('[data-lib-tabs]');
+    if (tabs) {
+      var buttons = Array.prototype.slice.call(tabs.querySelectorAll('[data-lib-tab]'));
+      var body = document.querySelector('.wk-docbody');
+      var notes = document.querySelector('.wk-comments[data-island="comments"]');
+      var panels = function (name) {
+        if (name === 'text') return body ? [body] : [];
+        if (name === 'notes') return notes ? [notes] : [];
+        return [box].concat(Array.prototype.slice.call(document.querySelectorAll('[data-lib-tabpanel="overview"]')));
+      };
+      var has = function (name) { return buttons.some(function (b) { return b.getAttribute('data-lib-tab') === name; }); };
+      var showTab = function (name) {
+        if (!has(name)) name = 'overview';
+        buttons.forEach(function (b) {
+          var tab = b.getAttribute('data-lib-tab');
+          b.setAttribute('data-on', tab === name ? '1' : '');
+          b.setAttribute('aria-pressed', tab === name ? 'true' : 'false');
+          panels(tab).forEach(function (panel) { panel.hidden = tab !== name; });
+        });
+        document.body.setAttribute('data-lib-tab-on', name);
+        // What is laid out changed: the reader measures its bar and draws its map again
+        window.dispatchEvent(new Event('resize'));
+      };
+      var fromHash = function () {
+        var id = '';
+        try { id = decodeURIComponent(window.location.hash.slice(1)); } catch (e) { id = ''; }
+        if (id === '') return null;
+        if (id === 'notes' || id === 'comments') return 'notes';
+        if (id === 'text') return 'text';
+        var target = document.getElementById(id);
+        if (target && body && body.contains(target)) return 'text';
+        return /^p\d+$/.test(id) ? 'text' : null;
+      };
+      tabs.hidden = false;
+      showTab(fromHash() || 'overview');
+      buttons.forEach(function (b) {
+        b.addEventListener('click', function () { showTab(b.getAttribute('data-lib-tab')); });
+      });
+      window.addEventListener('hashchange', function () { var to = fromHash(); if (to) showTab(to); });
+      // The reader asks for a tab: Notes for a comment on a selection, Text for a highlight shown in place
+      document.addEventListener('reporion:library-tab', function (event) { showTab(String(event.detail || 'overview')); });
+      var count = tabs.querySelector('[data-lib-notes-count]');
+      document.addEventListener('reporion:comments', function (event) {
+        var open = (event.detail || []).filter(function (c) { return !c.resolved; }).length;
+        if (count) { count.hidden = open === 0; count.textContent = String(open); }
+      });
+    }
     // A cover that cannot be drawn (404): the card without a picture
     box.querySelectorAll('.wk-lib-cover-lg img').forEach(function (img) {
       var gone = function () { if (img.parentNode) img.parentNode.remove(); };
@@ -805,6 +961,7 @@
       return;
     }
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-add"]'), mountAdd);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lib-mark]'), mountMark);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-list"]'), mountList);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-record"]'), mountRecord);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-ai"]'), mountAi);

@@ -2308,7 +2308,7 @@ details.wk-tool .wk-count { margin-left: var(--space-1); }
 .wk-lib-search-row > .group > .input { flex: 1 1 auto; }
 .wk-lib-search-row > .btn { flex: none; }
 .wk-lib-search-help { color: var(--color-dimmer); font-size: var(--text-2xs); }
-.wk-lib-filter-form { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
+.wk-lib-filter-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
 .wk-lib-filter-form .field { margin: 0; }
 .wk-lib-filter-form .field > label { gap: var(--space-1); font-size: var(--text-xs); }
 @media (max-width: 1023px) { .wk-lib-filter-form { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -2401,6 +2401,19 @@ table.table.table-cards-compact.wk-lib-table td.wk-lib-rowtags { flex-wrap: wrap
 .wk-lib-art { display: flex; align-items: flex-start; gap: var(--space-3); text-align: left; min-width: 0; flex: 1 1 auto; }
 .wk-lib-art-text { min-width: 0; flex: 1 1 auto; }
 .wk-lib-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; margin-top: var(--space-1); }
+/* A citation's hover card: the source's cover, reference and summary under the citation */
+.wk-lib-card { position: absolute; z-index: 45; display: flex; align-items: flex-start; gap: var(--space-3); width: min(26rem, calc(100vw - 16px)); padding: var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: 0 8px 24px rgb(0 0 0 / .35); font-size: var(--text-sm); line-height: 1.45; }
+.wk-lib-card[hidden] { display: none; }
+.wk-lib-card .wk-lib-cover { width: 4.5rem; }
+.wk-lib-card-text { min-width: 0; }
+.wk-lib-card-text p { margin: 0 0 var(--space-2); overflow-wrap: anywhere; }
+.wk-lib-card-abstract { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; line-clamp: 5; overflow: hidden; font-size: var(--text-xs); }
+.wk-lib-card-actions { display: flex; gap: var(--space-4); margin-bottom: 0 !important; font-size: var(--text-xs); }
+/* A source's page in tabs: Overview, Text, Notes */
+.wk-lib-tabs { display: flex; gap: var(--space-1); margin: 0 0 var(--space-4); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-divider); }
+.wk-lib-tabs[hidden] { display: none; }
+.wk-lib-tabs .wk-tab { display: inline-flex; align-items: center; gap: var(--space-2); }
+.wk-docbody[hidden], .wk-comments[hidden], .wk-lib-source[hidden], .wk-notebook-ask[hidden] { display: none; }
 /* A source's card: its cover beside its reference, summary and abstract */
 .wk-lib-head { display: flex; align-items: flex-start; gap: var(--space-5); margin-bottom: var(--space-3); }
 .wk-lib-head-text { flex: 1 1 auto; min-width: 0; }
@@ -2408,6 +2421,21 @@ table.table.table-cards-compact.wk-lib-table td.wk-lib-rowtags { flex-wrap: wrap
 .wk-lib-lead { margin: var(--space-3) 0; padding-left: var(--space-3); border-left: 2.5px solid var(--color-accent); line-height: 1.5; }
 .wk-lib-head .wk-lib-abstract { margin-top: var(--space-3); }
 @media (max-width: 575px) { .wk-lib-head { gap: var(--space-3); } .wk-lib-cover-lg { width: 4.5rem; } .wk-lib-head .wk-lib-abstract-text { max-height: 14rem; } }
+/* The reader's own marks: a star and the reading status, quiet until set */
+.wk-lib-marks { flex: none; display: inline-flex; align-items: center; gap: 2px; }
+.wk-lib-marks .wk-tbtn { width: 28px; height: 28px; color: var(--color-dimmer); }
+.wk-lib-marks .wk-tbtn:hover { color: var(--color-text); }
+.wk-lib-star.is-on { color: var(--state-warn); }
+.wk-lib-star.is-on .ph::before { font-weight: 700; }
+.wk-lib-marks[data-status="toread"] .wk-lib-status { color: var(--color-accent); }
+.wk-lib-marks[data-status="reading"] .wk-lib-status { color: var(--state-warn); }
+.wk-lib-marks[data-status="read"] .wk-lib-status { color: var(--state-ok); }
+.wk-lib-list[data-view="covers"] .wk-lib-marks { order: -1; align-self: flex-end; margin-bottom: calc(-1 * var(--space-2)); }
+/* Tags as folders: a row being dragged lights the tags it can be dropped on */
+.wk-lib-chips.is-dropping :is([data-drop-tag], [data-drop-new]) { outline: 1px dashed var(--color-accent); outline-offset: 2px; }
+.wk-lib-chips :is([data-drop-tag], [data-drop-new]).is-over { background: color-mix(in srgb, var(--color-accent) 25%, transparent); border-color: var(--color-accent); }
+.wk-lib-newtag { width: 7.5rem; background: none; color: inherit; font: inherit; font-family: var(--font-mono); font-size: var(--text-xs); border-style: dashed; }
+.wk-lib-newtag::placeholder { color: var(--color-dimmer); }
 /* Opened lately: the sources this browser read last, each where it was left */
 .wk-lib-recent { display: flex; gap: var(--space-4); overflow-x: auto; padding: var(--space-4) 0 var(--space-2); border-top: 1px solid var(--color-divider); scrollbar-width: thin; }
 .wk-lib-recent[hidden] { display: none; }

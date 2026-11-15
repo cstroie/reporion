@@ -239,6 +239,8 @@
       var payload = { question: question, stream: true };
       if (cfg.path) payload.path = cfg.path;
       if (cfg.history) payload.history = history.slice();
+      // Ask this paper (a library source's page): the library's ask, kept to that one source
+      if (cfg.source) payload.source = cfg.source;
 
       function step(name) {
         var text = s['step_' + name];

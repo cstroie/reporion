@@ -113,6 +113,7 @@ final class FlatFileUserStore implements UserStoreInterface
             stamp: trim($user->stamp),
             views: SavedViews::clean($user->views),
             fullName: trim($user->fullName),
+            marks: LibraryMarks::clean($user->marks),
         );
         $this->write($updated);
 
@@ -179,6 +180,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'groups' => $user->groups,
             'stamp' => $user->stamp,
             'views' => $user->views,
+            'marks' => (object) $user->marks,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -241,6 +243,7 @@ final class FlatFileUserStore implements UserStoreInterface
             stamp: \is_string($decoded['stamp'] ?? null) ? $decoded['stamp'] : '',
             views: SavedViews::clean($decoded['views'] ?? []),
             fullName: \is_string($decoded['full_name'] ?? null) ? $decoded['full_name'] : '',
+            marks: LibraryMarks::clean($decoded['marks'] ?? []),
         ));
     }
 

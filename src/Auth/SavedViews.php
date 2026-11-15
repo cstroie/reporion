@@ -53,7 +53,7 @@ final class SavedViews
         if ($library) {
             // The filters as the library reads them: a value it cannot read is no filter
             $kept = array_intersect_key($kept, array_flip(['q', 'tag', 'sort'])) + LibraryFilter::of($kept);
-            if (isset($kept['sort']) && !\in_array($kept['sort'], ['author', 'year', 'title'], true)) {
+            if (isset($kept['sort']) && !\in_array($kept['sort'], ['author', 'year', 'title', 'added'], true)) {
                 unset($kept['sort']);
             }
         }

@@ -21,7 +21,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Size | 50 MB per file (`library.max_mb`) |
 | Citations a reader may not follow | Printed from the record, no link to the library page |
 | Long sources | Adaptive: whole when they fit `library.context_tokens` (32 000), else map-reduced by section |
-| Starred / read marks | None |
+| Starred / read marks | ~~None~~ **Reversed 2026-11-15:** each account's own star and reading status, in its user file (`marks`, `Auth\LibraryMarks`) |
 | External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
 | Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
 | Keeping the assistant's results | **Automatically** (owner, 2026-10-31): each analysis of a source and each Studio text is kept as a page beside its page, named by its prompt (`library:{key}:source-points`, `{notebook}:studio-overview`), shown when the source or notebook is opened again; they move and go to the trash with it |
@@ -434,7 +434,7 @@ Readwise's selection menu. No storage, schema or text format changes: everything
    A click or a drag scrolls there; the pointer over it names the section and page. Drawn again when a
    section folds, a search runs or the window changes.
 6. **Side by side** (a screen of 1200 px and more, a PDF): the original in a pane beside the text, staying in
-   view, in the browser's own PDF viewer (`#page=N&view=FitH&navpanes=0`). It goes to the page being read
+   view, in the browser's own PDF viewer (`#page=N&view=FitH&navpanes=0&pagemode=none`: the page's width, and the viewer's own side panel of thumbnails or contents hidden, in Chrome, Edge and Firefox). It goes to the page being read
    0.7 s after the reader settles on one (the viewer takes a page only as it loads). Opening or closing it
    keeps the reader on the page being read. The contents column gives way to it.
 7. **Highlights.** The page's open comments that quote it (D52, unchanged) are painted on the text where
@@ -453,15 +453,43 @@ Readwise's selection menu. No storage, schema or text format changes: everything
    the source (`GET /api/v1/pages/{library}:{key}:abstract`, asked then). Arrows (or `j` / `k`) move to the
    next row the filter shows, Enter opens it; *Copy citation key* copies `[@key]`.
 
-*Not built yet, chosen by the owner 2026-11-15 (each needs a decision first, noted):* **Ask this paper** (the
-notebook's ask on one source: a prompt page and an endpoint); **tabs** Overview / Text / Notes; **reading
-status** per account, To read / Reading / Read and a star (reverses 2026-10-30; where an account's marks
-are kept: its user file, as saved views, or a state table); **folders** by drag and drop (as tags: a
-revision of the source per move); a **hover card** on a `[@key]` citation (a small endpoint for a source's
-card); the **library in the report's rail** (passages matching the line being written, as Recall);
-**auto-digest on add** (summary, key points and tags by the assistant in the background: D8 says the
-writer applies; a maintenance task as `system:librarian`?); **tables and figures** extracted from the PDF
-(`pdfimages`, `pdftotext -layout` or a table tool: a dependency). Also: covers for EPUB and office files.
+10. **Tabs** on a source's page: **Overview** (the card: cover, reference, summary, abstract, the kept
+    analyses, related, what it cites, the assistant's buttons; Ask this paper), **Text** (the reader),
+    **Notes** (the comments and highlights, with their count). `library.js` shows one; a link into the
+    text (`#p12`, a heading, `#text`) opens Text, `#notes` opens Notes; the selection's *Comment* and *Add
+    passage* go to Notes, a quote clicked there goes back to its place in Text. Without JavaScript the
+    three follow each other as before.
+11. **Reading status and star** (owner, 2026-11-15: in the user file; reverses 2026-10-30; amends D36 by one
+    key): each account's own marks, `marks` in `data/users/{username}.json` by the source's pid
+    (`Auth\LibraryMarks`, FORMATS): a star, and none → To read → Reading → Read (one click each) on every
+    row of the list and on the source's card (`PUT /api/v1/library/{pid}/mark`). **My marks** filters the
+    list (`mark=toread|reading|read|star|none`, `Support\LibraryFilter`), so a saved collection can be
+    *To read*. Seen by the account only; no revision, no audit line; a bearer token limited to namespaces
+    keeps none.
+12. **Tags as folders** (owner, 2026-11-15: fine as tags, shared by the team, a revision a move): an editor
+    drags a row of the list onto a tag to file the article there, or onto *New tag…* and types its name
+    (`POST /api/v1/library/{pid}/tags {add, remove}`, `Library::retag()`: one revision `library: tags`,
+    audited `page.save`; none when nothing changes). Dragged elsewhere (the editor, a note), a row is its
+    `[@key]`.
+13. **Ask this paper**: Ask the library kept to one source (`POST /api/v1/library/ask` with `source`, the
+    source's pid): the same `ask-library` prompt, the same streamed answer with its pages; the source whole
+    when it fits, else its passages. A panel on the source's Overview, for an editor of the library with
+    the prompt there; never a report (404).
+14. **A citation's hover card** (`GET /api/v1/library/card?key=`, `assets/js/library-card.js`): the pointer
+    resting on a `[1]` that links to its source (shown only to a reader of the library), or the keyboard's
+    focus, shows the source's cover, reference, summary (else the start of its record's abstract), *Open*
+    and the original. The index's row only; a reader who may not see the source gets no card.
+15. **Overviews by themselves** (`bin/reporion library:digest`, Admin → Maintenance;
+    `Service\Maintenance\LibraryDigestTask`; owner, 2026-11-15: as a maintenance task under
+    `system:librarian`, amending D8 for these two texts): for each source that lacks one, the assistant's
+    one-line summary (into `summary`) and key points (kept as `library:{key}:source-points`), from its
+    abstract page when it has one, else its text. Never made again once there; `--limit` bounds a run;
+    Check sends nothing. There is no queue: run it from cron (hourly, `--limit=20`) so a paper added has
+    its overview within the hour.
+
+*Still to build:* the **library in the report's rail** (passages matching the line being written, as
+Recall; owner: last). *Left out for now (owner, 2026-11-15):* tables and figures extracted from the PDF.
+Also: highlight colours; covers for EPUB and office files.
 
 ## Long sources
 

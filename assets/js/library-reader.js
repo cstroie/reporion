@@ -31,8 +31,9 @@
   var LONG = 20000;      // characters: a longer source opens as an outline
   var MAX_HITS = 2000;
   var KEPT = 'reporion.library.reader';
-  // The PDF pane: the page's width, no thumbnails of its own (the text beside it is the way about)
-  var PDF_VIEW = '&view=FitH&navpanes=0';
+  // The PDF pane: the page's width and no side panel of thumbnails or contents (the text beside it is the way
+  // about): `navpanes=0` for Chrome's and Edge's viewer and Acrobat's, `pagemode=none` for Firefox's
+  var PDF_VIEW = '&view=FitH&navpanes=0&pagemode=none';
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -657,6 +658,7 @@
       var wanted = quote.textContent.replace(/…$/, '').replace(/\s+/g, ' ').trim().slice(0, 40);
       for (var i = 0; i < painted.length; i++) {
         if (painted[i].textContent.replace(/\s+/g, ' ').indexOf(wanted.slice(0, Math.min(wanted.length, painted[i].textContent.length))) === 0) {
+          document.dispatchEvent(new CustomEvent('reporion:library-tab', { detail: 'text' }));
           reveal(painted[i]);
           painted[i].scrollIntoView({ block: 'center' });
           return;
@@ -682,6 +684,7 @@
       resume.hidden = false;
       resume.addEventListener('click', function () {
         resume.hidden = true;
+        document.dispatchEvent(new CustomEvent('reporion:library-tab', { detail: 'text' }));
         for (var i = 0; i < marks.length; i++) {
           if (marks[i].getAttribute('data-page') === before.page) { reveal(marks[i]); marks[i].scrollIntoView({ block: 'start' }); break; }
         }
@@ -761,6 +764,7 @@
       // The comments panel holds the selection already (comments.js); this only goes to it
       action(s.passage || '', 'bookmark-simple', function () {
         pop.hidden = true;
+        document.dispatchEvent(new CustomEvent('reporion:library-tab', { detail: 'notes' }));
         passageBox.hidden = false;
         passageBox.scrollIntoView({ block: 'center' });
         var to = passageBox.querySelector('[data-passage-add]');
@@ -770,6 +774,7 @@
     if (commentText) {
       action(s.comment || '', 'chat-circle', function () {
         pop.hidden = true;
+        document.dispatchEvent(new CustomEvent('reporion:library-tab', { detail: 'notes' }));
         commentText.scrollIntoView({ block: 'center' });
         commentText.focus({ preventScroll: true });
       });

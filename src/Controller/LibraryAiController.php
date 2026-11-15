@@ -80,8 +80,8 @@ final class LibraryAiController
     }
 
     /**
-     * POST /api/v1/library/ask {question, history?, stream?}: a question answered from every library
-     * source the caller can read (LibraryAsk), never reports; an editor of the library only, others
+     * POST /api/v1/library/ask {question, history?, stream?, source?}: a question answered from every library
+     * source the caller can read (LibraryAsk), or from the one whose pid `source` is (Ask this paper), never reports; an editor of the library only, others
      * 404; `history` the last turns [{question, answer}] the browser kept
      */
     public function askLibrary(Request $request, ?User $principal): Response
@@ -103,9 +103,19 @@ final class LibraryAiController
                 $history[] = ['question' => mb_substr($turn['question'], 0, self::MAX_QUESTION), 'answer' => mb_substr($turn['answer'], 0, 4000)];
             }
         }
+        // Ask this paper (2026-11-15): `source` is the pid of one source the caller reads; the question stays in it
+        $source = null;
+        if (\is_string($fields['source'] ?? null)) {
+            $row = $this->index->findByPid($fields['source'], $principal);
+            $path = $row !== null ? (string) $row['path'] : '';
+            if ($row === null || !str_starts_with($path, $this->libraryNamespace . ':') || substr_count($path, ':') !== substr_count($this->libraryNamespace, ':') + 1) {
+                return ApiResponse::error(404, 'not_found', 'Not found.');
+            }
+            $source = ['key' => substr($path, \strlen($this->libraryNamespace) + 1), 'path' => $path, 'pid' => (string) $row['pid'], 'title' => (string) $row['title']];
+        }
         $library = $this->library;
 
-        return $this->answered($request, ($fields['stream'] ?? false) === true, fn (?\Closure $event): array => $library->ask($question, $history, $principal, $request, $event));
+        return $this->answered($request, ($fields['stream'] ?? false) === true, fn (?\Closure $event): array => $library->ask($question, $history, $principal, $request, $event, $source));
     }
 
     /** Whether Studio can read a script aloud: a speech model is set */

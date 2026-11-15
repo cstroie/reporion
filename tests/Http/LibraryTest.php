@@ -90,6 +90,62 @@ final class LibraryTest extends HttpTestCase
         self::assertFileExists($this->dataRoot . '/sources/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.thumb.jpg');
     }
 
+    public function testAReadersMarksAreTheirOwnAndFilterTheirList(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $csl = ['type' => 'article-journal', 'title' => 'Made-up', 'issued' => ['date-parts' => [[2020]]]];
+        $one = $storage->create('library:abel2020', ['title' => 'Abel marked', 'visibility' => 'private', 'csl' => $csl], '', 'owner');
+        $storage->create('library:cole2021', ['title' => 'Cole unmarked', 'visibility' => 'private', 'csl' => $csl], '', 'owner');
+        $page = $storage->create('wiki:notes', ['title' => 'Notes', 'visibility' => 'public'], "Text.\n", 'owner');
+
+        $set = $this->call('reader', 'PUT', '/api/v1/library/' . $one->pid . '/mark', ['status' => 'toread', 'star' => true]);
+        self::assertSame([200, ['pid' => $one->pid, 'status' => 'toread', 'star' => true]], [$set->status, json_decode($set->body, true)]);
+        self::assertSame(['status' => 'reading', 'star' => true], array_intersect_key(json_decode($this->call('reader', 'PUT', '/api/v1/library/' . $one->pid . '/mark', ['status' => 'reading'])->body, true), ['status' => 1, 'star' => 1]), 'a key left out stays');
+        self::assertSame(422, $this->call('reader', 'PUT', '/api/v1/library/' . $one->pid . '/mark', ['status' => 'finished'])->status);
+        self::assertSame(404, $this->call('other', 'PUT', '/api/v1/library/' . $one->pid . '/mark', ['star' => true])->status, 'no grant on the library');
+        self::assertSame(404, $this->call(null, 'PUT', '/api/v1/library/' . $one->pid . '/mark', ['star' => true])->status);
+        self::assertSame(404, $this->call('owner', 'PUT', '/api/v1/library/' . $page->pid . '/mark', ['star' => true])->status, 'not a source');
+
+        $mine = $this->call('reader', 'GET', '/library?mark=reading')->body;
+        self::assertStringContainsString('Abel marked', $mine);
+        self::assertStringNotContainsString('Cole unmarked', $mine);
+        self::assertStringContainsString('data-status="reading"', $mine);
+        $starred = $this->call('reader', 'GET', '/library?mark=star')->body;
+        self::assertStringContainsString('Abel marked', $starred);
+        $editors = $this->call('editor', 'GET', '/library?mark=reading')->body;
+        self::assertStringNotContainsString('Abel marked', $editors, 'another account has its own marks');
+        self::assertStringContainsString('data-status="reading"', $this->call('reader', 'GET', '/library:abel2020')->body);
+        self::assertStringNotContainsString('"action":"page.save"', (string) @file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), 'a mark is no revision');
+    }
+
+    public function testAnEditorFilesASourceUnderATagAndACitationsCardIsForItsReaders(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'author' => [['family' => 'Abel', 'given' => 'Ana']], 'issued' => ['date-parts' => [[2020]]], 'abstract' => 'What the made-up study found.'];
+        $one = $storage->create('library:abel2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl, 'tags' => ['dose'], 'summary' => 'One line.'], '', 'owner');
+
+        $filed = $this->call('editor', 'POST', '/api/v1/library/' . $one->pid . '/tags', ['add' => ['Paediatric CT', 'dose'], 'remove' => []]);
+        self::assertSame([200, ['dose', 'paediatric ct'], true, 2], [$filed->status, json_decode($filed->body, true)['tags'], json_decode($filed->body, true)['changed'], json_decode($filed->body, true)['rev']]);
+        $again = json_decode($this->call('editor', 'POST', '/api/v1/library/' . $one->pid . '/tags', ['add' => ['dose']])->body, true);
+        self::assertSame([false, 2], [$again['changed'], $again['rev']], 'nothing changed: no revision');
+        self::assertSame(['paediatric ct'], json_decode($this->call('editor', 'POST', '/api/v1/library/' . $one->pid . '/tags', ['remove' => ['dose']])->body, true)['tags']);
+        self::assertSame(422, $this->call('editor', 'POST', '/api/v1/library/' . $one->pid . '/tags', ['add' => []])->status);
+        foreach ([null, 'reader', 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'POST', '/api/v1/library/' . $one->pid . '/tags', ['add' => ['x']])->status, $user ?? 'anonymous');
+        }
+
+        $card = $this->call('reader', 'GET', '/api/v1/library/card?key=abel2020');
+        self::assertSame(200, $card->status);
+        $shown = json_decode($card->body, true);
+        self::assertSame(['abel2020', '/library:abel2020', 'One line.', 'What the made-up study found.', '', ''], [$shown['key'], $shown['href'], $shown['summary'], $shown['abstract'], $shown['cover'], $shown['file']]);
+        self::assertStringContainsString('Abel A. A made-up study', $shown['citation']);
+        foreach ([null, 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/api/v1/library/card?key=abel2020')->status, $user ?? 'anonymous');
+        }
+        self::assertSame(404, $this->call('reader', 'GET', '/api/v1/library/card?key=nobody1999')->status);
+        self::assertSame(404, $this->call('reader', 'GET', '/api/v1/library/card?key=../wiki:notes')->status);
+    }
+
     public function testOnlyAnEditorOfTheLibraryUploadsOrConfirms(): void
     {
         foreach ([null, 'reader', 'other'] as $user) {

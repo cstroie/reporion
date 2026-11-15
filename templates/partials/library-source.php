@@ -26,6 +26,9 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <section class="wk-panel wk-lib-source" data-island="library-record">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-book-open-text" aria-hidden="true"></i> <?= $e(t('library.source')) ?></h2></hgroup>
 <div class="wk-actions">
+<?php if (isset($source['mark'])): /* the reader's own star and reading status (Auth\LibraryMarks) */ ?>
+<?php $markPid = $source['pid']; $markStatus = $source['mark']['status']; $markStar = $source['mark']['star']; include __DIR__ . '/library-mark.php'; ?>
+<?php endif; ?>
 <?php if ($source['original'] !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $e($basePath . '/library/file/' . $source['pid']) ?>"<?= $source['original']['ext'] === 'pdf' ? ' target="_blank" rel="noopener"' : '' ?>><i class="ph ph-file" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.open_original', [strtoupper($source['original']['ext'])])) ?></span></a>
 <?php endif; ?>

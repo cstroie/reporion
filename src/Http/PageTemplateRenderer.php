@@ -173,6 +173,11 @@ final class PageTemplateRenderer
                 'bytes' => (int) ($record->frontmatter['original']['bytes'] ?? 0),
             ] : null,
             'path' => $record->path,
+            // The reader's own mark on it (Auth\LibraryMarks): not for a principal that keeps none (a narrowed token)
+            'mark' => $principal !== null && $principal->tokenNamespaces === null ? ['status' => $principal->marks[$record->pid]['status'] ?? '', 'star' => ($principal->marks[$record->pid]['star'] ?? false) === true] : null,
+            // Ask this paper: Ask the library kept to this source, for an editor of the library, with its prompt there and a text to ask
+            'ask' => $currentRev === null && trim($record->body) !== '' && $principal !== null && $principal->canWrite($this->libraryNamespace)
+                && $this->aiActions?->special($this->libraryNamespace, 'ask-library') !== null,
             // Its cover: the first page of its PDF (GET /library/thumb/{pid}); the hash's start keeps the address good for ever
             'cover' => \Reporion\Service\Library\Thumbnails::possible($record->frontmatter['original'] ?? null) ? substr((string) $record->frontmatter['original']['sha256'], 0, 12) : '',
             // Its one-line summary (the assistant's, applied by a writer): what the paper says, above its abstract
