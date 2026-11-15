@@ -20,7 +20,8 @@ use Reporion\Storage\FileTree;
  * passage_fts and passage_vectors), never a report, never HippoBridge (no `ask.sources` hook). The
  * `ask-library` prompt of the profile serving the library namespace, its search words from
  * `notebook-terms`; the earlier turns ({history}, at most TURNS) come from the browser and are not
- * kept. Shown, never written; audited `ai.call` as every request.
+ * kept. Shown, never written; audited `ai.call` as every request. **Ask this paper** (2026-11-15) is the
+ * same question kept to one source the caller reads (`source`): the same prompt, no new one.
  */
 final class LibraryAsk
 {
@@ -46,12 +47,13 @@ final class LibraryAsk
     /**
      * @param list<array{question: string, answer: string}> $history
      * @param ?Closure(string, array<string, mixed>): void $event
+     * @param ?array{key: string, path: string, pid: string, title: string} $source one source to keep the question to (Ask this paper, 2026-11-15)
      *
      * @return array{answer: ?string, sources: list<array{n: int, key: ?string, title: string, page: ?int, path: string}>, whole: bool, understood: ?string, notices: list<string>, dropped: int, ms: int, provider: string, context: list<string>}
      *
      * @throws AiException not_configured without the prompt, or the provider's reason
      */
-    public function ask(string $question, array $history, User $principal, ?Request $request, ?Closure $event = null): array
+    public function ask(string $question, array $history, User $principal, ?Request $request, ?Closure $event = null, ?array $source = null): array
     {
         $action = $this->actions->special($this->libraryNamespace, 'ask-library');
         if ($action === null) {
@@ -64,7 +66,8 @@ final class LibraryAsk
             $question,
             \array_slice($history, -self::TURNS),
             [],
-            null,
+            // Ask this paper: that one source, whole when it fits, else its passages; null: the whole library
+            $source !== null ? [$source] : null,
             // The library's language (`library.language`, Context's default)
             null,
             $principal,

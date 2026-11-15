@@ -861,6 +861,13 @@ path cannot land here); at most 20. Toggled with `POST /profile/pins`. An invali
 repeat is dropped when the record is read. A pin grants nothing: the namespace index it links
 to is visibility-filtered like any other listing.
 
+`marks` (2026-11-15, absent before; an empty object when none): the account's own marks on library
+sources, by the source's pid: `{"01J…": {"status": "toread"}, "01K…": {"status": "read", "star": true}}`.
+`Auth\LibraryMarks`: `status` one of `toread`, `reading`, `read` (left out for none), `star` only as
+`true`; a mark with neither is dropped; at most 5000, the ones set longest ago going first. Set with
+`PUT /api/v1/library/{pid}/mark`; not audited, like a pin. A mark is seen by its account only, is no part
+of the source and grants nothing.
+
 `views` (2026-10-19, absent before): the account's saved searches, in the order saved:
 `[{"name":"MRI genunchi 2026","query":"q=genunchi&modality=mri&sort=date"}]`. `Auth\SavedViews`: at
 most 20, a name of at most 60 characters (the same name in any case replaces), `query` only
@@ -869,7 +876,7 @@ most 20, a name of at most 60 characters (the same name in any case replaces), `
 audited, like a pin. A view grants nothing: every search runs the visibility predicate when opened.
 A view with `"kind":"library"` (2026-11-04, D60) is a **collection of the library**: its `query` keeps
 only `/library`'s parameters (`q`, `tag`, `sort`, and `Support\LibraryFilter`'s `year`, `journal`, `file`,
-`notice`, `uncited`), it opens `/library?{query}` and shows in the menu with the books icon; a search
+`notice`, `uncited`, `mark`), it opens `/library?{query}` and shows in the menu with the books icon; a search
 view has no `kind` key.
 
 

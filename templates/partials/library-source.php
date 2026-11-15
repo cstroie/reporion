@@ -8,7 +8,7 @@
  * PUT /api/v1/library/{pid}/record).
  *
  * Variables in scope: array{pid: string, key: string, rev: int, citation: string, csl: array<string, mixed>,
- * tags: list<string>, aiTasks: list<string>, path: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool, canLookup: bool,
+ * tags: list<string>, aiTasks: list<string>, path: string, cover: string, summary: string, original: ?array{ext: string, pages: int, bytes: int}, canEdit: bool, canLookup: bool,
  * cites: ?array{entries: list<array{text: string, doi: ?string, match: ?array{key: string, path: string, title: string, by: string}}>, found: int},
  * saved: list<array{prompt: string, path: string, at: string, provider: string, stale: bool, html: string}>} $librarySource;
  * string $basePath
@@ -26,6 +26,9 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <section class="wk-panel wk-lib-source" data-island="library-record">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-book-open-text" aria-hidden="true"></i> <?= $e(t('library.source')) ?></h2></hgroup>
 <div class="wk-actions">
+<?php if (isset($source['mark'])): /* the reader's own star and reading status (Auth\LibraryMarks) */ ?>
+<?php $markPid = $source['pid']; $markStatus = $source['mark']['status']; $markStar = $source['mark']['star']; include __DIR__ . '/library-mark.php'; ?>
+<?php endif; ?>
 <?php if ($source['original'] !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $e($basePath . '/library/file/' . $source['pid']) ?>"<?= $source['original']['ext'] === 'pdf' ? ' target="_blank" rel="noopener"' : '' ?>><i class="ph ph-file" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.open_original', [strtoupper($source['original']['ext'])])) ?></span></a>
 <?php endif; ?>
@@ -61,7 +64,15 @@ $noticeClass = 'wk-lib-flag';
 include __DIR__ . '/notice.php';
 ?>
 <?php endif; ?>
+<div class="wk-lib-head">
+<?php if (($source['cover'] ?? '') !== ''): /* the PDF's first page: a paper is told from another at a glance; it opens the PDF */ ?>
+<a class="wk-lib-cover wk-lib-cover-lg" href="<?= $e($basePath . '/library/file/' . $source['pid']) ?>" target="_blank" rel="noopener" title="<?= $e(t('library.open_original', ['PDF'])) ?>"><img src="<?= $e($basePath . '/library/thumb/' . $source['pid'] . '?v=' . $source['cover']) ?>" alt="<?= $e(t('library.cover')) ?>" width="150" height="212" decoding="async"></a>
+<?php endif; ?>
+<div class="wk-lib-head-text">
 <p class="wk-lib-ref" data-lib-ref><?= $e($source['citation']) ?></p>
+<?php if (($source['summary'] ?? '') !== ''): ?>
+<p class="wk-lib-lead"><?= $e($source['summary']) ?></p>
+<?php endif; ?>
 <?php if ($doi !== '' || $pmid !== '' || $source['original'] !== null): ?>
 <p class="wk-dim wk-text-xs wk-mono wk-lib-ids">
 <?php if ($doi !== ''): ?><a href="https://doi.org/<?= $e($doi) ?>" rel="noopener noreferrer" target="_blank">doi:<?= $e($doi) ?></a><?php endif; ?>
@@ -72,7 +83,7 @@ include __DIR__ . '/notice.php';
 </p>
 <?php endif; ?>
 <?php if (($source['abstract'] ?? null) !== null): ?>
-<details class="wk-disclosure wk-lib-abstract" data-lib-abstract>
+<details class="wk-disclosure wk-lib-abstract" data-lib-abstract open>
 <summary><span><i class="ph ph-article" aria-hidden="true"></i> <?= $e(t('library.abstract.title')) ?></span> <span class="wk-dim wk-text-xs">· <?= $e(t('library.abstract.from_' . ($source['abstract']['from'] === 'record' ? 'record' : 'text'))) ?></span></summary>
 <div class="wk-lib-abstract-text wk-text-sm">
 <?php foreach (preg_split('/\n\s*\n/', $source['abstract']['text']) ?: [] as $paragraph): ?>
@@ -82,6 +93,8 @@ include __DIR__ . '/notice.php';
 <p class="wk-dim wk-text-xs"><a href="<?= $e($basePath . '/' . $source['abstract']['path']) ?>"><?= $e(t('library.abstract.open')) ?></a> · <?= $e(t('library.abstract.note')) ?></p>
 </details>
 <?php endif; ?>
+</div>
+</div>
 <?php
 $savedAnalyses = $source['saved'] ?? [];
 $savedLabels = [];

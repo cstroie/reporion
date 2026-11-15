@@ -9,7 +9,8 @@ namespace Reporion\Support;
 /**
  * The filters of the library's view beyond the tag and the text (docs/library.md, D60): the year
  * (`2020`, `2018-2022`, `2020-`, `-2015`), the journal (a word of its name), whether the source has
- * its file, a notice (`any`, `retracted`, `concern`, `corrected`) and whether nothing cites it. They
+ * its file, a notice (`any`, `retracted`, `concern`, `corrected`), whether nothing cites it, and the
+ * caller's own mark (`toread`, `reading`, `read`, `star`, `none`: Auth\LibraryMarks, 2026-11-15). They
  * are `/library`'s query parameters, so a filter is a link, and saved as a collection (Auth\SavedViews,
  * kind `library`) it is that query: it grants nothing, the listing still runs the visibility predicate
  * (invariant 6). Pure functions over the rows Service\Library\Library::entries() lists.
@@ -17,7 +18,10 @@ namespace Reporion\Support;
 final class LibraryFilter
 {
     /** The filter parameters, in the order a saved collection prints them */
-    public const KEYS = ['year', 'journal', 'file', 'notice', 'uncited'];
+    public const KEYS = ['year', 'journal', 'file', 'notice', 'uncited', 'mark'];
+
+    /** The values of `mark`: the caller's own reading status, a star, or no mark at all (Auth\LibraryMarks) */
+    public const MARKS = ['toread', 'reading', 'read', 'star', 'none'];
 
     /**
      * The filters in a query, cleaned: a parameter that is none of them, or has a value it cannot read, is dropped
@@ -46,6 +50,9 @@ final class LibraryFilter
         if (($query['uncited'] ?? null) === '1') {
             $filter['uncited'] = '1';
         }
+        if (\in_array($query['mark'] ?? null, self::MARKS, true)) {
+            $filter['mark'] = (string) $query['mark'];
+        }
 
         return $filter;
     }
@@ -53,7 +60,7 @@ final class LibraryFilter
     /**
      * The entries that pass every filter given
      *
-     * @param list<array<string, mixed>> $entries Library::entries(): year, journal, ext, cited, notice
+     * @param list<array<string, mixed>> $entries Library::entries(): year, journal, ext, cited, notice; mark and star as the controller adds them
      * @param array<string, string>      $filter  of()
      *
      * @return list<array<string, mixed>>
@@ -87,6 +94,17 @@ final class LibraryFilter
             }
             if (isset($filter['uncited']) && (int) ($e['cited'] ?? 0) > 0) {
                 return false;
+            }
+            if (isset($filter['mark'])) {
+                $status = (string) ($e['mark'] ?? '');
+                $star = ($e['star'] ?? false) === true;
+                if (match ($filter['mark']) {
+                    'star' => !$star,
+                    'none' => $status !== '' || $star,
+                    default => $status !== $filter['mark'],
+                }) {
+                    return false;
+                }
             }
 
             return true;

@@ -34,6 +34,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="20"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
 <label class="radio"><input type="checkbox" name="offline" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.offline')) ?></label>
 </div>
+<?php elseif ($name === 'library:digest'): ?>
+<div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit_digest')) ?>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="10"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>
 <?php elseif ($name === 'library:notices'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit_notices')) ?>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="100"><small><?= $e(t('admin.maint.opt.limit_help')) ?></small></label></div>

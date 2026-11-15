@@ -7,7 +7,9 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\LibraryMarks;
 use Reporion\Auth\User;
+use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\LibraryException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
@@ -26,6 +28,7 @@ use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\Merge;
 use Reporion\Service\Library\OnlineSearch;
 use Reporion\Service\Library\Related;
+use Reporion\Service\Library\Thumbnails;
 use Reporion\Support\Flashcards;
 use Reporion\Support\LibraryFilter;
 use Reporion\Service\Library\WebClip;
@@ -42,6 +45,7 @@ use Reporion\Support\InternalLink;
  * answered with the proposed record and a token; nothing kept but the temporary upload.
  * POST /api/v1/library {token, csl, key?, tags?}: the confirmed record, made a library page.
  * GET /library/file/{pid}: a source's original, to a signed-in caller who may see its page.
+ * GET /library/thumb/{pid}: its cover (the PDF's first page, a small JPEG), under the same rule.
  * GET /library: the library's view (phase 2): every source the caller may see, filtered by a tag,
  * sorted by author, year or title, with the upload form for an editor.
  * PUT /api/v1/library/{pid}/record {csl, base_rev, tags?}: a source's record corrected.
@@ -74,6 +78,8 @@ final class LibraryController
         private readonly ?Merge $merge = null,
         private readonly ?Related $related = null,
         private readonly ?OnlineSearch $online = null,
+        private readonly ?Thumbnails $thumbnails = null,
+        private readonly ?UserStoreInterface $users = null,
     ) {
     }
 
@@ -102,7 +108,7 @@ final class LibraryController
     public const IMPORT_EXTENSIONS = ['bib', 'ris', 'json'];
 
     /** The orders the view offers; the first is the default */
-    public const SORTS = ['author', 'year', 'title'];
+    public const SORTS = ['author', 'year', 'title', 'added'];
 
     public function index(Request $request, ?User $principal): Response
     {
@@ -117,6 +123,11 @@ final class LibraryController
             }
         }
         ksort($counts);
+        // The caller's own marks (Auth\LibraryMarks): where their reading stands and their star, on each row
+        foreach ($entries as $i => $entry) {
+            $entries[$i]['mark'] = $principal->marks[$entry['pid']]['status'] ?? '';
+            $entries[$i]['star'] = ($principal->marks[$entry['pid']]['star'] ?? false) === true;
+        }
         $tag = (string) ($request->query['tag'] ?? '');
         if ($tag !== '') {
             $entries = array_values(array_filter($entries, static fn (array $e): bool => \in_array($tag, $e['tags'], true)));
@@ -128,6 +139,8 @@ final class LibraryController
         usort($entries, static fn (array $a, array $b): int => match ($sort) {
             'year' => [$b['year'] ?? 0, mb_strtolower($a['authors'])] <=> [$a['year'] ?? 0, mb_strtolower($b['authors'])],
             'title' => strcoll(mb_strtolower($a['title']), mb_strtolower($b['title'])),
+            // A pid is a ULID: it sorts by the moment the source was added, the newest first
+            'added' => strcmp($b['pid'], $a['pid']),
             default => [mb_strtolower($a['authors'] !== '' ? $a['authors'] : $a['title']), $a['year'] ?? 0] <=> [mb_strtolower($b['authors'] !== '' ? $b['authors'] : $b['title']), $b['year'] ?? 0],
         });
         // A text search (2026-11-02): the articles holding the words, best first, each with its passage
@@ -685,6 +698,132 @@ final class LibraryController
             // A clipped web page's scripts never run as this site, even if a browser rendered it (a sandbox would stop a PDF viewer)
             'Content-Security-Policy' => 'sandbox; default-src \'none\'',
         ]));
+    }
+
+    /**
+     * GET /api/v1/library/card?key={key}: what a citation's hover card shows of a source the caller
+     * may read (2026-11-15): its reference, its one-line summary, the start of its record's
+     * abstract, its cover's address, a notice. The index's row only: no page file is read. Anyone
+     * who may not read it, and anonymous: 404 (a public notebook's reader gets no card).
+     */
+    public function card(Request $request, ?User $principal): Response
+    {
+        $key = (string) ($request->query['key'] ?? '');
+        $row = $principal !== null && preg_match('/^[a-z0-9][a-z0-9_.-]*$/', $key) === 1 ? $this->index->findByPath($this->library->namespace() . ':' . $key, $principal) : null;
+        $meta = $row !== null ? json_decode((string) ($row['meta_json'] ?? ''), true) : null;
+        if (!\is_array($meta) || !\Reporion\Support\LibrarySource::isSource($meta)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $csl = \is_array($meta['csl'] ?? null) ? $meta['csl'] : ['title' => (string) $row['title']];
+        $abstract = \is_string($csl['abstract'] ?? null) ? trim(preg_replace('/\s+/', ' ', strip_tags($csl['abstract'])) ?? '') : '';
+
+        return ApiResponse::json([
+            'pid' => (string) $row['pid'],
+            'key' => $key,
+            'href' => $request->basePath . '/' . $row['path'],
+            'title' => (string) $row['title'] !== '' ? (string) $row['title'] : (string) ($csl['title'] ?? ''),
+            'citation' => Citation::vancouver($csl),
+            'summary' => \is_string($meta['summary'] ?? null) ? trim($meta['summary']) : '',
+            'abstract' => mb_strlen($abstract) > 600 ? mb_substr($abstract, 0, 600) . '…' : $abstract,
+            'cover' => Thumbnails::possible($meta['original'] ?? null) ? $request->basePath . '/library/thumb/' . $row['pid'] . '?v=' . substr((string) $meta['original']['sha256'], 0, 12) : '',
+            'file' => \is_array($meta['original'] ?? null) ? $request->basePath . '/library/file/' . $row['pid'] : '',
+            'notice' => \Reporion\Support\SourceNotice::clean($meta['notice'] ?? null)['status'] ?? null,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/library/{pid}/tags {add?: [tag…], remove?: [tag…]}: a source's tags changed without
+     * its record, for an editor of it (the list's folders: a row dragged onto a tag). One revision
+     * by the writer, audited `page.save`; nothing changed: no revision. Anyone else: 404.
+     */
+    public function tags(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || !$principal->canWrite((string) $row['path'])) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $list = static fn (mixed $v): array => \is_array($v) ? array_values(array_filter($v, 'is_string')) : [];
+        $add = $list($fields['add'] ?? null);
+        $remove = $list($fields['remove'] ?? null);
+        if ($add === [] && $remove === []) {
+            return ApiResponse::error(422, 'invalid_body', '"add" or "remove" (a list of tags) is required.');
+        }
+        try {
+            $result = $this->library->retag((string) $row['path'], $add, $remove, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (RevisionConflictException) {
+            return ApiResponse::error(409, 'conflict', t('library.err_conflict'));
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($result['changed']) {
+            $this->audit->record('page.save', $principal->username, $request, $result['page']->pid, $result['page']->path, $result['page']->rev);
+        }
+
+        return ApiResponse::json(['pid' => $result['page']->pid, 'rev' => $result['page']->rev, 'tags' => $result['tags'], 'changed' => $result['changed']]);
+    }
+
+    /**
+     * PUT /api/v1/library/{pid}/mark {status?: toread|reading|read|"", star?: bool}: the caller's own
+     * mark on a source they may read (Auth\LibraryMarks): where their reading stands, a star. Kept
+     * in their account's file, seen by no one else, no part of the source: no revision, no audit
+     * line. A key left out stays as it is. A bearer token limited to namespaces has no account to
+     * keep it in: 403.
+     */
+    public function mark(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null && $this->users !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($row === null || !\Reporion\Support\LibrarySource::isSource(json_decode((string) ($row['meta_json'] ?? '[]'), true) ?: [])) {
+            throw new PageNotFoundException();
+        }
+        if ($principal->tokenNamespaces !== null) {
+            return ApiResponse::error(403, 'forbidden', 'A token limited to namespaces keeps no marks');
+        }
+        $body = $request->json();
+        $status = \array_key_exists('status', $body) ? $body['status'] : null;
+        $star = \array_key_exists('star', $body) ? $body['star'] : null;
+        if (($status !== null && $status !== '' && !\in_array($status, LibraryMarks::STATUSES, true)) || ($star !== null && !\is_bool($star))) {
+            return ApiResponse::error(422, 'invalid_mark', 'status is toread, reading, read or empty; star is true or false');
+        }
+        $marks = LibraryMarks::set($principal->marks, $pid, $status, $star);
+        if ($marks !== $principal->marks) {
+            $this->users->save($principal->with(marks: $marks));
+        }
+
+        return ApiResponse::json(['pid' => $pid, 'status' => $marks[$pid]['status'] ?? '', 'star' => ($marks[$pid]['star'] ?? false) === true]);
+    }
+
+    /**
+     * GET /library/thumb/{pid}: a source's cover, the first page of its PDF as a small JPEG
+     * (Service\Library\Thumbnails), to a signed-in caller who may see its page: the rule of its
+     * original. No PDF, or one that cannot be drawn: 404, and the page shows no picture
+     */
+    public function thumb(Request $request, string $pid, ?User $principal): Response
+    {
+        $notFound = new Response(404, 'Not found', ['Content-Type' => 'text/plain; charset=utf-8']);
+        $row = $principal !== null && $this->thumbnails !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($row === null) {
+            return $notFound;
+        }
+        try {
+            $page = $this->storage->read((string) $row['path']);
+        } catch (PageNotFoundException) {
+            return $notFound;
+        }
+        $file = $this->thumbnails->of($page->frontmatter['original'] ?? null);
+        $bytes = $file !== null ? file_get_contents($file) : false;
+        if ($bytes === false) {
+            return $notFound;
+        }
+
+        return new Response(200, $bytes, [
+            'Content-Type' => 'image/jpeg',
+            // The address carries the file's hash (?v=), so the picture behind one address never changes
+            'Cache-Control' => 'private, max-age=31536000, immutable',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     private const EXPORT_TYPES = [

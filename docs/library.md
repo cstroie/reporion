@@ -21,7 +21,7 @@ lookups; the assistant on a source and Ask the notebook; Studio and the template
 | Size | 50 MB per file (`library.max_mb`) |
 | Citations a reader may not follow | Printed from the record, no link to the library page |
 | Long sources | Adaptive: whole when they fit `library.context_tokens` (32 000), else map-reduced by section |
-| Starred / read marks | None |
+| Starred / read marks | ~~None~~ **Reversed 2026-11-15:** each account's own star and reading status, in its user file (`marks`, `Auth\LibraryMarks`) |
 | External AI and article text | The external-AI acknowledgement (`ai.external_ack`) covers library sources too: their text may go to an external server (owner, 2026-10-30) |
 | Profile for the library | The fallback profile (`ai.fallback_profile`) is fine; no profile of its own (owner, 2026-10-30) |
 | Keeping the assistant's results | **Automatically** (owner, 2026-10-31): each analysis of a source and each Studio text is kept as a page beside its page, named by its prompt (`library:{key}:source-points`, `{notebook}:studio-overview`), shown when the source or notebook is opened again; they move and go to the trash with it |
@@ -383,6 +383,113 @@ What Zotero, Mendeley, Paperpile and EndNote do that a clinical team needs, buil
 6. **Find full text.** A source with a DOI and no file gets a *Find full text* button (`POST /api/v1/library/{pid}/fulltext`, `bin/reporion library:fulltext`): Unpaywall is asked by DOI, with the address in Admin → Settings → Library (blank: the feature is off), the free PDF it names is fetched with the web clip's safeguards and read like an upload, so the patient guard and OCR still apply. A PDF that names another DOI, a page that is not a PDF, or a file the library has already is not kept. **Copies in turn** (2026-11-04: a publisher's CDN answered a program 403): every PDF Unpaywall lists, then OpenAlex's own copy of the PDF (`content.openalex.org`, only with an OpenAlex key, `library.openalex_key`: the DOI and the key sent), then Europe PMC's open-access text as JATS XML (`www.ebi.ac.uk`, by the record's PMCID, or one Europe PMC gives for the DOI), read by pandoc and kept as the original `.xml` (text, no page numbers; it must name the same DOI). When every copy is refused the answer is `refused`: download the PDF in a browser and drop it on Add articles, which attaches it to the record of the same DOI. No request pretends to be a browser.
 7. **Save-to-library bookmarklet.** With the web clip on, the Add page offers a link to drag to the bookmarks bar; on an article it opens `/library/add?clip={address}` (an older one's `/library?clip=` is forwarded) with the field filled in, and the writer presses Clip (a GET never fetches anything). The link is built in the page from the address it is on, so a proxy's host name is never guessed.
 8. **Add by search.** With *Search PubMed from the library* on (Admin → Settings → Library, `library.search`, off by default) an editor gets a *Search PubMed* panel on the *Add articles* page (`/library/add`): words, or a DOI or PMID typed whole, answered with records to add as sources with no file (`GET`/`POST /api/v1/library/online`). **This is the one lookup that sends what was typed**, not an identifier: the panel says so, a query holding a CNP (or thirteen digits shaped like one) is refused before anything is sent, and the audit keeps a count, never the words. A pick with a DOI, when Find full text is set up, gets its free PDF at once (the page calls Find full text for it, item 6). Decided by the owner on 2026-11-04 ("build them all"), which amends D58's "identifier only" for this opt-in feature.
+
+## The reader, covers and the list (2026-11-15)
+
+Owner's request: a long article made a long page, hard to read, to scroll and to find anything in; and a
+paper should be told from another at a glance. After Mendeley's and Zotero's readers, Notion's toggles and
+Readwise's selection menu. No storage, schema or text format changes: everything works on the text as it is kept.
+
+1. **The reader** (`templates/partials/library-reader.php`, `assets/js/library-reader.js`): a bar over a
+   source's text, staying under the top bar while the text scrolls. It works in the browser on the HTML the
+   server rendered (invariant 4: still one parser); without JavaScript the bar is hidden and the text reads
+   as before.
+   - **Outline.** Every `##` section folds to its heading, with its length and page (`640 words · p. 3`); a
+     text with fewer than three headings and at least three pages folds by page, each page named by its
+     first words. A source over 20 000 characters with three sections or more **opens folded**; *Outline* /
+     *Open all* is remembered in this browser (`reporion.library.reader`). A link to a heading or a page
+     (`#p12`, the contents' links) opens the section it is in. The length and page are drawn from an
+     attribute, never text: not selected, not copied with the section, not searched.
+   - **Find in this article.** Every match marked, case and diacritics apart (`tesut` finds `țesut`), counted
+     (`3 of 17`), stepped through with Enter / Shift+Enter or the arrows, Escape clears; the sections holding
+     a match are opened and say how many (`5 found`). A match is found inside one run of text (not across
+     a change of emphasis). At most 2000 marks.
+   - **Pages.** The extracted text's `— p. N —` lines become thin rules that open the PDF at that page
+     (`/library/file/{pid}#page=N`) and carry the anchor `#pN`; the bar shows the page in view, jumps to any
+     other, and *PDF here* opens the original at the page being read.
+   - **A selection's actions**, beside the selection instead of at the end of the page: *Copy with citation*
+     (`> text [@key, p. N]`, ready to paste into a notebook), *Add passage* and *Comment* (the comments
+     panel's own, which already holds the selection: `comments.js`).
+   - The words and reading time (230 words a minute).
+2. **Covers** (`Service\Library\Thumbnails`, `GET /library/thumb/{pid}`): the first page of a source's PDF as
+   a 300 px JPEG, drawn by `pdftoppm` (the OCR's program: an argument list, 20 s) the first time it is asked
+   for and kept beside the PDF, `data/sources/{ab}/{sha256}.thumb.jpg` (owner, 2026-11-15: saved along the
+   sources, so backed up with them), made again when missing; `integrity:verify` passes the name over (it is
+   no original's). A PDF pdftoppm refuses leaves an empty `{sha256}.thumb.none`
+   so it is not tried at every view; a missing program is tried again. Served under the rule of the original
+   (the page's visibility; anonymous and no grant: 404), cached for good by the browser (the address
+   carries the file's hash). Only a PDF has a cover; a record with no file, or another format, shows a plain tile.
+3. **The source's card**: the cover beside the reference (it opens the PDF), the one-line `summary` under
+   the reference when the page has one, and the abstract **open**: what the paper is and says comes before
+   its text.
+4. **The list** (`/library`): each row has its cover and, when the page has one, its summary (two lines);
+   **Added** joins the orders (the newest first: a pid is a ULID, so no date is stored for it); a
+   **List / Covers** switch draws the same rows as a wall of first pages (this browser's choice,
+   `reporion.library.view`).
+
+5. **The map** (owner, 2026-11-15: "a mini-map by the scrollbar, as a code editor's"): a 38 px strip at the
+   window's right edge, on screens of 1024 px and more and for a text taller than a window and a half. The
+   whole text in small (a canvas: its blocks, its headings as accent lines, its pages as rules), the matches
+   of a search as bright lines right across, highlights as marks at the edge, what is in view as a lit band.
+   A click or a drag scrolls there; the pointer over it names the section and page. Drawn again when a
+   section folds, a search runs or the window changes.
+6. **Side by side** (a screen of 1200 px and more, a PDF): the original in a pane beside the text, staying in
+   view, in the browser's own PDF viewer (`#page=N&view=FitH&navpanes=0&pagemode=none`: the page's width, and the viewer's own side panel of thumbnails or contents hidden, in Chrome, Edge and Firefox). It goes to the page being read
+   0.7 s after the reader settles on one (the viewer takes a page only as it loads). Opening or closing it
+   keeps the reader on the page being read. The contents column gives way to it.
+7. **Highlights.** The page's open comments that quote it (D52, unchanged) are painted on the text where
+   their quote stands (white space folded; a quote cut at 300 characters or at a paragraph's end by its
+   first 80), with the comment as the mark's title; a quote clicked in the comments panel shows it in the
+   text. The selection's **Highlight** makes one in a click: a comment whose text is "Highlight" (the
+   comments API as it is, no new storage). A resolved comment's mark goes. `comments.js` announces its
+   list (`reporion:comments`) and reads it again when asked (`reporion:comments-reload`).
+8. **Where the reading stopped**, in this browser only (`reporion.library.recent`: the last twelve sources
+   opened, each with its page, title and cover address; nothing on the server, so not shared between a
+   reader's machines): *Continue at p. N* in the bar when a source is opened again, and **Opened lately**, a
+   strip of covers over the list, each link going to the page left.
+9. **Quick look** on the list: a row clicked (not its links) opens the paper in a pane at the window's right
+   edge, filled from the row itself (cover, title, authors, journal and year, summary, tags) plus the
+   record's abstract (700 characters, in the row) or, when the record has none, the abstract page beside
+   the source (`GET /api/v1/pages/{library}:{key}:abstract`, asked then). Arrows (or `j` / `k`) move to the
+   next row the filter shows, Enter opens it; *Copy citation key* copies `[@key]`.
+
+10. **Tabs** on a source's page: **Overview** (the card: cover, reference, summary, abstract, the kept
+    analyses, related, what it cites, the assistant's buttons; Ask this paper), **Text** (the reader),
+    **Notes** (the comments and highlights, with their count). `library.js` shows one; a link into the
+    text (`#p12`, a heading, `#text`) opens Text, `#notes` opens Notes; the selection's *Comment* and *Add
+    passage* go to Notes, a quote clicked there goes back to its place in Text. Without JavaScript the
+    three follow each other as before.
+11. **Reading status and star** (owner, 2026-11-15: in the user file; reverses 2026-10-30; amends D36 by one
+    key): each account's own marks, `marks` in `data/users/{username}.json` by the source's pid
+    (`Auth\LibraryMarks`, FORMATS): a star, and none → To read → Reading → Read (one click each) on every
+    row of the list and on the source's card (`PUT /api/v1/library/{pid}/mark`). **My marks** filters the
+    list (`mark=toread|reading|read|star|none`, `Support\LibraryFilter`), so a saved collection can be
+    *To read*. Seen by the account only; no revision, no audit line; a bearer token limited to namespaces
+    keeps none.
+12. **Tags as folders** (owner, 2026-11-15: fine as tags, shared by the team, a revision a move): an editor
+    drags a row of the list onto a tag to file the article there, or onto *New tag…* and types its name
+    (`POST /api/v1/library/{pid}/tags {add, remove}`, `Library::retag()`: one revision `library: tags`,
+    audited `page.save`; none when nothing changes). Dragged elsewhere (the editor, a note), a row is its
+    `[@key]`.
+13. **Ask this paper**: Ask the library kept to one source (`POST /api/v1/library/ask` with `source`, the
+    source's pid): the same `ask-library` prompt, the same streamed answer with its pages; the source whole
+    when it fits, else its passages. A panel on the source's Overview, for an editor of the library with
+    the prompt there; never a report (404).
+14. **A citation's hover card** (`GET /api/v1/library/card?key=`, `assets/js/library-card.js`): the pointer
+    resting on a `[1]` that links to its source (shown only to a reader of the library), or the keyboard's
+    focus, shows the source's cover, reference, summary (else the start of its record's abstract), *Open*
+    and the original. The index's row only; a reader who may not see the source gets no card.
+15. **Overviews by themselves** (`bin/reporion library:digest`, Admin → Maintenance;
+    `Service\Maintenance\LibraryDigestTask`; owner, 2026-11-15: as a maintenance task under
+    `system:librarian`, amending D8 for these two texts): for each source that lacks one, the assistant's
+    one-line summary (into `summary`) and key points (kept as `library:{key}:source-points`), from its
+    abstract page when it has one, else its text. Never made again once there; `--limit` bounds a run;
+    Check sends nothing. There is no queue: run it from cron (hourly, `--limit=20`) so a paper added has
+    its overview within the hour.
+
+*Still to build:* the **library in the report's rail** (passages matching the line being written, as
+Recall; owner: last). *Left out for now (owner, 2026-11-15):* tables and figures extracted from the PDF.
+Also: highlight colours; covers for EPUB and office files.
 
 ## Long sources
 

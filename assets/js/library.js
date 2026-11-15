@@ -7,7 +7,9 @@
  *   as the request body of POST /api/v1/library/uploads; its proposed record fills a copy of the
  *   record form (templates/partials/library-record-form.php) to correct, and Add sends it with
  *   the token to POST /api/v1/library. Discard keeps nothing (the upload expires on the server).
- * - library-list: the text filter over the table's rows (the sort and the tag are links).
+ * - library-list: the text filter over the table's rows (the sort and the tag are links); the
+ *   list / covers switch (this browser's choice); the quick look (a row clicked opens the paper
+ *   beside the list, filled from the row; the arrows move to the next).
  * - library-record (a source's page): Copy reference, and for a writer Edit record, the same
  *   form filled from the record, saved by PUT /api/v1/library/{pid}/record, then the page reloads.
  *
@@ -357,6 +359,43 @@
     });
   }
 
+  // ---- the reader's own marks: a star and where their reading stands, on a row and on a source's card ----
+
+  var MARK_ORDER = ['', 'toread', 'reading', 'read'];
+  var MARK_ICONS = { '': 'circle-dashed', toread: 'bookmark-simple', reading: 'book-open', read: 'check-circle' };
+
+  function mountMark(box) {
+    var star = box.querySelector('[data-mark-star]');
+    var status = box.querySelector('[data-mark-status]');
+    var labels = {};
+    try { labels = JSON.parse(box.getAttribute('data-labels')) || {}; } catch (e) { labels = {}; }
+    function draw(state) {
+      box.setAttribute('data-status', state.status);
+      star.classList.toggle('is-on', state.star);
+      star.setAttribute('aria-pressed', state.star ? 'true' : 'false');
+      status.firstElementChild.className = 'ph ph-' + (MARK_ICONS[state.status] || MARK_ICONS['']);
+      status.title = labels[state.status] || '';
+      status.setAttribute('aria-label', status.title);
+    }
+    function send(change) {
+      star.disabled = status.disabled = true;
+      fetch(box.getAttribute('data-url'), {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(change)
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (json) {
+        star.disabled = status.disabled = false;
+        if (json) draw({ status: json.status || '', star: json.star === true });
+      }, function () { star.disabled = status.disabled = false; });
+    }
+    star.addEventListener('click', function () { send({ star: star.getAttribute('aria-pressed') !== 'true' }); });
+    status.addEventListener('click', function () {
+      var next = MARK_ORDER[(MARK_ORDER.indexOf(box.getAttribute('data-status') || '') + 1) % MARK_ORDER.length];
+      send({ status: next });
+    });
+  }
+
   // ---- library-list ----
 
   function mountList(box) {
@@ -376,6 +415,237 @@
         saveDialog.showModal();
         var name = saveDialog.querySelector('input[name="name"]');
         if (name) name.focus();
+      });
+    }
+    // List or covers: the same rows, drawn as a table or as a wall of first pages; kept in this browser
+    var views = Array.prototype.slice.call(box.querySelectorAll('[data-lib-view]'));
+    function setView(view) {
+      box.setAttribute('data-view', view);
+      views.forEach(function (b) {
+        var on = b.getAttribute('data-lib-view') === view;
+        b.classList.toggle('seg-on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+    if (views.length) {
+      var kept = 'list';
+      try { kept = window.localStorage.getItem('reporion.library.view') || 'list'; } catch (e) { kept = 'list'; }
+      setView(kept === 'covers' ? 'covers' : 'list');
+      views.forEach(function (b) {
+        b.addEventListener('click', function () {
+          var view = b.getAttribute('data-lib-view');
+          setView(view);
+          try { window.localStorage.setItem('reporion.library.view', view); } catch (e) { /* no storage */ }
+        });
+      });
+    }
+    // A cover that cannot be drawn (404): the plain tile instead of a broken picture
+    box.querySelectorAll('.wk-lib-cover img').forEach(function (img) {
+      var plain = function () { var i = el('i', 'ph ph-file-text'); img.replaceWith(i); };
+      if (img.complete && img.naturalWidth === 0 && img.currentSrc) plain();
+      else img.addEventListener('error', plain);
+    });
+    // Tags as folders: a row dragged onto a tag files the article there; onto New tag, under the name typed
+    var drop = box.querySelector('[data-lib-drop]');
+    if (drop) {
+      var dropStrings = {};
+      try { dropStrings = JSON.parse(drop.getAttribute('data-strings')) || {}; } catch (e) { dropStrings = {}; }
+      var said = drop.querySelector('[data-drop-said]');
+      var fresh = drop.querySelector('[data-drop-new]');
+      var carried = null;
+      var file = function (row, tag, chip) {
+        tag = tag.trim().toLowerCase();
+        if (!row || tag === '') return;
+        fetch(drop.getAttribute('data-url') + row.getAttribute('data-pid') + '/tags', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ add: [tag] })
+        }).then(function (r) { return r.json().then(function (json) { return { ok: r.ok, json: json }; }); }).then(function (r) {
+          if (!r.ok) { said.textContent = r.json && r.json.error ? r.json.error.message : (dropStrings.failed || ''); return; }
+          said.textContent = (dropStrings.added || '%s').replace('%s', tag);
+          if (!r.json.changed) return;
+          // The row shows its new tag; the tag's count grows (a new tag appears with the next load)
+          var cell = row.querySelector('.wk-lib-rowtags');
+          if (cell) { cell.appendChild(el('span', 'wk-chip', tag)); cell.appendChild(document.createTextNode(' ')); }
+          var n = chip ? chip.querySelector('.wk-dim') : null;
+          if (n) n.textContent = String((parseInt(n.textContent, 10) || 0) + 1);
+        }, function () { said.textContent = dropStrings.failed || ''; });
+      };
+      rows.forEach(function (row) {
+        row.addEventListener('dragstart', function (event) {
+          carried = row;
+          drop.classList.add('is-dropping');
+          event.dataTransfer.effectAllowed = 'copy';
+          event.dataTransfer.setData('text/plain', '[@' + row.getAttribute('data-key') + ']');
+        });
+        row.addEventListener('dragend', function () {
+          drop.classList.remove('is-dropping');
+          drop.querySelectorAll('.is-over').forEach(function (n) { n.classList.remove('is-over'); });
+        });
+      });
+      var target = function (event) { return event.target.closest ? event.target.closest('[data-drop-tag], [data-drop-new]') : null; };
+      drop.addEventListener('dragover', function (event) {
+        var over = carried ? target(event) : null;
+        if (!over) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        over.classList.add('is-over');
+      });
+      drop.addEventListener('dragleave', function (event) {
+        var over = target(event);
+        if (over) over.classList.remove('is-over');
+      });
+      drop.addEventListener('drop', function (event) {
+        var over = carried ? target(event) : null;
+        if (!over) return;
+        event.preventDefault();
+        over.classList.remove('is-over');
+        if (over.hasAttribute('data-drop-tag')) { file(carried, over.getAttribute('data-drop-tag'), over); carried = null; return; }
+        // New tag: the name is typed, Enter files the article under it
+        fresh.pending = carried;
+        fresh.value = '';
+        fresh.focus();
+      });
+      if (fresh) {
+        fresh.addEventListener('keydown', function (event) {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          if (fresh.pending && fresh.value.trim() !== '') { file(fresh.pending, fresh.value, null); fresh.pending = null; fresh.value = ''; fresh.blur(); }
+        });
+      }
+    }
+    // Opened lately: kept in this browser by the reader (library-reader.js), shown as a strip of covers
+    var recentBox = box.querySelector('[data-lib-recent]');
+    if (recentBox) {
+      var opened = [];
+      try { opened = JSON.parse(window.localStorage.getItem('reporion.library.recent')) || []; } catch (e) { opened = []; }
+      opened.slice(0, 8).forEach(function (source) {
+        if (!source || typeof source.href !== 'string' || source.href.charAt(0) !== '/' || source.href.charAt(1) === '/') return;
+        var a = el('a', 'wk-lib-recent-item');
+        a.href = source.href + (source.page && source.page !== '1' ? '#p' + source.page : '');
+        var cover = el('span', 'wk-lib-cover');
+        if (typeof source.cover === 'string' && source.cover.charAt(0) === '/' && source.cover.charAt(1) !== '/') {
+          var img = el('img');
+          img.src = source.cover;
+          img.alt = '';
+          img.loading = 'lazy';
+          cover.appendChild(img);
+        } else {
+          cover.appendChild(icon('file-text'));
+        }
+        a.appendChild(cover);
+        var words = el('span', 'wk-lib-recent-title', String(source.title || source.key || ''));
+        if (source.page && source.page !== '1') {
+          words.appendChild(document.createTextNode(' '));
+          words.appendChild(el('span', 'wk-dim wk-mono', (recentBox.getAttribute('data-page') || '%s').replace('%s', source.page)));
+        }
+        a.appendChild(words);
+        recentBox.appendChild(a);
+      });
+      recentBox.hidden = recentBox.children.length < 2;
+    }
+    // Quick look: a row clicked (not its links) opens the paper beside the list, filled from the row;
+    // the arrows move to the row above or below that the filter still shows
+    var peek = box.querySelector('[data-lib-peek]');
+    if (peek && typeof peek.showModal === 'function') {
+      var peekBody = peek.querySelector('[data-peek-body]');
+      var peekOpen = peek.querySelector('[data-peek-open]');
+      var peekFile = peek.querySelector('[data-peek-file]');
+      var peekCite = peek.querySelector('[data-peek-cite]');
+      var peekCiteLabel = peek.querySelector('[data-peek-cite-label]');
+      var peekStrings = {};
+      try { peekStrings = JSON.parse(peek.getAttribute('data-strings')) || {}; } catch (e) { peekStrings = {}; }
+      var citeText = peekCiteLabel.textContent;
+      var peeked = null;
+      var show = function (row) {
+        peeked = row;
+        rows.forEach(function (r) { r.classList.toggle('wk-sel', r === row); });
+        var title = row.querySelector('.wk-lib-art-text > a');
+        var img = row.querySelector('.wk-lib-cover img');
+        var text = function (sel) { var n = row.querySelector(sel); return n ? n.textContent.trim() : ''; };
+        peekBody.textContent = '';
+        var head = el('div', 'wk-lib-peek-head');
+        if (img) {
+          var cover = el('span', 'wk-lib-cover wk-lib-cover-lg');
+          var copy = el('img');
+          copy.src = img.currentSrc || img.src;
+          copy.alt = '';
+          cover.appendChild(copy);
+          head.appendChild(cover);
+        }
+        var words = el('div', 'wk-lib-peek-text');
+        words.appendChild(el('h3', 'wk-lib-peek-title', title ? title.textContent : ''));
+        var authors = text('.wk-lib-authors');
+        if (authors) words.appendChild(el('p', 'wk-dim', authors));
+        var facts = [row.cells[2] ? row.cells[2].textContent.trim() : '', row.cells[1] ? row.cells[1].textContent.trim() : ''].filter(Boolean).join(' · ');
+        if (facts) words.appendChild(el('p', 'wk-dim wk-text-sm', facts));
+        var flag = row.querySelector('.wk-src-flag');
+        if (flag) words.appendChild(flag.cloneNode(true));
+        head.appendChild(words);
+        peekBody.appendChild(head);
+        var summary = text('.wk-lib-summary');
+        if (summary) peekBody.appendChild(el('p', 'wk-lib-lead', summary));
+        var abstract = row.getAttribute('data-abstract') || '';
+        var abstractEl = el('p', 'wk-lib-peek-abstract', abstract + (abstract.length >= 700 ? (peekStrings.more || '…') : ''));
+        abstractEl.hidden = abstract === '';
+        peekBody.appendChild(abstractEl);
+        // No abstract in the record: the one kept beside the source (its abstract page), when there is one
+        var api = peek.getAttribute('data-api');
+        if (abstract === '' && api) {
+          fetch(api + encodeURIComponent(row.getAttribute('data-key')) + ':abstract', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (json) {
+              var body = json && typeof json.body === 'string' ? json.body.replace(/\s+/g, ' ').trim() : '';
+              if (body === '' || peeked !== row) return;
+              abstractEl.textContent = body.length > 1200 ? body.slice(0, 1200) + (peekStrings.more || '…') : body;
+              abstractEl.hidden = false;
+            }, function () { /* no abstract shown */ });
+        }
+        var tags = row.querySelector('.wk-lib-rowtags');
+        if (tags && tags.children.length) {
+          var chips = el('div', 'wk-lib-chips');
+          Array.prototype.forEach.call(tags.children, function (chip) { chips.appendChild(chip.cloneNode(true)); });
+          peekBody.appendChild(chips);
+        }
+        peekOpen.href = title ? title.href : '#';
+        var file = row.querySelector('.wk-lib-file');
+        peekFile.hidden = !file;
+        if (file) peekFile.href = file.href;
+        peekCiteLabel.textContent = citeText;
+        peekBody.scrollTop = 0;
+        if (!peek.open) peek.showModal();
+      };
+      var step = function (by) {
+        var shown = rows.filter(function (r) { return !r.hidden; });
+        var i = shown.indexOf(peeked);
+        var to = shown[i + by];
+        if (to) { show(to); to.scrollIntoView({ block: 'nearest' }); }
+      };
+      rows.forEach(function (row) {
+        row.addEventListener('click', function (event) {
+          if (event.target.closest('a, button, input, select')) return;
+          var sel = window.getSelection ? window.getSelection() : null;
+          if (sel && !sel.isCollapsed) return;
+          show(row);
+        });
+      });
+      peek.querySelector('[data-peek-prev]').addEventListener('click', function () { step(-1); });
+      peek.querySelector('[data-peek-next]').addEventListener('click', function () { step(1); });
+      peek.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowDown' || event.key === 'j') { event.preventDefault(); step(1); }
+        else if (event.key === 'ArrowUp' || event.key === 'k') { event.preventDefault(); step(-1); }
+        else if (event.key === 'Enter' && !event.target.closest('a, button')) { window.location.href = peekOpen.href; }
+      });
+      peek.addEventListener('click', function (event) {
+        if (event.target === peek || event.target.closest('[data-modal-close]')) peek.close();
+      });
+      peek.addEventListener('close', function () { rows.forEach(function (r) { r.classList.remove('wk-sel'); }); });
+      peekCite.addEventListener('click', function () {
+        if (!peeked || !navigator.clipboard) return;
+        navigator.clipboard.writeText('[@' + peeked.getAttribute('data-key') + ']').then(function () {
+          peekCiteLabel.textContent = peekStrings.copied || citeText;
+        }, function () { /* not copied: the label stays */ });
       });
     }
     if (!filter) return;
@@ -398,6 +668,61 @@
 
   function mountRecord(box) {
     var cfg = config(box);
+    // The page's three tabs: Overview (this card, Ask this paper), Text (the reader), Notes (comments
+    // and highlights). A link into the text (#p12, a heading) opens Text; #notes opens Notes.
+    var tabs = document.querySelector('[data-lib-tabs]');
+    if (tabs) {
+      var buttons = Array.prototype.slice.call(tabs.querySelectorAll('[data-lib-tab]'));
+      var body = document.querySelector('.wk-docbody');
+      var notes = document.querySelector('.wk-comments[data-island="comments"]');
+      var panels = function (name) {
+        if (name === 'text') return body ? [body] : [];
+        if (name === 'notes') return notes ? [notes] : [];
+        return [box].concat(Array.prototype.slice.call(document.querySelectorAll('[data-lib-tabpanel="overview"]')));
+      };
+      var has = function (name) { return buttons.some(function (b) { return b.getAttribute('data-lib-tab') === name; }); };
+      var showTab = function (name) {
+        if (!has(name)) name = 'overview';
+        buttons.forEach(function (b) {
+          var tab = b.getAttribute('data-lib-tab');
+          b.setAttribute('data-on', tab === name ? '1' : '');
+          b.setAttribute('aria-pressed', tab === name ? 'true' : 'false');
+          panels(tab).forEach(function (panel) { panel.hidden = tab !== name; });
+        });
+        document.body.setAttribute('data-lib-tab-on', name);
+        // What is laid out changed: the reader measures its bar and draws its map again
+        window.dispatchEvent(new Event('resize'));
+      };
+      var fromHash = function () {
+        var id = '';
+        try { id = decodeURIComponent(window.location.hash.slice(1)); } catch (e) { id = ''; }
+        if (id === '') return null;
+        if (id === 'notes' || id === 'comments') return 'notes';
+        if (id === 'text') return 'text';
+        var target = document.getElementById(id);
+        if (target && body && body.contains(target)) return 'text';
+        return /^p\d+$/.test(id) ? 'text' : null;
+      };
+      tabs.hidden = false;
+      showTab(fromHash() || 'overview');
+      buttons.forEach(function (b) {
+        b.addEventListener('click', function () { showTab(b.getAttribute('data-lib-tab')); });
+      });
+      window.addEventListener('hashchange', function () { var to = fromHash(); if (to) showTab(to); });
+      // The reader asks for a tab: Notes for a comment on a selection, Text for a highlight shown in place
+      document.addEventListener('reporion:library-tab', function (event) { showTab(String(event.detail || 'overview')); });
+      var count = tabs.querySelector('[data-lib-notes-count]');
+      document.addEventListener('reporion:comments', function (event) {
+        var open = (event.detail || []).filter(function (c) { return !c.resolved; }).length;
+        if (count) { count.hidden = open === 0; count.textContent = String(open); }
+      });
+    }
+    // A cover that cannot be drawn (404): the card without a picture
+    box.querySelectorAll('.wk-lib-cover-lg img').forEach(function (img) {
+      var gone = function () { if (img.parentNode) img.parentNode.remove(); };
+      if (img.complete && img.naturalWidth === 0 && img.currentSrc) gone();
+      else img.addEventListener('error', gone);
+    });
     var s = cfg.strings || {};
     var copy = box.querySelector('[data-lib-copy]');
     var ref = box.querySelector('[data-lib-ref]');
@@ -636,6 +961,7 @@
       return;
     }
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-add"]'), mountAdd);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lib-mark]'), mountMark);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-list"]'), mountList);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-record"]'), mountRecord);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-ai"]'), mountAi);

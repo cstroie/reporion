@@ -75,6 +75,30 @@ final class LibraryAskTest extends HttpTestCase
         self::assertStringNotContainsString('[@abel2020, p. 4]', $sent);
     }
 
+    public function testAskThisPaperKeepsTheQuestionToOneSource(): void
+    {
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $cole = (string) $index->findByPath('library:cole2021', (new FlatFileUserStore($this->dataRoot))->find('writer'))['pid'];
+
+        $response = $this->ask('writer', ['question' => 'How were the lesions graded with Fazekas?', 'source' => $cole]);
+
+        self::assertSame(200, $response->status, $response->body);
+        $data = json_decode($response->body, true)['data'];
+        self::assertTrue($data['whole'], 'one short source goes whole');
+        self::assertSame(['cole2021'], array_values(array_unique(array_column($data['sources'], 'key'))));
+        $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString('cardiac output', $sent);
+        self::assertStringNotContainsString('128 patients', $sent, 'the other source is not read');
+
+        $report = (string) $index->findByPath('reports:mri:x:260101-test-unu', (new FlatFileUserStore($this->dataRoot))->find('owner'))['pid'];
+        self::assertSame(404, $this->ask('writer', ['question' => 'Fazekas?', 'source' => $report])->status, 'never a report');
+        self::assertSame(404, $this->ask('writer', ['question' => 'Fazekas?', 'source' => '01J0000000000000000000000A'])->status);
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/library:cole2021', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('writer')]))->body;
+        self::assertStringContainsString('"source":"' . $cole . '"', $page, 'the panel on the source\'s page');
+        $read = Kernel::boot($this->config)->handle(new Request('GET', '/library:cole2021', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('reader')]))->body;
+        self::assertStringNotContainsString('"source":"' . $cole . '"', $read, 'a reader does not ask');
+    }
+
     public function testOnlyAnEditorOfTheLibraryAsksAndOnlyWithThePrompt(): void
     {
         foreach ([null, 'reader'] as $user) {

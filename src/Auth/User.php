@@ -65,6 +65,9 @@ final class User
         // grants are computed and it is never saved (FlatFileUserStore::save() refuses it).
         /** @var ?list<string> */
         public readonly ?array $tokenNamespaces = null,
+        // The account's marks on library sources (2026-11-15): reading status and star by pid; Auth\LibraryMarks.
+        /** @var array<string, array{status?: string, star?: true}> */
+        public readonly array $marks = [],
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check: a bare string or anything non-Grant slipping in here
@@ -86,8 +89,9 @@ final class User
      * @param ?list<Grant> $grants
      * @param ?list<string> $groups
      * @param ?list<array{name: string, query: string}> $views
+     * @param ?array<string, array{status?: string, star?: true}> $marks
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null, ?array $views = null, ?string $fullName = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null, ?array $views = null, ?string $fullName = null, ?array $marks = null): self
     {
         return new self(
             $this->username,
@@ -109,6 +113,7 @@ final class User
             $views ?? $this->views,
             $fullName ?? $this->fullName,
             $this->tokenNamespaces,
+            $marks ?? $this->marks,
         );
     }
 
@@ -133,7 +138,7 @@ final class User
         return new self(
             $this->username, $this->passwordHash, $this->isOwner, $this->grants, $this->active,
             $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
-            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views, $this->fullName, $this->tokenNamespaces,
+            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views, $this->fullName, $this->tokenNamespaces, $this->marks,
         );
     }
 
@@ -168,6 +173,7 @@ final class User
             $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
             $this->pins, $this->isRadiologist(), $this->groups, [], false, $this->stamp, $this->views, $this->fullName,
             array_values($namespaces),
+            $this->marks,
         );
     }
 

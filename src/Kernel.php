@@ -424,6 +424,27 @@ final class Kernel
     }
 
     /**
+     * library:digest: the assistant's one-line summary and key points of each library source that
+     * lacks them, for Admin → Maintenance and the CLI
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function libraryDigestTask(array $config, FileTree $storage, Sqlite $index, AuditLog $audit): \Reporion\Service\Maintenance\LibraryDigestTask
+    {
+        $aiConfig = AiConfig::fromConfig($config);
+        $actions = new AiActions($aiConfig, $storage, $index, self::libraryNamespace($config));
+
+        return new \Reporion\Service\Maintenance\LibraryDigestTask(
+            self::library($config, $storage, $index, $audit),
+            $storage,
+            $audit,
+            new \Reporion\Service\Library\SourceAnalysis($actions, self::assistant($config, $aiConfig, $storage, $index, $audit), max(4000, (int) ($config['library']['context_tokens'] ?? 32000)), new Abstracts($storage)),
+            new Analyses($storage, $index),
+            $aiConfig->longestTimeout(),
+        );
+    }
+
+    /**
      * Two library sources that are one article folded into one (D60): the web's endpoint and library:merge
      */
     public static function libraryMerge(array $config, FileTree $storage, IndexInterface $index, AuditLog $audit): \Reporion\Service\Library\Merge
@@ -613,7 +634,7 @@ final class Kernel
             return $ask instanceof AskController && $ask->available();
         }, self::libraryNamespace($config));
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit), self::libraryNoticesTask($config, $storage, $index, $audit)]);
+        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit), self::libraryNoticesTask($config, $storage, $index, $audit), self::libraryDigestTask($config, $storage, $index, $audit)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
@@ -633,6 +654,10 @@ final class Kernel
             self::libraryMerge($config, $storage, $index, $audit),
             new \Reporion\Service\Library\Related($index, self::libraryNamespace($config), \Reporion\Service\Ai\Embedder::minScore($config)),
             new \Reporion\Service\Library\OnlineSearch(self::library($config, $storage, $index, $audit), ($config['library']['search'] ?? false) === true ? new Lookup(Lookup::http()) : null),
+            // Covers: the first page of a source's PDF, drawn by pdftoppm (the OCR's program) and kept beside the PDF
+            new \Reporion\Service\Library\Thumbnails($storage, \is_string($config['library']['tools']['pdftoppm'] ?? null) && $config['library']['tools']['pdftoppm'] !== '' ? $config['library']['tools']['pdftoppm'] : 'pdftoppm'),
+            // An account's own marks on sources (reading status, star) are kept in its file
+            $users,
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -868,6 +893,14 @@ final class Kernel
             => $libraryController->audio($request, $params['pid'], $session->principal($request)));
         $router->get('/library/flashcards/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->flashcards($request, $params['pid'], $session->principal($request)));
+        $router->get('/api/v1/library/card', static fn (Request $request, array $params): Response
+            => $libraryController->card($request, $session->principal($request)));
+        $router->put('/api/v1/library/{pid:[0-9A-Z]+}/mark', static fn (Request $request, array $params): Response
+            => $libraryController->mark($request, $params['pid'], $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/tags', static fn (Request $request, array $params): Response
+            => $libraryController->tags($request, $params['pid'], $session->principal($request)));
+        $router->get('/library/thumb/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $libraryController->thumb($request, $params['pid'], $session->principal($request)));
         $router->get('/library/file/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->original($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response

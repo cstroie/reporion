@@ -240,6 +240,40 @@ final class Library
         return $this->storage->save($path, $frontmatter, $page->body, $baseRev, $actor, 'library: record');
     }
 
+    /**
+     * A source's tags changed without its record (2026-11-15: a row dragged onto a tag of the list,
+     * the library's folders): $add joined, $remove taken out, cleaned as the record form's; one
+     * new revision, none when nothing changes.
+     *
+     * @param list<string> $add
+     * @param list<string> $remove
+     *
+     * @return array{page: PageRecord, tags: list<string>, changed: bool}
+     *
+     * @throws LibraryException INVALID when the page is not a source
+     */
+    public function retag(string $path, array $add, array $remove, string $actor): array
+    {
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        $before = self::cleanTags($page->frontmatter['tags'] ?? []);
+        $gone = self::cleanTags($remove);
+        $tags = self::cleanTags(array_merge(array_values(array_filter($before, static fn (string $t): bool => !\in_array($t, $gone, true))), $add));
+        if ($tags === $before) {
+            return ['page' => $page, 'tags' => $tags, 'changed' => false];
+        }
+        $frontmatter = $page->frontmatter;
+        if ($tags === []) {
+            unset($frontmatter['tags']);
+        } else {
+            $frontmatter['tags'] = $tags;
+        }
+
+        return ['page' => $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: tags'), 'tags' => $tags, 'changed' => true];
+    }
+
     /** Whether the online lookups are on (Admin → Settings → Library `library.lookup`) */
     public function lookupOn(): bool
     {
@@ -715,7 +749,9 @@ final class Library
     /**
      * The library as its view lists it: every source $principal may see, with what the table shows
      *
-     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string}>
+     * `cover` is the start of its PDF's hash when it can have a cover (Thumbnails), else ''.
+     *
+     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string, summary: string, cover: string, abstract: string}>
      */
     public function entries(User $principal): array
     {
@@ -740,6 +776,10 @@ final class Library
                 'ext' => \is_array($meta['original'] ?? null) ? (string) ($meta['original']['ext'] ?? '') : '',
                 'doi' => \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : '',
                 'notice' => SourceNotice::clean($meta['notice'] ?? null)['status'] ?? null,
+                'summary' => \is_string($meta['summary'] ?? null) ? trim($meta['summary']) : '',
+                'cover' => Thumbnails::possible($meta['original'] ?? null) ? substr((string) $meta['original']['sha256'], 0, 12) : '',
+                // The record's abstract, cut short: what the list's quick look shows (the whole is on the source's page)
+                'abstract' => \is_string($csl['abstract'] ?? null) ? mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($csl['abstract'])) ?? ''), 0, 700) : '',
             ];
         }
 

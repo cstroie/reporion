@@ -127,7 +127,20 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <?php endif; ?>
 
 <?php if (($librarySource ?? null) !== null): ?>
+<?php /* A source's page in three tabs (2026-11-15): Overview (the card, Ask this paper), Text (the reader), Notes (comments and highlights). assets/js/library.js shows one; without JavaScript all three follow each other as before */ ?>
+<nav class="wk-tabs wk-lib-tabs" data-lib-tabs hidden aria-label="<?= htmlspecialchars(t('library.tabs.label'), ENT_QUOTES) ?>">
+<button type="button" class="wk-tab" data-lib-tab="overview" data-on="1"><i class="ph ph-book-open-text" aria-hidden="true"></i> <?= htmlspecialchars(t('library.tabs.overview'), ENT_QUOTES) ?></button>
+<?php if (trim($contentHtml) !== ''): ?>
+<button type="button" class="wk-tab" data-lib-tab="text"><i class="ph ph-text-align-left" aria-hidden="true"></i> <?= htmlspecialchars(t('library.tabs.text'), ENT_QUOTES) ?></button>
+<?php endif; ?>
+<?php if ($comments ?? false): ?>
+<button type="button" class="wk-tab" data-lib-tab="notes"><i class="ph ph-highlighter" aria-hidden="true"></i> <?= htmlspecialchars(t('library.tabs.notes'), ENT_QUOTES) ?> <span class="wk-count" data-lib-notes-count hidden></span></button>
+<?php endif; ?>
+</nav>
 <?php include __DIR__ . '/partials/library-source.php'; ?>
+<?php if ($librarySource['ask'] ?? false): ?>
+<?php include __DIR__ . '/partials/library-ask-source.php'; ?>
+<?php endif; ?>
 <?php endif; ?>
 <?php if (($notebookAsk ?? null) !== null || ($notebookStudio ?? null) !== null): /* Ask and Studio: tool panels, one stack (docs/design-rules.md) */ ?>
 <div class="wk-tools">
@@ -144,6 +157,9 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
 <?php include __DIR__ . '/partials/toc.php'; ?>
 <div class="wk-docmain">
+<?php if (($librarySource ?? null) !== null && trim($contentHtml) !== ''): /* a library source's text is read with the reader's bar (find, pages, outline) */ ?>
+<?php include __DIR__ . '/partials/library-reader.php'; ?>
+<?php endif; ?>
 
 <?php /* assets/js/copy-code.js puts a Copy button on each ## heading (that section); the whole text is the tab row's Copy */ ?>
 <div class="wk-prosebox" data-copy-section="<?= htmlspecialchars(t('page.copy_section'), ENT_QUOTES) ?>">
@@ -155,6 +171,9 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 </div>
 </div>
 </div>
+<?php if (str_contains($contentHtml, 'wk-ref-src') || ($notebookAsk ?? null) !== null || ($notebookStudio ?? null) !== null): /* a citation hovered shows its source's card (GET /api/v1/library/card) */ ?>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/library-card.js'), ENT_QUOTES) ?>" data-url="<?= htmlspecialchars($basePath . '/api/v1/library/card', ENT_QUOTES) ?>" data-open="<?= htmlspecialchars(t('library.card.open'), ENT_QUOTES) ?>" data-file="<?= htmlspecialchars(t('library.original'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
 <footer class="wk-doc-foot">
 <?php /* Backlinks (2026-10-19): what links here, the latest first, each with its date and how it
  * links (in its text, or listing this report among its priors); past BACKLINKS_SHOWN the rest folds */ ?>

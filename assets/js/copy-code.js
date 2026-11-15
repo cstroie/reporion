@@ -81,7 +81,7 @@
     var html = nodes.map(function (node) {
       if (node.nodeType !== 1) { return node.textContent; }
       var clone = node.cloneNode(true);
-      clone.querySelectorAll('.wk-code-copy, .wk-section-copy').forEach(function (b) { b.remove(); });
+      clone.querySelectorAll('.wk-code-copy, .wk-section-copy, .wk-sect-toggle').forEach(function (b) { b.remove(); });
       return clone.outerHTML;
     }).join('');
     // innerText keeps the line breaks, and the headings' capitals as shown on screen
