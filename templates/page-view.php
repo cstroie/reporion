@@ -144,6 +144,9 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
 <?php include __DIR__ . '/partials/toc.php'; ?>
 <div class="wk-docmain">
+<?php if (($librarySource ?? null) !== null && trim($contentHtml) !== ''): /* a library source's text is read with the reader's bar (find, pages, outline) */ ?>
+<?php include __DIR__ . '/partials/library-reader.php'; ?>
+<?php endif; ?>
 
 <?php /* assets/js/copy-code.js puts a Copy button on each ## heading (that section); the whole text is the tab row's Copy */ ?>
 <div class="wk-prosebox" data-copy-section="<?= htmlspecialchars(t('page.copy_section'), ENT_QUOTES) ?>">

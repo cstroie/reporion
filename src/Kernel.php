@@ -633,6 +633,8 @@ final class Kernel
             self::libraryMerge($config, $storage, $index, $audit),
             new \Reporion\Service\Library\Related($index, self::libraryNamespace($config), \Reporion\Service\Ai\Embedder::minScore($config)),
             new \Reporion\Service\Library\OnlineSearch(self::library($config, $storage, $index, $audit), ($config['library']['search'] ?? false) === true ? new Lookup(Lookup::http()) : null),
+            // Covers: the first page of a source's PDF, drawn by pdftoppm (the OCR's program) and kept in data/tmp/thumbs
+            new \Reporion\Service\Library\Thumbnails($storage, (string) $config['paths']['data'] . '/tmp', \is_string($config['library']['tools']['pdftoppm'] ?? null) && $config['library']['tools']['pdftoppm'] !== '' ? $config['library']['tools']['pdftoppm'] : 'pdftoppm'),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);
@@ -868,6 +870,8 @@ final class Kernel
             => $libraryController->audio($request, $params['pid'], $session->principal($request)));
         $router->get('/library/flashcards/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->flashcards($request, $params['pid'], $session->principal($request)));
+        $router->get('/library/thumb/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $libraryController->thumb($request, $params['pid'], $session->principal($request)));
         $router->get('/library/file/{pid:[0-9A-Z]+}', static fn (Request $request, array $params): Response
             => $libraryController->original($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response

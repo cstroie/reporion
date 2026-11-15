@@ -715,7 +715,9 @@ final class Library
     /**
      * The library as its view lists it: every source $principal may see, with what the table shows
      *
-     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string}>
+     * `cover` is the start of its PDF's hash when it can have a cover (Thumbnails), else ''.
+     *
+     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string, summary: string, cover: string}>
      */
     public function entries(User $principal): array
     {
@@ -740,6 +742,8 @@ final class Library
                 'ext' => \is_array($meta['original'] ?? null) ? (string) ($meta['original']['ext'] ?? '') : '',
                 'doi' => \is_string($csl['DOI'] ?? null) ? $csl['DOI'] : '',
                 'notice' => SourceNotice::clean($meta['notice'] ?? null)['status'] ?? null,
+                'summary' => \is_string($meta['summary'] ?? null) ? trim($meta['summary']) : '',
+                'cover' => Thumbnails::possible($meta['original'] ?? null) ? substr((string) $meta['original']['sha256'], 0, 12) : '',
             ];
         }
 

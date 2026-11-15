@@ -384,6 +384,53 @@ What Zotero, Mendeley, Paperpile and EndNote do that a clinical team needs, buil
 7. **Save-to-library bookmarklet.** With the web clip on, the Add page offers a link to drag to the bookmarks bar; on an article it opens `/library/add?clip={address}` (an older one's `/library?clip=` is forwarded) with the field filled in, and the writer presses Clip (a GET never fetches anything). The link is built in the page from the address it is on, so a proxy's host name is never guessed.
 8. **Add by search.** With *Search PubMed from the library* on (Admin → Settings → Library, `library.search`, off by default) an editor gets a *Search PubMed* panel on the *Add articles* page (`/library/add`): words, or a DOI or PMID typed whole, answered with records to add as sources with no file (`GET`/`POST /api/v1/library/online`). **This is the one lookup that sends what was typed**, not an identifier: the panel says so, a query holding a CNP (or thirteen digits shaped like one) is refused before anything is sent, and the audit keeps a count, never the words. A pick with a DOI, when Find full text is set up, gets its free PDF at once (the page calls Find full text for it, item 6). Decided by the owner on 2026-11-04 ("build them all"), which amends D58's "identifier only" for this opt-in feature.
 
+## The reader, covers and the list (2026-11-15)
+
+Owner's request: a long article made a long page, hard to read, to scroll and to find anything in; and a
+paper should be told from another at a glance. After Mendeley's and Zotero's readers, Notion's toggles and
+Readwise's selection menu. No storage, schema or text format changes: everything works on the text as it is kept.
+
+1. **The reader** (`templates/partials/library-reader.php`, `assets/js/library-reader.js`): a bar over a
+   source's text, staying under the top bar while the text scrolls. It works in the browser on the HTML the
+   server rendered (invariant 4: still one parser); without JavaScript the bar is hidden and the text reads
+   as before.
+   - **Outline.** Every `##` section folds to its heading, with its length and page (`640 words · p. 3`); a
+     text with fewer than three headings and at least three pages folds by page, each page named by its
+     first words. A source over 20 000 characters with three sections or more **opens folded**; *Outline* /
+     *Open all* is remembered in this browser (`reporion.library.reader`). A link to a heading or a page
+     (`#p12`, the contents' links) opens the section it is in. The length and page are drawn from an
+     attribute, never text: not selected, not copied with the section, not searched.
+   - **Find in this article.** Every match marked, case and diacritics apart (`tesut` finds `țesut`), counted
+     (`3 of 17`), stepped through with Enter / Shift+Enter or the arrows, Escape clears; the sections holding
+     a match are opened and say how many (`5 found`). A match is found inside one run of text (not across
+     a change of emphasis). At most 2000 marks.
+   - **Pages.** The extracted text's `— p. N —` lines become thin rules that open the PDF at that page
+     (`/library/file/{pid}#page=N`) and carry the anchor `#pN`; the bar shows the page in view, jumps to any
+     other, and *PDF here* opens the original at the page being read.
+   - **A selection's actions**, beside the selection instead of at the end of the page: *Copy with citation*
+     (`> text [@key, p. N]`, ready to paste into a notebook), *Add passage* and *Comment* (the comments
+     panel's own, which already holds the selection: `comments.js`).
+   - The words and reading time (230 words a minute).
+2. **Covers** (`Service\Library\Thumbnails`, `GET /library/thumb/{pid}`): the first page of a source's PDF as
+   a 300 px JPEG, drawn by `pdftoppm` (the OCR's program: an argument list, 20 s) the first time it is asked
+   for and kept in `data/tmp/thumbs/{ab}/{sha256}.jpg`: derived, never backed up (`tmp/` is left out), made
+   again when missing; delete the directory at will. A PDF pdftoppm refuses leaves an empty `{sha256}.none`
+   so it is not tried at every view; a missing program is tried again. Served under the rule of the original
+   (the page's visibility; anonymous and no grant: 404), cached for good by the browser (the address
+   carries the file's hash). Only a PDF has a cover; a record with no file, or another format, shows a plain tile.
+3. **The source's card**: the cover beside the reference (it opens the PDF), the one-line `summary` under
+   the reference when the page has one, and the abstract **open**: what the paper is and says comes before
+   its text.
+4. **The list** (`/library`): each row has its cover and, when the page has one, its summary (two lines);
+   **Added** joins the orders (the newest first: a pid is a ULID, so no date is stored for it); a
+   **List / Covers** switch draws the same rows as a wall of first pages (this browser's choice,
+   `reporion.library.view`).
+
+*Not built (ideas kept for later):* the PDF beside the text in a split view; a quick-look pane on the list
+(the abstract and actions without leaving it); a hover card on a `[@key]` citation (cover, reference,
+summary); a list of a source's highlights apart from its comments; read / to-read marks (ruled out
+2026-10-30); covers for EPUB and office files.
+
 ## Long sources
 
 The context is adaptive (owner, 2026-10-30): `library.context_tokens` (default 32 000). A source

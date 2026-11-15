@@ -57,6 +57,39 @@ final class LibraryTest extends HttpTestCase
         self::assertSame(404, $this->call('other', 'GET', '/library/file/' . $page['pid'])->status, 'no grant on the library');
     }
 
+    public function testACoverIsServedOnlyToWhoMaySeeTheSourceAndTheListCanBeSortedByAdded(): void
+    {
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $csl = ['type' => 'article-journal', 'title' => 'Made-up', 'issued' => ['date-parts' => [[2020]]]];
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml('<h1>A made-up article</h1><p>Its first page.</p>');
+        $dompdf->render();
+        $original = $storage->storeOriginal((string) $dompdf->output(), 'pdf') + ['pages' => 1, 'text' => true];
+        $first = $storage->create('library:zed2020', ['title' => 'Zed first', 'visibility' => 'private', 'csl' => $csl, 'original' => $original, 'summary' => 'What the made-up paper says.'], "Text.\n", 'owner');
+        $second = $storage->create('library:abel2021', ['title' => 'Abel second', 'visibility' => 'private', 'csl' => $csl], '', 'owner');
+
+        $view = $this->call('reader', 'GET', '/library')->body;
+        self::assertStringContainsString('/library/thumb/' . $first->pid . '?v=' . substr($original['sha256'], 0, 12), $view);
+        self::assertStringNotContainsString('/library/thumb/' . $second->pid, $view, 'no PDF, no cover');
+        self::assertStringContainsString('What the made-up paper says.', $view);
+        self::assertLessThan(strpos($view, 'Zed first'), strpos($view, 'Abel second'), 'by author, then title');
+        $added = $this->call('reader', 'GET', '/library?sort=added')->body;
+        self::assertLessThan(strpos($added, 'Zed first'), strpos($added, 'Abel second'), 'the newest first');
+        self::assertStringContainsString('/library/thumb/' . $first->pid, $this->call('reader', 'GET', '/library:zed2020')->body);
+
+        foreach ([null, 'other'] as $user) {
+            self::assertSame(404, $this->call($user, 'GET', '/library/thumb/' . $first->pid)->status, $user ?? 'anonymous');
+        }
+        self::assertSame(404, $this->call('reader', 'GET', '/library/thumb/' . $second->pid)->status);
+        if (trim((string) shell_exec('command -v pdftoppm')) === '') {
+            self::markTestSkipped('pdftoppm is not installed');
+        }
+        $cover = $this->call('reader', 'GET', '/library/thumb/' . $first->pid);
+        self::assertSame([200, 'image/jpeg', 'private, max-age=31536000, immutable'], [$cover->status, $cover->headers['Content-Type'], $cover->headers['Cache-Control']]);
+        self::assertSame("\xFF\xD8", substr($cover->body, 0, 2));
+        self::assertFileExists($this->dataRoot . '/tmp/thumbs/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.jpg');
+    }
+
     public function testOnlyAnEditorOfTheLibraryUploadsOrConfirms(): void
     {
         foreach ([null, 'reader', 'other'] as $user) {

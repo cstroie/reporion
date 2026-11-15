@@ -26,6 +26,7 @@ use Reporion\Service\Library\LibrarySearch;
 use Reporion\Service\Library\Merge;
 use Reporion\Service\Library\OnlineSearch;
 use Reporion\Service\Library\Related;
+use Reporion\Service\Library\Thumbnails;
 use Reporion\Support\Flashcards;
 use Reporion\Support\LibraryFilter;
 use Reporion\Service\Library\WebClip;
@@ -42,6 +43,7 @@ use Reporion\Support\InternalLink;
  * answered with the proposed record and a token; nothing kept but the temporary upload.
  * POST /api/v1/library {token, csl, key?, tags?}: the confirmed record, made a library page.
  * GET /library/file/{pid}: a source's original, to a signed-in caller who may see its page.
+ * GET /library/thumb/{pid}: its cover (the PDF's first page, a small JPEG), under the same rule.
  * GET /library: the library's view (phase 2): every source the caller may see, filtered by a tag,
  * sorted by author, year or title, with the upload form for an editor.
  * PUT /api/v1/library/{pid}/record {csl, base_rev, tags?}: a source's record corrected.
@@ -74,6 +76,7 @@ final class LibraryController
         private readonly ?Merge $merge = null,
         private readonly ?Related $related = null,
         private readonly ?OnlineSearch $online = null,
+        private readonly ?Thumbnails $thumbnails = null,
     ) {
     }
 
@@ -102,7 +105,7 @@ final class LibraryController
     public const IMPORT_EXTENSIONS = ['bib', 'ris', 'json'];
 
     /** The orders the view offers; the first is the default */
-    public const SORTS = ['author', 'year', 'title'];
+    public const SORTS = ['author', 'year', 'title', 'added'];
 
     public function index(Request $request, ?User $principal): Response
     {
@@ -128,6 +131,8 @@ final class LibraryController
         usort($entries, static fn (array $a, array $b): int => match ($sort) {
             'year' => [$b['year'] ?? 0, mb_strtolower($a['authors'])] <=> [$a['year'] ?? 0, mb_strtolower($b['authors'])],
             'title' => strcoll(mb_strtolower($a['title']), mb_strtolower($b['title'])),
+            // A pid is a ULID: it sorts by the moment the source was added, the newest first
+            'added' => strcmp($b['pid'], $a['pid']),
             default => [mb_strtolower($a['authors'] !== '' ? $a['authors'] : $a['title']), $a['year'] ?? 0] <=> [mb_strtolower($b['authors'] !== '' ? $b['authors'] : $b['title']), $b['year'] ?? 0],
         });
         // A text search (2026-11-02): the articles holding the words, best first, each with its passage
@@ -685,6 +690,37 @@ final class LibraryController
             // A clipped web page's scripts never run as this site, even if a browser rendered it (a sandbox would stop a PDF viewer)
             'Content-Security-Policy' => 'sandbox; default-src \'none\'',
         ]));
+    }
+
+    /**
+     * GET /library/thumb/{pid}: a source's cover, the first page of its PDF as a small JPEG
+     * (Service\Library\Thumbnails), to a signed-in caller who may see its page: the rule of its
+     * original. No PDF, or one that cannot be drawn: 404, and the page shows no picture
+     */
+    public function thumb(Request $request, string $pid, ?User $principal): Response
+    {
+        $notFound = new Response(404, 'Not found', ['Content-Type' => 'text/plain; charset=utf-8']);
+        $row = $principal !== null && $this->thumbnails !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($row === null) {
+            return $notFound;
+        }
+        try {
+            $page = $this->storage->read((string) $row['path']);
+        } catch (PageNotFoundException) {
+            return $notFound;
+        }
+        $file = $this->thumbnails->of($page->frontmatter['original'] ?? null);
+        $bytes = $file !== null ? file_get_contents($file) : false;
+        if ($bytes === false) {
+            return $notFound;
+        }
+
+        return new Response(200, $bytes, [
+            'Content-Type' => 'image/jpeg',
+            // The address carries the file's hash (?v=), so the picture behind one address never changes
+            'Cache-Control' => 'private, max-age=31536000, immutable',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     private const EXPORT_TYPES = [

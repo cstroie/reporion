@@ -7,7 +7,8 @@
  *   as the request body of POST /api/v1/library/uploads; its proposed record fills a copy of the
  *   record form (templates/partials/library-record-form.php) to correct, and Add sends it with
  *   the token to POST /api/v1/library. Discard keeps nothing (the upload expires on the server).
- * - library-list: the text filter over the table's rows (the sort and the tag are links).
+ * - library-list: the text filter over the table's rows (the sort and the tag are links); the
+ *   list / covers switch (this browser's choice).
  * - library-record (a source's page): Copy reference, and for a writer Edit record, the same
  *   form filled from the record, saved by PUT /api/v1/library/{pid}/record, then the page reloads.
  *
@@ -378,6 +379,34 @@
         if (name) name.focus();
       });
     }
+    // List or covers: the same rows, drawn as a table or as a wall of first pages; kept in this browser
+    var views = Array.prototype.slice.call(box.querySelectorAll('[data-lib-view]'));
+    function setView(view) {
+      box.setAttribute('data-view', view);
+      views.forEach(function (b) {
+        var on = b.getAttribute('data-lib-view') === view;
+        b.classList.toggle('seg-on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+    if (views.length) {
+      var kept = 'list';
+      try { kept = window.localStorage.getItem('reporion.library.view') || 'list'; } catch (e) { kept = 'list'; }
+      setView(kept === 'covers' ? 'covers' : 'list');
+      views.forEach(function (b) {
+        b.addEventListener('click', function () {
+          var view = b.getAttribute('data-lib-view');
+          setView(view);
+          try { window.localStorage.setItem('reporion.library.view', view); } catch (e) { /* no storage */ }
+        });
+      });
+    }
+    // A cover that cannot be drawn (404): the plain tile instead of a broken picture
+    box.querySelectorAll('.wk-lib-cover img').forEach(function (img) {
+      var plain = function () { var i = el('i', 'ph ph-file-text'); img.replaceWith(i); };
+      if (img.complete && img.naturalWidth === 0 && img.currentSrc) plain();
+      else img.addEventListener('error', plain);
+    });
     if (!filter) return;
     var fold = function (text) { return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
     var texts = rows.map(function (row) { return fold(row.textContent); });
@@ -398,6 +427,12 @@
 
   function mountRecord(box) {
     var cfg = config(box);
+    // A cover that cannot be drawn (404): the card without a picture
+    box.querySelectorAll('.wk-lib-cover-lg img').forEach(function (img) {
+      var gone = function () { if (img.parentNode) img.parentNode.remove(); };
+      if (img.complete && img.naturalWidth === 0 && img.currentSrc) gone();
+      else img.addEventListener('error', gone);
+    });
     var s = cfg.strings || {};
     var copy = box.querySelector('[data-lib-copy]');
     var ref = box.querySelector('[data-lib-ref]');
