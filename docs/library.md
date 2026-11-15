@@ -413,8 +413,9 @@ Readwise's selection menu. No storage, schema or text format changes: everything
    - The words and reading time (230 words a minute).
 2. **Covers** (`Service\Library\Thumbnails`, `GET /library/thumb/{pid}`): the first page of a source's PDF as
    a 300 px JPEG, drawn by `pdftoppm` (the OCR's program: an argument list, 20 s) the first time it is asked
-   for and kept in `data/tmp/thumbs/{ab}/{sha256}.jpg`: derived, never backed up (`tmp/` is left out), made
-   again when missing; delete the directory at will. A PDF pdftoppm refuses leaves an empty `{sha256}.none`
+   for and kept beside the PDF, `data/sources/{ab}/{sha256}.thumb.jpg` (owner, 2026-11-15: saved along the
+   sources, so backed up with them), made again when missing; `integrity:verify` passes the name over (it is
+   no original's). A PDF pdftoppm refuses leaves an empty `{sha256}.thumb.none`
    so it is not tried at every view; a missing program is tried again. Served under the rule of the original
    (the page's visibility; anonymous and no grant: 404), cached for good by the browser (the address
    carries the file's hash). Only a PDF has a cover; a record with no file, or another format, shows a plain tile.
@@ -426,10 +427,41 @@ Readwise's selection menu. No storage, schema or text format changes: everything
    **List / Covers** switch draws the same rows as a wall of first pages (this browser's choice,
    `reporion.library.view`).
 
-*Not built (ideas kept for later):* the PDF beside the text in a split view; a quick-look pane on the list
-(the abstract and actions without leaving it); a hover card on a `[@key]` citation (cover, reference,
-summary); a list of a source's highlights apart from its comments; read / to-read marks (ruled out
-2026-10-30); covers for EPUB and office files.
+5. **The map** (owner, 2026-11-15: "a mini-map by the scrollbar, as a code editor's"): a 38 px strip at the
+   window's right edge, on screens of 1024 px and more and for a text taller than a window and a half. The
+   whole text in small (a canvas: its blocks, its headings as accent lines, its pages as rules), the matches
+   of a search as bright lines right across, highlights as marks at the edge, what is in view as a lit band.
+   A click or a drag scrolls there; the pointer over it names the section and page. Drawn again when a
+   section folds, a search runs or the window changes.
+6. **Side by side** (a screen of 1200 px and more, a PDF): the original in a pane beside the text, staying in
+   view, in the browser's own PDF viewer (`#page=N&view=FitH&navpanes=0`). It goes to the page being read
+   0.7 s after the reader settles on one (the viewer takes a page only as it loads). Opening or closing it
+   keeps the reader on the page being read. The contents column gives way to it.
+7. **Highlights.** The page's open comments that quote it (D52, unchanged) are painted on the text where
+   their quote stands (white space folded; a quote cut at 300 characters or at a paragraph's end by its
+   first 80), with the comment as the mark's title; a quote clicked in the comments panel shows it in the
+   text. The selection's **Highlight** makes one in a click: a comment whose text is "Highlight" (the
+   comments API as it is, no new storage). A resolved comment's mark goes. `comments.js` announces its
+   list (`reporion:comments`) and reads it again when asked (`reporion:comments-reload`).
+8. **Where the reading stopped**, in this browser only (`reporion.library.recent`: the last twelve sources
+   opened, each with its page, title and cover address; nothing on the server, so not shared between a
+   reader's machines): *Continue at p. N* in the bar when a source is opened again, and **Opened lately**, a
+   strip of covers over the list, each link going to the page left.
+9. **Quick look** on the list: a row clicked (not its links) opens the paper in a pane at the window's right
+   edge, filled from the row itself (cover, title, authors, journal and year, summary, tags) plus the
+   record's abstract (700 characters, in the row) or, when the record has none, the abstract page beside
+   the source (`GET /api/v1/pages/{library}:{key}:abstract`, asked then). Arrows (or `j` / `k`) move to the
+   next row the filter shows, Enter opens it; *Copy citation key* copies `[@key]`.
+
+*Not built yet, chosen by the owner 2026-11-15 (each needs a decision first, noted):* **Ask this paper** (the
+notebook's ask on one source: a prompt page and an endpoint); **tabs** Overview / Text / Notes; **reading
+status** per account, To read / Reading / Read and a star (reverses 2026-10-30; where an account's marks
+are kept: its user file, as saved views, or a state table); **folders** by drag and drop (as tags: a
+revision of the source per move); a **hover card** on a `[@key]` citation (a small endpoint for a source's
+card); the **library in the report's rail** (passages matching the line being written, as Recall);
+**auto-digest on add** (summary, key points and tags by the assistant in the background: D8 says the
+writer applies; a maintenance task as `system:librarian`?); **tables and figures** extracted from the PDF
+(`pdfimages`, `pdftotext -layout` or a table tool: a dependency). Also: covers for EPUB and office files.
 
 ## Long sources
 

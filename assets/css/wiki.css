@@ -2366,8 +2366,31 @@ table.table.table-cards-compact.wk-lib-table td.wk-lib-rowtags { flex-wrap: wrap
 .wk-pagemark.wk-sect-h { flex-wrap: nowrap; }
 .wk-pagemark.wk-sect-h::after { flex: 0 1 auto; height: auto; background: none; order: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-body, inherit); font-size: var(--text-xs); }
 .wk-pagemark.wk-sect-h.is-folded { margin: 0; padding: var(--space-2) 0; border-top: 1px solid var(--color-divider); }
+.wk-prose mark.wk-hl { background: color-mix(in srgb, var(--state-warn) 32%, transparent); color: inherit; border-radius: 2px; cursor: help; }
+.wk-has-reader .wk-comment-quote { cursor: pointer; }
 .wk-prose mark.wk-find { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; border-radius: 2px; }
 .wk-prose mark.wk-find.is-current { background: var(--color-accent); color: var(--color-bg); }
+/* The map: the whole text in small at the window's right edge; what is in view is the lit band */
+.wk-reader-map { position: fixed; top: var(--wk-topbar-h); right: 0; bottom: 0; width: 38px; z-index: 15; cursor: pointer; border-left: 1px solid var(--color-divider); background: var(--color-bg); touch-action: none; }
+.wk-reader-map[hidden], .wk-reader-map-tip[hidden] { display: none; }
+.wk-reader-map canvas { display: block; width: 100%; height: 100%; }
+.wk-reader-map-view { position: absolute; left: 0; right: 0; background: color-mix(in srgb, var(--color-accent) 16%, transparent); border-top: 1px solid var(--color-accent); border-bottom: 1px solid var(--color-accent); pointer-events: none; }
+.wk-reader-map-tip { position: fixed; right: 46px; z-index: 41; max-width: 22rem; padding: 2px var(--space-2); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+/* The PDF beside the text: two columns under the bar, the PDF staying in view */
+.wk-reader-split { display: none; }
+@media (min-width: 1200px) { .wk-reader-split:not([hidden]) { display: inline-flex; } }
+.wk-reader-pdf[hidden] { display: none; }
+@media (min-width: 1200px) {
+  .wk-docgrid.wk-split-on { display: block; }
+  .wk-docgrid.wk-split-on > .wk-toc { display: none; }
+  .wk-docmain.wk-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--space-5); align-items: start; }
+  .wk-docmain.wk-split > * { grid-column: 1; }
+  .wk-docmain.wk-split > .wk-reader { grid-column: 1 / -1; }
+  .wk-docmain.wk-split > .wk-reader-pdf { grid-column: 2; grid-row: 2; position: sticky; top: calc(var(--wk-topbar-h) + var(--wk-reader-h, 3.5rem) + var(--space-2)); height: calc(100vh - var(--wk-topbar-h) - var(--wk-reader-h, 3.5rem) - var(--space-5)); }
+  .wk-docmain.wk-split > .wk-prosebox { grid-row: 2; }
+  .wk-reader-pdf iframe { display: block; width: 100%; height: 100%; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); background: #fff; }
+}
+@media (max-width: 1199px) { .wk-reader-pdf { display: none; } }
 /* What can be done with a selection of the text: beside it, not at the end of the page */
 .wk-reader-pop { position: absolute; z-index: 40; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: 0 6px 20px rgb(0 0 0 / .35); }
 .wk-reader-pop[hidden] { display: none; }
@@ -2385,6 +2408,26 @@ table.table.table-cards-compact.wk-lib-table td.wk-lib-rowtags { flex-wrap: wrap
 .wk-lib-lead { margin: var(--space-3) 0; padding-left: var(--space-3); border-left: 2.5px solid var(--color-accent); line-height: 1.5; }
 .wk-lib-head .wk-lib-abstract { margin-top: var(--space-3); }
 @media (max-width: 575px) { .wk-lib-head { gap: var(--space-3); } .wk-lib-cover-lg { width: 4.5rem; } .wk-lib-head .wk-lib-abstract-text { max-height: 14rem; } }
+/* Opened lately: the sources this browser read last, each where it was left */
+.wk-lib-recent { display: flex; gap: var(--space-4); overflow-x: auto; padding: var(--space-4) 0 var(--space-2); border-top: 1px solid var(--color-divider); scrollbar-width: thin; }
+.wk-lib-recent[hidden] { display: none; }
+.wk-lib-recent > .wk-lib-facet-h { flex: none; align-self: flex-start; }
+.wk-lib-recent-item { flex: 0 0 13rem; display: flex; gap: var(--space-2); align-items: flex-start; min-width: 0; color: inherit; text-decoration: none; font-size: var(--text-xs); line-height: 1.35; }
+.wk-lib-recent-item:hover .wk-lib-cover { border-color: var(--color-accent); }
+.wk-lib-recent-item span.wk-lib-recent-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+/* Quick look: the paper beside the list, the whole height of the window at its right edge */
+.wk-lib-table tr[data-lib-row] { cursor: pointer; }
+.wk-lib-table tr.wk-sel td { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+dialog.wk-modal.wk-lib-peek { width: min(30rem, 100vw); height: 100dvh; max-height: none; margin: 0 0 0 auto; border-radius: 0; border-left: 1px solid var(--color-divider); }
+.wk-lib-peek > footer { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-lib-peek > footer > [hidden] { display: none; }
+.wk-lib-peek-head { display: flex; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-4); }
+.wk-lib-peek-head .wk-lib-cover-lg { width: 7rem; }
+.wk-lib-peek-text { min-width: 0; }
+.wk-lib-peek-text p { margin: var(--space-1) 0 0; }
+.wk-lib-peek-title { margin: 0; font-size: var(--text-md); line-height: 1.3; overflow-wrap: anywhere; }
+.wk-lib-peek-abstract { line-height: 1.6; margin: 0 0 var(--space-4); }
+.wk-lib-peek-abstract[hidden] { display: none; }
 /* Covers: the same rows as a wall of first pages */
 .wk-lib-list[data-view="covers"] table.table.wk-lib-table { display: block; min-width: 0; overflow: visible; }
 .wk-lib-list[data-view="covers"] table.table.table-cards.wk-lib-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

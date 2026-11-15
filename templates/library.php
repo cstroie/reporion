@@ -162,13 +162,15 @@ $collectionQuery = array_filter(['q' => $query, 'tag' => $tag, 'sort' => $sort =
 <?php endif; ?>
 </div>
 <?php endif; ?>
+<?php /* Opened lately (2026-11-15): what this browser read last and where it stopped (library-reader.js keeps it; nothing on the server) */ ?>
+<div class="wk-lib-recent" data-lib-recent data-page="<?= $e(t('library.reader.page_n')) ?>" hidden><span class="wk-lib-facet-h"><?= $e(t('library.recent')) ?></span></div>
 <?php if ($searched): ?><p class="wk-dim wk-text-sm" role="status"><?= $e(t($total === 0 ? 'library.search_none' : 'library.search_found', [(string) $total, $query])) ?></p><?php endif; ?>
 </div>
 <table class="table table-cards table-cards-compact wk-lib-table">
 <thead><tr><th><?= $e(t('library.col_article')) ?></th><th><?= $e(t('library.col_year')) ?></th><th><?= $e(t('library.col_journal')) ?></th><th><?= $e(t('library.col_cited')) ?></th><th><?= $e(t('library.col_tags')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($entries as $entry): ?>
-<tr data-lib-row>
+<tr data-lib-row data-key="<?= $e($entry['key']) ?>"<?= $entry['abstract'] !== '' ? ' data-abstract="' . $e($entry['abstract']) . '"' : '' ?>>
 <td class="wk-card-head"><div class="wk-lib-art">
 <a class="wk-lib-cover" href="<?= $e($basePath . '/' . $entry['path']) ?>" tabindex="-1" aria-hidden="true"><?php if ($entry['cover'] !== ''): /* the PDF's first page (GET /library/thumb/{pid}), drawn when first asked for */ ?><img src="<?= $e($basePath . '/library/thumb/' . $entry['pid'] . '?v=' . $entry['cover']) ?>" alt="" loading="lazy" decoding="async" width="150" height="212"><?php else: ?><i class="ph <?= $entry['ext'] !== '' ? 'ph-file-text' : 'ph-quotes' ?>"></i><?php endif; ?></a>
 <div class="wk-lib-art-text"><a href="<?= $e($basePath . '/' . $entry['path']) ?>"><?= $e($entry['title']) ?></a><?php if ($entry['ext'] !== ''): ?> <a class="wk-lib-file" href="<?= $e($basePath . '/library/file/' . $entry['pid']) ?>" title="<?= $e(t('library.original')) ?>"><i class="ph ph-file" aria-hidden="true"></i><?= $e($entry['ext']) ?></a><?php endif; ?><?php if (($entry['notice'] ?? null) !== null): ?> <span class="wk-src-flag wk-src-flag-<?= $e($entry['notice']) ?>" title="<?= $e(t('library.notice.banner_' . $entry['notice'])) ?>"><?= $e(t('library.notice.' . $entry['notice'])) ?></span><?php endif; ?><?php if ($entry['authors'] !== ''): ?><span class="wk-lib-authors wk-dim wk-text-sm"><?= $e($entry['authors']) ?></span><?php endif; ?><?php if ($entry['summary'] !== '' && ($entry['snippet'] ?? '') === ''): /* its one-line summary: what the paper says, before it is opened */ ?><span class="wk-lib-summary wk-dim wk-text-sm"><?= $e($entry['summary']) ?></span><?php endif; ?><?php if (($entry['snippet'] ?? '') !== ''): /* highlightSnippet(): escaped, then <mark> */ ?><span class="wk-lib-snippet wk-text-sm"><?= $entry['snippet'] ?><?= isset($entry['page']) && $entry['page'] !== null ? ' <span class="wk-dim">p. ' . (int) $entry['page'] . '</span>' : '' ?></span><?php endif; ?></div></div>
@@ -181,6 +183,19 @@ $collectionQuery = array_filter(['q' => $query, 'tag' => $tag, 'sort' => $sort =
 <?php endforeach; ?>
 </tbody>
 </table>
+<?php /* Quick look (2026-11-15): a row clicked opens the paper beside the list, filled from the row itself; the arrows move to the next */ ?>
+<dialog class="wk-modal wk-lib-peek" aria-labelledby="wk-lib-peek-title" data-lib-peek data-api="<?= $e($basePath . '/api/v1/pages/' . $namespace . ':') ?>" data-strings="<?= $e((string) json_encode(['copied' => t('library.copied'), 'more' => t('library.peek.more')], JSON_UNESCAPED_UNICODE)) ?>">
+<header><h2 class="wk-eyebrow" id="wk-lib-peek-title"><i class="ph ph-eye" aria-hidden="true"></i> <?= $e(t('library.peek.title')) ?></h2>
+<button type="button" class="wk-tbtn" data-peek-prev title="<?= $e(t('library.peek.prev')) ?>" aria-label="<?= $e(t('library.peek.prev')) ?>"><i class="ph ph-caret-up"></i></button>
+<button type="button" class="wk-tbtn" data-peek-next title="<?= $e(t('library.peek.next')) ?>" aria-label="<?= $e(t('library.peek.next')) ?>"><i class="ph ph-caret-down"></i></button>
+<button type="button" class="wk-tbtn" data-modal-close title="<?= $e(t('drawer.close')) ?>" aria-label="<?= $e(t('drawer.close')) ?>"><i class="ph ph-x"></i></button></header>
+<div class="wk-modal-main" data-peek-body></div>
+<footer>
+<button type="button" class="btn btn-ghost" data-peek-cite title="<?= $e(t('library.peek.cite_title')) ?>"><i class="ph ph-quotes" aria-hidden="true"></i><span data-peek-cite-label><?= $e(t('library.peek.cite')) ?></span></button>
+<a class="btn btn-secondary" data-peek-file target="_blank" rel="noopener" hidden><i class="ph ph-file" aria-hidden="true"></i><?= $e(t('library.original')) ?></a>
+<a class="btn btn-primary" data-peek-open><i class="ph ph-book-open-text" aria-hidden="true"></i><?= $e(t('library.peek.open')) ?></a>
+</footer>
+</dialog>
 <p class="wk-dim" data-lib-none hidden><?= $e(t('library.none_match')) ?></p>
 <?php if ($collectionQuery !== []): /* Save this view as a collection (D60): the name asked in a modal; POST /profile/views */ ?>
 <dialog class="wk-modal" id="wk-lib-save-modal" aria-labelledby="wk-lib-save-title" data-lib-save>

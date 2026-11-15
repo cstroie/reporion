@@ -717,7 +717,7 @@ final class Library
      *
      * `cover` is the start of its PDF's hash when it can have a cover (Thumbnails), else ''.
      *
-     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string, summary: string, cover: string}>
+     * @return list<array{pid: string, path: string, key: string, title: string, authors: string, year: ?int, journal: string, tags: list<string>, cited: int, ext: string, doi: string, notice: ?string, summary: string, cover: string, abstract: string}>
      */
     public function entries(User $principal): array
     {
@@ -744,6 +744,8 @@ final class Library
                 'notice' => SourceNotice::clean($meta['notice'] ?? null)['status'] ?? null,
                 'summary' => \is_string($meta['summary'] ?? null) ? trim($meta['summary']) : '',
                 'cover' => Thumbnails::possible($meta['original'] ?? null) ? substr((string) $meta['original']['sha256'], 0, 12) : '',
+                // The record's abstract, cut short: what the list's quick look shows (the whole is on the source's page)
+                'abstract' => \is_string($csl['abstract'] ?? null) ? mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($csl['abstract'])) ?? ''), 0, 700) : '',
             ];
         }
 

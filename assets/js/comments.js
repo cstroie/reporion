@@ -124,6 +124,8 @@
     }
 
     function show(comments) {
+      // A library source's reader paints the open comments' quotes on the text (library-reader.js)
+      document.dispatchEvent(new CustomEvent('reporion:comments', { detail: comments }));
       var open = comments.filter(function (c) { return !c.resolved; });
       var done = comments.filter(function (c) { return c.resolved; });
       list.innerHTML = '';
@@ -226,6 +228,8 @@
       });
     }
 
+    // The reader's Highlight adds a comment by itself: the list is read again
+    document.addEventListener('reporion:comments-reload', load);
     load();
   }
 

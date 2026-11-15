@@ -12,8 +12,8 @@ use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\RecordingIndex;
 
 /**
- * A source's cover (docs/library.md, *The reader*), pdftoppm stubbed: drawn once and kept in
- * data/tmp/thumbs, only for a PDF, a PDF that cannot be drawn not tried at every view.
+ * A source's cover (docs/library.md, *The reader*), pdftoppm stubbed: drawn once and kept beside
+ * the PDF in data/sources, only for a PDF, a PDF that cannot be drawn not tried at every view.
  */
 final class ThumbnailsTest extends TestCase
 {
@@ -43,7 +43,7 @@ final class ThumbnailsTest extends TestCase
 
         $file = $thumbs->of($original);
 
-        self::assertSame($this->dataRoot . '/tmp/thumbs/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.jpg', $file);
+        self::assertSame($this->dataRoot . '/sources/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.thumb.jpg', $file);
         self::assertSame('JPEG', file_get_contents((string) $file));
         $argv = $this->ran[0];
         self::assertSame(['pdftoppm', '-f', '1', '-l', '1', '-singlefile', '-jpeg', '-scale-to-x', '300', '-scale-to-y', '-1'], \array_slice($argv, 0, 11));
@@ -51,7 +51,7 @@ final class ThumbnailsTest extends TestCase
 
         self::assertSame($file, $thumbs->of($original));
         self::assertCount(1, $this->ran, 'the second view reads the kept file');
-        self::assertSame([$original['sha256'] . '.jpg'], array_values(array_diff(scandir(\dirname((string) $file)) ?: [], ['.', '..'])), 'nothing half-written left behind');
+        self::assertSame([$original['sha256'] . '.pdf', $original['sha256'] . '.thumb.jpg'], array_values(array_diff(scandir(\dirname((string) $file)) ?: [], ['.', '..'])), 'nothing half-written left behind');
     }
 
     public function testOnlyAPdfThatIsThereHasACover(): void
@@ -87,7 +87,7 @@ final class ThumbnailsTest extends TestCase
 
     private function thumbnails(int $exit, ?string $writes): Thumbnails
     {
-        return new Thumbnails($this->storage, $this->dataRoot . '/tmp', 'pdftoppm', function (array $argv, int $timeout, array $env) use ($exit, $writes): array {
+        return new Thumbnails($this->storage, 'pdftoppm', function (array $argv, int $timeout, array $env) use ($exit, $writes): array {
             $this->ran[] = $argv;
             if ($writes !== null) {
                 file_put_contents(end($argv) . '.jpg', $writes);

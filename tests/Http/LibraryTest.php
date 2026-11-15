@@ -87,7 +87,7 @@ final class LibraryTest extends HttpTestCase
         $cover = $this->call('reader', 'GET', '/library/thumb/' . $first->pid);
         self::assertSame([200, 'image/jpeg', 'private, max-age=31536000, immutable'], [$cover->status, $cover->headers['Content-Type'], $cover->headers['Cache-Control']]);
         self::assertSame("\xFF\xD8", substr($cover->body, 0, 2));
-        self::assertFileExists($this->dataRoot . '/tmp/thumbs/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.jpg');
+        self::assertFileExists($this->dataRoot . '/sources/' . substr($original['sha256'], 0, 2) . '/' . $original['sha256'] . '.thumb.jpg');
     }
 
     public function testOnlyAnEditorOfTheLibraryUploadsOrConfirms(): void

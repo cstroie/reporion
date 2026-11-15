@@ -8,7 +8,8 @@
  *   record form (templates/partials/library-record-form.php) to correct, and Add sends it with
  *   the token to POST /api/v1/library. Discard keeps nothing (the upload expires on the server).
  * - library-list: the text filter over the table's rows (the sort and the tag are links); the
- *   list / covers switch (this browser's choice).
+ *   list / covers switch (this browser's choice); the quick look (a row clicked opens the paper
+ *   beside the list, filled from the row; the arrows move to the next).
  * - library-record (a source's page): Copy reference, and for a writer Edit record, the same
  *   form filled from the record, saved by PUT /api/v1/library/{pid}/record, then the page reloads.
  *
@@ -407,6 +408,139 @@
       if (img.complete && img.naturalWidth === 0 && img.currentSrc) plain();
       else img.addEventListener('error', plain);
     });
+    // Opened lately: kept in this browser by the reader (library-reader.js), shown as a strip of covers
+    var recentBox = box.querySelector('[data-lib-recent]');
+    if (recentBox) {
+      var opened = [];
+      try { opened = JSON.parse(window.localStorage.getItem('reporion.library.recent')) || []; } catch (e) { opened = []; }
+      opened.slice(0, 8).forEach(function (source) {
+        if (!source || typeof source.href !== 'string' || source.href.charAt(0) !== '/' || source.href.charAt(1) === '/') return;
+        var a = el('a', 'wk-lib-recent-item');
+        a.href = source.href + (source.page && source.page !== '1' ? '#p' + source.page : '');
+        var cover = el('span', 'wk-lib-cover');
+        if (typeof source.cover === 'string' && source.cover.charAt(0) === '/' && source.cover.charAt(1) !== '/') {
+          var img = el('img');
+          img.src = source.cover;
+          img.alt = '';
+          img.loading = 'lazy';
+          cover.appendChild(img);
+        } else {
+          cover.appendChild(icon('file-text'));
+        }
+        a.appendChild(cover);
+        var words = el('span', 'wk-lib-recent-title', String(source.title || source.key || ''));
+        if (source.page && source.page !== '1') {
+          words.appendChild(document.createTextNode(' '));
+          words.appendChild(el('span', 'wk-dim wk-mono', (recentBox.getAttribute('data-page') || '%s').replace('%s', source.page)));
+        }
+        a.appendChild(words);
+        recentBox.appendChild(a);
+      });
+      recentBox.hidden = recentBox.children.length < 2;
+    }
+    // Quick look: a row clicked (not its links) opens the paper beside the list, filled from the row;
+    // the arrows move to the row above or below that the filter still shows
+    var peek = box.querySelector('[data-lib-peek]');
+    if (peek && typeof peek.showModal === 'function') {
+      var peekBody = peek.querySelector('[data-peek-body]');
+      var peekOpen = peek.querySelector('[data-peek-open]');
+      var peekFile = peek.querySelector('[data-peek-file]');
+      var peekCite = peek.querySelector('[data-peek-cite]');
+      var peekCiteLabel = peek.querySelector('[data-peek-cite-label]');
+      var peekStrings = {};
+      try { peekStrings = JSON.parse(peek.getAttribute('data-strings')) || {}; } catch (e) { peekStrings = {}; }
+      var citeText = peekCiteLabel.textContent;
+      var peeked = null;
+      var show = function (row) {
+        peeked = row;
+        rows.forEach(function (r) { r.classList.toggle('wk-sel', r === row); });
+        var title = row.querySelector('.wk-lib-art-text > a');
+        var img = row.querySelector('.wk-lib-cover img');
+        var text = function (sel) { var n = row.querySelector(sel); return n ? n.textContent.trim() : ''; };
+        peekBody.textContent = '';
+        var head = el('div', 'wk-lib-peek-head');
+        if (img) {
+          var cover = el('span', 'wk-lib-cover wk-lib-cover-lg');
+          var copy = el('img');
+          copy.src = img.currentSrc || img.src;
+          copy.alt = '';
+          cover.appendChild(copy);
+          head.appendChild(cover);
+        }
+        var words = el('div', 'wk-lib-peek-text');
+        words.appendChild(el('h3', 'wk-lib-peek-title', title ? title.textContent : ''));
+        var authors = text('.wk-lib-authors');
+        if (authors) words.appendChild(el('p', 'wk-dim', authors));
+        var facts = [row.cells[2] ? row.cells[2].textContent.trim() : '', row.cells[1] ? row.cells[1].textContent.trim() : ''].filter(Boolean).join(' · ');
+        if (facts) words.appendChild(el('p', 'wk-dim wk-text-sm', facts));
+        var flag = row.querySelector('.wk-src-flag');
+        if (flag) words.appendChild(flag.cloneNode(true));
+        head.appendChild(words);
+        peekBody.appendChild(head);
+        var summary = text('.wk-lib-summary');
+        if (summary) peekBody.appendChild(el('p', 'wk-lib-lead', summary));
+        var abstract = row.getAttribute('data-abstract') || '';
+        var abstractEl = el('p', 'wk-lib-peek-abstract', abstract + (abstract.length >= 700 ? (peekStrings.more || '…') : ''));
+        abstractEl.hidden = abstract === '';
+        peekBody.appendChild(abstractEl);
+        // No abstract in the record: the one kept beside the source (its abstract page), when there is one
+        var api = peek.getAttribute('data-api');
+        if (abstract === '' && api) {
+          fetch(api + encodeURIComponent(row.getAttribute('data-key')) + ':abstract', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (json) {
+              var body = json && typeof json.body === 'string' ? json.body.replace(/\s+/g, ' ').trim() : '';
+              if (body === '' || peeked !== row) return;
+              abstractEl.textContent = body.length > 1200 ? body.slice(0, 1200) + (peekStrings.more || '…') : body;
+              abstractEl.hidden = false;
+            }, function () { /* no abstract shown */ });
+        }
+        var tags = row.querySelector('.wk-lib-rowtags');
+        if (tags && tags.children.length) {
+          var chips = el('div', 'wk-lib-chips');
+          Array.prototype.forEach.call(tags.children, function (chip) { chips.appendChild(chip.cloneNode(true)); });
+          peekBody.appendChild(chips);
+        }
+        peekOpen.href = title ? title.href : '#';
+        var file = row.querySelector('.wk-lib-file');
+        peekFile.hidden = !file;
+        if (file) peekFile.href = file.href;
+        peekCiteLabel.textContent = citeText;
+        peekBody.scrollTop = 0;
+        if (!peek.open) peek.showModal();
+      };
+      var step = function (by) {
+        var shown = rows.filter(function (r) { return !r.hidden; });
+        var i = shown.indexOf(peeked);
+        var to = shown[i + by];
+        if (to) { show(to); to.scrollIntoView({ block: 'nearest' }); }
+      };
+      rows.forEach(function (row) {
+        row.addEventListener('click', function (event) {
+          if (event.target.closest('a, button, input, select')) return;
+          var sel = window.getSelection ? window.getSelection() : null;
+          if (sel && !sel.isCollapsed) return;
+          show(row);
+        });
+      });
+      peek.querySelector('[data-peek-prev]').addEventListener('click', function () { step(-1); });
+      peek.querySelector('[data-peek-next]').addEventListener('click', function () { step(1); });
+      peek.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowDown' || event.key === 'j') { event.preventDefault(); step(1); }
+        else if (event.key === 'ArrowUp' || event.key === 'k') { event.preventDefault(); step(-1); }
+        else if (event.key === 'Enter' && !event.target.closest('a, button')) { window.location.href = peekOpen.href; }
+      });
+      peek.addEventListener('click', function (event) {
+        if (event.target === peek || event.target.closest('[data-modal-close]')) peek.close();
+      });
+      peek.addEventListener('close', function () { rows.forEach(function (r) { r.classList.remove('wk-sel'); }); });
+      peekCite.addEventListener('click', function () {
+        if (!peeked || !navigator.clipboard) return;
+        navigator.clipboard.writeText('[@' + peeked.getAttribute('data-key') + ']').then(function () {
+          peekCiteLabel.textContent = peekStrings.copied || citeText;
+        }, function () { /* not copied: the label stays */ });
+      });
+    }
     if (!filter) return;
     var fold = function (text) { return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
     var texts = rows.map(function (row) { return fold(row.textContent); });

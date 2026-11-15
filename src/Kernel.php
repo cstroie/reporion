@@ -633,8 +633,8 @@ final class Kernel
             self::libraryMerge($config, $storage, $index, $audit),
             new \Reporion\Service\Library\Related($index, self::libraryNamespace($config), \Reporion\Service\Ai\Embedder::minScore($config)),
             new \Reporion\Service\Library\OnlineSearch(self::library($config, $storage, $index, $audit), ($config['library']['search'] ?? false) === true ? new Lookup(Lookup::http()) : null),
-            // Covers: the first page of a source's PDF, drawn by pdftoppm (the OCR's program) and kept in data/tmp/thumbs
-            new \Reporion\Service\Library\Thumbnails($storage, (string) $config['paths']['data'] . '/tmp', \is_string($config['library']['tools']['pdftoppm'] ?? null) && $config['library']['tools']['pdftoppm'] !== '' ? $config['library']['tools']['pdftoppm'] : 'pdftoppm'),
+            // Covers: the first page of a source's PDF, drawn by pdftoppm (the OCR's program) and kept beside the PDF
+            new \Reporion\Service\Library\Thumbnails($storage, \is_string($config['library']['tools']['pdftoppm'] ?? null) && $config['library']['tools']['pdftoppm'] !== '' ? $config['library']['tools']['pdftoppm'] : 'pdftoppm'),
         );
         // Failed sign-ins, OAuth registrations and redeemed codes (D56 hardening): a status note in data/tmp
         $auth = new AuthController($users, $session, $audit, $throttle);

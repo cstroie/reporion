@@ -12,10 +12,11 @@ use Reporion\Storage\StorageInterface;
 /**
  * A library source's cover: the first page of its PDF as a small JPEG, a visual clue to tell one
  * paper from another (docs/library.md, *The reader*). Made by `pdftoppm` (an argument list, no
- * shell, a timeout: as the OCR's pages) the first time it is asked for and kept in
- * `data/tmp/thumbs/{ab}/{sha256}.jpg`: derived, never backed up (tmp/ is left out), made again
- * when missing. A PDF pdftoppm cannot draw leaves an empty `{sha256}.none`, so it is not tried
- * on every view. Only PDFs have a cover; the caller checks who may see the source.
+ * shell, a timeout: as the OCR's pages) the first time it is asked for and kept beside the PDF,
+ * `data/sources/{ab}/{sha256}.thumb.jpg` (owner, 2026-11-15): backed up with it, made again
+ * when missing; the name is no original's (`{sha256}.{ext}`), so integrity:verify passes it over.
+ * A PDF pdftoppm cannot draw leaves an empty `{sha256}.thumb.none`, so it is not tried on every
+ * view. Only PDFs have a cover; the caller checks who may see the source.
  */
 final class Thumbnails
 {
@@ -29,7 +30,6 @@ final class Thumbnails
      */
     public function __construct(
         private readonly StorageInterface $storage,
-        private readonly string $tmpRoot,
         private readonly string $pdftoppm = 'pdftoppm',
         private readonly ?\Closure $runner = null,
     ) {
@@ -57,15 +57,12 @@ final class Thumbnails
         if ($pdf === null) {
             return null;
         }
-        $dir = $this->tmpRoot . '/thumbs/' . substr($sha, 0, 2);
-        $file = $dir . '/' . $sha . '.jpg';
+        $dir = \dirname($pdf);
+        $file = $dir . '/' . $sha . '.thumb.jpg';
         if (is_file($file)) {
             return $file;
         }
-        if (is_file($dir . '/' . $sha . '.none')) {
-            return null;
-        }
-        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+        if (is_file($dir . '/' . $sha . '.thumb.none')) {
             return null;
         }
         // pdftoppm adds `.jpg` to the prefix; a name of its own, so two requests never share a half-written file
@@ -77,7 +74,7 @@ final class Thumbnails
             @unlink($made);
             // The program is missing (-1, 127) or was killed: try again another time; a PDF it refuses is not asked again
             if ($exit > 0 && $exit !== 127) {
-                @touch($dir . '/' . $sha . '.none');
+                @touch($dir . '/' . $sha . '.thumb.none');
             }
 
             return null;
