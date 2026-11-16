@@ -36,6 +36,8 @@ use Reporion\Controller\McpController;
 use Reporion\Controller\OAuthController;
 use Reporion\Controller\LibraryAiController;
 use Reporion\Controller\GuideController;
+use Reporion\Controller\WorkupController;
+use Reporion\Service\Workup\Workup;
 use Reporion\Controller\LibraryController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
@@ -930,6 +932,20 @@ final class Kernel
             => $ask->ask($request, $session->principal($request)));
         $router->post('/api/v1/recall', static fn (Request $request, array $params): Response
             => $recall->find($request, $session->principal($request)));
+        // Workup (D63): the evidence for the report in front, then one synthesis
+        $workup = new WorkupController($editorPages, new Workup(
+            $aiActions,
+            $assistant,
+            $storage,
+            $index,
+            new PriorStudy($storage, $index),
+            new ArchiveAsk($index, $embedModel !== null ? ['model' => $embedModel, 'min' => Embedder::minScore($config), 'common' => $commonMin] : null),
+            $passageSearch,
+            self::guide((string) $config['paths']['data'], $index),
+            self::libraryNamespace($config),
+        ), $aiConfig);
+        $router->post('/api/v1/workup', static fn (Request $request, array $params): Response
+            => $workup->workup($request, $session->principal($request)));
         $router->post('/api/v1/checks', static fn (Request $request, array $params): Response
             => $writingAids->checks($request, $session->principal($request)));
         $router->post('/api/v1/textflow', static fn (Request $request, array $params): Response

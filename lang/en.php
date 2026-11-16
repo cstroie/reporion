@@ -2229,6 +2229,8 @@ return [
     'library.bookmarklet_title' => 'Bookmarklet',
     'library.bookmarklet'      => 'Save to the library',
     'library.bookmarklet_help' => 'Drag this to your bookmarks bar. On an article\'s page, press it: the library opens with that address filled in, and you press Clip. Nothing is fetched until then.',
+    'workup.no_prompt'         => 'The assistant has no Workup prompt for this report: the evidence is shown without a synthesis.',
+    'workup.no_guide'          => 'The imaging guide is not loaded, so Next steps has no guide lines.',
     'guide.title'              => 'Imaging guide',
     'guide.intro'              => 'The Romanian guide to imaging indications (Ghid de indicații radioimagistice, Ministry of Health): which exam for which clinical situation, how strongly, with what evidence and dose.',
     'guide.search'             => 'Search the guide',
