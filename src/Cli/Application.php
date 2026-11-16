@@ -212,6 +212,11 @@ final class Application
 
             return new TagsReviewCommand($maintenance($storage, $index));
         });
+        $app->register('guide:load', GuideLoadCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [, $index] = $indexAndStorage();
+
+            return new GuideLoadCommand(Kernel::guide((string) $config['paths']['data'], $index), $audit());
+        });
         $app->register('page:new', PageNewCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 

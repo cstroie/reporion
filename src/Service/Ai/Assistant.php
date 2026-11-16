@@ -119,6 +119,22 @@ final class Assistant
     }
 
     /**
+     * Workup's synthesis (D63): the `workup` prompt over the gathered blocks (Context::workup()),
+     * its pieces to $emit as they come; the page's pid on the `ai.call` line
+     *
+     * @param array<string, mixed> $facts  Workup::facts()
+     * @param array<string, mixed> $blocks Workup::gather()
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runWorkup(Action $action, PageRecord $page, array $facts, array $blocks, User $user, ?Request $request, \Closure $emit): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->workup($action, $page, $facts, $blocks), $page, $user, $request, $emit);
+    }
+
+    /**
      * Ask the archive's first step (D53): the `ask-expand` prompt's answer for a
      * question and the earlier turns (Context::expand()). Same lock, retries and
      * `ai.call` line as the rest, no page on it.

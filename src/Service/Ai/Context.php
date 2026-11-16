@@ -383,6 +383,80 @@ final class Context
     }
 
     /**
+     * Workup's synthesis (D63): the report's findings, conclusion and indication, and the four
+     * gathered blocks numbered `[block.item]`, de-identified: the Redactor learns this report and
+     * every report a block quotes before anything is redacted, then the prompt is checked for a
+     * leak (nothing sent then). The guide's rows are public and go as they are. Placeholders:
+     * {findings} {conclusion} {indication} {exam} {age} {sex} {blocks} {language} {current_date}.
+     *
+     * @param array<string, mixed> $facts  Service\Workup\Workup::facts()
+     * @param array<string, mixed> $blocks Service\Workup\Workup::gather()
+     *
+     * @throws AiException identifier_leak
+     */
+    public function workup(Action $action, PageRecord $page, array $facts, array $blocks): Prompt
+    {
+        $redactor = new Redactor();
+        $redactor->learn($page->frontmatter, $page->path, $page->body);
+        foreach ([...$blocks['context']['studies'], ...$blocks['similar']] as $item) {
+            $record = $this->study($item['path']);
+            if ($record !== null) {
+                $redactor->learn($record->frontmatter, $record->path, $record->body);
+            }
+        }
+        $clean = fn (string $text): string => self::escape(trim(Redactor::scrubContacts($redactor->redact($text, $page->frontmatter))));
+        $out = [];
+        $lines = [];
+        foreach ($blocks['library'] as $i => $p) {
+            $lines[] = '[1.' . ($i + 1) . '] ' . ($p['key'] !== null ? '[@' . $p['key'] . '] ' : '') . self::escape($p['title']) . ($p['page'] !== null ? ' (p. ' . $p['page'] . ')' : '') . ': ' . $clean($p['text']);
+        }
+        $out[] = "<block id=\"1\" name=\"library\">\n" . ($lines !== [] ? implode("\n", $lines) : '(nimic)') . "\n</block>";
+        $lines = [];
+        foreach ($blocks['context']['studies'] as $i => $s) {
+            $lines[] = '[2.' . ($i + 1) . '] ' . self::escape(trim($s['date'] . ' ' . $s['exam'])) . ($s['status'] === 'archived' ? ' (HIS)' : '') . ': ' . $clean($s['text']);
+        }
+        $out[] = "<block id=\"2\" name=\"context\">\n" . ($lines !== [] ? implode("\n", $lines) : '(niciun alt examen)') . "\n</block>";
+        $lines = [];
+        foreach ($blocks['similar'] as $i => $s) {
+            $lines[] = '[3.' . ($i + 1) . '] ' . self::escape((string) ($s['modality'] ?? '')) . ': ' . $clean($s['text']) . ($s['conclusion'] !== '' ? ' — Concluzie: ' . $clean($s['conclusion']) : '');
+        }
+        $out[] = "<block id=\"3\" name=\"similar\">\n" . ($lines !== [] ? implode("\n", $lines) : '(nimic)') . "\n</block>";
+        $lines = [];
+        $n = 0;
+        foreach ($blocks['next']['guide'] as $g) {
+            $rows = array_map(static fn (array $x): string => '  - ' . $x['exam'] . ': ' . $x['indication'] . ($x['grade'] !== '' ? ' (' . $x['grade'] . ')' : '') . (($x['this'] ?? false) ? ' ← acest examen' : ''), $g['exams']);
+            $comment = array_values(array_filter(array_column($g['exams'], 'comment')))[0] ?? '';
+            $lines[] = '[4.' . ++$n . '] Ghid: ' . self::escape($g['chapter'] . ' — ' . $g['title']) . "\n" . self::escape(implode("\n", $rows)) . ($comment !== '' ? "\n  " . self::escape(mb_substr($comment, 0, 500)) : '');
+        }
+        foreach ($blocks['next']['protocols'] as $p) {
+            $lines[] = '[4.' . ++$n . '] Protocol: ' . self::escape($p['title']) . ': ' . $clean($p['text']);
+        }
+        $out[] = "<block id=\"4\" name=\"next\">\n" . ($lines !== [] ? implode("\n", $lines) : '(nimic)') . "\n</block>";
+
+        $fm = $page->frontmatter;
+        $vars = [
+            'findings' => $clean($facts['findings']),
+            'conclusion' => $clean($facts['conclusion']),
+            'indication' => $clean($facts['indication']),
+            'exam' => self::escape(ReportName::examTitle($fm)),
+            'age' => $facts['age'] !== null ? (string) $facts['age'] : '',
+            'sex' => \is_array($fm['patient'] ?? null) && \is_string($fm['patient']['sex'] ?? null) ? $fm['patient']['sex'] : '',
+            'blocks' => implode("\n\n", $out),
+            'language' => self::LANGUAGE,
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+        $counts = [\count($blocks['library']), \count($blocks['context']['studies']), \count($blocks['similar']), $n];
+
+        return new Prompt($system, $user, ['workup ' . implode('/', $counts), 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
      * The passages as the prompt gets them: every name and CNP they carry
      * learned first, then each text redacted and scrubbed of contact details
      * (Redactor::scrubContacts()); one left empty is dropped. Also

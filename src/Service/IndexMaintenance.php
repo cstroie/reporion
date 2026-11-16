@@ -83,6 +83,15 @@ final class IndexMaintenance
         })();
 
         $this->index->rebuild($snapshots);
+        // The imaging guide (D62): its tables refilled from data/guide/guide.csv. A kept file that no
+        // longer reads as the guide leaves the tables empty rather than failing the pages' rebuild
+        if ($this->dataRoot !== '') {
+            try {
+                \Reporion\Kernel::guide($this->dataRoot, $this->index)->refill();
+            } catch (\Reporion\Exception\GuideException) {
+                $this->index->guide()->replace([], null);
+            }
+        }
 
         return $count;
     }

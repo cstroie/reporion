@@ -691,6 +691,16 @@ notice:
 
 It is read from CrossRef's `updated-by` (Retraction Watch's records are in it) and PubMed's `Retracted Publication` type and `CommentsCorrections` (`RetractionIn`, `PartialRetractionIn`, `ExpressionOfConcernIn`, `ErratumIn`, `CorrectedandRepublishedIn`), by the DOI or PMID only (`Service\Library\Lookup`, `Support\SourceNotice`), when the source is added, by *Look up online* and by `library:notices`. A notice that says the same as before is not rewritten (`found` is not compared). It is not a CSL field and not `status` (reserved for `draft|signed|archived`); a citation of the source is marked on screen to a reader who can open the library (never in print or an export).
 
+
+## 3p. The imaging guide: `data/guide/` (2026-11-16, D62)
+
+`data/guide/guide.csv` is the Romanian *Ghid de indicații radioimagistice* exactly as loaded (GIRI's `GHID.csv`: UTF-8, comma, double quotes, a header naming the 13 columns `NR.CRT`, `Capitol`, `Subcapitol`, `Situația Clinică`, `Tip`, `Examen`, `Indicație`, `Grad Indicație`, `Comentarii`, `Alte informații`, `Doza Min`, `Doza Max`, `Terapeutic`). Written only by `guide:load` (temp + fsync + rename), never edited in Reporion; backed up with `data/`. Beside it `guide.json`:
+
+```json
+{"sha256": "…", "rows": 1341, "situations": 622, "source": "GIRI@e797896", "loaded_at": "2026-11-16T10:00:00Z", "loaded_by": "cli"}
+```
+
+The index's `guide_row` and `guide_fts` are made from it (architecture-storage-index); none: the guide is empty.
 ## 4. Share tokens
 
 *Was `meta.json.share_token` (D54, 2026-10-20): now the `share` table of `reporion.sqlite`, one row per page,

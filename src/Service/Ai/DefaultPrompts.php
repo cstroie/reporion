@@ -83,6 +83,7 @@ final class DefaultPrompts
         'recall-expand' => ['kind' => self::SPECIAL, 'title' => 'Recall: expand', 'file' => 'recall-expand.txt', 'targets' => self::RADIOLOGY_ONLY],
         'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'workup' => ['kind' => self::SPECIAL, 'title' => 'Workup', 'file' => 'workup.txt', 'model' => 'expert', 'targets' => self::RADIOLOGY_ONLY],
         'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'source-part' => ['kind' => self::SPECIAL, 'title' => 'Source: condense one part', 'file' => 'source-part.txt', 'targets' => self::RESEARCH_ONLY],
         'source-points' => ['kind' => self::SPECIAL, 'title' => 'Source: key points', 'file' => 'source-points.txt', 'targets' => self::RESEARCH_ONLY],
