@@ -47,6 +47,21 @@ final class McpTest extends HttpTestCase
         self::assertSame(202, $this->post($token, ['jsonrpc' => '2.0', 'method' => 'notifications/initialized'])->status);
     }
 
+    public function testTheGuideToolsOnceTheGuideIsLoaded(): void
+    {
+        $token = $this->newToken('mihai', '');
+        \Reporion\Kernel::guide($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'))
+            ->load((string) file_get_contents(\dirname(__DIR__) . '/fixtures/guide/guide-sample.csv'), 'GIRI@test', 'owner');
+        self::assertSame(['search', 'get_page', 'list_namespace', 'guide_search', 'guide_get'], array_column($this->rpc($token, 'tools/list')['result']['tools'], 'name'));
+
+        $found = $this->tool($token, 'guide_search', ['query' => 'apendicita', 'type' => 'T'])['result']['structuredContent'];
+        self::assertSame('Apendicită', $found['situations'][0]['title']);
+        self::assertStringContainsString('GIRI@test', $found['source']);
+        $one = $this->tool($token, 'guide_get', ['key' => $found['situations'][0]['key']])['result']['structuredContent'];
+        self::assertSame(['E', 'T'], array_column($one['exams'], 'tip'));
+        self::assertTrue($this->tool($token, 'guide_get', ['key' => 'abcdef123456'])['result']['isError']);
+    }
+
     public function testNoTokenNoCookie(): void
     {
         $none = Kernel::boot($this->config)->handle(new Request('POST', '/mcp', body: '{}'));

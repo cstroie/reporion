@@ -55,6 +55,8 @@ final class McpController
         /** @var ?\Closure(Request): bool whether the caller's token is a write token */
         private readonly ?\Closure $writes = null,
         private readonly string $access = 'on',
+        // The imaging guide (D62): public data, offered to every caller when it is loaded
+        private readonly ?\Reporion\Service\Guide\Guide $guide = null,
     ) {
     }
 
@@ -123,7 +125,7 @@ final class McpController
                     : 'Reporion wiki pages as this account sees them. Address a page by its colon path (ns:sub:slug). Reports and pages about a patient are not served.',
             ]),
             'ping' => self::result($id, []),
-            'tools/list' => self::result($id, ['tools' => [...self::tools($this->reports), ...($this->canWrite($request) ? self::writeTools() : [])]]),
+            'tools/list' => self::result($id, ['tools' => [...self::tools($this->reports), ...($this->guide?->info() !== null ? self::guideTools() : []), ...($this->canWrite($request) ? self::writeTools() : [])]]),
             'tools/call' => $this->call($id, $params, $request, $principal),
             default => self::failure($id, -32601, 'Method not found'),
         };
@@ -152,6 +154,30 @@ final class McpController
     }
 
     /**
+     * The imaging guide's tools (D62): the Romanian guide to imaging indications, public
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function guideTools(): array
+    {
+        $string = static fn (string $d): array => ['type' => 'string', 'description' => $d];
+
+        return [
+            ['name' => 'guide_search', 'description' => 'Search the Romanian imaging guide (Ghid de indicații radioimagistice, Ministry of Health): which imaging exam is indicated for a clinical situation, with its indication, evidence grade and dose. Write the situation in Romanian; diacritics are optional.',
+                'inputSchema' => ['type' => 'object', 'properties' => [
+                    'query' => $string('The clinical situation, e.g. apendicită copil'),
+                    'type' => $string('Only situations with an exam of these types, comma separated: ' . implode(', ', array_map(static fn (string $k, string $v): string => $k . ' ' . $v, array_keys(\Reporion\Support\GuideCodes::TYPES), \Reporion\Support\GuideCodes::TYPES))),
+                    'chapter' => $string('Only this chapter, e.g. Pediatrie'),
+                    'indication' => $string('Only exams with these indications, comma separated: ' . implode(', ', array_keys(\Reporion\Support\GuideCodes::INDICATIONS))),
+                ], 'required' => ['query']],
+                'annotations' => ['readOnlyHint' => true]],
+            ['name' => 'guide_get', 'description' => 'One clinical situation of the imaging guide by its key (from guide_search), with all its exams.',
+                'inputSchema' => ['type' => 'object', 'properties' => ['key' => $string('The situation\'s 12-character key')], 'required' => ['key']],
+                'annotations' => ['readOnlyHint' => true]],
+        ];
+    }
+
+    /**
      * @param array<mixed> $params
      *
      * @return array<string, mixed>
@@ -166,6 +192,8 @@ final class McpController
             'search' => $this->search($arg('query'), trim($arg('namespace'), ':'), $principal),
             'get_page' => $this->page(trim($arg('path'), ':'), $arg('pid'), $principal, $request->basePath),
             'list_namespace' => $this->listing(trim($arg('namespace'), ':'), $principal),
+            'guide_search' => $this->guideSearch($arg('query'), $arg('type'), $arg('chapter'), $arg('indication')),
+            'guide_get' => $this->guide !== null && ($found = $this->guide->situation($arg('key'))) !== null ? [$found, 1] : [null, $this->guide !== null ? 0 : -1],
             'create_page', 'update_page', 'update_meta' => [null, 0],
             default => [null, -1],
         };
@@ -184,6 +212,19 @@ final class McpController
             'content' => [['type' => 'text', 'text' => (string) json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)]],
             'structuredContent' => $payload,
         ]);
+    }
+
+    /** @return array{0: ?array<string, mixed>, 1: int} */
+    private function guideSearch(string $query, string $types, string $chapter, string $indications): array
+    {
+        if ($this->guide === null) {
+            return [null, -1];
+        }
+        $list = static fn (string $v): array => array_values(array_filter(array_map('trim', explode(',', $v)), static fn (string $x): bool => $x !== ''));
+        $found = $this->guide->search(mb_substr($query, 0, 200), array_filter(['tip' => $list($types), 'chapter' => $chapter, 'indication' => $list($indications)], static fn (array|string $v): bool => $v !== [] && $v !== ''), 10);
+        $info = $this->guide->info();
+
+        return [['situations' => $found, 'source' => 'Ghid de indicații radioimagistice, Ministerul Sănătății' . ($info !== null && $info['source'] !== '' ? ' (' . $info['source'] . ')' : '')], \count($found)];
     }
 
     /**

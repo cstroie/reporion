@@ -686,7 +686,7 @@ final class Kernel
         // The MCP server (D56): the wiki for MCP clients, by bearer token only
         $baseUrl = rtrim((string) ($config['site']['base_url'] ?? ''), '/');
         $mcpAccess = \in_array($config['mcp']['access'] ?? 'local', McpController::ACCESS, true) ? (string) ($config['mcp']['access'] ?? 'local') : 'off';
-        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r) && (($config['mcp']['write_anywhere'] ?? false) === true || McpController::isLocal($r)), $mcpAccess);
+        $mcp = new McpController($index, $storage, $audit, (bool) ($config['mcp']['reports'] ?? false), $baseUrl, $pagesApi, static fn (Request $r): bool => $session->tokenWrites($r) && (($config['mcp']['write_anywhere'] ?? false) === true || McpController::isLocal($r)), $mcpAccess, self::guide((string) $config['paths']['data'], $index));
         // Its OAuth 2.1 (D56, phase 3), for claude.ai and Desktop: offered only with site.base_url set
         $oauth = new OAuthController(
             new OAuth((string) $config['auth']['session_secret'], array_values(array_filter((array) ($config['mcp']['redirect_uris'] ?? []), static fn (mixed $u): bool => \is_string($u) && str_starts_with($u, 'https://')))),
