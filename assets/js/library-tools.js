@@ -8,6 +8,7 @@
  *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
  * - the Find full text button on a source's card (`[data-lib-fulltext]`, POST /api/v1/library/{pid}/fulltext),
  *   its answer shown in `[data-lib-fulltext-status]`; the page reloads when a file was attached.
+ * - Back to the library (`[data-lib-back]`): the list's address as it was left, when the source was opened from it.
  * - Attach file on a source with no file (`[data-lib-attach]`, the file as the body of POST
  *   /api/v1/library/{pid}/file), its answer in `[data-lib-attach-status]`; reloads when attached.
  * - online (GET /library, an editor, `library.search` on): PubMed searched by the words typed
@@ -290,6 +291,13 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-lib-fulltext]'), mountFulltext);
     Array.prototype.forEach.call(document.querySelectorAll('[data-lib-attach]'), mountAttach);
+    // Back to the library: to the list as it was left (its sort, tag, filter, search), when the source was opened from it
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lib-back]'), function (link) {
+      try {
+        var from = new URL(document.referrer);
+        if (from.origin === window.location.origin && from.pathname === new URL(link.href).pathname) link.href = from.href;
+      } catch (e) { /* no referrer: the plain list */ }
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
