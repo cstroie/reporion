@@ -61,6 +61,8 @@ final class QuickNav
             ...($askable ? [['href' => '/ask', 'label' => t('quick.ask'), 'icon' => 'chats-circle']] : []),
             // The library (docs/library.md), for whoever may read it
             ...($principal->canRead('library') ? [['href' => '/library', 'label' => t('quick.library'), 'icon' => 'books']] : []),
+            // The imaging guide (D62): public, for everyone
+            ['href' => '/guide', 'label' => t('guide.title'), 'icon' => 'list-checks'],
         ];
 
         // Each namespace's `priority` (low|medium|high, its description page's
