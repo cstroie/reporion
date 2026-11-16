@@ -203,8 +203,8 @@ final class Guide
     /** A strong match's least coverage of the indication's own words (guide:measure, D62 step 4) */
     public const MIN_COVERAGE = 0.6;
 
-    /** A strong match's least lead over the next situation, as a share of its score */
-    public const MIN_MARGIN = 0.25;
+    /** A strong match's least lead over the next situation, as a share of its score (0.15 from guide:measure on 5 080 reports, 2026-11-16: 18 warned, 1 in 280) */
+    public const MIN_MARGIN = 0.15;
 
     /**
      * The Checks warning (D62 step 4): when the report's indication matches one guide situation
