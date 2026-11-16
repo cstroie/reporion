@@ -8,6 +8,12 @@
  *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
  * - the Find full text button on a source's card (`[data-lib-fulltext]`, POST /api/v1/library/{pid}/fulltext),
  *   its answer shown in `[data-lib-fulltext-status]`; the page reloads when a file was attached.
+ * - Attach file on a source with no file (`[data-lib-attach]`, the file as the body of POST
+ *   /api/v1/library/{pid}/file), its answer in `[data-lib-attach-status]`; reloads when attached.
+ * - online (GET /library, an editor, `library.search` on): PubMed searched by the words typed
+ *   (GET /api/v1/library/online?q=), each result with Add (POST /api/v1/library/online {records}).
+ * - duplicates (GET /library, an editor): groups of sources that look like one article; the radio
+ *   picks the one to keep, Merge sends POST /api/v1/library/{keep}/merge {from} for each of the others.
  */
 (function () {
   'use strict';
@@ -159,6 +165,39 @@
     });
   }
 
+  // ---- Attach file: the writer's own copy, sent as the body of POST /api/v1/library/{pid}/file ----
+
+  function mountAttach(input) {
+    var status = document.querySelector('[data-lib-attach-status]');
+    var s = {};
+    try { s = JSON.parse(status.getAttribute('data-strings')) || {}; } catch (e) { s = {}; }
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      input.disabled = true;
+      status.textContent = '';
+      status.appendChild(notice('info', s.working));
+      api(input.getAttribute('data-url') + '?name=' + encodeURIComponent(file.name), {
+        method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file
+      }).then(function (result) {
+        status.textContent = '';
+        if (result.status === 201) {
+          status.appendChild(notice('ok', s.attached));
+          window.setTimeout(function () { window.location.reload(); }, 800);
+          return;
+        }
+        status.appendChild(notice('error', errorOf(result, s.failed)));
+        input.disabled = false;
+        input.value = '';
+      }, function () {
+        status.textContent = '';
+        status.appendChild(notice('error', s.failed));
+        input.disabled = false;
+        input.value = '';
+      });
+    });
+  }
+
   // ---- Add by search: PubMed asked by the words typed ----
 
   function oneLine(csl) {
@@ -250,6 +289,7 @@
       if (mount) mount(box);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-lib-fulltext]'), mountFulltext);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lib-attach]'), mountAttach);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

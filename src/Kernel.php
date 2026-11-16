@@ -845,6 +845,8 @@ final class Kernel
             => $libraryController->clip($request, $session->principal($request)));
         $router->get('/api/v1/library/duplicates', static fn (Request $request, array $params): Response
             => $libraryController->duplicates($request, $session->principal($request)));
+        $router->post('/api/v1/library/{pid:[0-9A-Z]+}/file', static fn (Request $request, array $params): Response
+            => $libraryController->attachFile($request, $params['pid'], $session->principal($request)));
         $router->post('/api/v1/library/{pid:[0-9A-Z]+}/fulltext', static fn (Request $request, array $params): Response
             => $libraryController->fulltext($request, $params['pid'], $session->principal($request)));
         $router->get('/api/v1/library/online', static fn (Request $request, array $params): Response

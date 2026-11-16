@@ -232,6 +232,11 @@ final class Application
 
             return new LibraryFulltextCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
         });
+        $app->register('library:attach', LibraryAttachCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new LibraryAttachCommand(Kernel::library($config, $storage, $index, $audit()), $audit());
+        });
         $app->register('library:duplicates', LibraryDuplicatesCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

@@ -192,6 +192,8 @@ final class PageTemplateRenderer
             'canLookup' => $this->lookup && $currentRev === null && $principal->canWrite($record->path),
             // Find full text (D60): set up, a DOI and no file yet
             'canFulltext' => $this->fullText && $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null) && (\is_string(($record->frontmatter['csl'] ?? [])['DOI'] ?? null) || (string) (($record->frontmatter['csl'] ?? [])['PMID'] ?? '') !== ''),
+            // Attach file (2026-11-16): a writer's own copy of the article, for a source with no file yet
+            'canAttach' => $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null),
             // What it cites (phase 7): its reference list against the records the caller reads (the index only)
             'cites' => $this->cites($record, $principal),
             // What the assistant made of it before, kept beside it, for any reader of the source

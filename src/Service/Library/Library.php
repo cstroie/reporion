@@ -464,6 +464,52 @@ final class Library
     }
 
     /**
+     * A file chosen by a writer for a source that has only its record (2026-11-16: the *Attach file*
+     * button, `bin/reporion library:attach`): for a source with no DOI or PMID, which no upload
+     * recognises. Read like an upload (the patient guard, OCR for a scan) and attached as for a record
+     * that took its file: the key, tags and record kept, only blanks filled. Refused when the source
+     * has its file, when the file names another DOI or PMID than the record's, or when the library
+     * holds this file under another source (merge them instead).
+     *
+     * @throws LibraryException HAS_FILE, MISMATCH, DUPLICATE (pid: the source holding it), INVALID (not a source), PATIENT_DATA, and the upload's own
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function attachFile(string $path, string $bytes, string $name, User $principal, string $actor, bool $dryRun = false): PageRecord
+    {
+        $page = $this->storage->read($path);
+        if (!LibrarySource::isSource($page->frontmatter)) {
+            throw new LibraryException(LibraryException::INVALID);
+        }
+        if (\is_array($page->frontmatter['original'] ?? null)) {
+            throw new LibraryException(LibraryException::HAS_FILE);
+        }
+        [$ext, $extracted] = $this->read($bytes, $name);
+        $mine = self::cleanCsl(\is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : []);
+        $theirs = Identify::propose($extracted)['csl'];
+        $myDoi = \is_string($mine['DOI'] ?? null) ? ArticleIds::normalizeDoi($mine['DOI']) : null;
+        $fileDoi = \is_string($theirs['DOI'] ?? null) ? ArticleIds::normalizeDoi($theirs['DOI']) : null;
+        if ($myDoi !== null && $fileDoi !== null && $myDoi !== $fileDoi) {
+            throw new LibraryException(LibraryException::MISMATCH);
+        }
+        $myPmid = (string) ($mine['PMID'] ?? '');
+        $filePmid = (string) ($theirs['PMID'] ?? '');
+        if ($myPmid !== '' && $filePmid !== '' && $myPmid !== $filePmid) {
+            throw new LibraryException(LibraryException::MISMATCH);
+        }
+        $duplicate = $this->duplicateOf([], hash('sha256', $bytes), $principal, $page->pid);
+        if ($duplicate !== null && $duplicate['by'] === 'file') {
+            throw new LibraryException(LibraryException::DUPLICATE, $duplicate['pid']);
+        }
+        if ($dryRun) {
+            return $page;
+        }
+        // The file's identifiers fill the record's blanks (a source with neither gets them from its file)
+        $fill = array_filter(['DOI' => $fileDoi, 'PMID' => $filePmid !== '' ? $filePmid : null], static fn (?string $v): bool => $v !== null);
+
+        return $this->attach($path, $bytes, $ext, self::fileName($name), $extracted, $fill, $actor);
+    }
+
+    /**
      * One free copy tried for findFullText(): a PDF's address fetched by WebClip, or Europe PMC's JATS
      * XML as given; read like an upload (the patient guard), checked to name this DOI, and attached
      *

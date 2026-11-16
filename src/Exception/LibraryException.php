@@ -30,6 +30,10 @@ final class LibraryException extends RuntimeException
     public const NO_OCR = 'no_ocr';
     /** The online lookups are off (Admin → Settings → Library) */
     public const LOOKUP_OFF = 'lookup_off';
+    /** The source has its file already (Library::attachFile()) */
+    public const HAS_FILE = 'has_file';
+    /** The file names another article than the source (its DOI or PMID differs) */
+    public const MISMATCH = 'mismatch';
 
     public function __construct(public readonly string $reason, public readonly ?string $pid = null)
     {

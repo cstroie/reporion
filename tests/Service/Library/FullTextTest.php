@@ -279,4 +279,38 @@ final class FullTextTest extends StorageTestCase
         self::assertEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'unpaywall')), 'no DOI: Unpaywall is not asked');
         self::assertSame('xml', $this->storage->read('library:pmid2021')->frontmatter['original']['ext']);
     }
+
+    public function testAWritersOwnFileIsAttachedToASourceWithNoIdentifier(): void
+    {
+        $text = "No DOI here\n\n" . str_repeat('The text of an article that names no identifier at all. ', 8);
+        $page = $this->library(null, $text)->attachFile('library:nodoi2020', "%PDF-1.4\nmine", 'mine.pdf', self::owner(), 'owner');
+
+        self::assertSame('pdf', $page->frontmatter['original']['ext']);
+        self::assertSame('No DOI here', $page->frontmatter['csl']['title'], 'the record is kept');
+        self::assertStringContainsString('names no identifier', $page->body);
+        self::assertSame([], $this->asked, 'nothing is sent anywhere');
+
+        $this->expectExceptionObject(new LibraryException(LibraryException::HAS_FILE));
+        $this->library(null, $text)->attachFile('library:nodoi2020', "%PDF-1.4\nanother", 'another.pdf', self::owner(), 'owner');
+    }
+
+    public function testAFileNamingAnotherDoiIsRefusedAndOneTheLibraryHasIsADuplicate(): void
+    {
+        try {
+            $this->library(null, "Another\n\nDOI 10.1111/other.2\n\n" . str_repeat('Text of another article, long enough. ', 8))->attachFile('library:made2020', "%PDF-1.4\nx", 'x.pdf', self::owner(), 'owner');
+            self::fail('mismatch');
+        } catch (LibraryException $e) {
+            self::assertSame(LibraryException::MISMATCH, $e->reason);
+        }
+        $text = str_repeat('Plain text of an article with no identifier. ', 8);
+        $this->library(null, $text)->attachFile('library:nodoi2020', "%PDF-1.4\nsame", 'a.pdf', self::owner(), 'owner');
+        try {
+            $this->library(null, $text)->attachFile('library:made2020', "%PDF-1.4\nsame", 'b.pdf', self::owner(), 'owner');
+            self::fail('duplicate');
+        } catch (LibraryException $e) {
+            self::assertSame(LibraryException::DUPLICATE, $e->reason);
+            self::assertSame($this->storage->read('library:nodoi2020')->pid, $e->pid);
+        }
+        self::assertArrayNotHasKey('original', $this->storage->read('library:made2020')->frontmatter);
+    }
 }

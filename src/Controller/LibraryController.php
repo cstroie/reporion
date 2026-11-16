@@ -287,6 +287,36 @@ final class LibraryController
         return ApiResponse::json($result);
     }
 
+    /**
+     * POST /api/v1/library/{pid}/file?name=: the raw body is a file for a source that has only its
+     * record (Library::attachFile(), 2026-11-16): read like an upload and attached. Writers of the
+     * source (else 404) → 201 `{pid, path, rev, href}`; 409 `has_file` / `duplicate`
+     * (`fields`: the source holding the file), 422 `mismatch` / `patient_data` / the upload's own;
+     * audited `library.attach` with the file's hash, size and type
+     */
+    public function attachFile(Request $request, string $pid, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
+        if ($principal === null || $row === null || !$principal->canWrite((string) $row['path'])) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            $page = $this->library->attachFile((string) $row['path'], $request->body, (string) ($request->query['name'] ?? ''), $principal, $principal->username);
+        } catch (LibraryException $e) {
+            return $this->failure($e, $principal);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $original = (array) $page->frontmatter['original'];
+        $this->audit->record('library.attach', $principal->username, $request, $page->pid, $page->path, $page->rev, extra: [
+            'sha256' => (string) ($original['sha256'] ?? ''),
+            'bytes' => (int) ($original['bytes'] ?? 0),
+            'ext' => (string) ($original['ext'] ?? ''),
+        ]);
+
+        return ApiResponse::json(['pid' => $page->pid, 'path' => $page->path, 'rev' => $page->rev, 'href' => $request->basePath . '/' . $page->path], 201);
+    }
+
     /** Searches a writer may make a minute (PubMed allows about three requests a second without a key; a search is two) */
     public const SEARCHES_PER_MINUTE = 12;
 
@@ -887,7 +917,7 @@ final class LibraryController
         $status = match ($e->reason) {
             LibraryException::TOO_LARGE => 413,
             LibraryException::UNSUPPORTED => 415,
-            LibraryException::DUPLICATE => 409,
+            LibraryException::DUPLICATE, LibraryException::HAS_FILE => 409,
             LibraryException::EXPIRED => 410,
             LibraryException::TOOL_MISSING => 503,
             LibraryException::TIMEOUT => 504,
