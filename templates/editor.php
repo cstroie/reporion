@@ -382,6 +382,21 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </section>
 </div>
 </details>
+<?php /* D63: Workup, the evidence for the conclusion (library, the patient's other studies, similar
+ * finished reports, the imaging guide and protocols) and one synthesis: POST /api/v1/workup,
+ * assets/js/editor-workup.js. Runs only on a click (a model call); shown, never written unless
+ * Insert is clicked (then the note says assisted: workup, D8). */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="workup">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-stethoscope"></i> <?= $e(t('editor.workup.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.workup.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-aid" id="editor-workup">
+<div class="wk-recall-bar"><button type="button" class="btn btn-secondary btn-sm" data-workup-run><i class="ph ph-magnifying-glass"></i> <?= $e(t('editor.workup.run')) ?></button></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-workup-status" aria-live="polite"></p>
+<div id="editor-workup-out"></div>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.workup.note')) ?></p>
+</section>
+</div>
+</details>
 <?php endif; ?>
 <?php /* Tools (2026-10-16): text clean-ups that run in the browser on the text in front (its
  * selection, else all of it) through assets/js/editor-format.js: no assistant, no server
@@ -612,6 +627,30 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'compare' => t('editor.prior.compare'),
             'comparePhrase' => t('editor.prior.compare_phrase'),
         ],
+        'workup' => [
+            'library' => t('editor.workup.library'),
+            'context' => t('editor.workup.context'),
+            'similar' => t('editor.workup.similar'),
+            'next' => t('editor.workup.next'),
+            'synthesis' => t('editor.workup.synthesis'),
+            'none' => t('editor.workup.none'),
+            'indication' => t('editor.workup.indication'),
+            'mine' => t('editor.workup.mine'),
+            'concluded' => t('editor.workup.concluded'),
+            'thisExam' => t('editor.workup.this_exam'),
+            'steps' => [
+                'library' => t('editor.workup.step_library'),
+                'context' => t('editor.workup.step_context'),
+                'similar' => t('editor.workup.step_similar'),
+                'next' => t('editor.workup.step_next'),
+                'answering' => t('editor.workup.step_answering'),
+            ],
+            'copy' => t('editor.workup.copy'),
+            'copied' => t('editor.workup.copied'),
+            'insert' => t('editor.workup.insert'),
+            'failed' => t('editor.workup.failed'),
+            'open' => t('editor.recall.open'),
+        ],
     ] : null,
     'priors' => $priorCandidates,
     'templates' => $templates,
@@ -627,7 +666,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if (!$raw && \in_array('checklist', array_column($details['fields'] ?? [], 'key'), true)): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/details-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($ai !== null || $recallAi): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($recall !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-recall.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
-<?php if ($aids): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-aids.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($aids): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-aids.js'), ENT_QUOTES) ?>" defer></script><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-workup.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if (($commenter ?? null) !== null && $baseRev > 0): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/comments.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>

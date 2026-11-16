@@ -2601,3 +2601,12 @@ body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inhe
 @media (max-width: 640px) {
   .wk-guide-exams th:nth-child(3), .wk-guide-exams td:nth-child(3) { display: none; }
 }
+
+/* Workup (D63, assets/js/editor-workup.js): the four blocks and the synthesis in the rail */
+.wk-workup-block { margin: var(--space-3) 0; }
+.wk-workup-list { padding-left: var(--space-5); margin: var(--space-1) 0; }
+.wk-workup-item { margin-bottom: var(--space-2); }
+.wk-workup-head { font-size: var(--text-sm); }
+.wk-workup-guide { list-style: none; padding-left: 0; margin: var(--space-1) 0; font-size: var(--text-sm); }
+.wk-workup-this { font-weight: 600; }
+.wk-workup-text { white-space: pre-wrap; }

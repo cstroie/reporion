@@ -1952,6 +1952,24 @@
       });
     }
 
+    // Workup (D63): assets/js/editor-workup.js, given the text, the pane in front, the undoable edit and the assisted mark
+    var Workup = window.ReporionEditorWorkup;
+    if (Workup && config.aids) {
+      Workup.mount({
+        basePath: basePath,
+        path: path,
+        config: config.aids,
+        unsaved: unsavedForm,
+        front: function () { return textarea; },
+        document: function () { return docArea.value; },
+        apply: function (e, target) { applyEdit(e, target); },
+        assisted: function (id) {
+          if (applied.indexOf(id) === -1) applied.push(id);
+          if (aiAssisted) aiAssisted.value = applied.join(',');
+        }
+      });
+    }
+
     showChars();
     showStatus();
   }

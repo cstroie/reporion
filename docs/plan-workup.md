@@ -1,6 +1,6 @@
 # Plan: Workup, a rail section that gathers the evidence for a report's conclusion
 
-Status: **approved 2026-11-16** (decisions below); to build on `feat/guide` after D62's steps 1–2. Decision row to add: **D63**.
+Status: **approved and built 2026-11-16** on `feat/guide` (D63). Departures: library sources tagged `guideline` are not a separate list (they come through the library block); the editor's whole text is read, the conclusion's words first. Decision row to add: **D63**.
 Builds on D62 (the imaging guide, steps 1–2 built on `feat/guide`), which becomes one of its sources.
 
 ## Context
