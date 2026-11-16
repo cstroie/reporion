@@ -42,7 +42,7 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 <button class="btn btn-ghost btn-sm" type="button" data-lib-fulltext data-url="<?= $e($basePath . '/api/v1/library/' . $source['pid'] . '/fulltext') ?>" title="<?= $e(t('library.fulltext_title')) ?>"><i class="ph ph-file-arrow-down" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.fulltext')) ?></span></button>
 <?php endif; ?>
 <?php if ($source['canAttach'] ?? false): ?>
-<label class="btn btn-ghost btn-sm" title="<?= $e(t('library.attach_title')) ?>"><i class="ph ph-paperclip" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.attach')) ?></span><input type="file" hidden data-lib-attach data-url="<?= $e($basePath . '/api/v1/library/' . $source['pid'] . '/file') ?>" accept="<?= $e(implode(',', array_map(static fn (string $x): string => '.' . $x, array_keys(\Reporion\Service\Library\Extractor::TYPES)))) ?>"></label>
+<label class="btn btn-ghost btn-sm" title="<?= $e(t('library.attach_file_title')) ?>"><i class="ph ph-paperclip" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.attach_file')) ?></span><input type="file" hidden data-lib-attach data-url="<?= $e($basePath . '/api/v1/library/' . $source['pid'] . '/file') ?>" accept="<?= $e(implode(',', array_map(static fn (string $x): string => '.' . $x, array_keys(\Reporion\Service\Library\Extractor::TYPES)))) ?>"></label>
 <?php endif; ?>
 <?php if ($source['canEdit']): ?>
 <button class="btn btn-ghost btn-sm" type="button" data-lib-edit><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('library.edit_record')) ?></span></button>
@@ -59,7 +59,7 @@ $pmid = \is_scalar($source['csl']['PMID'] ?? null) ? (string) $source['csl']['PM
 ], JSON_UNESCAPED_UNICODE)) ?>"></div>
 <?php endif; ?>
 <?php if ($source['canAttach'] ?? false): ?>
-<div data-lib-attach-status aria-live="polite" data-strings="<?= $e((string) json_encode(['working' => t('library.attach_working'), 'attached' => t('library.fulltext_attached'), 'failed' => t('library.failed')], JSON_UNESCAPED_UNICODE)) ?>"></div>
+<div data-lib-attach-status aria-live="polite" data-strings="<?= $e((string) json_encode(['working' => t('library.attach_file_working'), 'attached' => t('library.fulltext_attached'), 'failed' => t('library.failed')], JSON_UNESCAPED_UNICODE)) ?>"></div>
 <?php endif; ?>
 <?php if (($source['notice'] ?? null) !== null): ?>
 <?php
