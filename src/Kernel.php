@@ -244,6 +244,12 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
+    /** The imaging guide (D62): data/guide/ and the index's guide tables, with the IRIS synonyms */
+    public static function guide(string $dataRoot, \Reporion\Index\Sqlite $index): \Reporion\Service\Guide\Guide
+    {
+        return new \Reporion\Service\Guide\Guide($index->guide(), $dataRoot, \dirname(__DIR__) . '/resources/guide-synonyms.json');
+    }
+
     public static function library(array $config, FileTree $storage, IndexInterface $index, ?AuditLog $audit = null): Library
     {
         $data = (string) $config['paths']['data'];

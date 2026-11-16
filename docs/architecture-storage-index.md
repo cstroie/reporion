@@ -343,6 +343,18 @@ CREATE VIRTUAL TABLE passage_fts USING fts5(
 - **Queries:** `passagesAbout($terms, $pids, $principal)` (any word, by stem or a D28 synonym: the asks), `passagesMatching($query, $principal)` (every word, as `/search` reads a query: the library's search), `passagesAt($places)` (the text for what the vectors found, to check their `sha`), `passageLengths($pids)` (whether a notebook fits whole), `passagePids()`, `sourcePids($ns)`: each joined to `pages` under `visibilityClause()` (invariant 6); BM25 order, `snippet()` with the search's markers.
 - **`/search` leaves the library out** (2026-11-02): the facet clause's `not_ns` filter, set by `SearchController` for the library namespace unless the request's `ns` asks for it.
 
+**The imaging guide** (2026-11-16, D62, `migrations/index/009_guide.sql`; schema change approved by the owner 2026-11-16): the Romanian guide's rows, loaded from `data/guide/guide.csv` (FORMATS §3p), not from pages.
+
+```
+CREATE TABLE guide_row (key PRIMARY KEY, situation, ord, chapter, subchapter, title, tip, exam,
+  indication, grade, comment, other, dose_min, dose_max, therapeutic);
+CREATE VIRTUAL TABLE guide_fts USING fts5(title, exams, comment, chapter, subchapter,
+  situation UNINDEXED, tokenize = "unicode61 remove_diacritics 2");
+```
+
+- **Filled whole** by `guide:load` and by `index:rebuild` (`IndexMaintenance` → `Guide::refill()`), never per page (`Index\GuideTable::replace()`, one transaction); `schema_meta.guide_sha` is the sha256 of the file the tables hold, so `Guide::info()['indexed']` says whether they match the kept file. No file: empty tables.
+- **One FTS row per situation** (its exams and their distinct comments joined), so BM25 ranks situations; `GuideTable::find()` narrows by exam type and indication (an `EXISTS` on `guide_row`) and chapter. Public data: no visibility clause.
+
 ### Visibility inside the query
 
 Multi-user (D35–D37, superseding the old D6/D13 single-user design): `visibility` still controls

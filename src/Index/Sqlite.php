@@ -68,6 +68,12 @@ final class Sqlite implements IndexInterface
         $this->pdo = Databases::beside($databasePath, $migrationsDir, $statePath, $vectorsPath)->connect();
     }
 
+    /** The imaging guide's tables (D62), on this connection */
+    public function guide(): GuideTable
+    {
+        return new GuideTable($this->pdo);
+    }
+
     public function index(PageSnapshot $snapshot): void
     {
         $this->pdo->beginTransaction();
