@@ -140,6 +140,86 @@ final class Guide
         return $this->situations($keys);
     }
 
+    /** The guide's chapter for children: ranked first for a patient under 18, last for an adult */
+    public const CHILDREN = 'Pediatrie';
+
+    /**
+     * The situations a report is about (Workup's *Next steps*, D63): searched by its indication and
+     * regions, a child's (under 18) Pediatrie situations first and an adult's last, the rows of the
+     * report's own exam types marked `this: true`. Nothing is sent anywhere.
+     *
+     * @param list<string> $regions
+     * @param list<string> $modalities the report's (D29), e.g. CT, MR
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forReport(string $indication, array $regions, array $modalities, ?int $age, int $limit = 3): array
+    {
+        // The IRIS synonyms' guide words are searched too ("AVC" → "accident vascular"), weighed as the regions
+        preg_match_all('/\p{L}+/u', RecallTerms::fold($indication), $m);
+        $own = self::stems($indication);
+        $stems = self::stems($indication . ' ' . implode(' ', $regions) . ' ' . implode(' ', $this->expansions(' ' . implode(' ', $m[0]) . ' ')));
+        if ($stems === []) {
+            return [];
+        }
+        // Any stem matches; then ranked by how many of them the situation's own title holds
+        $keys = $this->table->find(implode(' OR ', array_map(static fn (string $s): string => '"' . $s . '"*', $stems)), [], '', [], 40);
+        $found = $this->situations($keys);
+        $order = array_flip($keys);
+        // A word weighs by how rare it is among the situations' titles (idf): "apendic" more than "durere"
+        [$total, $df] = $this->table->titleFrequencies($stems);
+        $weight = array_map(static fn (int $n): float => log(($total + 1) / ($n + 1)), $df);
+        $rank = static function (array $s) use ($stems, $own, $age, $weight): array {
+            $title = RecallTerms::fold($s['title'] . ' ' . $s['subchapter']);
+            // The indication's words count double, the regions' once
+            $covered = (int) round(100 * array_sum(array_map(static fn (string $stem): float => preg_match('/\b' . preg_quote($stem, '/') . '/u', $title) === 1 ? ($weight[$stem] ?? 0.0) * (\in_array($stem, $own, true) ? 2 : 1) : 0.0, $stems)));
+            // A report is a diagnostic exam: procedures and the guide's catch-all rows come last
+            $aside = $s['chapter'] === self::PROCEDURES || str_starts_with(RecallTerms::fold($s['title']), 'alta situatie') ? 1 : 0;
+            $ageRank = $age === null ? 0 : (($s['chapter'] === self::CHILDREN) === ($age < 18) ? 0 : 1);
+
+            return [$aside, -$covered, $ageRank];
+        };
+        usort($found, static fn (array $a, array $b): int => [...$rank($a), $order[$a['key']]] <=> [...$rank($b), $order[$b['key']]]);
+        $tips = array_values(array_filter(array_map(GuideCodes::typeOfModality(...), $modalities)));
+        $out = [];
+        foreach (\array_slice($found, 0, max(1, $limit)) as $situation) {
+            foreach ($situation['exams'] as $n => $exam) {
+                $situation['exams'][$n]['this'] = \in_array($exam['tip'], $tips, true);
+            }
+            $out[] = $situation;
+        }
+
+        return $out;
+    }
+
+    /** Words of an indication that say nothing of the situation */
+    private const VAGUE = ['suspiciune', 'suspect', 'posibil', 'probabil', 'control', 'evaluare', 'pacient', 'pacienta', 'fara', 'semne', 'stanga', 'dreapta', 'dreapt', 'stang', 'bilateral', 'cunoscut', 'cunoscuta', 'istoric'];
+
+    /** The interventional chapter: procedures, ranked after diagnostic situations for a report */
+    public const PROCEDURES = 'Radiologie intervențională';
+
+    /**
+     * A report's words as stems for a prefix search (no stemmer, D28): folded, small words dropped,
+     * a word of six letters or more cut to max(5, length − 4) letters ("pancreasului" → "pancreas",
+     * "brutală" → "bruta"), at most 12
+     *
+     * @return list<string>
+     */
+    public static function stems(string $text): array
+    {
+        preg_match_all('/\p{L}+/u', RecallTerms::fold($text), $m);
+        $out = [];
+        foreach ($m[0] as $word) {
+            $len = mb_strlen($word);
+            if ($len < 3 || \in_array($word, self::STOP, true) || \in_array($word, self::VAGUE, true)) {
+                continue;
+            }
+            $out[] = $len >= 6 ? mb_substr($word, 0, max(5, $len - 5)) : $word;
+        }
+
+        return \array_slice(array_values(array_unique($out)), 0, 12);
+    }
+
     /** One situation by its key, or null (none, or the guide has moved on) */
     public function situation(string $key): ?array
     {

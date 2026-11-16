@@ -113,6 +113,26 @@ final class GuideTable
     }
 
     /**
+     * How many situations there are, and how many have each stem (as a prefix) in their title
+     *
+     * @param list<string> $stems
+     *
+     * @return array{0: int, 1: array<string, int>}
+     */
+    public function titleFrequencies(array $stems): array
+    {
+        $total = (int) $this->pdo->query('SELECT COUNT(*) FROM guide_fts')->fetchColumn();
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM guide_fts WHERE guide_fts MATCH ?');
+        $df = [];
+        foreach ($stems as $stem) {
+            $stmt->execute(['title : "' . str_replace('"', '', $stem) . '"*']);
+            $df[$stem] = (int) $stmt->fetchColumn();
+        }
+
+        return [$total, $df];
+    }
+
+    /**
      * The rows of these situations, grouped by situation in the order of $keys
      *
      * @param list<string> $keys

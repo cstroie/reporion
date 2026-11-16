@@ -112,4 +112,17 @@ final class GuideTest extends StorageTestCase
         (new \Reporion\Service\IndexMaintenance(new \Reporion\Storage\FileTree($this->dataRoot, $this->index), $this->index, $this->dataRoot, ''))->rebuild();
         self::assertSame('Apendicită', $this->guide->search('apendicita')[0]['title'] ?? null);
     }
+
+    public function testForAReportAChildsSituationsComeFirstAndItsExamIsMarked(): void
+    {
+        $this->guide->load($this->csv, '', 'owner');
+        $child = $this->guide->forReport('Durere abdominală, suspiciune apendicită', ['abdomen'], ['CT'], 9);
+        self::assertSame('Apendicită', $child[0]['title'] ?? null);
+        self::assertSame([false, true], array_column($child[0]['exams'], 'this'), 'the CT row is this exam');
+
+        $adult = $this->guide->forReport('cefalee brusca, suspiciune AVC', [], ['MR'], 60);
+        self::assertSame('Accident vascular cerebral acut', $adult[0]['title'] ?? null);
+        self::assertSame([false, true], array_column($adult[0]['exams'], 'this'));
+        self::assertSame([], $this->guide->forReport('', [], ['CT'], 40));
+    }
 }
