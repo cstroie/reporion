@@ -246,4 +246,37 @@ final class FullTextTest extends StorageTestCase
         self::assertStringContainsString('read from its XML', $page->body);
         self::assertEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'search?query')), 'the record had its PMCID: no search');
     }
+
+    private static function pubmedXml(string $pmid, string $ids): string
+    {
+        return '<?xml version="1.0"?><PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>' . $pmid . '</PMID><Article><ArticleTitle>A made-up study</ArticleTitle></Article></MedlineCitation><PubmedData><ArticleIdList><ArticleId IdType="pubmed">' . $pmid . '</ArticleId>' . $ids . '</ArticleIdList></PubmedData></PubmedArticle></PubmedArticleSet>';
+    }
+
+    public function testASourceWithAPmidOnlyIsLookedUpByItAtPubmed(): void
+    {
+        $this->storage->create('library:pmid2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => ['title' => 'A made-up study', 'PMID' => '12345678']], '', 'owner');
+
+        // PubMed gives the DOI: Unpaywall is asked by it as for any source with a DOI
+        $result = $this->chain(['efetch' => self::pubmedXml('12345678', '<ArticleId IdType="doi">10.9999/made.1</ArticleId>'), 'unpaywall' => self::FOUND], [
+            'https://repo.example.org/files/made.pdf' => [200, 'application/pdf', "%PDF-1.4\nmade-up"],
+        ])->findFullText('library:pmid2020', self::owner(), 'owner');
+        self::assertSame('attached', $result['status']);
+        self::assertStringContainsString('id=12345678', $this->asked[0], 'PubMed asked by the PMID only');
+        self::assertStringContainsString('api.unpaywall.org/v2/10.9999%2Fmade.1', $this->asked[1]);
+    }
+
+    public function testAPmidWithNoDoiTakesEuropePmcsTextWhichMustNameThePmid(): void
+    {
+        $this->storage->create('library:pmid2021', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => ['title' => 'A made-up study', 'PMID' => '12345678']], '', 'owner');
+        $text = "# Introduction\n\n" . str_repeat('The open-access text of the made-up article, read from its XML. ', 8);
+        $jats = static fn (string $pmid): string => '<?xml version="1.0"?><article><front><article-meta><article-id pub-id-type="pmid">' . $pmid . '</article-id></article-meta></front><body><p>Text.</p></body></article>';
+        $pubmed = self::pubmedXml('12345678', '<ArticleId IdType="pmc">PMC123</ArticleId>');
+
+        self::assertSame('mismatch', $this->chain(['efetch' => $pubmed, 'PMC123/fullTextXML' => $jats('99999')], [], null, $text)->findFullText('library:pmid2021', self::owner(), 'owner')['status']);
+        $this->asked = [];
+        $result = $this->chain(['efetch' => $pubmed, 'PMC123/fullTextXML' => $jats('12345678')], [], null, $text)->findFullText('library:pmid2021', self::owner(), 'owner');
+        self::assertSame(['attached', 'www.ebi.ac.uk'], [$result['status'], $result['host']]);
+        self::assertEmpty(array_filter($this->asked, static fn (string $u): bool => str_contains($u, 'unpaywall')), 'no DOI: Unpaywall is not asked');
+        self::assertSame('xml', $this->storage->read('library:pmid2021')->frontmatter['original']['ext']);
+    }
 }

@@ -8,10 +8,6 @@
  *   (GET /api/v1/library/{pid}/related), so the page itself stays as fast as before.
  * - the Find full text button on a source's card (`[data-lib-fulltext]`, POST /api/v1/library/{pid}/fulltext),
  *   its answer shown in `[data-lib-fulltext-status]`; the page reloads when a file was attached.
- * - online (GET /library, an editor, `library.search` on): PubMed searched by the words typed
- *   (GET /api/v1/library/online?q=), each result with Add (POST /api/v1/library/online {records}).
- * - duplicates (GET /library, an editor): groups of sources that look like one article; the radio
- *   picks the one to keep, Merge sends POST /api/v1/library/{keep}/merge {from} for each of the others.
  */
 (function () {
   'use strict';
@@ -177,7 +173,7 @@
     var cfg = config(box);
     var s = cfg.strings || {};
     var base = cfg.basePath || '';
-    // A record just added that has a DOI: its free PDF asked of Unpaywall and attached (POST
+    // A record just added that has a DOI or a PMID: its free PDF asked of Unpaywall and attached (POST
     // /api/v1/library/{pid}/fulltext, as Find full text on the source's page), the answer beside it
     function fullText(done, text) {
       var line = el('span', 'wk-dim wk-text-sm', s.ft_working);
@@ -232,7 +228,7 @@
                 var open = el('a', 'wk-chip', s.added);
                 open.href = done.href;
                 text.appendChild(open);
-                if (cfg.fullText && row.csl.DOI) fullText(done, text);
+                if (cfg.fullText && (row.csl.DOI || row.csl.PMID)) fullText(done, text);
               } else {
                 text.appendChild(el('span', 'wk-dim wk-text-sm', s.skipped));
               }

@@ -198,7 +198,7 @@ bin/reporion library:relookup [<key>...] [--tag=<t>] [--all] [--actor=<u>] [--ye
 bin/reporion library:abstracts [--offline] [--dry-run] [--limit=<n>] [--actor=<u>] [--json]  each library source's abstract page `library:{key}:abstract` where it has none: the record's `csl.abstract`
 bin/reporion library:digest [--dry-run] [--limit=<n>] [--actor=<u>] [--json]  the assistant's one-line summary and key points for each library source that lacks them, as `system:librarian`
 bin/reporion library:notices [--all] [--dry-run] [--limit=<n>] [--actor=<u>] [--json]  each library source's DOI or PMID asked of CrossRef and PubMed
-bin/reporion library:fulltext [<key>...] [--limit=<n>] [--actor=<u>] [--dry-run] [--json]  the free PDF of the sources that have a DOI and no file, by Unpaywall
+bin/reporion library:fulltext [<key>...] [--limit=<n>] [--actor=<u>] [--dry-run] [--json]  the free PDF of the sources that have a DOI or a PMID and no file, by Unpaywall
 bin/reporion library:duplicates [--json]  the library's sources that look like one article (a shared DOI, PMID, original file, or title and year), group by group, the one to keep first; reads only
 bin/reporion library:merge <keep> <from> [--actor=<u>] [--dry-run] [--json]  the source `from` folded into `keep` (D60): its missing fields, tags, file and text move over, every unsigned page citing it is re-cited,
 bin/reporion library:export [--format=bibtex|ris|csl|text] [--style=vancouver|apa|ama] [--tag=<t>] [--to=<file>]  the library's references; reads only

@@ -365,13 +365,13 @@ final class Library
 
     /**
      * The free PDF of a source that has only its record (Zotero's "Find available PDF"): the DOI and
-     * the library's address go to Unpaywall; the PDF it names is fetched by WebClip's safeguards
+     * the library's address go to Unpaywall (a source with a PMID only: PubMed is asked for its DOI and PMCID first); the PDF it names is fetched by WebClip's safeguards
      * (public addresses only, the size limit, redirects checked) and read like an upload (the patient
      * guard, OCR for a scan), then attached as for a record that took its file. A file that names
      * another DOI is refused, and one the library holds already.
      *
      * @return array{pid: string, path: string, rev: int, status: string, host: ?string}
-     *               status: `attached`, `has_file`, `no_doi`, `none` (no free copy), `not_pdf` (the address gave something else), `mismatch` (the file is another article),
+     *               status: `attached`, `has_file`, `no_doi` (neither DOI nor PMID), `none` (no free copy), `not_pdf` (the address gave something else), `mismatch` (the file is another article),
      *               `refused` (the copies found would not be sent to a program: a publisher's 403 or bot check),
      *               `duplicate` (the library has that file), `failed` (not reached or not readable)
      *
@@ -393,40 +393,55 @@ final class Library
         }
         $csl = self::cleanCsl(\is_array($page->frontmatter['csl'] ?? null) ? $page->frontmatter['csl'] : []);
         $doi = \is_string($csl['DOI'] ?? null) ? ArticleIds::normalizeDoi($csl['DOI']) : null;
-        if ($doi === null) {
+        $pmid = preg_match('/^\d{1,9}$/', (string) ($csl['PMID'] ?? '')) === 1 ? (string) $csl['PMID'] : null;
+        $pmcid = \is_string($csl['PMCID'] ?? null) && $csl['PMCID'] !== '' ? $csl['PMCID'] : null;
+        if ($doi === null && $pmid === null) {
             return ['status' => 'no_doi'] + $result;
+        }
+        $reached = true;
+        if ($doi === null) {
+            // A source known by its PMID only (2026-11-16): PubMed is asked by the PMID for the article's
+            // DOI and PMCID, the identifier only; the chain below then runs as for a DOI
+            try {
+                $known = $this->lookup?->pubmed((string) $pmid)['csl'] ?? [];
+                $doi = \is_string($known['DOI'] ?? null) ? ArticleIds::normalizeDoi($known['DOI']) : null;
+                $pmcid ??= \is_string($known['PMCID'] ?? null) && $known['PMCID'] !== '' ? $known['PMCID'] : null;
+            } catch (\RuntimeException) {
+                $reached = false;
+            }
         }
         // Where a free copy may be, in turn (2026-11-04): each PDF Unpaywall lists (a publisher may refuse a
         // program, a repository not), OpenAlex's own copy of the PDF (with the library's key), then Europe
         // PMC's open-access text as JATS XML (by the PMCID). Each is sent the identifier only
-        $reached = true;
         $urls = [];
-        try {
-            $found = $this->lookup?->unpaywall($doi, (string) $this->unpaywallEmail);
-            $urls = $found['urls'] ?? ($found !== null ? [$found['url']] : []);
-        } catch (\RuntimeException) {
-            $reached = false;
+        if ($doi !== null) {
+            try {
+                $found = $this->lookup?->unpaywall($doi, (string) $this->unpaywallEmail);
+                $urls = $found['urls'] ?? ($found !== null ? [$found['url']] : []);
+            } catch (\RuntimeException) {
+                $reached = false;
+            }
         }
         $outcomes = [];
         foreach ($urls as $url) {
-            $tried = $this->tryFullText($path, $page->pid, $doi, $url, 'pdf', $principal, $actor, $dryRun);
+            $tried = $this->tryFullText($path, $page->pid, $doi, $pmid, $url, 'pdf', $principal, $actor, $dryRun);
             if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
                 return $tried + $result;
             }
             $outcomes[] = $tried;
         }
-        $openAlex = $this->openAlexKey !== null && $this->openAlexKey !== '' ? $this->lookup?->openAlexPdf($doi, $this->openAlexKey) : null;
+        $openAlex = $doi !== null && $this->openAlexKey !== null && $this->openAlexKey !== '' ? $this->lookup?->openAlexPdf($doi, $this->openAlexKey) : null;
         if ($openAlex !== null) {
-            $tried = $this->tryFullText($path, $page->pid, $doi, $openAlex, 'pdf', $principal, $actor, $dryRun);
+            $tried = $this->tryFullText($path, $page->pid, $doi, $pmid, $openAlex, 'pdf', $principal, $actor, $dryRun);
             if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
                 return $tried + $result;
             }
             $outcomes[] = $tried;
         }
-        $pmcid = \is_string($csl['PMCID'] ?? null) && $csl['PMCID'] !== '' ? $csl['PMCID'] : $this->lookup?->europePmcId($doi);
+        $pmcid ??= $doi !== null ? $this->lookup?->europePmcId($doi) : null;
         $xml = $pmcid !== null ? $this->lookup?->europePmcXml($pmcid) : null;
         if ($xml !== null) {
-            $tried = $this->tryFullText($path, $page->pid, $doi, $xml, 'xml', $principal, $actor, $dryRun);
+            $tried = $this->tryFullText($path, $page->pid, $doi, $pmid, $xml, 'xml', $principal, $actor, $dryRun);
             if ($tried['status'] === 'attached' || $tried['status'] === 'duplicate') {
                 return $tried + $result;
             }
@@ -456,14 +471,18 @@ final class Library
      *
      * @throws LibraryException PATIENT_DATA
      */
-    private function tryFullText(string $path, string $pid, string $doi, string $source, string $kind, User $principal, string $actor, bool $dryRun): array
+    private function tryFullText(string $path, string $pid, ?string $doi, ?string $pmid, string $source, string $kind, User $principal, string $actor, bool $dryRun): array
     {
         if ($kind === 'xml') {
             $bytes = $source;
             $host = 'www.ebi.ac.uk';
-            // The XML names its article: the DOI is read from it, not from pandoc's text (which drops the front matter)
+            // The XML names its article: the DOI (or, for a source with none, the PMID) is read from it, not from pandoc's text (which drops the front matter)
             $named = preg_match('~<article-id[^>]*pub-id-type="doi"[^>]*>\s*([^<\s]+)\s*<~', $bytes, $m) === 1 ? ArticleIds::normalizeDoi(html_entity_decode($m[1], ENT_QUOTES | ENT_XML1)) : null;
-            if ($named !== null && $named !== $doi) {
+            if ($doi !== null && $named !== null && $named !== $doi) {
+                return ['status' => 'mismatch', 'host' => $host];
+            }
+            $namedPmid = preg_match('~<article-id[^>]*pub-id-type="pmid"[^>]*>\s*(\d+)\s*<~', $bytes, $m) === 1 ? $m[1] : null;
+            if ($doi === null && $pmid !== null && $namedPmid !== null && $namedPmid !== $pmid) {
                 return ['status' => 'mismatch', 'host' => $host];
             }
         } else {
@@ -499,7 +518,7 @@ final class Library
             // A publisher's page can answer with another article, or a paywall: a DOI the file names that is not this one
             $identified = Identify::propose($extracted)['csl']['DOI'] ?? null;
             $named = \is_string($identified) ? ArticleIds::normalizeDoi($identified) : null;
-            if ($named !== null && $named !== $doi) {
+            if ($doi !== null && $named !== null && $named !== $doi) {
                 return ['status' => 'mismatch', 'host' => $host];
             }
         }

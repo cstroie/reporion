@@ -55,7 +55,7 @@ final class PageTemplateRenderer
         private readonly bool $speaks = false,
         // The online lookups are on: a source's card offers Look up online (2026-10-31)
         private readonly bool $lookup = false,
-        // Find full text is set up (the lookups on and Unpaywall's address): a source with a DOI and no file offers it (D60)
+        // Find full text is set up (the lookups on and Unpaywall's address): a source with a DOI or a PMID and no file offers it (D60)
         private readonly bool $fullText = false,
         // A source's passage picker (2026-11-11): the pages citing it that take passages (Highlights::notebooks())
         private readonly ?\Reporion\Service\Library\Highlights $highlights = null,
@@ -191,7 +191,7 @@ final class PageTemplateRenderer
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
             'canLookup' => $this->lookup && $currentRev === null && $principal->canWrite($record->path),
             // Find full text (D60): set up, a DOI and no file yet
-            'canFulltext' => $this->fullText && $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null) && \is_string(($record->frontmatter['csl'] ?? [])['DOI'] ?? null),
+            'canFulltext' => $this->fullText && $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null) && (\is_string(($record->frontmatter['csl'] ?? [])['DOI'] ?? null) || (string) (($record->frontmatter['csl'] ?? [])['PMID'] ?? '') !== ''),
             // What it cites (phase 7): its reference list against the records the caller reads (the index only)
             'cites' => $this->cites($record, $principal),
             // What the assistant made of it before, kept beside it, for any reader of the source
