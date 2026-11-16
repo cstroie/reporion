@@ -204,6 +204,7 @@ bin/reporion library:duplicates [--json]  the library's sources that look like o
 bin/reporion library:merge <keep> <from> [--actor=<u>] [--dry-run] [--json]  the source `from` folded into `keep` (D60): its missing fields, tags, file and text move over, every unsigned page citing it is re-cited,
 bin/reporion library:export [--format=bibtex|ris|csl|text] [--style=vancouver|apa|ama] [--tag=<t>] [--to=<file>]  the library's references; reads only
 bin/reporion guide:load <file.csv> [--source=<text>] [--actor=<u>] [--dry-run] [--json]  the imaging guide (D62) from GIRI's GHID.csv: checked (13 columns, legends, no CNP), kept in data/guide/, its search tables filled; index:rebuild refills them
+bin/reporion guide:measure [--limit=<n>] [--json]  how well the reports' indications match the imaging guide (coverage, lead, would-warn counts per threshold pair); reads only, counts only
 bin/reporion page:new <path> [--template=<p>]  create, optionally copying a template page
 bin/reporion page:move <from> <to> [--actor=<u>]  a redirect from the old path + fixups in unsigned pages
 bin/reporion pages:repair-paths [--dry-run] [--json]  page files under pages/ that are no page where they are: one moved by hand takes its page along

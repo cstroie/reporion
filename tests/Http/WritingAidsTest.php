@@ -60,6 +60,21 @@ final class WritingAidsTest extends HttpTestCase
         self::assertSame('Described, not in the conclusion: Chist de [dimensiune].', $byCode['not_concluded']['message']);
     }
 
+    public function testTheGuideWarnsWhenItDoesNotBackThisExamForAStronglyMatchedIndication(): void
+    {
+        $path = 'reports:mri:mioveni:261019-test-pacient';
+        $this->storage()->create($path, ['visibility' => 'private', 'modality' => ['CR'], 'region' => ['torace'], 'study_date' => '2026-10-19', 'indication' => 'Durere toracică nespecifică', 'patient' => ['name' => 'TEST Pacient', 'cnp' => self::CNP]], "# TEST Pacient\n\n## Radiografie toracică\n\n### Concluzii\n\nNormal.\n", 'mihai');
+        $checks = fn (): array => array_column(json_decode($this->call('POST', '/api/v1/checks', 'mihai', ['path' => $path, 'text' => "# TEST Pacient\n\n## Radiografie toracică\n\n### Concluzii\n\nNormal.\n"])->body, true)['data'], null, 'code');
+        self::assertArrayNotHasKey('guide', $checks(), 'no guide loaded: no warning');
+
+        \Reporion\Kernel::guide($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'))
+            ->load((string) file_get_contents(\dirname(__DIR__) . '/fixtures/guide/guide-sample.csv'), 'test', 'owner');
+        $guide = $checks()['guide'] ?? null;
+        self::assertNotNull($guide);
+        self::assertSame('The imaging guide lists Radiografie toracică as „Neindicat în primă intenție” for Durere toracică nespecifică.', $guide['message']);
+        self::assertStringStartsWith('/guide/', $guide['href']);
+    }
+
     public function testADocumentWithItsOwnFrontmatterIsCheckedByIt(): void
     {
         $text = "---\npatient:\n  sex: F\n---\n\n# TEST Pacient\n\n## IRM pelvis\n\n### Descriere\n\nProstată mărită.\n\n### Concluzii\n\nProstată mărită.\n";

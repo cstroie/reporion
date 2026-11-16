@@ -125,4 +125,15 @@ final class GuideTest extends StorageTestCase
         self::assertSame([false, true], array_column($adult[0]['exams'], 'this'));
         self::assertSame([], $this->guide->forReport('', [], ['CT'], 40));
     }
+
+    public function testACautionOnlyOnAStrongMatchWhoseRowsForThisExamAreDiscouraged(): void
+    {
+        $this->guide->load($this->csv, '', 'owner');
+        $caution = $this->guide->caution('Durere toracică nespecifică', [], ['DX'], 50);
+        self::assertSame('Durere toracică nespecifică', $caution['situation']['title'] ?? null);
+        self::assertSame('not-first', $caution['exam']['indication_code'] ?? null);
+        self::assertNull($this->guide->caution('Durere toracică nespecifică', [], ['CT'], 50), 'no row of this exam type');
+        self::assertNull($this->guide->caution('Accident vascular cerebral acut', [], ['CT'], 60), 'indicated: nothing to say');
+        self::assertNull($this->guide->caution('durere', [], ['DX'], 50, 0.99, 0.99), 'a weak match never warns');
+    }
 }

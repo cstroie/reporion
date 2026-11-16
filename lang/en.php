@@ -2231,6 +2231,7 @@ return [
     'library.bookmarklet_title' => 'Bookmarklet',
     'library.bookmarklet'      => 'Save to the library',
     'library.bookmarklet_help' => 'Drag this to your bookmarks bar. On an article\'s page, press it: the library opens with that address filled in, and you press Clip. Nothing is fetched until then.',
+    'editor.checks.guide'      => 'The imaging guide lists %1$s as „%2$s” for %3$s.',
     'editor.workup.title'      => 'Workup',
     'editor.workup.sub'        => 'evidence and next steps',
     'editor.workup.run'        => 'Gather',

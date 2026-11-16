@@ -48,6 +48,8 @@ final class WritingAidsController
     public function __construct(
         private readonly EditorPages $editorPages,
         private readonly PriorStudy $priors,
+        // The imaging guide (D62 step 4): a warning when it does not back this exam for a strongly matched indication
+        private readonly ?\Reporion\Service\Guide\Guide $guide = null,
     ) {
     }
 
@@ -76,8 +78,41 @@ final class WritingAidsController
             'message' => CheckText::message($check),
             'quote' => $check['quote'],
         ], WritingChecks::check($body, $frontmatter ?? $page->frontmatter));
+        $caution = $this->guideCaution($page);
+        if ($caution !== null) {
+            $data[] = $caution;
+        }
 
         return ApiResponse::json(['data' => $data]);
+    }
+
+    /**
+     * The guide's warning (D62 step 4, Guide::caution()): only on a strong match, a warning never
+     * a block (D7); the situation's page linked. Null when the guide is not loaded or is silent.
+     *
+     * @return array{code: string, exam: string, message: string, quote: string, href: string}|null
+     */
+    private function guideCaution(\Reporion\Storage\PageRecord $page): ?array
+    {
+        if ($this->guide === null || $this->guide->info() === null) {
+            return null;
+        }
+        $facts = \Reporion\Service\Workup\Workup::facts($page);
+        if ($facts['indication'] === '') {
+            return null;
+        }
+        $caution = $this->guide->caution($facts['indication'], $facts['regions'], $facts['modalities'], $facts['age']);
+        if ($caution === null) {
+            return null;
+        }
+
+        return [
+            'code' => 'guide',
+            'exam' => '',
+            'message' => t('editor.checks.guide', [$caution['exam']['exam'], $caution['exam']['indication'], $caution['situation']['title']]),
+            'quote' => '',
+            'href' => '/guide/' . $caution['situation']['key'],
+        ];
     }
 
     public function prior(Request $request, string $path, ?User $principal): Response

@@ -708,7 +708,7 @@ final class Kernel
         $editorPages = new EditorPages($index, $editorPage);
         $recall = new RecallController($editorPages, new Recall($index, $storage));
         // The editor's checks and prior section (D51): rules and the index, no AI
-        $writingAids = new WritingAidsController($editorPages, new PriorStudy($storage, $index));
+        $writingAids = new WritingAidsController($editorPages, new PriorStudy($storage, $index), self::guide((string) $config['paths']['data'], $index));
         $textFlow = new Controller\TextFlowController();
         $assistant = self::assistant($config, $aiConfig, $storage, $index, $audit);
         // Plugins listen on these (and add routes); the Ask screen asks them for outside passages

@@ -220,6 +220,10 @@
           button.addEventListener('click', function () {
             if (!api.locate(item.quote) && checkStatus) checkStatus.textContent = s.notFound || '';
           });
+        } else if (item.href) {
+          // The imaging guide's warning (D62): its situation opens beside the editor
+          button.querySelector('i').className = 'ph ph-list-checks';
+          button.addEventListener('click', function () { window.open(api.basePath + item.href, '_blank', 'noopener'); });
         } else {
           button.disabled = true;
         }

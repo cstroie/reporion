@@ -146,7 +146,9 @@ final class Guide
     /**
      * The situations a report is about (Workup's *Next steps*, D63): searched by its indication and
      * regions, a child's (under 18) Pediatrie situations first and an adult's last, the rows of the
-     * report's own exam types marked `this: true`. Nothing is sent anywhere.
+     * report's own exam types marked `this: true`; each with `score` (the weighed words its title
+     * holds), `coverage` (0..1: the share of the indication's own weight it holds) and `aside` (a
+     * procedure or catch-all row). Nothing is sent anywhere.
      *
      * @param list<string> $regions
      * @param list<string> $modalities the report's (D29), e.g. CT, MR
@@ -180,16 +182,74 @@ final class Guide
             return [$aside, -$covered, $ageRank];
         };
         usort($found, static fn (array $a, array $b): int => [...$rank($a), $order[$a['key']]] <=> [...$rank($b), $order[$b['key']]]);
+        // How much of the indication's own weight the title holds, 0..1: what the Checks warning trusts (D62 step 4)
+        $ownWeight = 200 * array_sum(array_map(static fn (string $stem): float => $weight[$stem] ?? 0.0, $own));
         $tips = array_values(array_filter(array_map(GuideCodes::typeOfModality(...), $modalities)));
         $out = [];
         foreach (\array_slice($found, 0, max(1, $limit)) as $situation) {
             foreach ($situation['exams'] as $n => $exam) {
                 $situation['exams'][$n]['this'] = \in_array($exam['tip'], $tips, true);
             }
+            $r = $rank($situation);
+            $situation['score'] = -$r[1];
+            $situation['coverage'] = $ownWeight > 0 ? round(min(1.0, -$r[1] / $ownWeight), 3) : 0.0;
+            $situation['aside'] = $r[0] === 1;
             $out[] = $situation;
         }
 
         return $out;
+    }
+
+    /** A strong match's least coverage of the indication's own words (guide:measure, D62 step 4) */
+    public const MIN_COVERAGE = 0.6;
+
+    /** A strong match's least lead over the next situation, as a share of its score */
+    public const MIN_MARGIN = 0.25;
+
+    /**
+     * The Checks warning (D62 step 4): when the report's indication matches one guide situation
+     * strongly (a diagnostic one, covering at least $minCoverage of the indication's own words,
+     * leading the next by $minMargin of its score) and every row of this exam's type there is
+     * discouraged (GuideCodes::DISCOURAGED: justification needed, not first, not indicated),
+     * that situation and the row; else null. Never a block (D7).
+     *
+     * @param list<string> $regions
+     * @param list<string> $modalities
+     *
+     * @return array{situation: array<string, mixed>, exam: array<string, mixed>, coverage: float, margin: float}|null
+     */
+    public function caution(string $indication, array $regions, array $modalities, ?int $age, float $minCoverage = self::MIN_COVERAGE, float $minMargin = self::MIN_MARGIN): ?array
+    {
+        $match = $this->strongest($indication, $regions, $modalities, $age);
+        if ($match === null || $match['coverage'] < $minCoverage || $match['margin'] < $minMargin) {
+            return null;
+        }
+        $rows = array_values(array_filter($match['situation']['exams'], static fn (array $x): bool => $x['this']));
+        if ($rows === [] || \count(array_filter($rows, static fn (array $x): bool => \in_array($x['indication_code'], GuideCodes::DISCOURAGED, true))) !== \count($rows)) {
+            return null;
+        }
+
+        return ['situation' => $match['situation'], 'exam' => $rows[0], 'coverage' => $match['coverage'], 'margin' => $match['margin']];
+    }
+
+    /**
+     * The best situation for a report with how sure the match is: its coverage and its lead over
+     * the next (0..1); null when there is none or the best is a procedure or catch-all row
+     *
+     * @param list<string> $regions
+     * @param list<string> $modalities
+     *
+     * @return array{situation: array<string, mixed>, coverage: float, margin: float}|null
+     */
+    public function strongest(string $indication, array $regions, array $modalities, ?int $age): ?array
+    {
+        $found = $this->forReport($indication, $regions, $modalities, $age, 2);
+        if ($found === [] || $found[0]['aside'] || $found[0]['score'] <= 0) {
+            return null;
+        }
+        $second = $found[1]['score'] ?? 0;
+
+        return ['situation' => $found[0], 'coverage' => (float) $found[0]['coverage'], 'margin' => round(max(0, $found[0]['score'] - $second) / $found[0]['score'], 3)];
     }
 
     /** Words of an indication that say nothing of the situation */

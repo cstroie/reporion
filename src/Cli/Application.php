@@ -217,6 +217,11 @@ final class Application
 
             return new GuideLoadCommand(Kernel::guide((string) $config['paths']['data'], $index), $audit());
         });
+        $app->register('guide:measure', GuideMeasureCommand::class, static function () use ($indexAndStorage, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new GuideMeasureCommand($storage, Kernel::guide((string) $config['paths']['data'], $index));
+        });
         $app->register('page:new', PageNewCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 
