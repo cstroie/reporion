@@ -1,6 +1,6 @@
 # Plan: Workup, a rail section that gathers the evidence for a report's conclusion
 
-Status: **proposed 2026-11-16**, awaiting the owner's approval. Decision row to add: **D63**.
+Status: **approved 2026-11-16** (decisions below); to build on `feat/guide` after D62's steps 1–2. Decision row to add: **D63**.
 Builds on D62 (the imaging guide, steps 1–2 built on `feat/guide`), which becomes one of its sources.
 
 ## Context
@@ -115,9 +115,8 @@ start: the block simply has no protocol lines.
 
 Full suite before merge.
 
-## Decisions for the owner
-1. **New endpoint** `POST /api/v1/workup` and a reserved prompt id `workup`: approve?
-2. **The model call**: one per click, `expert` tier by default: right?
-3. **The library's English words** by the existing `ask-expand` small call: on by default?
-4. **`protocols:` namespace** for local rules, read by Workup: create it now (empty), or later?
-5. **Similar reports**: the doctor's own reports first (as Recall), or all readable reports alike?
+## Decisions (owner, 2026-11-16)
+1. `POST /api/v1/workup` and the reserved prompt `workup`: **approved**, one model call per click on the **`expert`** tier by default.
+2. The library's English search words by the existing `ask-expand` small call: **on by default**.
+3. `protocols:` namespace: **created now, empty**, with a head page explaining the convention (by `ai:prompts-install`-like seeding or by hand; not by a migration).
+4. Similar finished reports: **the doctor's own first**, then others the caller can read (as Recall).
