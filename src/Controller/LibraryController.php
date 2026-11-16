@@ -47,7 +47,7 @@ use Reporion\Support\InternalLink;
  * GET /library/file/{pid}: a source's original, to a signed-in caller who may see its page.
  * GET /library/thumb/{pid}: its cover (the PDF's first page, a small JPEG), under the same rule.
  * GET /library: the library's view (phase 2): every source the caller may see, filtered by a tag,
- * sorted by author, year or title, with the upload form for an editor.
+ * sorted by date added (the default), author, year or title, with the upload form for an editor.
  * PUT /api/v1/library/{pid}/record {csl, base_rev, tags?}: a source's record corrected.
  * POST /api/v1/library/{pid}/lookup: the record asked again of CrossRef and PubMed by its DOI or PMID and
  * overwritten with what they return (opt-in `library.lookup`, off: 404).
@@ -108,7 +108,7 @@ final class LibraryController
     public const IMPORT_EXTENSIONS = ['bib', 'ris', 'json'];
 
     /** The orders the view offers; the first is the default */
-    public const SORTS = ['author', 'year', 'title', 'added'];
+    public const SORTS = ['added', 'author', 'year', 'title'];
 
     public function index(Request $request, ?User $principal): Response
     {
