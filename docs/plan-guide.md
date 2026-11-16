@@ -2,6 +2,8 @@
 
 Status: **approved 2026-11-16** (all five decisions as recommended, below); to build on branch `feat/guide`. Decision row to add: **D62**.
 
+**Amended 2026-11-16 (owner):** the guide is one source of the *Workup* rail section (`docs/plan-workup.md`, D63), not a feature on its own. Steps 1–2 below are built; step 3's rail section is folded into Workup (as `Guide::forReport()` and its *Next steps* block); steps 4–5 stay as small follow-ups.
+
 ## Context
 
 The Romanian *Ghid de indicații radioimagistice* (public, signed by the Ministry of Health; the
