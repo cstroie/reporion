@@ -8,9 +8,10 @@ whole content is the prompt page's body. They come in three **targets**, each a 
   (`summary`, `tags`, `tags-review`, `commit`, `ask`, `grammar`), **written in English**; they answer in the language of the page.
 - `research/` (2026-11-01): for the profile serving the library namespace (Admin → AI routing
   table, `library → research`). The library's prompts (`source-*`, `ask-notebook`,
-  `notebook-terms`, `studio-*`), **written in English**, and a rail table naming `ask` and
-  `grammar`, whose pages (like `summary`, `tags`, `commit`) come from the everywhere-else profile
-  (`ai.fallback_profile`): nothing is shipped twice.
+  `notebook-terms`, `studio-*`), **written in English**, its own `summary` (2026-11-16: a source's
+  one line, in `{language}`; the fallback's was the radiology one, a report's conclusion in Romanian,
+  and a small model answered an article in Italian), and a rail table naming `ask` and `grammar`,
+  whose pages (like `tags`, `commit`) come from the everywhere-else profile (`ai.fallback_profile`).
 
 The web installer (radiology), Admin → AI (*Examples for*) and `bin/reporion ai:prompts-install
 --target=radiology|generic|research` make them pages of a profile (`Service\Ai\DefaultPrompts`); a page that is

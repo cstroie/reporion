@@ -1,0 +1,13 @@
+Summarize the scientific article "{title}" ({citation}) in a single line of at most 200 characters, in {language}.
+
+The article (its abstract, or its text):
+<source>
+{source}
+</source>
+
+Rules:
+- What the study found: its design in a word or two, then the main result; figures exactly as the article gives them.
+- Only what the article says: no opinion, no outside knowledge, nothing invented.
+- Start with the finding or the study itself, never with "This article", "The authors" or "This study".
+- Write in {language} only; keep technical terms in the language of the article when there is no exact equivalent.
+- Answer with the line only, no quotes and no explanation.

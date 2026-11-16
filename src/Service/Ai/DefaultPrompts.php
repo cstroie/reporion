@@ -74,7 +74,7 @@ final class DefaultPrompts
      * @var array<string, array{kind: string, title: string, file: string, targets: list<string>, model?: string}>
      */
     public const CATALOGUE = [
-        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt', 'model' => 'lite', 'targets' => self::BOTH],
+        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt', 'model' => 'lite', 'targets' => self::ALL],
         'tags' => ['kind' => self::SPECIAL, 'title' => 'Tags', 'file' => 'tags.txt', 'model' => 'lite', 'targets' => self::BOTH],
         'tags-review' => ['kind' => self::SPECIAL, 'title' => 'Tags review', 'file' => 'tags-review.txt', 'targets' => self::BOTH],
         'commit' => ['kind' => self::SPECIAL, 'title' => 'Revision note', 'file' => 'commit.txt', 'model' => 'lite', 'targets' => self::BOTH],

@@ -53,7 +53,7 @@ final class DefaultPromptsTest extends StorageTestCase
 
         self::assertEqualsCanonicalizing(array_diff(array_keys(DefaultPrompts::CATALOGUE), ['grammar'], Actions::LIBRARY), $of('radiology'));
         self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $of('generic'));
-        self::assertEqualsCanonicalizing(['table', ...Actions::LIBRARY], $of('research'), 'the library\'s prompts and a rail table; the rest from the fallback profile');
+        self::assertEqualsCanonicalizing(['table', 'summary', ...Actions::LIBRARY], $of('research'), 'the library\'s prompts and a rail table, its own summary of an article; the rest from the fallback profile');
         self::assertNotContains('grammar', $of('radiology'), 'grammar is for ordinary pages');
         self::assertSame('ai:profiles:reports:system', DefaultPrompts::pathOf('reports', 'system'));
         self::assertSame('ai:profiles:reports:conclusion', DefaultPrompts::pathOf('reports', 'conclusion'));
@@ -75,9 +75,9 @@ final class DefaultPromptsTest extends StorageTestCase
         self::assertStringContainsString('Ești radiolog', $this->storage->read('ai:profiles:reports:special:summary')->body);
 
         $research = $this->prompts->install('research', 'owner', target: DefaultPrompts::RESEARCH);
-        self::assertEqualsCanonicalizing(['table', ...Actions::LIBRARY], $research['created']);
+        self::assertEqualsCanonicalizing(['table', 'summary', ...Actions::LIBRARY], $research['created']);
         self::assertStringContainsString('| grammar |', $this->storage->read('ai:profiles:research')->body, 'its rail names ask and grammar');
-        self::assertSame(['missing'], array_values(array_unique(array_intersect_key($this->prompts->status('research', DefaultPrompts::GENERIC), ['summary' => 1, 'ask' => 1]))), 'not shipped twice');
+        self::assertSame(['missing'], array_values(array_unique(array_intersect_key($this->prompts->status('research', DefaultPrompts::GENERIC), ['ask' => 1, 'grammar' => 1]))), 'not shipped twice');
 
         $this->expectException(\InvalidArgumentException::class);
         $this->prompts->install('x', 'owner', target: 'nope');
