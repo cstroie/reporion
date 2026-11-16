@@ -679,6 +679,8 @@ return [
     'admin.ai.reserved.recall-expand' => 'Recall\'s "Expand the line" in the editor',
     'admin.ai.feature.ask-archive' => 'Ask the archive',
     'admin.ai.reserved.ask-archive' => 'The answer on the Ask the archive screen',
+    'admin.ai.feature.workup' => 'Workup',
+    'admin.ai.reserved.workup' => 'The synthesis of the editor\'s Workup section: a differential and next steps from the gathered evidence',
     'admin.ai.feature.ask-expand' => 'Ask: expand the question',
     'admin.ai.reserved.ask-expand' => "Ask the archive's first step: the question made standalone, plus search words",
     'admin.ai.feature.source-part' => 'Source: condense a part',
