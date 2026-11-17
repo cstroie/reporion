@@ -301,6 +301,17 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertStringNotContainsString('maladia', $sent);
     }
 
+    public function testAHeldCapitalisedWordIsNamedInANoticeAndLowerCaseSendsIt(): void
+    {
+        $answer = $this->ask('owner', ['question' => 'Cum arată sindromul Kasabach la copil?']);
+        self::assertStringNotContainsString('kasabach', implode(' ', $this->words()));
+        self::assertStringContainsString('Kasabach', json_decode($answer->body, true)['data']['notices'][0] ?? '', $answer->body);
+
+        $this->asked = [];
+        $this->ask('owner', ['question' => 'Cum arată sindromul kasabach la copil?']);
+        self::assertStringContainsString('kasabach', implode(' ', $this->words()));
+    }
+
     public function testTheEponymListMapsSpellingsToTheirCommonStem(): void
     {
         $map = \Reporion\Plugin\Hipobridge\Ask::eponyms(\dirname(__DIR__, 2) . '/resources/eponyms.txt');

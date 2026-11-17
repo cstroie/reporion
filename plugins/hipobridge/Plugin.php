@@ -183,13 +183,16 @@ final class Plugin implements PluginInterface
         if (!$this->configured || !NewReport::canCreateReports($principal)) {
             return [];
         }
+        // A capitalised word is held back as a possible name: say which, so a medical term can be typed again in lower case
+        $held = $this->ask->held($question, $principal);
+        $notices = $held === [] ? [] : [['notice' => t('hipobridge.ask.held', [implode(', ', $held)])]];
         try {
             $passages = $this->ask->passages($question, $principal);
         } catch (HisException $e) {
-            return [['notice' => t('hipobridge.ask.failed', [t('hipobridge.err.' . $e->reason())])]];
+            return [...$notices, ['notice' => t('hipobridge.ask.failed', [t('hipobridge.err.' . $e->reason())])]];
         }
 
-        return array_map(static fn (array $p): array => [
+        return [...$notices, ...array_map(static fn (array $p): array => [
             'text' => $p['text'],
             'date' => $p['date'],
             'label' => t('hipobridge.ask.kind.' . $p['kind']),
@@ -197,7 +200,7 @@ final class Plugin implements PluginInterface
             'names' => $p['names'],
             'cnp' => $p['cnp'],
             'extra' => $p['extra'],
-        ], $passages);
+        ], $passages)];
     }
 
     /** The report behind $pid, when $principal may write it: else 404 (never 403) */

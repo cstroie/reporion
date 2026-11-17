@@ -74,5 +74,6 @@ return [
     'hipobridge.err.patient' => 'The patient could not be read from HippoBridge.',
     'hipobridge.ask.kind.imaging' => 'HIS imaging',
     'hipobridge.ask.kind.epicrisis' => 'HIS epicrisis',
+    'hipobridge.ask.held' => 'Not sent to HippoBridge, taken for a name: %s. If it is a medical term, write it in lower case.',
     'hipobridge.ask.failed' => 'HippoBridge was left out of this answer: %s',
 ];

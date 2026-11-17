@@ -129,7 +129,38 @@ final class Ask
      */
     public function terms(string $question, ?User $principal = null): array
     {
-        $blocked = $this->nameWords();
+        [$blocked] = $this->capitalised($question, $principal);
+        $terms = array_filter(
+            ArchiveAsk::terms($question),
+            static fn (string $term): bool => !isset($blocked[$term]) && !\in_array($term, self::FILLER, true) && preg_match('/\d{4}/', $term) !== 1,
+        );
+
+        // An eponym is searched by the stem of its spellings: "ombredan" finds Ombredane and Ombredanne
+        return array_values(array_unique(array_map(fn (string $term): string => $this->eponyms[$term] ?? $term, $terms)));
+    }
+
+    /**
+     * The capitalised words of $question held back as possible names, as
+     * typed, for a notice: written in lower case they are sent (a medical
+     * term the eponym list lacks). Only content words count (no "Cum"); a name word of a report path is left out:
+     * it stays blocked in any case, so lower case would not help.
+     *
+     * @return list<string>
+     */
+    public function held(string $question, ?User $principal = null): array
+    {
+        return $this->capitalised($question, $principal)[1];
+    }
+
+    /**
+     * @return array{0: array<string, true>, 1: list<string>} the blocked folded words; the capitalised ones held, as typed
+     */
+    private function capitalised(string $question, ?User $principal): array
+    {
+        $names = $this->nameWords();
+        $blocked = $names;
+        $content = array_flip(ArchiveAsk::terms($question));
+        $held = [];
         $tokens = preg_split('/\s+/u', trim($question)) ?: [];
         foreach ($tokens as $i => $token) {
             $word = trim($token, " \t.,;:!?()[]{}\"'«»„”");
@@ -144,16 +175,13 @@ final class Ask
             }
             if (!$starts || $principal === null || $this->index->searchCount($folded, $principal) < self::KNOWN_IN_WIKI) {
                 $blocked[$folded] = true;
+                if (isset($content[$folded]) && !isset($names[$folded]) && !\in_array($folded, self::FILLER, true) && !\in_array($word, $held, true)) {
+                    $held[] = $word;
+                }
             }
         }
 
-        $terms = array_filter(
-            ArchiveAsk::terms($question),
-            static fn (string $term): bool => !isset($blocked[$term]) && !\in_array($term, self::FILLER, true) && preg_match('/\d{4}/', $term) !== 1,
-        );
-
-        // An eponym is searched by the stem of its spellings: "ombredan" finds Ombredane and Ombredanne
-        return array_values(array_unique(array_map(fn (string $term): string => $this->eponyms[$term] ?? $term, $terms)));
+        return [$blocked, $held];
     }
 
     /**
