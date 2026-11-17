@@ -30,7 +30,8 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   texts only; the two answers are merged by HippoBridge's `search-score`, and a passage keeps its section name.
   Only content words of the question are sent to HippoBridge (never the question; no filler such as "usually" or
   "recommended"; no name, number or mid-sentence capitalised word; a capitalised word that begins the question goes
-  unless at least three wiki pages use it). Each document's patient name, CNP and every other identifier its page
+  unless at least three wiki pages use it; an eponym of `resources/eponyms.txt` (Chiari, Ombredanne…) goes wherever it
+  stands, as the common stem of its spellings, unless it is also a name word of a report path). Each document's patient name, CNP and every other identifier its page
   held (address, phone, email…) are used only to de-identify its passages (emails, phones and street addresses are
   also scrubbed by pattern) and never reach the prompt, the answer, the audit or a log. A document without a name is
   dropped. Not behind the visibility rules, which cannot filter the HIS. If HippoBridge fails or refuses the account,

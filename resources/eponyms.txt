@@ -1,0 +1,99 @@
+# Eponyms: medical names that Ask the archive may send to HippoBridge although
+# they are capitalised (a capitalised word mid-sentence is otherwise taken for a
+# patient's name and dropped). One eponym per line; spellings of the same name
+# on one line, separated by spaces: their common stem is what is searched
+# ("ombredanne ombredane" -> "ombredan"). Folded (no diacritics), lower case.
+# A word that is also a name in a report path is still dropped.
+addison
+alzheimer
+arnold
+baker
+bankart
+barrett
+bechterew bekhterev
+behcet
+bennett
+binswanger
+blount
+bosniak
+budd
+caroli
+chiari
+chilaiditi
+colles
+creutzfeldt
+crohn
+cushing
+dandy
+quervain
+dupuytren
+ehlers
+erdheim
+ewing
+fahr
+fallot
+forestier
+freiberg
+galeazzi
+gaucher
+graves
+guillain
+hashimoto
+hill
+hirschsprung
+hodgkin
+hoffa
+huntington
+jefferson
+kahler
+kienbock
+klatskin
+klippel
+kohler
+krukenberg
+legg
+lisfranc
+madelung
+maisonneuve
+marfan
+meckel
+menetrier
+meniere
+milwaukee
+mirizzi
+monteggia
+morton
+moyamoya
+ombredanne ombredane
+ormond
+osgood
+paget
+pancoast
+parkinson
+pellegrini
+perthes
+peyronie
+poland
+rathke
+riedel
+scheuermann
+schatzki
+schlatter
+segond
+sever
+sinding
+sjogren
+smith
+stieda
+sturge
+sudeck
+takayasu
+tarlov
+thornwaldt tornwaldt
+virchow
+hippel
+wegener
+whipple
+wilms
+wilson
+zenker

@@ -60,7 +60,7 @@ final class Ask
      */
     private const FILLER = [
         'obicei', 'uzual', 'frecvent', 'formulari', 'formulare', 'formulam', 'folosim', 'folosit', 'folosite', 'folosesc', 'avut', 'avea', 'avem', 'aveau',
-        'controale', 'luni', 'saptamani', 'zile', 'recomanda', 'recomandam', 'recomandat', 'exista', 'intalnit', 'gasit', 'spune', 'spus', 'scris', 'notat',
+        'maladia', 'maladie', 'maladiei', 'boala', 'boli', 'bolii', 'controale', 'luni', 'saptamani', 'zile', 'recomanda', 'recomandam', 'recomandat', 'exista', 'intalnit', 'gasit', 'spune', 'spus', 'scris', 'notat',
         'mentionat', 'mentionata', 'cazuri', 'caz', 'exemple', 'exemplu', 'tipic', 'tipice', 'general', 'altfel', 'anume', 'diferit', 'diferite',
         'usually', 'commonly', 'common', 'wording', 'phrasing', 'phrases', 'found', 'mention', 'mentioned', 'cases', 'example', 'examples', 'typical', 'recommend', 'recommended',
     ];
@@ -71,11 +71,50 @@ final class Ask
     /** `search-identifiers` keys that name the patient: their values are learned as name parts */
     private const NAME_KEYS = ['name', 'family-name', 'given-name'];
 
+    /**
+     * @param array<string, string> $eponyms folded spelling => searched stem (self::eponyms())
+     */
     public function __construct(
         private readonly Client $client,
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly array $eponyms = [],
     ) {
+    }
+
+    /**
+     * The eponyms of a list file (resources/eponyms.txt): each folded spelling
+     * mapped to what is searched, the common stem of the spellings on its line
+     * (at least 4 letters, else the spelling itself).
+     *
+     * @return array<string, string>
+     */
+    public static function eponyms(string $file): array
+    {
+        $map = [];
+        foreach (is_file($file) ? (file($file, FILE_IGNORE_NEW_LINES) ?: []) : [] as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#') {
+                continue;
+            }
+            $spellings = array_values(array_filter(array_map(RecallTerms::fold(...), preg_split('/\s+/', $line) ?: []), static fn (string $w): bool => preg_match('/^\p{L}{3,}$/u', $w) === 1));
+            if ($spellings === []) {
+                continue;
+            }
+            $stem = $spellings[0];
+            foreach ($spellings as $spelling) {
+                $n = 0;
+                while ($n < min(\strlen($stem), \strlen($spelling)) && $stem[$n] === $spelling[$n]) {
+                    $n++;
+                }
+                $stem = substr($stem, 0, $n);
+            }
+            foreach ($spellings as $spelling) {
+                $map[$spelling] = \strlen($stem) >= 4 ? $stem : $spelling;
+            }
+        }
+
+        return $map;
     }
 
     /**
@@ -99,15 +138,22 @@ final class Ask
             }
             $starts = $i === 0 || preg_match('/[.!?:]$/u', $tokens[$i - 1]) === 1;
             $folded = RecallTerms::fold($word);
+            // A known eponym (Chiari, Ombredanne…) is a finding word wherever it stands
+            if (isset($this->eponyms[$folded])) {
+                continue;
+            }
             if (!$starts || $principal === null || $this->index->searchCount($folded, $principal) < self::KNOWN_IN_WIKI) {
                 $blocked[$folded] = true;
             }
         }
 
-        return array_values(array_filter(
+        $terms = array_filter(
             ArchiveAsk::terms($question),
             static fn (string $term): bool => !isset($blocked[$term]) && !\in_array($term, self::FILLER, true) && preg_match('/\d{4}/', $term) !== 1,
-        ));
+        );
+
+        // An eponym is searched by the stem of its spellings: "ombredan" finds Ombredane and Ombredanne
+        return array_values(array_unique(array_map(fn (string $term): string => $this->eponyms[$term] ?? $term, $terms)));
     }
 
     /**

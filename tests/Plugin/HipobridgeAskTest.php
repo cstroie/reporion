@@ -291,6 +291,26 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertStringContainsString('hernia', implode(' ', $this->words()));
     }
 
+    public function testAnEponymMidSentenceIsSentByTheStemOfItsSpellings(): void
+    {
+        $this->ask('owner', ['question' => 'Cum descriem maladia Ombredanne la copil?']);
+
+        $sent = implode(' ', $this->words());
+        self::assertStringContainsString('ombredan', $sent);
+        self::assertStringNotContainsString('ombredanne', $sent);
+        self::assertStringNotContainsString('maladia', $sent);
+    }
+
+    public function testTheEponymListMapsSpellingsToTheirCommonStem(): void
+    {
+        $map = \Reporion\Plugin\Hipobridge\Ask::eponyms(\dirname(__DIR__, 2) . '/resources/eponyms.txt');
+
+        self::assertSame('ombredan', $map['ombredane']);
+        self::assertSame('ombredan', $map['ombredanne']);
+        self::assertSame('chiari', $map['chiari']);
+        self::assertArrayNotHasKey('von', $map);
+    }
+
     public function testWhenTwoWordsTogetherFindNothingOneIsEnough(): void
     {
         $bundle = $this->his['/fhir/ImagingStudy'];

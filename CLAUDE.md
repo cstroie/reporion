@@ -94,7 +94,7 @@ assets/
   css/
 plugins/<id>/             plugin.json + Plugin.php
 conf/                     local.php: strict configuration only: the data path and the session secret. Everything else is in data/
-resources/                shipped defaults, git-tracked: schema/*.json (per-modality field definitions), synonyms.txt (seeds data/tags.yaml)
+resources/                shipped defaults, git-tracked: schema/*.json (per-modality field definitions), synonyms.txt (seeds data/tags.yaml), eponyms.txt (names Ask may send to HippoBridge)
 data/                     pages/ ({slug}.md), attic/ ({slug}.zip), reporion.sqlite (permanent), index.sqlite + vectors.sqlite (caches),
                           media/, sources/ (library originals and their covers `{sha256}.thumb.jpg`, D58), users/, groups/, journal/, audit/, trash/{pid}/, tmp/ (uploads kept until used), snapshot/ (rsync's
                           copy of reporion.sqlite), backups/ (archives, D44), settings.yaml + site/ (Admin → Settings), tags.yaml

@@ -70,7 +70,7 @@ final class Plugin implements PluginInterface
         );
 
         $this->configured = (string) $settings['url'] !== '' && (string) $settings['username'] !== '';
-        $this->ask = new Ask(new Client((string) $settings['url'], (string) $settings['username'], (string) $settings['password'], (int) $settings['timeout'], self::$transport), $this->storage, $this->index);
+        $this->ask = new Ask(new Client((string) $settings['url'], (string) $settings['username'], (string) $settings['password'], (int) $settings['timeout'], self::$transport), $this->storage, $this->index, Ask::eponyms(\dirname(__DIR__, 2) . '/resources/eponyms.txt'));
 
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->route('GET', '/worklist', $this->worklist(...));
