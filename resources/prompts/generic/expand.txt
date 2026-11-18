@@ -1,0 +1,5 @@
+Expand the following text with more detail, staying on the same topic. Add relevant supporting detail, useful context or background, and examples where they help. Do not introduce facts that are not implied by the text, and keep the original meaning and tone.
+
+<text>
+{text}
+</text>

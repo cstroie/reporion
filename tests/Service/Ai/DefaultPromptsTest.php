@@ -51,8 +51,8 @@ final class DefaultPromptsTest extends StorageTestCase
     {
         $of = static fn (string $target): array => array_keys(array_filter(DefaultPrompts::CATALOGUE, static fn (array $e): bool => \in_array($target, $e['targets'], true)));
 
-        self::assertEqualsCanonicalizing(array_diff(array_keys(DefaultPrompts::CATALOGUE), ['grammar'], Actions::LIBRARY), $of('radiology'));
-        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $of('generic'));
+        self::assertEqualsCanonicalizing(array_diff(array_keys(DefaultPrompts::CATALOGUE), ['grammar', 'expand', 'bluf'], Actions::LIBRARY), $of('radiology'));
+        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'expand', 'conclusion', 'rewrite', 'bluf', 'table'], $of('generic'));
         self::assertEqualsCanonicalizing(['table', 'summary', ...Actions::LIBRARY], $of('research'), 'the library\'s prompts and a rail table, its own summary of an article; the rest from the fallback profile');
         self::assertNotContains('grammar', $of('radiology'), 'grammar is for ordinary pages');
         self::assertSame('ai:profiles:reports:system', DefaultPrompts::pathOf('reports', 'system'));
@@ -65,7 +65,7 @@ final class DefaultPromptsTest extends StorageTestCase
     public function testEachTargetMakesItsOwnTextAndRefusesAnUnknownOne(): void
     {
         $made = $this->prompts->install('wiki', 'owner');
-        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'table'], $made['created']);
+        self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'expand', 'conclusion', 'rewrite', 'bluf', 'table'], $made['created']);
         self::assertSame('missing', $this->prompts->status('wiki', DefaultPrompts::RESEARCH)['ask-notebook']);
         self::assertStringContainsString('Summarize the text', $this->storage->read('ai:profiles:wiki:special:summary')->body);
         self::assertSame('missing', $this->prompts->status('wiki', DefaultPrompts::RADIOLOGY)['presign']);
@@ -95,7 +95,7 @@ final class DefaultPromptsTest extends StorageTestCase
     public function testInstallMakesEveryPageOfAProfileAndAskingTwiceMakesNone(): void
     {
         $first = $this->prompts->install('reports-short', 'owner', target: DefaultPrompts::RADIOLOGY);
-        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 1 - \count(Actions::LIBRARY), $first['created']);
+        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 3 - \count(Actions::LIBRARY), $first['created']);
         self::assertSame([], $first['skipped']);
         self::assertSame('Summary', $this->storage->read('ai:profiles:reports-short:special:summary')->frontmatter['title']);
         self::assertSame('private', $this->storage->read('ai:profiles:reports-short:ask')->frontmatter['visibility']);
@@ -103,7 +103,7 @@ final class DefaultPromptsTest extends StorageTestCase
 
         $again = $this->prompts->install('reports-short', 'owner', target: DefaultPrompts::RADIOLOGY);
         self::assertSame([], $again['created']);
-        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 1 - \count(Actions::LIBRARY), $again['skipped']);
+        self::assertCount(\count(DefaultPrompts::CATALOGUE) - 3 - \count(Actions::LIBRARY), $again['skipped']);
     }
 
     public function testEveryPromptPageIsPlainTextAndTheLightOnesRunOnLite(): void

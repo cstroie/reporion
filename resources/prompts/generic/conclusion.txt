@@ -1,0 +1,5 @@
+Write a concise concluding section for the following text, drawing together its main points into a short closing summary. Keep the same tone and terminology.
+
+<text>
+{text}
+</text>

@@ -8,3 +8,4 @@
 | urgent     | Urgent      | Findings to communicate quickly                | siren            | show    |        |
 | quality    | Quality     | A colleague's review before signing            | seal-check       | show    | lite   |
 | rapno      | RAPNO       | RAPNO response against the postoperative scan  | target           | append  |        |
+| rewrite    | Rewrite     | Rephrase: clearer, shorter, same meaning       | arrows-clockwise | replace |        |

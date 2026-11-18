@@ -1,0 +1,20 @@
+<text>
+{text}
+</text>
+
+<task>
+Summarize the text above concisely, preserving its key points.
+</task>
+
+<rules>
+1. Use only what the text states. Add no outside facts, opinions, or advice.
+2. Keep the key points in their original order, with the important numbers, dates, and names.
+3. Keep the text's certainty: possible, probable, or proposed stay as stated.
+4. Leave out background, examples, and repetition.
+5. Length: at most one quarter of the original, and no more than 6 sentences.
+6. If the text has no usable content, output exactly: NONE
+</rules>
+
+<output>
+Write the summary in {language}, as plain prose. Output only the summary: no heading, no markdown, no preamble.
+</output>

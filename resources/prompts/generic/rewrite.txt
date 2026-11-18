@@ -1,0 +1,5 @@
+Improve the clarity and readability of the following text while preserving its meaning and tone. Simplify complex sentences, ensure a logical flow, and keep terminology consistent. Return only the improved text.
+
+<text>
+{text}
+</text>

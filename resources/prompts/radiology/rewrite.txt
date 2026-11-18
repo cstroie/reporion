@@ -1,0 +1,17 @@
+<text>
+{text}
+</text>
+
+<sarcina>
+Îmbunătățește claritatea, fluxul logic și concizia textului medical de mai sus, fără a-i schimba semnificația.
+</sarcina>
+
+<instructiuni>
+- Descompune frazele supraîncărcate; elimină redundanțele și repetițiile; condensează descrierile similare.
+- Organizează informația de la general la specific și grupează modificările patologice similare.
+- Uniformizează terminologia (aceeași structură — același termen) și localizează precis leziunile.
+- Nu adăuga informații care nu există în textul original și nu schimba semnificația medicală a constatărilor.
+- Păstrează toate datele cantitative (dimensiuni, grade, scoruri); exprimă măsurătorile în mm.
+- Păstrează structura de secțiuni Markdown dacă există; textul din interiorul secțiunilor rămâne proză narativă continuă.
+- Returnează NUMAI textul îmbunătățit, în format Markdown, fără explicații.
+</instructiuni>
