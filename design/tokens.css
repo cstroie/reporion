@@ -28,8 +28,8 @@
   --diff-add:    #7fb59a;
   --diff-del:    #e08a8a;
 
-  --font-body:    Inter, system-ui, -apple-system, sans-serif;
-  --font-heading: Inter, system-ui, -apple-system, sans-serif;
+  --font-body:    "DM Sans", Inter, system-ui, -apple-system, sans-serif;
+  --font-heading: Manrope, Inter, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   --space-1: 2px;  --space-2: 4px;  --space-3: 8px;  --space-4: 12px;

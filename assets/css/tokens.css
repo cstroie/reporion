@@ -7,15 +7,18 @@
  * not defined per palette in the mockup; for lime/amber it is derived from
  * their own text and background the way the royal-blue value relates to its.
  *
- * Self-hosted webfonts (assets/fonts/) matching --font-body/--font-mono
- * below: the mockup's own styles.css instead @imports Inter from the
+ * Self-hosted webfonts (assets/fonts/) matching --font-body/--font-heading/
+ * --font-mono below: DM Sans (text) and Manrope (headings) since 2026-11-18
+ * (docs/design-rules.md, Typefaces), Inter kept as their fallback for what
+ * their latin/latin-ext subsets lack. The mockup's own styles.css instead
+ * @imports Inter from the
  * Google Fonts CDN, but this app has no external-CDN dependency, hence the
  * local woff2 files and the @font-face rules to actually load them.
  * JetBrains Mono ships only as regular weight, split into the subset files
  * Google Fonts serves it as; Inter ships one weight per file, full charset.
  *
  * font-display: swap (2026-10-15; it was `optional`): a font that arrives late
- * is painted when it does, so every page ends in Inter and JetBrains Mono.
+ * is painted when it does, so every page ends in its webfonts.
  * With `optional` a font missing after ~100 ms (a revalidation round trip on
  * a page load, or one of the mono subsets, decided file by file: ă â î ș ț are
  * in latin-ext) left that page, or part of one line, in the system font, and a
@@ -67,7 +70,7 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* try/fonts: DM Sans (body) + Manrope (headings), variable weight, latin + latin-ext (ă â î ș ț). */
+/* DM Sans (text) + Manrope (headings): variable weight, one file per subset, latin + latin-ext (ă â î ș ț). */
 @font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../fonts/dm-sans-latin-ext.woff2) format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../fonts/dm-sans-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: "Manrope"; font-style: normal; font-weight: 400 800; font-display: swap; src: url(../fonts/manrope-latin-ext.woff2) format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }

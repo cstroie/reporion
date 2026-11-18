@@ -2652,6 +2652,6 @@ body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inhe
 .wk-workup-this { font-weight: 600; }
 .wk-workup-text { white-space: pre-wrap; }
 
-/* try/fonts: Manrope for headings outside report prose, tracked tight. */
+/* Headings outside report prose: Manrope, tracked tight (docs/design-rules.md, Typefaces). */
 :is(h1, h2, h3):not(.wk-prose *, .wk-preview *) { font-family: var(--font-heading); letter-spacing: -.02em; }
 :is(.wk-stat, .wk-start-stat, .wk-ins-total) :is(b, dd) { letter-spacing: -.04em; }

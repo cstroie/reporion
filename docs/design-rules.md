@@ -27,6 +27,12 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
 - **Fix the rule, not the symptom.** A breakpoint bug is fixed in the rule that causes it, not by
   adding a second menu; two rules for one component are merged (roadmap, phase "Chrome and visual
   polish").
+- **Typefaces** (2026-11-18, owner's choice): **DM Sans** for text, **Manrope** for headings
+  (`--font-body`, `--font-heading`), JetBrains Mono for code and metadata; Inter is only the
+  fallback. All self-hosted in `assets/fonts/` (latin + latin-ext for ă â î ș ț), never a font CDN.
+  Page titles are Manrope 500 tracked tight (`-.035em`), other app headings `-.02em`; report prose
+  headings keep their wide-tracked capitals. No text below `--text-2xs` (12px). Print keeps its
+  own fonts (D34).
 - **One control, one look.** The same thing is drawn the same way everywhere: one visibility badge
   and one visibility picker (2026-10-02), one notice card (2026-10-14).
 
