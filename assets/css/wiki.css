@@ -433,7 +433,8 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
   align-items: center;
   gap: 9px;
   font-family: var(--font-heading);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -.02em;
   font-size: var(--text-md);
   white-space: nowrap;
   color: var(--color-text);
@@ -494,7 +495,7 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 /* a button in the line (copy page id) must not make it taller than the text: the title would sit lower than on a page without one */
 .wk-crumbs .wk-tbtn { width: 24px; height: 20px; font-size: var(--text-sm); }
 .wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
-.wk-doc-title { font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
+.wk-doc-title { font-family: var(--font-heading); font-weight: 500; letter-spacing: -.035em; line-height: 1.15; font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: nowrap; justify-content: flex-end; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
@@ -2650,3 +2651,7 @@ body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inhe
 .wk-workup-guide { list-style: none; padding-left: 0; margin: var(--space-1) 0; font-size: var(--text-sm); }
 .wk-workup-this { font-weight: 600; }
 .wk-workup-text { white-space: pre-wrap; }
+
+/* try/fonts: Manrope for headings outside report prose, tracked tight. */
+:is(h1, h2, h3):not(.wk-prose *, .wk-preview *) { font-family: var(--font-heading); letter-spacing: -.02em; }
+:is(.wk-stat, .wk-start-stat, .wk-ins-total) :is(b, dd) { letter-spacing: -.04em; }
