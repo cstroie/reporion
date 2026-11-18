@@ -13,7 +13,7 @@ Steps 1 to 5 can also be done from a browser (D43):
 
 1. Unpack the archive on the web server: either where the address maps to its `public/`
    directory (recommended, step 3), or simply inside an existing web root, e.g.
-   `/var/www/html/reporion` served as `/reporion/` ("root mode").
+   `/var/www/reporion` served as `/reporion/` ("root mode").
 2. Let the web server's user write `conf/` and create `data/` (the installer names the exact
    commands if it cannot), e.g. `sudo chgrp www-data . conf && sudo chmod 2775 . conf`.
 3. Open the address. Until `conf/local.php` exists every page leads to `install.php`, which:
@@ -96,7 +96,7 @@ symlink; a `.zip` extracted on some systems loses it (the installer then re-crea
 ## 2. Code and configuration
 
 ```sh
-git clone … /var/www/html/reporion && cd /var/www/html/reporion
+git clone … /var/www/reporion && cd /var/www/reporion
 composer install --no-dev
 cp conf/local.php.example conf/local.php
 php -r 'echo bin2hex(random_bytes(32)), "\n";'   # → auth.session_secret in conf/local.php (empty = nobody can sign in)
@@ -251,9 +251,9 @@ Then add these lines at the end, save and close:
 
 ```
 # Reporion tasks
-37 4 * * *  cd /var/www/html/reporion && bin/reporion index:verify --json > /dev/null
-17 5 * * *  cd /var/www/html/reporion && bin/reporion trash:purge
-47 5 * * 0  cd /var/www/html/reporion && bin/reporion integrity:verify --json > /dev/null
+37 4 * * *  cd /var/www/reporion && bin/reporion index:verify --json > /dev/null
+17 5 * * *  cd /var/www/reporion && bin/reporion trash:purge
+47 5 * * 0  cd /var/www/reporion && bin/reporion integrity:verify --json > /dev/null
 ```
 
 - `index:verify` only reports drift; the fix is **Admin → Index & storage → Rebuild** (or
@@ -339,7 +339,7 @@ from a backup, run `index:rebuild` and check Admin → Maintenance.
 ## 10. Updating
 
 ```sh
-cd /var/www/html/reporion && git pull && composer install --no-dev
+cd /var/www/reporion && git pull && composer install --no-dev
 sudo -u www-data bin/reporion doctor
 sudo -u www-data bin/reporion index:verify
 ```

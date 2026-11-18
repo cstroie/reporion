@@ -76,9 +76,9 @@ lighttpd + PHP-FPM on a personal server, TLS terminated upstream, PHP floor **8.
 
 ```
 # lighttpd.conf: document root is public/ ONLY
-server.document-root = "/var/www/html/reporion/public"
+server.document-root = "/var/www/reporion/public"
 url.rewrite-if-not-file = ( "^/(.*)$" => "/index.php/$1" )
-# data/, conf/, plugins/ live at /var/www/html/reporion/* (or wherever the code is installed): outside the docroot, unreachable by URL
+# data/, conf/, plugins/ live at /var/www/reporion/* (or wherever the code is installed): outside the docroot, unreachable by URL
 ```
 
 `bin/reporion doctor` asserts both at install time: that nothing outside `public/` is served (`/.git/config` and `/composer.json` are fetched from the public address; a docroot one level too high would also expose `data/` and `conf/`), and that the rewrite reaches the front controller. A misconfigured docroot on this app means patient reports served as plain text, so it is checked rather than documented.

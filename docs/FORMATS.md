@@ -1374,7 +1374,7 @@ file listed twice, any entry after the manifest.
 {
   "format": 1,
   "created": "2026-10-12T19:19:59+03:00",
-  "paths": {"data": "/var/www/html/reporion/data", "audit": "…/data/audit"},
+  "paths": {"data": "/var/www/reporion/data", "audit": "…/data/audit"},
   "php": "8.1.2",
   "file_count": 35, "dir_count": 14, "bytes": 18123,
   "files": [{"path": "data/settings.yaml", "size": 123, "sha256": "…"}]

@@ -8,7 +8,7 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
 
 ## Layout
 
-    /var/www/html/reporion/                 (any path will do; the examples use this one)
+    /var/www/reporion/                 (any path will do; the examples use this one)
       public/        <-- document root
         assets/      <-- symlink to ../assets, NOT a real directory
       src/ conf/ data/ plugins/ templates/ assets/ bin/ vendor/
@@ -26,7 +26,7 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
     server.modules += ( "mod_rewrite", "mod_fastcgi", "mod_setenv" )
 
     $HTTP["host"] == "reports.example.ro" {
-        server.document-root = "/var/www/html/reporion/public"
+        server.document-root = "/var/www/reporion/public"
 
         # front controller
         url.rewrite-if-not-file = ( "^/(.*)$" => "/index.php/$1" )
@@ -65,7 +65,7 @@ the same rule with the prefix, and `mod_setenv` loaded:
 
     server.modules += ( "mod_rewrite", "mod_setenv" )
 
-    alias.url += ( "/reporion/" => "/var/www/html/reporion/public/" )
+    alias.url += ( "/reporion/" => "/var/www/reporion/public/" )
 
     $HTTP["url"] =~ "^/reporion/" {
         url.rewrite-if-not-file = ( "^/reporion/(.*)$" => "/reporion/index.php/$1" )
@@ -115,7 +115,7 @@ with an `<If "%{QUERY_STRING} =~ /^v=/">`, and the shipped root-mode `.htaccess`
     ; optional hardening, if set, it must also list the directories of the plugin binaries
     ; (is_file()/is_executable() on /usr/bin/findscu or /usr/bin/groff fail outside it) and the
     ; system temp path; test a PDF export and each plugin's own test screen after setting it
-    ;php_admin_value[open_basedir] = /var/www/html/reporion:/tmp:/usr/bin:/usr/local/bin
+    ;php_admin_value[open_basedir] = /var/www/reporion:/tmp:/usr/bin:/usr/local/bin
     php_admin_flag[expose_php] = off
     php_admin_value[ffi.enable] = 1               ; real fsync() needs FFI: see below
 
@@ -252,10 +252,10 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
     SNAP=$(date +%F)
     rsync -az --delete --link-dest=../latest --exclude='index.sqlite*' \
       --exclude='vectors.sqlite*' --exclude='/reporion.sqlite*' \
-      -e ssh /var/www/html/reporion/data/ backup@host:/backups/reporion/$SNAP/
+      -e ssh /var/www/reporion/data/ backup@host:/backups/reporion/$SNAP/
     ssh backup@host "ln -sfn $SNAP /backups/reporion/latest"
     # the session secret and paths (once: ssh backup@host mkdir -p /backups/reporion/conf)
-    rsync -a -e ssh /var/www/html/reporion/conf/local.php backup@host:/backups/reporion/conf/local.php.$SNAP
+    rsync -a -e ssh /var/www/reporion/conf/local.php backup@host:/backups/reporion/conf/local.php.$SNAP
 
 ### Built-in rsync snapshots (D49)
 
@@ -274,7 +274,7 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
    snapshots, how often. Admin → Maintenance → *Rsync backup* → **Check** asks the target without
    storing anything.
 4. `sudo -u www-data bin/reporion backup:rsync` once by hand (the first copy is everything), then
-   in `sudo crontab -u www-data -e`: `7 * * * *  cd /var/www/html/reporion && bin/reporion backup:rsync --if-due`.
+   in `sudo crontab -u www-data -e`: `7 * * * *  cd /var/www/reporion && bin/reporion backup:rsync --if-due`.
    Tick *Back up on a schedule*. The cron line never changes; the interval and the switch are in
    the settings. `bin/reporion doctor` warns when no snapshot is recent.
 
