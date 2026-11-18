@@ -51,7 +51,7 @@ final class HipobridgeAskTest extends HttpTestCase
         ];
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('viewer', 'x', false, [new Grant('reports', GrantRole::Viewer)]);
-        $this->storage()->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:questions:archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
         // A report of ours: its name words never go to HippoBridge
         $this->storage()->create('reports:mri:mioveni:260110-ionescu-vasile', ['visibility' => 'private', 'modality' => ['MR'], 'patient' => ['name' => 'IONESCU Vasile']], "# IONESCU Vasile\n\n## IRM\n\n### Descriere\n\nText.\n", 'owner');
         Plugin::$transport = function (string $url, array $headers): array {
@@ -368,7 +368,7 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertSame(404, $this->ask(null, ['question' => self::QUESTION])->status);
         self::assertSame(422, $this->ask('owner', ['question' => ''])->status);
 
-        $this->storage()->delete('ai:profiles:reports:special:ask-archive', 'owner');
+        $this->storage()->delete('ai:profiles:reports:questions:archive', 'owner');
         self::assertSame(503, $this->ask('owner', ['question' => self::QUESTION])->status);
     }
 

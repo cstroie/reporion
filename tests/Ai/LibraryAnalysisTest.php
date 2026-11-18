@@ -253,7 +253,7 @@ final class LibraryAnalysisTest extends HttpTestCase
     public function testTheShippedProblemIdeaEvidencePromptIsAnAnalysisLikeTheOthers(): void
     {
         $prompt = (string) file_get_contents(\dirname(__DIR__, 2) . '/resources/prompts/research/source-pie.txt');
-        $this->storage()->create('ai:profiles:wiki:special:source-pie', ['title' => 'source-pie', 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
+        $this->storage()->create('ai:profiles:wiki:library:pie', ['title' => 'source-pie', 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
 
         $view = Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('editor')]))->body;
         self::assertStringContainsString('data-lib-ai-task="pie"', $view);
@@ -294,7 +294,7 @@ final class LibraryAnalysisTest extends HttpTestCase
 
     public function testTheOtherAnalysesAndASourceWithNoAbstractReadTheArticle(): void
     {
-        $this->storage()->create('ai:profiles:wiki:special:source-design', ['title' => 'source-design', 'format' => 'text', 'visibility' => 'private'], "Design of {title}:\n<a>{source}</a>\n", 'owner');
+        $this->storage()->create('ai:profiles:wiki:library:design', ['title' => 'source-design', 'format' => 'text', 'visibility' => 'private'], "Design of {title}:\n<a>{source}</a>\n", 'owner');
         $this->giveAbstract('library:short2024', 'An abstract that says little.');
 
         $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'design'])->body, true)['data'];

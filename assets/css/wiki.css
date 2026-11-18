@@ -1542,6 +1542,7 @@ section[id^="plugin-"] .wk-panel-h h2 > .wk-mono { white-space: nowrap; } /* the
 .wk-ai-features { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
 .wk-ai-features li { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 0 var(--space-2); padding: 4px 0; }
 .wk-ai-features li > i { color: var(--color-dim); }
+.wk-ai-features li.wk-ai-folder { display: block; padding: var(--space-3) 0 2px; color: var(--color-dim); }
 .wk-ai-features li[data-on="1"] > i { color: var(--state-ok); }
 .wk-ai-features li > small { grid-column: 2; font-size: var(--text-xs); }
 .wk-ai-feature-do { grid-column: 3; grid-row: 1 / span 2; display: inline-flex; gap: 6px; align-items: center; }

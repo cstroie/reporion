@@ -297,14 +297,17 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 
 <h4><?= $e(t('admin.ai.reserved')) ?> <span class="wk-dim"><?= $e(t('admin.ai.features_on', [\count($on), \count($on) + \count($off)])) ?></span></h4>
 <?php if ($on !== []): ?><ul class="wk-ai-features">
+<?php $folderOrder = array_flip([...\Reporion\Service\Ai\Actions::FOLDERS, 'special']); $byFolder = static fn (array $list): array => (static function (array $l) use ($folderOrder): array { usort($l, static fn (array $x, array $y): int => ($folderOrder[$x['group'] ?? 'special'] ?? 99) <=> ($folderOrder[$y['group'] ?? 'special'] ?? 99)); return $l; })($list); $on = $byFolder($on); $off = $byFolder($off); $lastFolder = null; ?>
 <?php foreach ($on as $r): ?>
-<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= ($r['from'] ?? '') !== '' ? ' · ' . $e(t('admin.ai.from_fallback', [$r['from']])) : '' ?></small></li>
+<?php if (($r['group'] ?? 'special') !== $lastFolder): $lastFolder = $r['group'] ?? 'special'; ?><li class="wk-ai-folder wk-eyebrow"><?= $e(t('admin.ai.folder.' . $lastFolder)) ?></li><?php endif; ?>
+<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= ($r['from'] ?? '') !== '' ? ' · ' . $e(t('admin.ai.from_fallback', [$r['from']])) : '' ?><?= ($r['old'] ?? false) ? ' · ' . $e(t('admin.ai.old_place')) : '' ?></small></li>
 <?php endforeach; ?>
 </ul><?php endif; ?>
 <?php if ($off !== []): ?><details class="wk-ai-off">
 <summary><?= $e(t('admin.ai.features_off', [\count($off)])) ?></summary>
 <ul class="wk-ai-features">
-<?php foreach ($off as $r): ?>
+<?php $lastFolder = null; foreach ($off as $r): ?>
+<?php if (($r['group'] ?? 'special') !== $lastFolder): $lastFolder = $r['group'] ?? 'special'; ?><li class="wk-ai-folder wk-eyebrow"><?= $e(t('admin.ai.folder.' . $lastFolder)) ?></li><?php endif; ?>
 <li><i class="ph ph-circle-dashed" aria-hidden="true"></i><span><?= $e(t('admin.ai.feature.' . $r['id'])) ?></span><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?></small>
 <span class="wk-ai-feature-do"><?php if (($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="target" value="<?= $e($o['target']) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($r['path']) ?>/edit"><?= $e(t('admin.ai.reserved_create')) ?></a></span></li>

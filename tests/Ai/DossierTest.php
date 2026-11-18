@@ -39,7 +39,7 @@ final class DossierTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $storage = $this->storage();
-        $storage->create('ai:profiles:reports:special:dossier-onco', ['visibility' => 'private'], "{exam}\n{pages}\n{dossier}\nRăspunde.\n", 'owner');
+        $storage->create('ai:profiles:reports:panels:dossier-onco', ['visibility' => 'private'], "{exam}\n{pages}\n{dossier}\nRăspunde.\n", 'owner');
         $storage->create(self::PATH, ['visibility' => 'private', 'modality' => ['MR'], 'study_date' => '2026-10-01', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => self::CNP, 'born' => 2015, 'sex' => 'F']],
             "# POPESCU Ana\n\n## IRM cerebral\n\n### Concluzii\n\n", 'mihai');
     }

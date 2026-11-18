@@ -30,7 +30,7 @@ final class NotebookKeepTest extends HttpTestCase
         $users->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('library', GrantRole::Editor)]);
         $users->create('libreader', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('library', GrantRole::Viewer)]);
         $storage = $this->storage();
-        $storage->create('ai:profiles:wiki:special:ask-notebook', ['title' => 'Ask', 'format' => 'text', 'visibility' => 'private'], "{sources}\n<q>{question}</q>\n", 'owner');
+        $storage->create('ai:profiles:wiki:questions:notebook', ['title' => 'Ask', 'format' => 'text', 'visibility' => 'private'], "{sources}\n<q>{question}</q>\n", 'owner');
         $csl = ['type' => 'article-journal', 'title' => 'A made-up guideline', 'issued' => ['date-parts' => [[2018]]]];
         $storage->create('library:guide2018', ['title' => 'A made-up guideline', 'visibility' => 'private', 'csl' => $csl], "*— p. 3 —*\n\nAge groups for head exams.\n", 'owner');
         $storage->create('wiki:doses', ['title' => 'Doses', 'visibility' => 'private'], "# Doses\n\n[@guide2018]\n", 'owner');

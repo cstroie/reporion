@@ -109,7 +109,7 @@ final class StudioTest extends HttpTestCase
     public function testTheOutlineReadsEachSourceInShortInOneRequestAndIsKept(): void
     {
         $storage = $this->storage();
-        $storage->create('ai:profiles:wiki:special:studio-outline', ['title' => 'outline', 'format' => 'text', 'visibility' => 'private'], "OUTLINE of {title}\n{sources}\n", 'owner');
+        $storage->create('ai:profiles:wiki:studio:outline', ['title' => 'outline', 'format' => 'text', 'visibility' => 'private'], "OUTLINE of {title}\n{sources}\n", 'owner');
         $this->config['library'] = ['context_tokens' => 4000];
         $long = $storage->read('library:long2021');
         $storage->create('library:long2021:source-points', ['title' => 'Points', 'visibility' => 'private', 'analysis' => ['prompt' => 'source-points', 'of' => $long->pid, 'of_rev' => 1, 'of_sha' => 'x', 'provider' => '', 'at' => '2026-11-11T10:00:00+02:00']], "- Fazekas grades white matter lesions.\n", 'owner');
@@ -297,7 +297,7 @@ final class StudioTest extends HttpTestCase
     public function testSourcesToCondenseWithoutTheirPromptAreRefusedBeforeAnyRequest(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];
-        $this->storage()->delete('ai:profiles:wiki:special:source-part', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:library:part', 'owner');
 
         foreach (['overview', 'compare'] as $task) {
             $response = $this->studio('writer', ['path' => 'wiki:two', 'task' => $task, 'questions' => 'Design']);
@@ -387,7 +387,7 @@ final class StudioTest extends HttpTestCase
     {
         $this->config['library'] = ['context_tokens' => 4000];
         // No condensing prompt: a focused template does not need it
-        $this->storage()->delete('ai:profiles:wiki:special:source-part', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:library:part', 'owner');
         $this->storage()->create('library:huge2022', ['title' => 'Huge', 'visibility' => 'private', 'csl' => ['title' => 'Huge']], str_repeat("A sentence of a very long made-up article.\n\n", 1500), 'owner');
         $this->storage()->save('wiki:two', ['title' => 'Two', 'visibility' => 'private', 'sources' => ['long2021', 'huge2022']], "# Two\n\nNotes [@abel2020].\n", 1, 'owner');
 

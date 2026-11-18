@@ -28,7 +28,7 @@ use RuntimeException;
  * and `…:system:{id}` an action's own appendage (DokuLLM's layout). The
  * model alias is the row's Model cell, else the prompt page's frontmatter
  * `model:`. The reserved prompts (self::SPECIAL) live apart, under
- * `ai:profiles:{profile}:special:{id}` (2026-10-14): never rail actions,
+ * `ai:profiles:{profile}:{folder}:{name}` (Actions::PLACES; `special:{id}` until 2026-11-18): never rail actions,
  * their model is the page's `model:`, and they run with no system prompt. Pages outside the profile's namespaces use the
  * fallback profile, if one is set (`ai.fallback_profile`).
  *
@@ -56,7 +56,7 @@ final class Actions
 
     private const SYSTEM = 'system';
 
-    /** The subnamespace of a profile holding the reserved prompts: `ai:profiles:{profile}:special:{id}` */
+    /** The old subnamespace of the reserved prompts (`ai:profiles:{profile}:special:{id}`), still read when a prompt has no page at its place */
     public const SPECIAL_NS = 'special';
 
     /**
@@ -81,6 +81,41 @@ final class Actions
     public const LIBRARY = ['source-part', 'source-points', 'source-pie','source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-outline', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template', 'source-flashcards', 'studio-flashcards', 'studio-audio', 'ask-library'];
 
     public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', 'workup', 'dossier', 'dossier-onco', 'dossier-neuro', ...self::LIBRARY];
+
+    /**
+     * Where each reserved prompt lives under its profile (2026-11-18, owner's regrouping):
+     * by where it is met. `panels:` the editor's side sections, run on a click; `buttons:` one
+     * button on a page or screen; `questions:` the Ask screens (not `ask:`: that is the rail's Ask action's page, which would head it, D61); `library:` a source's analyses;
+     * `studio:` a notebook's Studio texts; `auto:` run by the app with no click. The id is the
+     * key the code asks for; the page is `ai:profiles:{profile}:{place}`. The old place,
+     * `special:{id}`, is still read when the new one has no page (ai:prompts-relocate moves them).
+     */
+    public const PLACES = [
+        'workup' => 'panels:workup', 'dossier' => 'panels:dossier', 'dossier-onco' => 'panels:dossier-onco', 'dossier-neuro' => 'panels:dossier-neuro',
+        'recall-expand' => 'panels:recall-expand', 'recall-missing' => 'panels:recall-missing',
+        'summary' => 'buttons:summary', 'tags' => 'buttons:tags', 'evolution' => 'buttons:evolution', 'presign' => 'buttons:presign',
+        'ask-archive' => 'questions:archive', 'ask-expand' => 'questions:archive-expand', 'ask-library' => 'questions:library', 'ask-notebook' => 'questions:notebook', 'notebook-terms' => 'questions:notebook-terms',
+        'source-points' => 'library:points', 'source-pie' => 'library:pie', 'source-definitions' => 'library:definitions', 'source-classification' => 'library:classification',
+        'source-design' => 'library:design', 'source-limitations' => 'library:limitations', 'source-questions' => 'library:questions', 'source-flashcards' => 'library:flashcards', 'source-part' => 'library:part',
+        'studio-overview' => 'studio:overview', 'studio-outline' => 'studio:outline', 'studio-glossary' => 'studio:glossary', 'studio-faq' => 'studio:faq', 'studio-timeline' => 'studio:timeline',
+        'studio-compare' => 'studio:compare', 'studio-check' => 'studio:check', 'studio-template' => 'studio:template', 'studio-flashcards' => 'studio:flashcards', 'studio-audio' => 'studio:audio',
+        'commit' => 'auto:commit', 'tags-review' => 'auto:tags-review',
+    ];
+
+    /** The folders, in the order Admin → AI shows them; none of them, nor `special`, can be a rail action */
+    public const FOLDERS = ['panels', 'buttons', 'questions', 'library', 'studio', 'auto'];
+
+    /** A reserved prompt's page relative to its profile (`panels:workup`) */
+    public static function place(string $id): string
+    {
+        return self::PLACES[$id] ?? self::SPECIAL_NS . ':' . $id;
+    }
+
+    /** A reserved prompt's folder (`panels`) */
+    public static function folderOf(string $id): string
+    {
+        return strtok(self::place($id), ':') ?: self::SPECIAL_NS;
+    }
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,
@@ -162,7 +197,7 @@ final class Actions
                 }
                 continue;
             }
-            if ($id === self::SYSTEM || $id === self::SPECIAL_NS || \in_array($id, self::SPECIAL, true)) {
+            if ($id === self::SYSTEM || $id === self::SPECIAL_NS || \in_array($id, self::FOLDERS, true) || \in_array($id, self::SPECIAL, true)) {
                 continue;
             }
             // The profile's own prompt page, else the fallback profile's
@@ -282,9 +317,10 @@ final class Actions
         }
         $reserved = [];
         foreach (self::SPECIAL as $id) {
+            $named[self::place($id)] = true;
             $named[self::SPECIAL_NS . ':' . $id] = true;
-            $at = $this->promptPage($profile, self::SPECIAL_NS . ':' . $id);
-            $reserved[] = ['id' => $id, 'path' => $at ?? $this->specialPath($ns, $id), 'present' => $at !== null, 'from' => $this->fromFallback($ns, $at)];
+            $at = $this->reservedPage($profile, $id);
+            $reserved[] = ['id' => $id, 'group' => self::folderOf($id), 'path' => $at ?? $this->specialPath($ns, $id), 'present' => $at !== null, 'from' => $this->fromFallback($ns, $at), 'old' => $at !== null && str_ends_with($at, ':' . self::SPECIAL_NS . ':' . $id)];
         }
         $systemPresent = $this->body($ns . ':' . self::SYSTEM) !== null;
         $other = [];
@@ -325,7 +361,7 @@ final class Actions
 
     /**
      * A reserved action (self::SPECIAL) for a page, when the profile serving
-     * it has its prompt page (`{profile}:special:{id}`): the bare prompt on
+     * it has its prompt page (`{profile}:{place}`, Actions::place()): the bare prompt on
      * its page's `model:` (normal when none:`commit`: lite, and a 10 s
      * `timeout:` when its page sets none), with no system prompt; null when
      * the feature is off.
@@ -348,7 +384,7 @@ final class Actions
         if ($profile === null) {
             return null;
         }
-        $at = $this->promptPage($profile, self::SPECIAL_NS . ':' . $id, $fallback);
+        $at = $this->reservedPage($profile, $id, $fallback);
         if ($at === null) {
             return null;
         }
@@ -445,10 +481,30 @@ final class Actions
         return $at !== null && !str_starts_with($at, $ns . ':') ? $this->config->fallbackProfile : '';
     }
 
-    /** The page of a reserved prompt under a profile's namespace */
+    /**
+     * A reserved prompt's page: the profile's at its place, else at the old `special:{id}`, then
+     * (with $fallback) the fallback profile's, the same two ways
+     */
+    private function reservedPage(string $profile, string $id, bool $fallback = true): ?string
+    {
+        foreach ($fallback ? [$profile, $this->config->fallbackProfile] : [$profile] as $i => $name) {
+            if ($name === '' || ($i > 0 && $name === $profile)) {
+                continue;
+            }
+            foreach ([self::place($id), self::SPECIAL_NS . ':' . $id] as $rel) {
+                if ($this->body(self::NS . ':' . $name . ':' . $rel) !== null) {
+                    return self::NS . ':' . $name . ':' . $rel;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** The page of a reserved prompt under a profile's namespace, at its place */
     private function specialPath(string $ns, string $id): string
     {
-        return $ns . ':' . self::SPECIAL_NS . ':' . $id;
+        return $ns . ':' . self::place($id);
     }
 
     /**

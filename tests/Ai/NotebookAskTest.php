@@ -35,8 +35,8 @@ final class NotebookAskTest extends HttpTestCase
         $users->create('libreader', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('library', GrantRole::Viewer)]);
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Viewer), new Grant('library', GrantRole::Editor)]);
         $storage = $this->storage();
-        $storage->create('ai:profiles:wiki:special:ask-notebook', ['title' => 'Ask', 'format' => 'text', 'visibility' => 'private'], "{sources}\n<q>{question}</q> in {language}\n", 'owner');
-        $storage->create('ai:profiles:wiki:special:notebook-terms', ['title' => 'Terms', 'format' => 'text', 'visibility' => 'private', 'model' => 'lite'], "<q>{question}</q>\n", 'owner');
+        $storage->create('ai:profiles:wiki:questions:notebook', ['title' => 'Ask', 'format' => 'text', 'visibility' => 'private'], "{sources}\n<q>{question}</q> in {language}\n", 'owner');
+        $storage->create('ai:profiles:wiki:questions:notebook-terms', ['title' => 'Terms', 'format' => 'text', 'visibility' => 'private', 'model' => 'lite'], "<q>{question}</q>\n", 'owner');
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'issued' => ['date-parts' => [[2020]]]];
         $storage->create('library:abel2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl], "*— p. 4 —*\n\nWhite matter lesions were graded in 128 patients.\n\n## References\n\n```text\n1. Cited elsewhere.\n```\n", 'owner');
         $long = '';
@@ -112,7 +112,7 @@ final class NotebookAskTest extends HttpTestCase
         $this->config['ai']['embed_server'] = 1;
         $this->config['ai']['embed_model'] = 'embed-test';
         $this->config['ai']['embed_min_score'] = 0.9;
-        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:notebook-terms', 'owner');
         $question = 'Ce spune despre zebre?';
         $bag = static function (string $text): array {
             $vector = array_fill(0, 16, 0.0);
@@ -143,7 +143,7 @@ final class NotebookAskTest extends HttpTestCase
     public function testANotebookCitingManySourcesSendsTheBestPassagesFromTheIndexWithinBudget(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];
-        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:notebook-terms', 'owner');
         $storage = $this->storage();
         $csl = ['type' => 'article-journal', 'title' => 'Many', 'issued' => ['date-parts' => [[2022]]]];
         $keys = [];
@@ -173,7 +173,7 @@ final class NotebookAskTest extends HttpTestCase
     public function testTheAnswerHidingAmongRepeatedWordsIsFoundInAFewLargeSources(): void
     {
         $this->config['library'] = ['context_tokens' => 6000];
-        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:notebook-terms', 'owner');
         $storage = $this->storage();
         $csl = ['type' => 'report', 'title' => 'Guideline', 'issued' => ['date-parts' => [[2018]]]];
         foreach (['guide2018' => 7, 'other2017' => -1] as $key => $answerPage) {
@@ -230,7 +230,7 @@ final class NotebookAskTest extends HttpTestCase
     public function testNothingMatchingAsksNoModel(): void
     {
         $this->config['library'] = ['context_tokens' => 4000];
-        $this->storage()->delete('ai:profiles:wiki:special:notebook-terms', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:notebook-terms', 'owner');
 
         $response = $this->ask('writer', ['path' => 'wiki:long', 'question' => 'Ce spune despre zebre?']);
 
@@ -253,7 +253,7 @@ final class NotebookAskTest extends HttpTestCase
         self::assertSame(422, $this->ask('writer', ['path' => 'wiki:notebook', 'question' => str_repeat('a', 1001)])->status);
         self::assertSame(0, $this->server->requests());
 
-        $this->storage()->delete('ai:profiles:wiki:special:ask-notebook', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:notebook', 'owner');
         self::assertSame(503, $this->ask('writer', ['path' => 'wiki:notebook', 'question' => 'Ce?'])->status);
     }
 

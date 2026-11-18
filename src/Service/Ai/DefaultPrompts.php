@@ -20,7 +20,7 @@ use Reporion\Storage\StorageInterface;
  * notebook, Studio, flashcards, the audio script; in English; a rail table
  * naming ask and grammar, whose pages come from the fallback profile). A profile is
  * made from one of them: the reserved prompts
- * as `ai:profiles:{profile}:special:{id}`, the rail actions as
+ * as `ai:profiles:{profile}:{folder}:{name}` (Actions::PLACES), the rail actions as
  * `ai:profiles:{profile}:{id}` (among them *Ask*, whose `{prompt}` gives the
  * rail its question box) and, when the profile has none, its own page with
  * the rail's table (actions/table.md): an existing table is never rewritten,
@@ -147,7 +147,7 @@ final class DefaultPrompts
         $ns = Actions::NS . ':' . $profile;
 
         return match (self::CATALOGUE[$id]['kind']) {
-            self::SPECIAL => $ns . ':' . Actions::SPECIAL_NS . ':' . $id,
+            self::SPECIAL => $ns . ':' . Actions::place($id),
             self::ACTION => $ns . ':' . $id,
             self::SYSTEM => $ns . ':' . self::SYSTEM,
             default => $ns,
@@ -168,7 +168,7 @@ final class DefaultPrompts
             if (!\in_array($target, $entry['targets'], true)) {
                 continue;
             }
-            $path = self::pathOf($profile, $id);
+            $path = $this->foundAt($profile, $id);
             $states[$id] = !$this->exists($path) ? 'missing' : ($this->hasText($path) ? 'present' : 'empty');
         }
 
@@ -200,7 +200,8 @@ final class DefaultPrompts
             $path = self::pathOf($profile, $id);
             $file = $this->dir . '/' . $target . '/' . $entry['file'];
             $body = is_file($file) ? trim((string) file_get_contents($file)) : '';
-            if ($body === '' || $this->exists($path)) {
+            // A reserved prompt still at its old place (special:{id}) is there: never made twice
+            if ($body === '' || $this->exists($this->foundAt($profile, $id))) {
                 $skipped[] = $id;
                 continue;
             }
@@ -215,6 +216,18 @@ final class DefaultPrompts
         }
 
         return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    /** Where a prompt's page is: its place, or a reserved one's old `special:{id}` when only that exists */
+    private function foundAt(string $profile, string $id): string
+    {
+        $path = self::pathOf($profile, $id);
+        if (self::CATALOGUE[$id]['kind'] !== self::SPECIAL || $this->exists($path)) {
+            return $path;
+        }
+        $old = Actions::NS . ':' . $profile . ':' . Actions::SPECIAL_NS . ':' . $id;
+
+        return $this->exists($old) ? $old : $path;
     }
 
     private function exists(string $path): bool

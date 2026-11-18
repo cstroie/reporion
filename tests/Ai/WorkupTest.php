@@ -35,7 +35,7 @@ final class WorkupTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $storage = $this->storage();
-        $storage->create('ai:profiles:reports:special:workup', ['visibility' => 'private'], "{indication}\n{findings}\n{blocks}\nRăspunde.\n", 'owner');
+        $storage->create('ai:profiles:reports:panels:workup', ['visibility' => 'private'], "{indication}\n{findings}\n{blocks}\nRăspunde.\n", 'owner');
         $patient = ['name' => 'POPESCU Ana', 'cnp' => self::CNP, 'born' => 1960, 'sex' => 'F'];
         $storage->create(self::PATH, ['visibility' => 'private', 'modality' => ['MR'], 'region' => ['cerebral'], 'study_date' => '2026-10-01', 'indication' => 'Suspiciune accident vascular cerebral acut', 'patient' => $patient],
             "# POPESCU Ana\n\n## IRM cerebral\n\n### Descriere\n\nLeziune ischemică acută capsulară stângă la pacienta Popescu, hiperintensă în difuzie.\n\n### Concluzii\n\nInfarct lacunar acut capsular stâng.\n", 'mihai');
@@ -106,7 +106,7 @@ final class WorkupTest extends HttpTestCase
     {
         self::assertSame(404, $this->workup(null, ['path' => self::PATH])->status);
         self::assertSame(404, $this->workup('mihai', ['path' => 'reports:ct:mioveni:260112-dinu-ana'])->status);
-        $this->storage()->delete('ai:profiles:reports:special:workup', 'owner');
+        $this->storage()->delete('ai:profiles:reports:panels:workup', 'owner');
         $data = json_decode($this->workup('mihai', ['path' => self::PATH])->body, true)['data'];
         self::assertNull($data['answer'], 'no prompt: the blocks alone');
         self::assertNotSame([], $data['notices']);

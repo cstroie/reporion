@@ -67,12 +67,12 @@ final class DefaultPromptsTest extends StorageTestCase
         $made = $this->prompts->install('wiki', 'owner');
         self::assertEqualsCanonicalizing(['summary', 'tags', 'tags-review', 'commit', 'ask', 'grammar', 'expand', 'conclusion', 'rewrite', 'bluf', 'table'], $made['created']);
         self::assertSame('missing', $this->prompts->status('wiki', DefaultPrompts::RESEARCH)['ask-notebook']);
-        self::assertStringContainsString('Summarize the text', $this->storage->read('ai:profiles:wiki:special:summary')->body);
+        self::assertStringContainsString('Summarize the text', $this->storage->read('ai:profiles:wiki:buttons:summary')->body);
         self::assertSame('missing', $this->prompts->status('wiki', DefaultPrompts::RADIOLOGY)['presign']);
         self::assertArrayNotHasKey('presign', $this->prompts->status('wiki', DefaultPrompts::GENERIC));
 
         $this->prompts->install('reports', 'owner', target: DefaultPrompts::RADIOLOGY);
-        self::assertStringContainsString('Ești radiolog', $this->storage->read('ai:profiles:reports:special:summary')->body);
+        self::assertStringContainsString('Ești radiolog', $this->storage->read('ai:profiles:reports:buttons:summary')->body);
 
         $research = $this->prompts->install('research', 'owner', target: DefaultPrompts::RESEARCH);
         self::assertEqualsCanonicalizing(['table', 'summary', ...Actions::LIBRARY], $research['created']);
@@ -97,7 +97,7 @@ final class DefaultPromptsTest extends StorageTestCase
         $first = $this->prompts->install('reports-short', 'owner', target: DefaultPrompts::RADIOLOGY);
         self::assertCount(\count(DefaultPrompts::CATALOGUE) - 3 - \count(Actions::LIBRARY), $first['created']);
         self::assertSame([], $first['skipped']);
-        self::assertSame('Summary', $this->storage->read('ai:profiles:reports-short:special:summary')->frontmatter['title']);
+        self::assertSame('Summary', $this->storage->read('ai:profiles:reports-short:buttons:summary')->frontmatter['title']);
         self::assertSame('private', $this->storage->read('ai:profiles:reports-short:ask')->frontmatter['visibility']);
         self::assertSame(['present'], array_values(array_unique($this->prompts->status('reports-short', DefaultPrompts::RADIOLOGY))));
 
@@ -120,20 +120,20 @@ final class DefaultPromptsTest extends StorageTestCase
             }
             self::assertArrayNotHasKey('format', $this->storage->read(DefaultPrompts::pathOf($target, 'table'))->frontmatter, 'the table stays markdown');
         }
-        self::assertSame('lite', $this->storage->read('ai:profiles:generic:special:summary')->frontmatter['model']);
-        self::assertArrayNotHasKey('model', $this->storage->read('ai:profiles:radiology:special:evolution')->frontmatter);
+        self::assertSame('lite', $this->storage->read('ai:profiles:generic:buttons:summary')->frontmatter['model']);
+        self::assertArrayNotHasKey('model', $this->storage->read('ai:profiles:radiology:buttons:evolution')->frontmatter);
     }
 
     public function testAnEditedPageAndAnExistingTableAreNeverTouched(): void
     {
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "My summary prompt.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private'], "My summary prompt.\n", 'owner');
         $this->storage->create('ai:profiles:reports', ['visibility' => 'private'], "| ID | Label |\n|---|---|\n| mine | Mine |\n", 'owner');
 
         $result = $this->prompts->install('reports', 'owner');
 
         self::assertNotContains('summary', $result['created']);
         self::assertNotContains('table', $result['created']);
-        self::assertSame("My summary prompt.\n", $this->storage->read('ai:profiles:reports:special:summary')->body);
+        self::assertSame("My summary prompt.\n", $this->storage->read('ai:profiles:reports:buttons:summary')->body);
         self::assertStringContainsString('| mine |', $this->storage->read('ai:profiles:reports')->body);
     }
 
@@ -151,7 +151,7 @@ final class DefaultPromptsTest extends StorageTestCase
 
     public function testAnEmptyPageIsReportedAndLeftAlone(): void
     {
-        $this->storage->create('ai:profiles:reports:special:tags', ['visibility' => 'private'], '', 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:tags', ['visibility' => 'private'], '', 'owner');
 
         self::assertSame('empty', $this->prompts->status('reports')['tags']);
         self::assertNotContains('tags', $this->prompts->install('reports', 'owner')['created']);

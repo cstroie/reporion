@@ -167,6 +167,11 @@ final class Application
 
             return new JournalReplayCommand($maintenance($storage, $index));
         });
+        $app->register('ai:prompts-relocate', AiPromptsRelocateCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new AiPromptsRelocateCommand($maintenance($storage, $index));
+        });
         $app->register('pages:repair-paths', PagesRepairPathsCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

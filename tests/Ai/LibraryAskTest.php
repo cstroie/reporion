@@ -32,7 +32,7 @@ final class LibraryAskTest extends HttpTestCase
         $users->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('library', GrantRole::Editor)]);
         $users->create('reader', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('library', GrantRole::Viewer)]);
         $storage = $this->storage();
-        $storage->create('ai:profiles:wiki:special:ask-library', ['title' => 'Ask the library', 'format' => 'text', 'visibility' => 'private'], "{history}\n{sources}\n<q>{question}</q> in {language}\n", 'owner');
+        $storage->create('ai:profiles:wiki:questions:library', ['title' => 'Ask the library', 'format' => 'text', 'visibility' => 'private'], "{history}\n{sources}\n<q>{question}</q> in {language}\n", 'owner');
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'issued' => ['date-parts' => [[2020]]]];
         $storage->create('library:abel2020', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl], "*— p. 4 —*\n\nWhite matter lesions were graded with Fazekas in 128 patients.\n", 'owner');
         $storage->create('library:cole2021', ['title' => 'Another made-up study', 'visibility' => 'private', 'csl' => $csl], "Nothing on the subject: cardiac output only.\n", 'owner');
@@ -109,7 +109,7 @@ final class LibraryAskTest extends HttpTestCase
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/library', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('writer')]))->body;
         self::assertStringContainsString('\\/api\\/v1\\/library\\/ask', $page, 'the panel on /library');
 
-        $this->storage()->delete('ai:profiles:wiki:special:ask-library', 'owner');
+        $this->storage()->delete('ai:profiles:wiki:questions:library', 'owner');
         self::assertSame(503, $this->ask('writer', ['question' => 'Fazekas?'])->status);
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/library', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('writer')]))->body;
         self::assertStringNotContainsString('library\\/ask', $page);

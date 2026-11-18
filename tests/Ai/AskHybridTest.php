@@ -50,8 +50,8 @@ final class AskHybridTest extends HttpTestCase
         $this->makeRadiologist('mihai');
         $this->index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $storage = new FileTree($this->dataRoot, $this->index);
-        $storage->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
-        $storage->create('ai:profiles:reports:special:ask-expand', ['visibility' => 'private'], "{history}\n<question>{question}</question>\nScrie întrebarea completă, apoi cuvintele.\n", 'owner');
+        $storage->create('ai:profiles:reports:questions:archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
+        $storage->create('ai:profiles:reports:questions:archive-expand', ['visibility' => 'private'], "{history}\n<question>{question}</question>\nScrie întrebarea completă, apoi cuvintele.\n", 'owner');
     }
 
     protected function tearDown(): void
@@ -146,7 +146,7 @@ final class AskHybridTest extends HttpTestCase
 
     public function testWithoutTheExpandPromptTheQuestionIsSearchedAsItIs(): void
     {
-        (new FileTree($this->dataRoot, $this->index))->delete('ai:profiles:reports:special:ask-expand', 'owner');
+        (new FileTree($this->dataRoot, $this->index))->delete('ai:profiles:reports:questions:archive-expand', 'owner');
         $this->report('reports:mri:mioveni:260301-test-flair', $this->body('Aspect normal.', 'Zone de hiperintensitate periventriculară, fără efect de masă.'), [0.0, 0.0, 1.0, 0.0]);
 
         $data = $this->decode($this->ask('owner', ['question' => 'hiperintensitate periventriculară']));

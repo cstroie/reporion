@@ -73,6 +73,7 @@ final class MaintenanceRunner
                 $dataRoot,
             ),
             new PathRepairTask($storage),
+            new PromptRelocateTask($storage, $index, $audit),
             new TrashPurgeTask($storage, $audit, $trashPurgeDays),
             new BackupTask(new BackupService($dataRoot, \dirname(__DIR__, 3) . '/conf', $audit->directory())),
             new RsyncBackupTask($dataRoot, \dirname(__DIR__, 3) . '/conf/local.php'),

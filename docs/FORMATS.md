@@ -1185,10 +1185,18 @@ has none).
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) `ask-expand` (2026-10-19, D53: *Ask the archive*'s standalone question and search words; placeholders `{question}` and `{history}`; model `lite` unless its page sets `model:`; starting prompt `resources/prompts/ask-expand.txt`) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
-  subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
-  (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
-  those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) `ask-expand` (2026-10-19, D53: *Ask the archive*'s standalone question and search words; placeholders `{question}` and `{history}`; model `lite` unless its page sets `model:`; starting prompt `resources/prompts/ask-expand.txt`) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, each in a folder of its profile by where it
+  is met (2026-11-18, `Actions::PLACES`): `panels:` the editor's side sections (workup, dossier,
+  dossier-onco, dossier-neuro, recall-expand, recall-missing), `buttons:` one button on a page or
+  screen (summary, tags, evolution, presign), `questions:` the Ask screens (`archive` for ask-archive,
+  `archive-expand`, `library`, `notebook`, `notebook-terms`), `library:` a source's analyses
+  (`points`, `pie`, … for source-*), `studio:` Studio's texts (`overview`, … for studio-*), `auto:`
+  run with no click (commit, tags-review): `ai:profiles:{profile}:{folder}:{name}`. The old place
+  `special:{id}` is still read when the folder has no page; `ai:prompts-relocate` (also Admin →
+  Maintenance) moves them, history kept. Not `ask:`: the rail's Ask action's page would head it
+  (D61). Their control is not rendered without the page (`Actions::SPECIAL`, `Actions::special()`).
+  They are never rail actions: a table row with one of those ids, a folder's name, or `special`, is
+  ignored. They run on their page's `model:`, else `normal` (`commit`:
   `lite`), and with **no system prompt**, whatever the profile has.
 - **Sections** (2026-10-08): a row whose ID is `---` (the other cells blank) draws a thin line in
   the rail before the next action: `create`, `conclusion`, `diagnostic`, then `---`, then `quality`,
@@ -1289,7 +1297,7 @@ has none).
   gives `library` (row `library → research`). With no such row that is the fallback profile, as
   before. A page's `prompts:` does not change them.
 - A prompt page a profile lacks (2026-11-01): a rail row whose own page `{profile}:{id}` is missing,
-  or a reserved prompt `{profile}:special:{id}`, is the fallback profile's (`ai.fallback_profile`)
+  or a reserved prompt at its place (or old `special:{id}`), is the fallback profile's (`ai.fallback_profile`)
   when that profile has it, with that page's `model:` alias, `timeout:`, `max_tokens:` and its own
   `system:{id}` appendage, but never a server it names (`#2:lite`): a borrowed prompt runs on the
   page's namespace's server, as does a table chosen with `prompts:`; with no fallback it stays missing. **This applies to every profile at

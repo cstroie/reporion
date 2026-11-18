@@ -41,8 +41,8 @@ final class RecallAiTest extends HttpTestCase
         $storage = $this->storage();
         $storage->create('ai:profiles:reports', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n", 'owner');
         $storage->create('ai:profiles:reports:conclusion', ['visibility' => 'private'], "{text}\n", 'owner');
-        $storage->create('ai:profiles:reports:special:recall-expand', ['visibility' => 'private'], "<pasaje>\n{recall}\n</pasaje>\n<rand>{text}</rand>\nDezvoltă rândul.\n", 'owner');
-        $storage->create('ai:profiles:reports:special:recall-missing', ['visibility' => 'private'], "{recall}\n{text}\nCe lipsește?\n", 'owner');
+        $storage->create('ai:profiles:reports:panels:recall-expand', ['visibility' => 'private'], "<pasaje>\n{recall}\n</pasaje>\n<rand>{text}</rand>\nDezvoltă rândul.\n", 'owner');
+        $storage->create('ai:profiles:reports:panels:recall-missing', ['visibility' => 'private'], "{recall}\n{text}\nCe lipsește?\n", 'owner');
         $storage->create(
             'reports:mri:mioveni:260110-ionescu-vasile',
             ['visibility' => 'private', 'status' => 'archived', 'modality' => ['MR'], 'patient' => ['name' => 'IONESCU Vasile', 'cnp' => '1900101000002']],

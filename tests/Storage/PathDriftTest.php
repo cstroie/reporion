@@ -76,14 +76,14 @@ final class PathDriftTest extends StorageTestCase
 
     public function testAMovedFileIsStrayUntilRejoined(): void
     {
-        $this->moveByHand('ai:profiles:reports:summary', 'ai:profiles:reports:special:summary');
+        $this->moveByHand('ai:profiles:reports:summary', 'ai:profiles:reports:buttons:summary');
 
-        self::assertSame(['ai:profiles:reports:special:summary'], $this->storage->strayPaths());
-        self::assertSame('ai:profiles:reports:summary', $this->storage->storedPath('ai:profiles:reports:special:summary'));
-        self::assertSame('moved', $this->storage->strayKind('ai:profiles:reports:special:summary'));
+        self::assertSame(['ai:profiles:reports:buttons:summary'], $this->storage->strayPaths());
+        self::assertSame('ai:profiles:reports:summary', $this->storage->storedPath('ai:profiles:reports:buttons:summary'));
+        self::assertSame('moved', $this->storage->strayKind('ai:profiles:reports:buttons:summary'));
         self::assertSame(['ai:profiles:reports:summary'], $this->storage->missingPageFiles());
         $this->expectException(PageNotFoundException::class);
-        $this->storage->read('ai:profiles:reports:special:summary');
+        $this->storage->read('ai:profiles:reports:buttons:summary');
     }
 
     public function testVerifyNoticesTheStaleRowAndARebuildDropsIt(): void

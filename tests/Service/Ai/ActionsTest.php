@@ -61,7 +61,7 @@ final class ActionsTest extends StorageTestCase
     {
         $this->storage->create('ai:profiles:reports:expand', ['visibility' => 'private'], "Expand it.\n", 'owner');
         $this->storage->create('ai:profiles:reports:shorten', ['visibility' => 'private'], "Shorten it.\n", 'owner');
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
         $this->storage->create(
             'ai:profiles:reports',
             ['visibility' => 'private'],
@@ -163,7 +163,7 @@ final class ActionsTest extends StorageTestCase
     {
         $this->storage->create('ai:profiles:reports:expand', ['visibility' => 'private', 'model' => 'lite'], "Expand it.\n", 'owner');
         $this->storage->create('ai:profiles:reports:grammar', ['visibility' => 'private', 'model' => 'lite'], "Fix it.\n", 'owner');
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private', 'model' => '2:lite'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private', 'model' => '2:lite'], "Summarize.\n", 'owner');
         $this->storage->create(
             'ai:profiles:reports',
             ['visibility' => 'private'],
@@ -185,7 +185,7 @@ final class ActionsTest extends StorageTestCase
     public function testAReservedPromptHasNoSystemPromptAndIsNeverARailAction(): void
     {
         $this->storage->create('ai:profiles:reports:system', ['visibility' => 'private'], "You are a radiologist.\n", 'owner');
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
         $this->storage->create('ai:profiles:reports:summary', ['visibility' => 'private'], "Old place.\n", 'owner');
         $this->storage->create('ai:profiles:reports:conclusion', ['visibility' => 'private'], "Conclude.\n", 'owner');
         $this->storage->create(
@@ -204,8 +204,8 @@ final class ActionsTest extends StorageTestCase
 
     public function testCommitRunsLiteWithAShortTimeoutUnlessItsPageSaysOtherwise(): void
     {
-        $this->storage->create('ai:profiles:reports:special:commit', ['visibility' => 'private'], "{diff}\n", 'owner');
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private', 'timeout' => 30], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:auto:commit', ['visibility' => 'private'], "{diff}\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private', 'timeout' => 30], "Summarize.\n", 'owner');
         $actions = new Actions($this->config(), $this->storage, $this->index);
 
         $commit = $actions->special(self::PATH, 'commit');
@@ -213,7 +213,7 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['lite', 10], [$commit->model, $commit->timeout], 'a Save waits for it');
         self::assertSame(['normal', 30], [$actions->special(self::PATH, 'summary')?->model, $actions->special(self::PATH, 'summary')?->timeout]);
 
-        $page = $this->storage->read('ai:profiles:reports:special:commit');
+        $page = $this->storage->read('ai:profiles:reports:auto:commit');
         $this->storage->save($page->path, ['visibility' => 'private', 'model' => 'normal', 'timeout' => 4], "{diff}\n", $page->rev, 'owner');
         $own = (new Actions($this->config(), $this->storage, $this->index))->special(self::PATH, 'commit');
         self::assertSame(['normal', 4], [$own?->model, $own?->timeout], 'the page\'s own');
@@ -265,7 +265,7 @@ final class ActionsTest extends StorageTestCase
 
     public function testEachPromptPageIsReadOncePerObjectAcrossRepeatedLookups(): void
     {
-        $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
         $this->storage->create('ai:profiles:reports:conclusion', ['visibility' => 'private'], "Conclude.\n", 'owner');
         $this->storage->create('ai:profiles:reports', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | | | append |\n", 'owner');
         $actions = new Actions($this->config(), $this->storage, $this->index);
@@ -274,9 +274,9 @@ final class ActionsTest extends StorageTestCase
         self::assertNull($actions->special(self::PATH, 'tags'), 'no page, no feature');
 
         // Edited under a live object: it keeps what it read (one request, one CLI run)…
-        $page = $this->storage->read('ai:profiles:reports:special:summary');
+        $page = $this->storage->read('ai:profiles:reports:buttons:summary');
         $this->storage->save($page->path, $page->frontmatter, "Summarize differently.\n", $page->rev, 'owner');
-        $this->storage->create('ai:profiles:reports:special:tags', ['visibility' => 'private'], "Tag it.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:buttons:tags', ['visibility' => 'private'], "Tag it.\n", 'owner');
         $again = $actions->special(self::PATH, 'summary');
         self::assertNotNull($again);
         self::assertSame('Summarize.', $again->prompt);
@@ -307,9 +307,9 @@ final class ActionsTest extends StorageTestCase
 
     public function testTheLibrarysFeaturesFollowTheLibraryNamespaceWhereverTheNotebookIs(): void
     {
-        $this->storage->create('ai:profiles:research:special:ask-notebook', ['visibility' => 'private'], "Answer from the sources.\n", 'owner');
-        $this->storage->create('ai:profiles:teaching:special:ask-notebook', ['visibility' => 'private'], "Not this one.\n", 'owner');
-        $this->storage->create('ai:profiles:teaching:special:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:research:questions:notebook', ['visibility' => 'private'], "Answer from the sources.\n", 'owner');
+        $this->storage->create('ai:profiles:teaching:questions:notebook', ['visibility' => 'private'], "Not this one.\n", 'owner');
+        $this->storage->create('ai:profiles:teaching:buttons:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
         $this->storage->create('ai:profiles:teaching:rewrite', ['visibility' => 'private'], "Rewrite.\n", 'owner');
         $this->table('teaching', 'rewrite');
         $actions = new Actions($this->routed([
@@ -328,7 +328,7 @@ final class ActionsTest extends StorageTestCase
     public function testAPageNamesItsPromptsProfileButNeverItsServer(): void
     {
         $this->storage->create('ai:profiles:research:grammar', ['visibility' => 'private'], "Fix the grammar.\n", 'owner');
-        $this->storage->create('ai:profiles:research:special:summary', ['visibility' => 'private'], "Research summary.\n", 'owner');
+        $this->storage->create('ai:profiles:research:buttons:summary', ['visibility' => 'private'], "Research summary.\n", 'owner');
         $this->table('research', 'grammar');
         $this->storage->create('ai:profiles:teaching:rewrite', ['visibility' => 'private'], "Rewrite.\n", 'owner');
         $this->table('teaching', 'rewrite');
@@ -351,11 +351,11 @@ final class ActionsTest extends StorageTestCase
     {
         $this->storage->create('ai:profiles:wiki:ask', ['visibility' => 'private', 'model' => 'lite'], "Ask {prompt}.\n", 'owner');
         $this->storage->create('ai:profiles:wiki:system:ask', ['visibility' => 'private'], "Wiki's appendage.\n", 'owner');
-        $this->storage->create('ai:profiles:wiki:special:commit', ['visibility' => 'private'], "Note it.\n", 'owner');
+        $this->storage->create('ai:profiles:wiki:auto:commit', ['visibility' => 'private'], "Note it.\n", 'owner');
         $this->storage->create('ai:profiles:wiki:rewrite', ['visibility' => 'private'], "Rewrite.\n", 'owner');
         $this->table('wiki', 'rewrite');
         $this->table('research', 'ask', 'grammar');
-        $this->storage->create('ai:profiles:research:special:ask-notebook', ['visibility' => 'private'], "Answer.\n", 'owner');
+        $this->storage->create('ai:profiles:research:questions:notebook', ['visibility' => 'private'], "Answer.\n", 'owner');
         $map = ['profile_map' => ['library' => 'research']];
         $ids = static fn (array $list): array => array_map(static fn (Action $a): string => $a->id, $list);
 
@@ -372,7 +372,7 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['rewrite'], $ids($actions->forPage('docs:howto')), 'the fallback\'s own rail elsewhere');
 
         $this->table('empty');
-        $this->storage->create('ai:profiles:empty:special:summary', ['visibility' => 'private'], "S.\n", 'owner');
+        $this->storage->create('ai:profiles:empty:buttons:summary', ['visibility' => 'private'], "S.\n", 'owner');
         $bare = new Actions($this->routed(['profile_map' => ['bare' => 'nothing'], 'fallback_profile' => 'wiki']), $this->storage, $this->index);
         self::assertSame([], $bare->forPage('bare:x'), 'a profile with no table has no rail, whatever the fallback has');
 
@@ -387,7 +387,7 @@ final class ActionsTest extends StorageTestCase
 
     public function testABorrowedPromptNeverRunsOnTheServerItNames(): void
     {
-        $this->storage->create('ai:profiles:wiki:special:commit', ['visibility' => 'private', 'model' => '#2:lite'], "Note it.\n", 'owner');
+        $this->storage->create('ai:profiles:wiki:auto:commit', ['visibility' => 'private', 'model' => '#2:lite'], "Note it.\n", 'owner');
         $this->storage->create('ai:profiles:wiki:ask', ['visibility' => 'private', 'model' => '#2:lite'], "Ask.\n", 'owner');
         $this->table('wiki', 'ask');
         $this->table('reports', 'ask');
@@ -405,8 +405,8 @@ final class ActionsTest extends StorageTestCase
 
     public function testAPromptAboutNoPageTakesASubnamespacesOwnBeforeTheFallbacks(): void
     {
-        $this->storage->create('ai:profiles:wiki:special:tags-review', ['visibility' => 'private'], "Generic review.\n", 'owner');
-        $this->storage->create('ai:profiles:mri:special:tags-review', ['visibility' => 'private'], "Revizuire.\n", 'owner');
+        $this->storage->create('ai:profiles:wiki:auto:tags-review', ['visibility' => 'private'], "Generic review.\n", 'owner');
+        $this->storage->create('ai:profiles:mri:auto:tags-review', ['visibility' => 'private'], "Revizuire.\n", 'owner');
         $this->storage->create('reports:mri:x', ['visibility' => 'private'], "Raport.\n", 'owner');
         $actions = new Actions($this->routed(['profile_map' => ['reports' => 'reports', 'reports:mri' => 'mri'], 'fallback_profile' => 'wiki']), $this->storage, $this->index);
 
@@ -421,8 +421,8 @@ final class ActionsTest extends StorageTestCase
         (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts'))->install('reports', 'owner', target: DefaultPrompts::RADIOLOGY);
         $list = (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH);
 
-        self::assertSame(['ask', 'create', 'conclusion', 'diagnostic', 'gaps-traps', 'urgent', 'quality', 'rapno'], array_map(static fn (Action $a): string => $a->id, $list));
-        self::assertSame(['show', 'replace', 'append', 'append', 'show', 'show', 'show', 'append'], array_map(static fn (Action $a): string => $a->result, $list));
+        self::assertSame(['ask', 'create', 'conclusion', 'diagnostic', 'gaps-traps', 'urgent', 'quality', 'rapno', 'rewrite'], array_map(static fn (Action $a): string => $a->id, $list));
+        self::assertSame(['show', 'replace', 'append', 'append', 'show', 'show', 'show', 'append', 'replace'], array_map(static fn (Action $a): string => $a->result, $list));
         self::assertStringContainsString('{prompt}', $list[0]->prompt, 'Ask: the rail gives it a question box');
     }
 }

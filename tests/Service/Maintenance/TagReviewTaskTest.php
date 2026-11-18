@@ -49,7 +49,7 @@ final class TagReviewTaskTest extends StorageTestCase
     private function task(bool $withPrompt = true): TagReviewTask
     {
         if ($withPrompt) {
-            $this->storage->create('ai:profiles:reports:special:tags-review', ['title' => 'Tags review', 'visibility' => 'private'], "Tags:\n{tags}\n", 'owner');
+            $this->storage->create('ai:profiles:reports:auto:tags-review', ['title' => 'Tags review', 'visibility' => 'private'], "Tags:\n{tags}\n", 'owner');
         }
         $config = [
             'paths' => ['data' => $this->dataRoot, 'index' => $this->dataRoot . '/index.sqlite'],

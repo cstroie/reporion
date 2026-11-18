@@ -47,7 +47,7 @@ final class AiPromptsInstallCommandTest extends StorageTestCase
         self::assertSame(0, $code);
         self::assertStringStartsWith('ai:prompts-install reports generic (writes)', $out);
         self::assertStringContainsString('2 made, 0 already there', $out);
-        self::assertNotSame('', $this->storage->read('ai:profiles:reports:special:commit')->body);
+        self::assertNotSame('', $this->storage->read('ai:profiles:reports:auto:commit')->body);
         self::assertSame('missing', (new DefaultPrompts($this->storage, '/nonexistent'))->status('reports')['summary']);
         self::assertStringContainsString('"action":"settings.change"', (string) file_get_contents(glob($this->dataRoot . '/audit/*')[0]));
     }
@@ -55,7 +55,7 @@ final class AiPromptsInstallCommandTest extends StorageTestCase
     public function testDryRunAndListWriteNothing(): void
     {
         [, $dry] = $this->exec(['--profile=reports', '--dry-run']);
-        self::assertStringContainsString('would make ai:profiles:reports:special:summary', $dry);
+        self::assertStringContainsString('would make ai:profiles:reports:buttons:summary', $dry);
         [, $list] = $this->exec(['--profile=reports', '--list']);
         self::assertStringContainsString('summary', $list);
         self::assertStringContainsString('missing', $list);

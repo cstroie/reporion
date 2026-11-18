@@ -22,16 +22,16 @@ Every prompt page is made with `format: text` in its frontmatter (shown as typed
 
 | File | Page | Used by |
 |---|---|---|
-| `summary.txt` | `…:special:summary` | *Summarize* on a report, `pages:summarize`: `{text}` is the conclusion |
-| `tags.txt` | `…:special:tags` | *Suggest tags* on a report, `pages:tag`: `{text}` is the whole report |
-| `tags-review.txt` | `…:special:tags-review` | `tags:review` (Admin → Tags): `{tags}` is the tag list, no report |
-| `evolution.txt` | `…:special:evolution` | the patient timeline's and compare view's Evolution panel: `{text}` is this report, `{history}` the patient's earlier ones as `<report date exam>` blocks |
-| `presign.txt` | `…:special:presign` | the Sign screen's *Check before signing*: the whole report; the answer is a `- ` list, or `none` |
-| `commit.txt` | `…:special:commit` | the revision note a Save writes when *What changed?* is empty: `{diff}` is the change; lite, 10 s |
-| `recall-expand.txt` | `…:special:recall-expand` | the editor's Recall *Expand the line* (D50): `{text}` is the line, `{recall}` the passages recalled for it |
-| `recall-missing.txt` | `…:special:recall-missing` | the editor's Recall *What is missing?* (D50): `{text}` and `{recall}` the same; runs on `lite` unless its page says otherwise |
-| `ask-expand.txt` | `…:special:ask-expand` | *Ask the archive*'s first step (D53): `{question}` is the question, `{history}` the earlier turns of the conversation as `<turn>` blocks (de-identified, citations removed; empty at the first question); the answer is the question as a complete standalone one, then one word or phrase a report would use per line; lite; without this prompt Ask searches with the question's own words |
-| `ask-archive.txt` | `…:special:ask-archive` | *Ask the archive* (`/ask`, D53): `{question}` is the question (a patient's name in it goes as `[nume]`), `{sources}` the passages found for it as numbered `<sursa id="n">` blocks, de-identified; the profile serving `reports` |
+| `summary.txt` | `…:buttons:summary` | *Summarize* on a report, `pages:summarize`: `{text}` is the conclusion |
+| `tags.txt` | `…:buttons:tags` | *Suggest tags* on a report, `pages:tag`: `{text}` is the whole report |
+| `tags-review.txt` | `…:auto:tags-review` | `tags:review` (Admin → Tags): `{tags}` is the tag list, no report |
+| `evolution.txt` | `…:buttons:evolution` | the patient timeline's and compare view's Evolution panel: `{text}` is this report, `{history}` the patient's earlier ones as `<report date exam>` blocks |
+| `presign.txt` | `…:buttons:presign` | the Sign screen's *Check before signing*: the whole report; the answer is a `- ` list, or `none` |
+| `commit.txt` | `…:auto:commit` | the revision note a Save writes when *What changed?* is empty: `{diff}` is the change; lite, 10 s |
+| `recall-expand.txt` | `…:panels:recall-expand` | the editor's Recall *Expand the line* (D50): `{text}` is the line, `{recall}` the passages recalled for it |
+| `recall-missing.txt` | `…:panels:recall-missing` | the editor's Recall *What is missing?* (D50): `{text}` and `{recall}` the same; runs on `lite` unless its page says otherwise |
+| `ask-expand.txt` | `…:questions:archive-expand` | *Ask the archive*'s first step (D53): `{question}` is the question, `{history}` the earlier turns of the conversation as `<turn>` blocks (de-identified, citations removed; empty at the first question); the answer is the question as a complete standalone one, then one word or phrase a report would use per line; lite; without this prompt Ask searches with the question's own words |
+| `ask-archive.txt` | `…:questions:archive` | *Ask the archive* (`/ask`, D53): `{question}` is the question (a patient's name in it goes as `[nume]`), `{sources}` the passages found for it as numbered `<sursa id="n">` blocks, de-identified; the profile serving `reports` |
 
 ## Rail
 
