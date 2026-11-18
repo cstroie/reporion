@@ -630,6 +630,7 @@ final class Kernel
             (string) $config['site']['home_page'],
             $modalities,
             $stats,
+            new \Reporion\Service\StorageStats((string) $config['paths']['data']),
         );
         // /stats site filter: site key => its name (Admin → Sites)
         $siteNames = [];

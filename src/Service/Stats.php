@@ -169,6 +169,183 @@ final class Stats
     }
 
     /**
+     * The start page's Insights panel: the caller's listing over the last
+     * twelve months (one statsRows() call, invariant 6).
+     *
+     * @return array<string, mixed> see insightsFrom()
+     */
+    public function insights(User $principal, DateTimeImmutable $now): array
+    {
+        $since = $now->modify('first day of this month')->modify('-12 months')->format('Y-m-d');
+
+        return self::insightsFrom($this->reports($principal, ['since' => $since]), $now, $principal->username);
+    }
+
+    /**
+     * Pure: rows as statsRows() returns them (reports only).
+     *
+     * - weeks: the last 12 ISO weeks, oldest first, signatures by the caller and by others;
+     * - trend: median turnaround this month against the three months before, p90 this month;
+     * - sameDay: share of this month's signatures under one day (null for none);
+     * - backlog: open drafts by days since their last change, and the oldest one's age;
+     * - modality / site: this month's exams, top five with their share;
+     * - weekday / hour: when signatures happen over the 12 weeks (null for none);
+     * - share: the caller's part of this month's signatures; pace: this month's count
+     *   extrapolated over its working days (null before the first working day ends).
+     *
+     * @param list<array{path: string, title: string, status: string, site: ?string, study_date: ?string, signed_at: ?string, signed_by: ?string, updated: string, modalities: list<string>}> $rows
+     *
+     * @return array{
+     *   weeks: list<array{week: string, mine: int, team: int}>,
+     *   trend: array{median: ?float, before: ?float, p90: ?float, change: ?float},
+     *   sameDay: ?float,
+     *   backlog: array{buckets: array{day: int, week: int, month: int, older: int}, total: int, oldest: ?float},
+     *   modality: list<array{key: string, n: int, share: float}>,
+     *   site: list<array{key: string, n: int, share: float}>,
+     *   weekday: ?int,
+     *   hour: ?int,
+     *   signed: int,
+     *   mine: int,
+     *   share: ?float,
+     *   pace: ?int
+     * }
+     */
+    public static function insightsFrom(array $rows, DateTimeImmutable $now, string $me): array
+    {
+        $thisMonth = $now->format('Y-m');
+        $before = [];
+        for ($i = 1; $i <= 3; ++$i) {
+            $before[$now->modify('first day of this month')->modify("-{$i} months")->format('Y-m')] = true;
+        }
+        $monday = $now->setTime(0, 0)->modify('monday this week');
+        $weeks = [];
+        for ($i = 11; $i >= 0; --$i) {
+            $weeks[$monday->modify("-{$i} weeks")->format('o-\WW')] = ['mine' => 0, 'team' => 0];
+        }
+        $daysNow = [];
+        $daysBefore = [];
+        $buckets = ['day' => 0, 'week' => 0, 'month' => 0, 'older' => 0];
+        $oldest = null;
+        $mix = ['modality' => [], 'site' => []];
+        $exams = 0;
+        $weekday = array_fill(1, 7, 0);
+        $hour = array_fill(0, 24, 0);
+        $signed = 0;
+        $mine = 0;
+
+        foreach ($rows as $row) {
+            if ($row['status'] === 'draft') {
+                try {
+                    $age = ($now->getTimestamp() - (new DateTimeImmutable($row['updated']))->getTimestamp()) / 86400;
+                } catch (Throwable) {
+                    $age = null;
+                }
+                if ($age !== null) {
+                    $age = max(0.0, $age);
+                    ++$buckets[match (true) {
+                        $age < 1 => 'day',
+                        $age < 7 => 'week',
+                        $age < 30 => 'month',
+                        default => 'older',
+                    }];
+                    $oldest = max($oldest ?? 0.0, $age);
+                }
+            }
+            if ($row['study_date'] !== null && str_starts_with($row['study_date'], $thisMonth)) {
+                ++$exams;
+                foreach ($row['modalities'] !== [] ? $row['modalities'] : ['n/a'] as $m) {
+                    $mix['modality'][$m] = ($mix['modality'][$m] ?? 0) + 1;
+                }
+                $site = ($row['site'] ?? '') !== '' ? (string) $row['site'] : 'n/a';
+                $mix['site'][$site] = ($mix['site'][$site] ?? 0) + 1;
+            }
+            if ($row['signed_at'] === null || $row['signed_at'] === '') {
+                continue;
+            }
+            try {
+                $at = new DateTimeImmutable($row['signed_at']);
+            } catch (Throwable) {
+                continue;
+            }
+            $at = $at->setTimezone($now->getTimezone());
+            $isMine = $row['signed_by'] === $me;
+            $week = $at->format('o-\WW');
+            if (isset($weeks[$week])) {
+                ++$weeks[$week][$isMine ? 'mine' : 'team'];
+                ++$weekday[(int) $at->format('N')];
+                ++$hour[(int) $at->format('G')];
+            }
+            $month = $at->format('Y-m');
+            $days = self::turnaround($row['study_date'], $row['signed_at']);
+            if ($month === $thisMonth) {
+                ++$signed;
+                if ($isMine) {
+                    ++$mine;
+                }
+                if ($days !== null) {
+                    $daysNow[] = $days;
+                }
+            } elseif (isset($before[$month]) && $days !== null) {
+                $daysBefore[] = $days;
+            }
+        }
+
+        $median = self::percentile($daysNow, 50);
+        $medianBefore = self::percentile($daysBefore, 50);
+        $top = static function (array $counts) use ($exams): array {
+            arsort($counts);
+            $out = [];
+            foreach (\array_slice($counts, 0, 5, true) as $key => $n) {
+                $out[] = ['key' => (string) $key, 'n' => $n, 'share' => $exams > 0 ? $n / $exams : 0.0];
+            }
+
+            return $out;
+        };
+        $any = array_sum($weekday) > 0;
+
+        return [
+            'weeks' => array_map(static fn (string $w, array $c): array => ['week' => $w] + $c, array_keys($weeks), array_values($weeks)),
+            'trend' => [
+                'median' => $median,
+                'before' => $medianBefore,
+                'p90' => self::percentile($daysNow, 90),
+                'change' => $median !== null && $medianBefore !== null && $medianBefore > 0 ? ($median - $medianBefore) / $medianBefore : null,
+            ],
+            'sameDay' => $daysNow !== [] ? \count(array_filter($daysNow, static fn (float $d): bool => $d < 1)) / \count($daysNow) : null,
+            'backlog' => ['buckets' => $buckets, 'total' => array_sum($buckets), 'oldest' => $oldest],
+            'modality' => $top($mix['modality']),
+            'site' => $top($mix['site']),
+            'weekday' => $any ? (int) array_search(max($weekday), $weekday, true) : null,
+            'hour' => $any ? (int) array_search(max($hour), $hour, true) : null,
+            'signed' => $signed,
+            'mine' => $mine,
+            'share' => $signed > 0 ? $mine / $signed : null,
+            'pace' => self::pace($signed, $now),
+        ];
+    }
+
+    /** This month's count extrapolated over its working days (Mon–Fri); null before one has passed */
+    public static function pace(int $signed, DateTimeImmutable $now): ?int
+    {
+        $total = 0;
+        $done = 0;
+        $today = (int) $now->format('j');
+        $day = $now->modify('first day of this month')->setTime(12, 0);
+        $last = (int) $now->format('t');
+        for ($d = 1; $d <= $last; ++$d, $day = $day->modify('+1 day')) {
+            if ((int) $day->format('N') >= 6) {
+                continue;
+            }
+            ++$total;
+            if ($d < $today) {
+                ++$done;
+            }
+        }
+
+        return $done > 0 ? (int) round($signed / $done * $total) : null;
+    }
+
+    /**
      * Exam date → first signature, in days; null when either is missing or
      * the signature comes first.
      */

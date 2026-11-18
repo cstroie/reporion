@@ -137,6 +137,67 @@ final class StatsTest extends StorageTestCase
         return $path;
     }
 
+    public function testInsightsFromRows(): void
+    {
+        // Wednesday 2026-11-18 15:00 UTC: 21 working days in November, 12 passed
+        $now = new DateTimeImmutable('2026-11-18T15:00:00+00:00');
+        $row = static fn (array $r): array => $r + ['path' => 'reports:ct:x', 'title' => 't', 'status' => 'signed', 'site' => 'A', 'study_date' => null, 'signed_at' => null, 'signed_by' => null, 'updated' => '2026-11-18T10:00:00+00:00', 'modalities' => ['CT']];
+        $rows = [
+            // This month: two mine (0.5 d and 2 d), one the team's (0.25 d)
+            $row(['study_date' => '2026-11-16', 'signed_at' => '2026-11-16T12:00:00+00:00', 'signed_by' => 'me']),
+            $row(['study_date' => '2026-11-10', 'signed_at' => '2026-11-12T00:00:00+00:00', 'signed_by' => 'me', 'modalities' => ['MRI'], 'site' => 'B']),
+            $row(['study_date' => '2026-11-17', 'signed_at' => '2026-11-17T06:00:00+00:00', 'signed_by' => 'bob']),
+            // October: 4 days, the months before
+            $row(['study_date' => '2026-10-01', 'signed_at' => '2026-10-05T00:00:00+00:00', 'signed_by' => 'me']),
+            // Drafts: one hour old, three days, 60 days
+            $row(['status' => 'draft', 'updated' => '2026-11-18T14:00:00+00:00']),
+            $row(['status' => 'draft', 'updated' => '2026-11-15T15:00:00+00:00']),
+            $row(['status' => 'draft', 'updated' => '2026-09-19T15:00:00+00:00']),
+        ];
+        $ins = Stats::insightsFrom($rows, $now, 'me');
+
+        self::assertCount(12, $ins['weeks']);
+        self::assertSame(['week' => '2026-W47', 'mine' => 1, 'team' => 1], $ins['weeks'][11]);
+        self::assertSame(['week' => '2026-W46', 'mine' => 1, 'team' => 0], $ins['weeks'][10]);
+        self::assertSame(3, $ins['signed']);
+        self::assertSame(2, $ins['mine']);
+        self::assertEqualsWithDelta(2 / 3, $ins['share'], 1e-9);
+        self::assertEqualsWithDelta(0.5, $ins['trend']['median'], 1e-9);
+        self::assertEqualsWithDelta(4.0, $ins['trend']['before'], 1e-9);
+        self::assertEqualsWithDelta(-0.875, $ins['trend']['change'], 1e-9);
+        self::assertEqualsWithDelta(2 / 3, $ins['sameDay'], 1e-9);
+        self::assertSame(['day' => 1, 'week' => 1, 'month' => 0, 'older' => 1], $ins['backlog']['buckets']);
+        self::assertSame(3, $ins['backlog']['total']);
+        self::assertEqualsWithDelta(60.0, $ins['backlog']['oldest'], 1e-9);
+        // Exams this month: everything with a November study date, drafts have none
+        self::assertSame(['key' => 'CT', 'n' => 2, 'share' => 2 / 3], $ins['modality'][0]);
+        self::assertSame('A', $ins['site'][0]['key']);
+        self::assertSame(5, $ins['pace']);
+        self::assertNotNull($ins['weekday']);
+    }
+
+    public function testInsightsFromNothing(): void
+    {
+        $ins = Stats::insightsFrom([], new DateTimeImmutable('2026-11-18T15:00:00+00:00'), 'me');
+
+        self::assertSame(0, $ins['signed']);
+        self::assertNull($ins['share']);
+        self::assertNull($ins['sameDay']);
+        self::assertNull($ins['trend']['median']);
+        self::assertNull($ins['trend']['change']);
+        self::assertNull($ins['weekday']);
+        self::assertNull($ins['backlog']['oldest']);
+        self::assertSame([], $ins['modality']);
+    }
+
+    public function testPaceIsNullOnTheFirstWorkingDay(): void
+    {
+        // Monday 2026-06-01: no working day has ended yet
+        self::assertNull(Stats::pace(4, new DateTimeImmutable('2026-06-01T10:00:00+00:00')));
+        // Tuesday: one of 22 passed
+        self::assertSame(88, Stats::pace(4, new DateTimeImmutable('2026-06-02T10:00:00+00:00')));
+    }
+
     private function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');

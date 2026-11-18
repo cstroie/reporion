@@ -50,6 +50,8 @@ final class HomeController
         private readonly array $modalities = [],
         // The "This month" card (phase 24c); none in tests that build the controller bare
         private readonly ?Stats $stats = null,
+        // The owners' Storage panel; none in tests that build the controller bare
+        private readonly ?\Reporion\Service\StorageStats $storageStats = null,
     ) {
     }
 
@@ -141,6 +143,9 @@ final class HomeController
             ],
             'cap' => self::CAP,
             'month' => $this->stats?->thisMonth($principal, $now),
+            'insights' => $this->stats?->insights($principal, $now),
+            // Owners only: sizes of data/ by part, never a path (invariant 8)
+            'storage' => $principal->isOwner ? $this->storageStats?->get($now->getTimestamp(), ($query['storage'] ?? null) === 'refresh') : null,
             'staleDays' => self::STALE_DAYS,
             'staleBefore' => $staleBefore,
             'last' => $last,

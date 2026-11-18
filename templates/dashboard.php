@@ -33,6 +33,8 @@ use Reporion\Support\ReportPath;
 /** @var array{drafts: int, stale: int, today: int, week: int} $stats */
 /** @var int $cap */
 /** @var array{signed: int, median: ?float, lastSigned: int, lastMedian: ?float}|null $month */
+/** @var array<string, mixed>|null $insights */
+/** @var array<string, mixed>|null $storage */
 /** @var int $staleDays */
 /** @var array<string, mixed>|null $last */
 /** @var array{edit?: bool, patient?: bool} $lastActions */
@@ -113,6 +115,135 @@ include __DIR__ . '/partials/notice.php'; ?>
 <a class="wk-start-stat" href="<?= $b ?>/stats"><b><?= (int) $month['signed'] ?></b><span><?= $e(t('start.stat_month', [\Reporion\Service\Stats::formatDays($month['median'])])) ?></span><span><?= $e(t('start.stat_last_month', [$month['lastSigned'], \Reporion\Service\Stats::formatDays($month['lastMedian'])])) ?></span></a>
 <?php endif; ?>
 </div>
+
+<?php $insights ??= null;
+$storage ??= null; ?>
+<?php if ($insights !== null || $storage !== null): /* Insights (Service\Stats::insights()) and, for owners, Storage (Service\StorageStats) */ ?>
+<?php
+$pct = static fn (?float $v): string => $v === null ? 'n/a' : (string) round($v * 100) . '%';
+$fmtBytes = static function (?int $n): string {
+    if ($n === null) {
+        return 'n/a';
+    }
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $i = 0;
+    $v = (float) $n;
+    while ($v >= 1024 && $i < 4) {
+        $v /= 1024;
+        ++$i;
+    }
+
+    return ($i === 0 ? (string) $n : number_format($v, $v < 10 ? 1 : 0)) . ' ' . $units[$i];
+};
+?>
+<div class="wk-start-ins<?= $storage !== null ? ' wk-start-ins-3' : '' ?>">
+<?php if ($insights !== null): ?>
+<?php $ins = $insights;
+$peak = max(1, ...array_map(static fn (array $w): int => $w['mine'] + $w['team'], $ins['weeks']));
+$trend = $ins['trend'];
+$weekdays = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun']; ?>
+<section class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.ins_activity')) ?></h2></hgroup><a class="wk-start-more" href="<?= $b ?>/stats"><?= $e(t('start.ins_more')) ?></a></header>
+<svg class="wk-spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label="<?= $e(t('start.ins_weeks')) ?>">
+<?php foreach ($ins['weeks'] as $i => $w):
+    $hm = 30 * $w['mine'] / $peak;
+    $ht = 30 * $w['team'] / $peak; ?>
+<g><title><?= $e($w['week'] . ': ' . t('start.ins_week_tip', [$w['mine'], $w['team']])) ?></title>
+<rect class="wk-spark-team" x="<?= $i * 10 + 1 ?>" y="<?= round(32 - $hm - $ht, 2) ?>" width="8" height="<?= round($ht, 2) ?>"/>
+<rect class="wk-spark-mine" x="<?= $i * 10 + 1 ?>" y="<?= round(32 - $hm, 2) ?>" width="8" height="<?= round($hm, 2) ?>"/></g>
+<?php endforeach; ?>
+<line class="wk-spark-base" x1="0" y1="31.5" x2="120" y2="31.5"/>
+</svg>
+<p class="wk-spark-legend"><span class="wk-key wk-key-mine"></span><?= $e(t('start.ins_mine')) ?> <span class="wk-key wk-key-team"></span><?= $e(t('start.ins_team')) ?> <span class="wk-dim">· <?= $e(t('start.ins_weeks')) ?></span></p>
+<dl class="wk-ins-dl">
+<dt><?= $e(t('start.ins_turnaround')) ?></dt>
+<dd><b><?= $e(\Reporion\Service\Stats::formatDays($trend['median'])) ?></b><?php if ($trend['change'] !== null): $up = $trend['change'] > 0; ?> <span class="<?= $up ? 'wk-ins-worse' : 'wk-ins-better' ?>" title="<?= $e(t('start.ins_vs_before', [\Reporion\Service\Stats::formatDays($trend['before'])])) ?>"><i class="ph ph-arrow-<?= $up ? 'up' : 'down' ?>-right" aria-hidden="true"></i><?= $e((string) abs((int) round($trend['change'] * 100))) ?>%</span><?php endif; ?> <span class="wk-dim">p90 <?= $e(\Reporion\Service\Stats::formatDays($trend['p90'])) ?></span></dd>
+<dt><?= $e(t('start.ins_same_day')) ?></dt><dd><b><?= $e($pct($ins['sameDay'])) ?></b></dd>
+<dt><?= $e(t('start.ins_share')) ?></dt><dd><b><?= $e($pct($ins['share'])) ?></b> <span class="wk-dim"><?= $e(t('start.ins_of', [$ins['mine'], $ins['signed']])) ?></span></dd>
+<dt><?= $e(t('start.ins_pace')) ?></dt><dd><b><?= $ins['pace'] !== null ? '~' . (int) $ins['pace'] : 'n/a' ?></b> <span class="wk-dim"><?= $e(t('start.ins_pace_note')) ?></span></dd>
+<?php if ($ins['weekday'] !== null): ?>
+<dt><?= $e(t('start.ins_busiest')) ?></dt><dd><b><?= $e($weekdays[$ins['weekday']]) ?></b> <span class="wk-dim"><?= $e(t('start.ins_hour', [sprintf('%02d:00', $ins['hour'])])) ?></span></dd>
+<?php endif; ?>
+</dl>
+</section>
+
+<section class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.ins_backlog')) ?></h2></hgroup><a class="wk-start-more" href="#drafts"><?= $e(t('start.ins_backlog_n', [$ins['backlog']['total']])) ?></a></header>
+<?php $bl = $ins['backlog']; ?>
+<?php if ($bl['total'] === 0): ?>
+<p class="wk-dim"><?= $e(t('start.ins_backlog_none')) ?></p>
+<?php else: ?>
+<div class="wk-sbar" role="img" aria-label="<?= $e(t('start.ins_backlog')) ?>">
+<?php foreach ($bl['buckets'] as $key => $n): if ($n === 0) {
+    continue;
+} ?>
+<span class="wk-sbar-<?= $e($key) ?>" style="flex-grow: <?= (int) $n ?>" title="<?= $e(t('start.ins_age_' . $key) . ': ' . $n) ?>"></span>
+<?php endforeach; ?>
+</div>
+<p class="wk-spark-legend">
+<?php foreach ($bl['buckets'] as $key => $n): ?>
+<span class="wk-key wk-sbar-<?= $e($key) ?>"></span><?= $e(t('start.ins_age_' . $key)) ?> <b><?= (int) $n ?></b>
+<?php endforeach; ?>
+</p>
+<p class="wk-dim wk-ins-small"><?= $e(t('start.ins_oldest', [\Reporion\Service\Stats::formatDays($bl['oldest'])])) ?></p>
+<?php endif; ?>
+<?php foreach (['modality' => 'start.ins_mix_modality', 'site' => 'start.ins_mix_site'] as $group => $label): if ($ins[$group] === []) {
+    continue;
+} ?>
+<h3 class="wk-eyebrow wk-ins-h3"><?= $e(t($label)) ?></h3>
+<ul class="wk-ins-mix">
+<?php foreach ($ins[$group] as $item): ?>
+<li><span class="wk-mono"><?= $e($item['key']) ?></span><span class="wk-ins-track"><span style="width: <?= round($item['share'] * 100, 1) ?>%"></span></span><b><?= (int) $item['n'] ?></b></li>
+<?php endforeach; ?>
+</ul>
+<?php endforeach; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($storage !== null): ?>
+<?php $st = $storage;
+$used = $st['disk'] !== null && $st['free'] !== null ? $st['disk'] - $st['free'] : null;
+$freeShare = $st['disk'] ? $st['free'] / $st['disk'] : null;
+$backupAge = $st['backup'] > 0 ? (time() - $st['backup']) / 86400 : null;
+$groups = ['pages' => ['pages'], 'history' => ['attic'], 'media' => ['media', 'sources'], 'databases' => ['state', 'index', 'vectors'], 'other' => ['trash', 'backups']];
+$sum = static fn (array $parts): int => array_sum(array_map(static fn (string $p): int => (int) ($st['parts'][$p]['bytes'] ?? 0), $parts)); ?>
+<section class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.storage')) ?></h2></hgroup><a class="wk-start-more" href="<?= $b ?>/?storage=refresh" title="<?= $e(t('start.storage_measured', [MetaText::ago(date('c', (int) $st['at']))])) ?>"><?= $e(t('start.storage_refresh')) ?></a></header>
+<?php if ($freeShare !== null && $freeShare < 0.10): ?>
+<?php $noticeKind = 'warn';
+$noticeIcon = 'hard-drives';
+$noticeText = t('start.storage_low', [$pct($freeShare)]);
+$noticeLink = null;
+include __DIR__ . '/partials/notice.php'; ?>
+<?php endif; ?>
+<?php if ($backupAge === null || $backupAge > 2): ?>
+<?php $noticeKind = 'warn';
+$noticeIcon = 'cloud-warning';
+$noticeText = $backupAge === null ? t('start.storage_no_backup') : t('start.storage_old_backup', [(int) floor($backupAge)]);
+$noticeLink = [$basePath . '/admin/maintenance', t('start.storage_backup_link')];
+include __DIR__ . '/partials/notice.php'; ?>
+<?php endif; ?>
+<p class="wk-ins-total"><b><?= $e($fmtBytes((int) $st['total'])) ?></b> <span class="wk-dim"><?= $e(t('start.storage_in_data')) ?></span></p>
+<div class="wk-sbar" role="img" aria-label="<?= $e(t('start.storage')) ?>">
+<?php foreach ($groups as $key => $parts): $n = $sum($parts);
+    if ($n === 0) {
+        continue;
+    } ?>
+<span class="wk-sbar-st-<?= $e($key) ?>" style="flex-grow: <?= max(1, (int) round($n / max(1, $st['total']) * 1000)) ?>" title="<?= $e(t('start.storage_' . $key) . ': ' . $fmtBytes($n)) ?>"></span>
+<?php endforeach; ?>
+</div>
+<dl class="wk-ins-dl">
+<?php foreach ($groups as $key => $parts): ?>
+<dt><span class="wk-key wk-sbar-st-<?= $e($key) ?>"></span><?= $e(t('start.storage_' . $key)) ?></dt><dd><b><?= $e($fmtBytes($sum($parts))) ?></b> <span class="wk-dim"><?= $e(t('start.storage_files', [array_sum(array_map(static fn (string $p): int => (int) ($st['parts'][$p]['files'] ?? 0), $parts))])) ?></span></dd>
+<?php endforeach; ?>
+<dt><?= $e(t('start.storage_disk')) ?></dt><dd><b><?= $e($fmtBytes($st['free'])) ?></b> <span class="wk-dim"><?= $e(t('start.storage_free_of', [$fmtBytes($st['disk']), $pct($freeShare)])) ?></span></dd>
+<dt><?= $e(t('start.storage_content')) ?></dt><dd><b><?= (int) $st['pages'] ?></b> <span class="wk-dim"><?= $e(t('start.storage_counts', [(int) $st['revisions'], (int) $st['signatures']])) ?></span></dd>
+<dt><?= $e(t('start.storage_backup')) ?></dt><dd><b><?= $e($backupAge === null ? 'n/a' : MetaText::ago(date('c', (int) $st['backup']))) ?></b></dd>
+</dl>
+</section>
+<?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="wk-start-grid">
 <section class="wk-panel wk-start-continue">
