@@ -37,6 +37,8 @@ use Reporion\Controller\OAuthController;
 use Reporion\Controller\LibraryAiController;
 use Reporion\Controller\GuideController;
 use Reporion\Controller\WorkupController;
+use Reporion\Controller\DossierController;
+use Reporion\Service\Dossier\Dossier;
 use Reporion\Service\Workup\Workup;
 use Reporion\Controller\LibraryController;
 use Reporion\Controller\MediaController;
@@ -947,6 +949,11 @@ final class Kernel
         ), $aiConfig);
         $router->post('/api/v1/workup', static fn (Request $request, array $params): Response
             => $workup->workup($request, $session->principal($request)));
+        // Dossier (D64): a patient's folder read (OCR for scans) and summed up for the report in front; nothing kept
+        $dossierTools = \is_array($config['library']['tools'] ?? null) ? array_filter($config['library']['tools'], 'is_string') : [];
+        $dossier = new DossierController($editorPages, new Dossier($aiActions, $assistant, new Extractor((string) $config['paths']['data'] . '/tmp', $dossierTools)), $aiConfig);
+        $router->post('/api/v1/dossier', static fn (Request $request, array $params): Response
+            => $dossier->read($request, $session->principal($request)));
         $router->post('/api/v1/checks', static fn (Request $request, array $params): Response
             => $writingAids->checks($request, $session->principal($request)));
         $router->post('/api/v1/textflow', static fn (Request $request, array $params): Response

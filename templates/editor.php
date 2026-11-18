@@ -397,6 +397,24 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </section>
 </div>
 </details>
+<?php /* D64: Dossier, a patient's folder (scanned or printed PDF, or a photo) read page by page (OCR
+ * for scans) and summed up for the report in front: POST /api/v1/dossier, assets/js/editor-workup.js.
+ * Nothing is kept; shown, never written unless Insert is clicked (then assisted: dossier, D8). */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="dossier">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-folder-open"></i> <?= $e(t('editor.dossier.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.dossier.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-aid" id="editor-dossier">
+<div class="field"><label><?= $e(t('editor.dossier.file')) ?><input class="input input-sm" type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,application/pdf,image/*" data-dossier-file><small><?= $e(t('editor.dossier.file_help')) ?></small></label></div>
+<div class="field"><label><?= $e(t('editor.dossier.prompt')) ?><select class="input input-sm" data-dossier-prompt>
+<?php foreach (\Reporion\Service\Dossier\Dossier::PROMPTS as $dossierPrompt): ?><option value="<?= $e($dossierPrompt) ?>"><?= $e(t('editor.dossier.prompt_' . str_replace('-', '_', $dossierPrompt))) ?></option><?php endforeach; ?>
+</select><small><?= $e(t('editor.dossier.prompt_help')) ?></small></label></div>
+<div class="wk-recall-bar"><button type="button" class="btn btn-secondary btn-sm" data-dossier-run><i class="ph ph-scan"></i> <?= $e(t('editor.dossier.run')) ?></button></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-dossier-status" aria-live="polite"></p>
+<div id="editor-dossier-out"></div>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.dossier.note')) ?></p>
+</section>
+</div>
+</details>
 <?php endif; ?>
 <?php /* Tools (2026-10-16): text clean-ups that run in the browser on the text in front (its
  * selection, else all of it) through assets/js/editor-format.js: no assistant, no server
@@ -650,6 +668,20 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'insert' => t('editor.workup.insert'),
             'failed' => t('editor.workup.failed'),
             'open' => t('editor.recall.open'),
+        ],
+        'dossier' => [
+            'reading' => t('editor.dossier.reading'),
+            'ocr' => t('editor.dossier.ocr'),
+            'answering' => t('editor.dossier.answering'),
+            'done' => t('editor.dossier.done'),
+            'noFile' => t('editor.dossier.no_file'),
+            'tooLarge' => t('dossier.err.too_large', [(string) intdiv(\Reporion\Service\Dossier\Dossier::MAX_BYTES, 1024 * 1024)]),
+            'maxBytes' => \Reporion\Service\Dossier\Dossier::MAX_BYTES,
+            'title' => t('editor.dossier.answer'),
+            'copy' => t('editor.workup.copy'),
+            'copied' => t('editor.workup.copied'),
+            'insert' => t('editor.workup.insert'),
+            'failed' => t('editor.dossier.failed'),
         ],
     ] : null,
     'priors' => $priorCandidates,

@@ -181,5 +181,103 @@
     box.addEventListener('mousedown', function (event) { if (event.target.closest('button')) event.preventDefault(); });
   }
 
-  root.ReporionEditorWorkup = { mount: mount };
+  /**
+   * Dossier (D64): a patient's folder (PDF or image) sent to POST /api/v1/dossier (stream: true),
+   * read page by page on the server (OCR for scans), then summed up by the chosen prompt. The
+   * file goes in the request only; nothing is kept. Insert at cursor marks `assisted: dossier`.
+   */
+  function mountDossier(api) {
+    var s = (api.config && api.config.dossier) || {};
+    var box = document.getElementById('editor-dossier');
+    if (!box) return;
+    var status = document.getElementById('editor-dossier-status');
+    var out = document.getElementById('editor-dossier-out');
+    var button = box.querySelector('[data-dossier-run]');
+    var input = box.querySelector('[data-dossier-file]');
+    var choice = box.querySelector('[data-dossier-prompt]');
+    var answer = '';
+    var answerBox = null;
+
+    function showAnswer(text) {
+      if (!answerBox) {
+        answerBox = el('div', 'wk-workup-block wk-workup-answer');
+        answerBox.appendChild(el('h4', 'wk-aid-prior-h', s.title));
+        answerBox.appendChild(el('div', 'wk-aid-prior-text wk-workup-text'));
+        var row = el('div', 'wk-recall-row');
+        var copy = el('button', 'btn btn-ghost btn-sm', s.copy);
+        copy.type = 'button';
+        copy.addEventListener('click', function () {
+          if (navigator.clipboard) navigator.clipboard.writeText(answer).then(function () { status.textContent = s.copied; });
+        });
+        var insert = el('button', 'btn btn-secondary btn-sm', s.insert);
+        insert.type = 'button';
+        insert.addEventListener('click', function () {
+          var area = api.front();
+          if (!area || !answer) return;
+          var at = area.selectionStart;
+          var text = (at > 0 && area.value.charAt(at - 1) !== '\n' ? '\n\n' : '') + answer.trim() + '\n';
+          api.apply({ from: at, to: area.selectionEnd, insert: text, selStart: at + text.length, selEnd: at + text.length }, area);
+          if (api.assisted) api.assisted('dossier');
+        });
+        row.appendChild(copy);
+        row.appendChild(insert);
+        answerBox.appendChild(row);
+        out.appendChild(answerBox);
+      }
+      answerBox.querySelector('.wk-workup-text').textContent = text;
+    }
+
+    function fill(template, values) {
+      var i = 0;
+      return String(template || '').replace(/%s/g, function () { return values[i++]; });
+    }
+
+    function send(file, base64) {
+      fetch(api.basePath + '/api/v1/dossier', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
+        body: JSON.stringify({ path: api.path, text: api.document(), form: api.unsaved ? api.unsaved() : '', prompt: choice.value, name: file.name, file: base64, stream: true })
+      }).then(function (response) {
+        if (!response.ok || !response.body) {
+          return response.json().then(function (json) {
+            status.textContent = (json && json.error && json.error.message) || s.failed;
+          }, function () { status.textContent = s.failed; });
+        }
+        return readEvents(response, function (event, data) {
+          if (event === 'progress') {
+            if (data.step === 'answering') status.textContent = [s.answering].concat(data.notices || []).join(' ');
+            else status.textContent = fill(data.ocr ? s.ocr : s.reading, [data.page, data.pages]);
+          } else if (event === 'delta') { answer += data.text || ''; showAnswer(answer); }
+          else if (event === 'done') {
+            status.textContent = [fill(s.done, [data.pages, data.ocr])].concat(data.notices || []).join(' ');
+            if (data.answer) { answer = data.answer; showAnswer(answer); }
+          } else if (event === 'error') status.textContent = data.message || s.failed;
+        });
+      }).catch(function () { status.textContent = s.failed; }).then(function () { button.disabled = false; });
+    }
+
+    function run() {
+      var file = input.files && input.files[0];
+      if (!file) { status.textContent = s.noFile; return; }
+      if (s.maxBytes && file.size > s.maxBytes) { status.textContent = s.tooLarge; return; }
+      button.disabled = true;
+      out.innerHTML = '';
+      answer = '';
+      answerBox = null;
+      status.textContent = fill(s.reading, ['…', '…']);
+      var reader = new FileReader();
+      reader.onload = function () {
+        var url = String(reader.result || '');
+        send(file, url.slice(url.indexOf(',') + 1));
+      };
+      reader.onerror = function () { status.textContent = s.failed; button.disabled = false; };
+      reader.readAsDataURL(file);
+    }
+
+    button.addEventListener('click', run);
+    box.addEventListener('mousedown', function (event) { if (event.target.closest('button')) event.preventDefault(); });
+  }
+
+  root.ReporionEditorWorkup = { mount: function (api) { mount(api); mountDossier(api); } };
 }(this));

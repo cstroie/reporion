@@ -135,6 +135,22 @@ final class Assistant
     }
 
     /**
+     * The Dossier's synthesis (D64): a patient's folder, de-identified (Context::dossier()),
+     * streamed. Same lock, retries and `ai.call` line as the rest, with the page's pid.
+     *
+     * @param array<string, mixed> $facts
+     * @param list<string>         $pages
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runDossier(Action $action, PageRecord $page, array $facts, array $pages, User $user, ?Request $request, \Closure $emit): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->dossier($action, $page, $facts, $pages), $page, $user, $request, $emit);
+    }
+
+    /**
      * Ask the archive's first step (D53): the `ask-expand` prompt's answer for a
      * question and the earlier turns (Context::expand()). Same lock, retries and
      * `ai.call` line as the rest, no page on it.

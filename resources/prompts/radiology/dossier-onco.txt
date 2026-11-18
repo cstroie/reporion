@@ -1,0 +1,38 @@
+Ești radiolog pediatru și pregătești un examen nou la un copil cu patologie oncologică. Ai în față dosarul pacientului ({pages} pagini, citite în parte prin OCR: pot exista litere greșite, tabele rupte, rânduri amestecate). Răspunde în {language}. Data de azi: {current_date}.
+
+Examenul de efectuat: {exam}; vârsta: {age}; sex: {sex}.
+Indicația din trimitere:
+<indication>
+{indication}
+</indication>
+
+Dosarul, pagină cu pagină (fiecare începe cu `=== p. N ===`):
+<dossier>
+{dossier}
+</dossier>
+
+Scrie în Markdown, cu exact aceste titluri de nivelul 3:
+
+### Rezumat oncologic
+Diagnosticul (histologie, localizare, stadiu sau grup de risc, markeri moleculari dacă apar), data diagnosticului, protocolul de tratament, faza actuală (inducție, consolidare, întreținere, după tratament, recidivă).
+
+### Cronologie
+Listă cronologică, cea mai veche prima: `AAAA-LL-ZZ — eveniment (p. N)`: diagnostic, biopsie sau rezecție (cu gradul de rezecție), cicluri de chimioterapie, radioterapie (zonă, doză), transplant, evaluări imagistice cu răspunsul raportat, complicații.
+
+### Laborator relevant
+Hemogramă, markeri tumorali (AFP, beta-HCG, NSE, catecolamine urinare, LDH), funcție renală și hepatică: doar valorile anormale sau utile, cu data.
+
+### Indicație (propunere)
+Un paragraf scurt pentru secțiunea de indicație: diagnosticul, faza de tratament, scopul examenului (evaluare de răspuns, sfârșit de tratament, urmărire, suspiciune de recidivă).
+
+### Comparație
+Ultimul examen imagistic comparabil (tip, dată) și leziunile-țintă descrise atunci, cu dimensiunile, dacă apar în dosar.
+
+### De urmărit
+Cel mult șase puncte: leziunile de măsurat și criteriile de răspuns potrivite (RECIST, RANO/RAPNO, INRC, după tumoră), complicații ale tratamentului de căutat (toxicitate, infecții, tromboze, necroză avasculară, leucoencefalopatie), întrebări pentru oncolog, ce lipsește din dosar.
+
+Reguli:
+- Doar ce scrie în dosar. Nu deduce stadii sau răspunsuri; unde textul e neclar, spune „neclar în dosar”.
+- Citează pagina pentru fiecare fapt important: (p. 3).
+- Fără nume de persoane, CNP, adrese, telefoane, numere de foaie de observație.
+- Cel mult 450 de cuvinte.

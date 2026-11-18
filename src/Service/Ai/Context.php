@@ -457,6 +457,53 @@ final class Context
     }
 
     /**
+     * The Dossier's request (D64): a patient's folder, read page by page (OCR for scans), and the
+     * report it is for. The Redactor learns the report (its name in every field, its CNP, its path)
+     * and takes them out of the folder's text, then OCR's near misses (Redactor::redactNear()),
+     * every CNP-shaped number and contact details; the prompt is checked again, OCR slips included,
+     * and nothing is sent on a leak. Placeholders: {dossier} {pages} {exam} {indication} {age}
+     * {sex} {language} {current_date}.
+     *
+     * @param array<string, mixed> $facts Service\Workup\Workup::facts()
+     * @param list<string>         $pages the folder's text, a page each
+     *
+     * @throws AiException identifier_leak
+     */
+    public function dossier(Action $action, PageRecord $page, array $facts, array $pages): Prompt
+    {
+        $redactor = new Redactor();
+        $redactor->learn($page->frontmatter, $page->path, $page->body);
+        // fill() escapes every placeholder: the text goes in as it is cleaned, the pages marked `=== p. N ===`
+        $clean = static fn (string $text): string => trim(Redactor::scrubContacts($redactor->redactNear($redactor->redact($text))));
+        $out = [];
+        foreach ($pages as $i => $text) {
+            $text = trim((string) preg_replace(["/[ \t]+/", "/\n{3,}/"], [' ', "\n\n"], $text));
+            if ($text !== '') {
+                $out[] = '=== p. ' . ($i + 1) . " ===\n" . $clean($text);
+            }
+        }
+        $fm = $page->frontmatter;
+        $vars = [
+            'dossier' => implode("\n", $out),
+            'pages' => (string) \count($pages),
+            'exam' => ReportName::examTitle($fm),
+            'indication' => $clean($facts['indication']),
+            'age' => $facts['age'] !== null ? (string) $facts['age'] : '',
+            'sex' => \is_array($fm['patient'] ?? null) && \is_string($fm['patient']['sex'] ?? null) ? $fm['patient']['sex'] : '',
+            'language' => self::LANGUAGE,
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaksNear($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, ['dossier ' . \count($out) . '/' . \count($pages) . ' pages', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
      * The passages as the prompt gets them: every name and CNP they carry
      * learned first, then each text redacted and scrubbed of contact details
      * (Redactor::scrubContacts()); one left empty is dropped. Also

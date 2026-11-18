@@ -210,6 +210,78 @@ final class Extractor
         return $pages;
     }
 
+    /** The image types readPages() reads by OCR directly */
+    public const IMAGES = ['jpg', 'jpeg', 'png', 'tif', 'tiff'];
+
+    /**
+     * A patient's folder page by page (the editor's Dossier, D64): a PDF's pages each from its
+     * text layer, or by OCR when the page has next to none (a folder mixes printed letters and
+     * scans), an image by OCR. No article cleaning: the text as read. $progress gets (page, count,
+     * ocr?) before each page. Nothing is kept: the private temporary directory goes at the end.
+     *
+     * @param ?\Closure(int, int, bool): void $progress
+     *
+     * @return list<string>
+     *
+     * @throws LibraryException UNSUPPORTED, SCAN_TOO_LONG past $maxPages, NO_OCR, TIMEOUT, FAILED
+     */
+    public function readPages(string $bytes, string $ext, int $maxPages, ?\Closure $progress = null): array
+    {
+        $ext = strtolower($ext);
+        $image = \in_array($ext, self::IMAGES, true);
+        if ($ext !== 'pdf' && !$image) {
+            throw new LibraryException(LibraryException::UNSUPPORTED);
+        }
+        $progress ??= static function (int $page, int $count, bool $ocr): void {
+        };
+        $dir = $this->tmpDir();
+        try {
+            $in = $dir . '/in.' . $ext;
+            file_put_contents($in, $bytes);
+            $lang = implode('+', self::OCR_LANGUAGES);
+            if ($image) {
+                $progress(1, 1, true);
+                [$exit, $read] = $this->run([$this->tools['tesseract'], $in, 'stdout', '-l', $lang], self::OCR_PAGE_SECONDS, ['OMP_THREAD_LIMIT' => '1']);
+                $this->ocrStep($exit);
+
+                return [$read];
+            }
+            [$exit, $infoText] = $this->run([$this->tools['pdfinfo'], '-enc', 'UTF-8', $in], 30);
+            if ($exit === -1 || $exit === 127) {
+                throw new LibraryException(LibraryException::TOOL_MISSING);
+            }
+            $count = $exit === 0 ? (int) (self::parseInfo($infoText)['Pages'] ?? 0) : 0;
+            if ($count < 1) {
+                throw new LibraryException(LibraryException::FAILED);
+            }
+            if ($count > $maxPages) {
+                throw new LibraryException(LibraryException::SCAN_TOO_LONG);
+            }
+            @set_time_limit($count * (self::OCR_PAGE_SECONDS * 2 + 10) + 60);
+            $pages = [];
+            for ($page = 1; $page <= $count; ++$page) {
+                $n = (string) $page;
+                [$exit, $text] = $this->run([$this->tools['pdftotext'], '-enc', 'UTF-8', '-eol', 'unix', '-layout', '-f', $n, '-l', $n, $in, '-'], 30);
+                $text = $exit === 0 ? $text : '';
+                $ocr = \strlen((string) preg_replace('/\s+/', '', $text)) < self::SCAN_CHARS_PER_PAGE;
+                $progress($page, $count, $ocr);
+                if ($ocr) {
+                    $png = $dir . '/page-' . $n;
+                    [$exit] = $this->run([$this->tools['pdftoppm'], '-r', '300', '-gray', '-png', '-singlefile', '-f', $n, '-l', $n, $in, $png], self::OCR_PAGE_SECONDS);
+                    $this->ocrStep($exit);
+                    [$exit, $text] = $this->run([$this->tools['tesseract'], $png . '.png', 'stdout', '-l', $lang], self::OCR_PAGE_SECONDS, ['OMP_THREAD_LIMIT' => '1']);
+                    $this->ocrStep($exit);
+                    @unlink($png . '.png');
+                }
+                $pages[] = self::utf8($text);
+            }
+
+            return $pages;
+        } finally {
+            self::removeTree($dir);
+        }
+    }
+
     /** @throws LibraryException */
     private function ocrStep(int $exit): void
     {

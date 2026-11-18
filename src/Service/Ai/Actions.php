@@ -80,7 +80,7 @@ final class Actions
     /** The library's (docs/library.md, phases 5 and 6): one analysis of a source each, the condensing of one part of a long source, Ask the notebook and its search words, Studio's texts of a notebook, and flashcards (phase 8) */
     public const LIBRARY = ['source-part', 'source-points', 'source-pie','source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-outline', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template', 'source-flashcards', 'studio-flashcards', 'studio-audio', 'ask-library'];
 
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', 'workup', ...self::LIBRARY];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', 'workup', 'dossier', 'dossier-onco', 'dossier-neuro', ...self::LIBRARY];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,

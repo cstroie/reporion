@@ -179,6 +179,63 @@ final class Redactor
     }
 
     /**
+     * For text read by OCR (the Dossier, D64), where a name comes out a letter wrong
+     * (`Popesou`, `P0pescu`): after redact(), each word of five letters or more within one edit
+     * of a learned name part of five or more is taken out too. Digits read for letters count.
+     */
+    public function redactNear(string $text): string
+    {
+        $long = array_values(array_filter($this->names, static fn (string $n): bool => mb_strlen($n) >= 5));
+        if ($long === []) {
+            return $text;
+        }
+        $text = (string) preg_replace_callback('/[\p{L}0-9][\p{L}0-9\'’-]{3,}/u', static function (array $m) use ($long): string {
+            return self::near($m[0], $long) ? self::PATIENT : $m[0];
+        }, $text);
+
+        return (string) preg_replace('/\[pacient\](?:[ \t]+\[pacient\])+/', self::PATIENT, $text);
+    }
+
+    /** leaks(), or a word one OCR slip from a learned name part (redactNear()'s rule) */
+    public function leaksNear(string $text): bool
+    {
+        if ($this->leaks($text)) {
+            return true;
+        }
+        $long = array_values(array_filter($this->names, static fn (string $n): bool => mb_strlen($n) >= 5));
+        if ($long === [] || preg_match_all('/[\p{L}0-9][\p{L}0-9\'’-]{3,}/u', $text, $words) < 1) {
+            return false;
+        }
+        foreach ($words[0] as $word) {
+            if (self::near($word, $long)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param list<string> $names folded, five letters or more */
+    private static function near(string $word, array $names): bool
+    {
+        if (preg_match('/\p{L}/u', $word) !== 1) {
+            return false;
+        }
+        $folded = strtr(self::fold($word), ['0' => 'o', '1' => 'i', '5' => 's', '8' => 'b']);
+        if (mb_strlen($folded) < 5) {
+            return false;
+        }
+        foreach ($names as $name) {
+            // levenshtein() counts bytes: folded text is ASCII but for a stray letter, enough here
+            if (abs(\strlen($folded) - \strlen($name)) <= 1 && levenshtein($folded, $name) <= 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Contact details that name no patient but still point at a person: an
      * email, a phone number (nine digits or more), a street address. For a
      * text from outside the wiki (a HIS epicrisis holds relatives', employers'
