@@ -35,7 +35,7 @@ final class StudioTest extends HttpTestCase
         $users->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('library', GrantRole::Editor), new Grant('templates', GrantRole::Editor)]);
         $users->create('libreader', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('library', GrantRole::Viewer)]);
         $storage = $this->storage();
-        $prompt = static fn (string $id, string $text) => $storage->create('ai:profiles:wiki:special:' . $id, ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $text, 'owner');
+        $prompt = static fn (string $id, string $text) => $storage->create('ai:profiles:wiki:' . \Reporion\Service\Ai\Actions::place($id), ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $text, 'owner');
         $prompt('studio-overview', "OVERVIEW of {title}\n{sources}\nin {language}\n");
         $prompt('studio-compare', "STUDIO-ROW\n{sources}\n{questions}\n({count})\n");
         $prompt('studio-check', "CHECK\n<page>{page}</page>\n{sources}\n");

@@ -39,7 +39,7 @@ final class LibraryAnalysisTest extends HttpTestCase
         $users->create('other', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor)]);
         $storage = $this->storage();
         foreach (['source-points' => "Points of {title} ({citation}) in {language}:\n<a>{source}</a>\n", 'source-part' => "Part {part}, at most {words} words:\n<a>{source}</a>\n", 'summary' => "Summarize:\n<a>{text}</a>\n"] as $id => $prompt) {
-            $storage->create('ai:profiles:wiki:special:' . $id, ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
+            $storage->create('ai:profiles:wiki:' . \Reporion\Service\Ai\Actions::place($id), ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
         }
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'author' => [['family' => 'Nobody', 'given' => 'Ann']], 'issued' => ['date-parts' => [[2024]]]];
         $storage->create('library:short2024', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl, 'language' => 'en'], "Grade 3 was the most common in 128 patients.\n\n## References\n\n```text\n1. Nobody C. Cited paper.\n```\n", 'owner');

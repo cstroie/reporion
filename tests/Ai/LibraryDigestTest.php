@@ -36,7 +36,7 @@ final class LibraryDigestTest extends HttpTestCase
         $this->index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $this->storage = new FileTree($this->dataRoot, $this->index);
         foreach (['source-points' => "Points of {title}:\n<a>{source}</a>\n", 'summary' => "Summarize:\n<a>{text}</a>\n"] as $id => $prompt) {
-            $this->storage->create('ai:profiles:wiki:special:' . $id, ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
+            $this->storage->create('ai:profiles:wiki:' . \Reporion\Service\Ai\Actions::place($id), ['title' => $id, 'format' => 'text', 'visibility' => 'private'], $prompt, 'owner');
         }
         $csl = ['type' => 'article-journal', 'title' => 'A made-up study', 'issued' => ['date-parts' => [[2024]]]];
         $this->storage->create('library:short2024', ['title' => 'A made-up study', 'visibility' => 'private', 'csl' => $csl], "Grade 3 was the most common in 128 patients.\n", 'owner');
