@@ -2306,7 +2306,7 @@ return [
     'editor.dossier.file'      => 'Patient folder',
     'editor.dossier.file_help' => 'A PDF (scanned or printed) or a photo of a page. Read on the server, scans by OCR; nothing is kept.',
     'editor.dossier.prompt'    => 'Summary',
-    'editor.dossier.prompt_help' => 'The kind of overview: general, or for a child\'s oncological or neurological history.',
+    'editor.dossier.prompt_help' => 'General: any age or specialty, with a differential, protocol, questions and red flags. Oncology and neurology: a child\'s follow-up, by tumour region or type of disease.',
     'editor.dossier.prompt_dossier' => 'General',
     'editor.dossier.prompt_dossier_onco' => 'Paediatric oncology',
     'editor.dossier.prompt_dossier_neuro' => 'Paediatric neurology',

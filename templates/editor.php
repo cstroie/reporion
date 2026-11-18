@@ -404,7 +404,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-folder-open"></i> <?= $e(t('editor.dossier.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.dossier.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
 <section class="wk-aid" id="editor-dossier">
-<div class="field"><label><?= $e(t('editor.dossier.file')) ?><input class="input input-sm" type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,application/pdf,image/*" data-dossier-file><small><?= $e(t('editor.dossier.file_help')) ?></small></label></div>
+<div class="field"><label><?= $e(t('editor.dossier.file')) ?><input type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,application/pdf,image/*" data-dossier-file><small><?= $e(t('editor.dossier.file_help')) ?></small></label></div>
 <div class="field"><label><?= $e(t('editor.dossier.prompt')) ?><select class="input input-sm" data-dossier-prompt>
 <?php foreach (\Reporion\Service\Dossier\Dossier::PROMPTS as $dossierPrompt): ?><option value="<?= $e($dossierPrompt) ?>"><?= $e(t('editor.dossier.prompt_' . str_replace('-', '_', $dossierPrompt))) ?></option><?php endforeach; ?>
 </select><small><?= $e(t('editor.dossier.prompt_help')) ?></small></label></div>
