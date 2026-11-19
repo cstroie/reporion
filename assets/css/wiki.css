@@ -53,6 +53,10 @@ html { scrollbar-gutter: stable; }
    nothing moves when they appear */
 .ph { display: inline-block; width: 1em; text-align: center; }
 
+/* JetBrains Mono draws "***", "###", "->", "!=" as one glyph (ligatures and contextual
+   alternates): in a field or code a writer must see every character typed */
+textarea, input, code, kbd, samp, pre, .wk-mono { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+
 body {
   background: var(--color-bg);
   color: var(--color-text);

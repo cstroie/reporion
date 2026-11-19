@@ -176,6 +176,7 @@ html:has(> .nt) { height: 100%; }
 .nt-prose ul, .nt-prose ol { padding-left: 1.4em; }
 .nt-prose li > input[type="checkbox"] { margin-right: .4em; }
 .nt-prose code { font-family: var(--font-mono); font-size: .88em; padding: .1em .35em; border-radius: 6px; background: var(--nt-press); }
+.nt-prose code, .nt-prose pre, .nt textarea { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; } /* JetBrains Mono ligatures: every character typed stays visible */
 .nt-prose pre { padding: 12px 14px; border-radius: var(--nt-radius-sm); background: var(--nt-press); overflow-x: auto; white-space: pre-wrap; }
 .nt-prose pre code { padding: 0; background: none; }
 .nt-prose blockquote { padding-left: 14px; border-left: 3px solid var(--nt-accent); color: var(--nt-muted); }
