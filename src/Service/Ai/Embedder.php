@@ -24,7 +24,7 @@ final class Embedder
     public const DEFAULT_MIN_SCORE = 0.5;
 
     public function __construct(
-        private readonly OpenAiCompatibleProvider $provider,
+        private readonly EmbeddingProvider $provider,
         public readonly string $model,
         public readonly string $serverName,
     ) {
@@ -32,7 +32,7 @@ final class Embedder
 
     /**
      * The embedder Admin → AI sets up; null when the assistant is off, or no
-     * server or no model is chosen, or that server has no address
+     * server or no model is chosen, or that server has no address or speaks a protocol without embeddings
      *
      * @param array<string, mixed> $config the effective config
      */
@@ -45,11 +45,13 @@ final class Embedder
             return null;
         }
         $server = AiConfig::fromConfig($config, $slot);
-        if ($server->endpoint === '') {
+        // Anthropic's API has no embeddings: a server that speaks it embeds nothing
+        $provider = $server->endpoint === '' ? null : Providers::embedder($server);
+        if ($provider === null) {
             return null;
         }
 
-        return new self(new OpenAiCompatibleProvider($server, new EgressGuard()), $model, $server->serverName);
+        return new self($provider, $model, $server->serverName);
     }
 
     /**

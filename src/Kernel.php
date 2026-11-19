@@ -86,7 +86,7 @@ use Reporion\Service\Ai\Embedder;
 use Reporion\Service\Ai\Speaker;
 use Reporion\Service\Ai\FailoverProvider;
 use Reporion\Service\Ai\FtsExamples;
-use Reporion\Service\Ai\OpenAiCompatibleProvider;
+use Reporion\Service\Ai\Providers;
 use Reporion\Service\Ai\ProviderInterface;
 use Reporion\Service\ArchiveAsk;
 use Reporion\Service\Backup\BackupService;
@@ -358,14 +358,14 @@ final class Kernel
             if ($slot !== null && ($own->endpoint === '' || $own->model === '')) {
                 return null;
             }
-            $provider = new OpenAiCompatibleProvider($own, new EgressGuard());
+            $provider = Providers::for($own);
             // Phase 34f: the server's fallback, when it has one that is set up
             $other = $own->fallback !== null ? AiConfig::fromConfig($config, $own->fallback) : null;
             if ($other === null || $other->endpoint === '' || $other->model === '') {
                 return $provider;
             }
 
-            return new FailoverProvider($provider, new OpenAiCompatibleProvider($other, new EgressGuard()), $own->serverName, $other->serverName);
+            return new FailoverProvider($provider, Providers::for($other), $own->serverName, $other->serverName);
         };
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/resources/synonyms.txt');

@@ -48,7 +48,7 @@ final class Check
             $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
             $report['egress'] = 'allowed';
             if ($reachServer) {
-                $all = (new OpenAiCompatibleProvider($ai, $this->egress))->models();
+                $all = Providers::for($ai, $this->egress)->models();
                 // Shown through the server's filter; the aliases are looked up in all of them
                 $report['models'] = $ai->filterModels($all);
                 // It answered, but not with an OpenAI-style list: most likely not the …/v1 base
@@ -135,7 +135,7 @@ final class Check
             $row = ['tier' => $tier, 'model' => $settings->model, 'listed' => $all === [] ? null : \in_array($settings->model, $all, true), 'ok' => false, 'ms' => 0, 'answer' => '', 'error' => null];
             try {
                 $answer = '';
-                foreach ((new OpenAiCompatibleProvider($ai, $this->egress))->stream(Context::probe($tier)) as $piece) {
+                foreach (Providers::for($ai, $this->egress)->stream(Context::probe($tier)) as $piece) {
                     $answer .= $piece;
                 }
                 $row['ok'] = true;
@@ -162,7 +162,7 @@ final class Check
         }
         $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
 
-        return (new OpenAiCompatibleProvider($ai, $this->egress))->models();
+        return Providers::for($ai, $this->egress)->models();
     }
 
     /** No report text went out, so the server's own words are safe to show the owner */
