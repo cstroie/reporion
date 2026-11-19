@@ -62,7 +62,7 @@ final class Redactor
             // known so far: an exam's `#` shares none and stays words
             if (preg_match('/\A\s*#[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', self::withoutFrontmatter($body), $m) === 1
                 && array_intersect(self::nameParts($m[1]), $known) !== []) {
-                $this->learnName($m[1]);
+                $this->learnName(self::nameOfHeading($m[1]));
             }
         }
         foreach ($exact as $value) {
@@ -104,6 +104,31 @@ final class Redactor
         }
 
         return $parts;
+    }
+
+    /** Modality words that start an exam in a name heading ("Popescu Ion IRM genunchi") */
+    private const EXAM_WORDS = ['irm', 'rmn', 'rm', 'mri', 'ct', 'cbct', 'tc', 'pet', 'eco', 'ecografie', 'rx', 'radiografie', 'mamografie', 'examen', 'ex', 'angio', 'angiorm', 'angioct', 'uroct', 'uro'];
+
+    /**
+     * The name in a report's first heading, without what an older report
+     * wrote after it on the same line ("Popescu Ion Vasile genunchi drept",
+     * "POPESCU ION - IRM GENUNCHI"): the words up to a separator (" - ", "–",
+     * ":", ",", "/", "("), a digit, a word in lower case or a modality
+     * word. Without it, the exam's words were learned as the patient's name,
+     * and an ordinary "genunchi" anywhere in a prompt refused it.
+     */
+    private static function nameOfHeading(string $heading): string
+    {
+        $head = (string) preg_split('/\s+[-–—]\s+|[–—:,\/(\[]|\d/u', $heading, 2)[0];
+        $words = [];
+        foreach (preg_split('/\s+/u', trim($head)) ?: [] as $word) {
+            if ($word === '' || preg_match('/^\p{Ll}/u', $word) === 1 || \in_array(self::fold($word), self::EXAM_WORDS, true)) {
+                break;
+            }
+            $words[] = $word;
+        }
+
+        return implode(' ', $words);
     }
 
     /** @return list<string> a name's folded parts of three letters or more */

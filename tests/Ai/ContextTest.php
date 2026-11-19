@@ -348,6 +348,20 @@ final class ContextTest extends StorageTestCase
         }
     }
 
+    public function testAnOlderReportsHeadingTeachesItsNameNotItsExam(): void
+    {
+        // An example report whose first line is "name + exam" (2026-11-19): its exam words became
+        // name parts, and the report in front's own "IRM Genunchi" was refused
+        $redactor = new Redactor();
+        $redactor->learn(['patient' => ['name' => 'Testescu Ion']], 'reports:mri:demo:260101-testescu-ion', "# Testescu Ion\n\n## IRM Genunchi\n");
+        foreach (["# Exemplu Ana Maria genunchi drept\n", "# EXEMPLU ANA - IRM GENUNCHI STANG\n", "# Exemplu Ana IRM Genunchi\n"] as $heading) {
+            $redactor->learn([], 'reports:mri:demo:240101-exemplu-ana', $heading . "\nText.");
+        }
+        self::assertFalse($redactor->leaks('exam: IRM Genunchi drept, stang'), 'exam words are not a name');
+        self::assertTrue($redactor->leaks('Exemplu'), 'the name is still learned');
+        self::assertTrue($redactor->leaks('Maria'), 'a name word only the heading has, too');
+    }
+
     public function testRedactionIgnoresCaseAndDiacriticsButNotShortOrOrdinaryWords(): void
     {
         $redactor = new Redactor();
