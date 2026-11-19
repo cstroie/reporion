@@ -760,14 +760,14 @@ final class DicomTest extends HttpTestCase
         self::assertSame([], array_filter($this->calls, static fn (array $c): bool => $c[1] !== '--version'));
         self::assertStringContainsString('Site nopacs has no complete PACS settings saved', $none->body);
 
-        $admin = $this->get('owner', '/admin/plugins');
+        $admin = $this->get('owner', '/admin/integrations');
         self::assertStringContainsString('href="/x/dicom/echo?site=mioveni"', $admin->body, 'a Test button on each site row in Admin');
         self::assertStringContainsString('href="/x/dicom/echo?site=nopacs"', $admin->body);
     }
 
     public function testTheOwnerSetsThePacsOfEachSiteInAdmin(): void
     {
-        $admin = $this->get('owner', '/admin/plugins');
+        $admin = $this->get('owner', '/admin/integrations');
         self::assertStringContainsString('name="servers[mioveni][host]"', $admin->body, 'one row per configured site');
         self::assertStringContainsString('name="servers[nopacs][aet]"', $admin->body);
         self::assertStringContainsString('name="servers[scuc][calling_aet]"', $admin->body, 'our AE title, per site');
