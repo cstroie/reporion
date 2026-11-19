@@ -1,0 +1,19 @@
+You are writing the script of a short spoken overview of the scientific article "{title}" ({citation}), for colleagues to listen to: two hosts talking it through. Today is {current_date}.
+
+The article (whole, or notes made of it):
+<source>
+{source}
+</source>
+
+Write the script as lines, one turn a line, each starting with the host who speaks:
+
+A: …
+B: …
+
+Rules:
+- Two hosts: A leads and explains, B asks what a listener would ask and sums up. Natural speech, short sentences, no lists, no headings, no markdown, no citations or page numbers: it is read aloud.
+- Cover what matters most: the question the article asks, how the study was done (who, how many, which imaging), what it found, what it means in practice, and its limits.
+- Only what the article says: no outside knowledge, nothing invented; figures exactly as it gives them, written as they are spoken.
+- Spell out an abbreviation the first time it is used.
+- Between 14 and 30 turns, about three to five minutes when read.
+- Write in {language}.

@@ -175,17 +175,44 @@ final class LibraryAiController
         if (!isset(SourceAnalysis::TASKS[$task]) || !\in_array($task, $this->analysis->available($page->path), true)) {
             return ApiResponse::error(422, 'unknown_task', t('library.ai.unknown_task'));
         }
+        if ($task === 'audio' && $this->audio === null) {
+            return ApiResponse::error(422, 'unknown_task', t('studio.audio_off'));
+        }
         try {
             $plan = $this->analysis->plan($page, $task);
         } catch (LibraryException) {
             return ApiResponse::error(413, 'too_long', t('library.ai.too_long', [(string) SourceAnalysis::MAX_PARTS]));
         }
         // Every request has the Assistant's retries: room for all of them
-        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->longestTimeout()) + 60;
-        $run = function (\Closure $progress) use ($task, $page, $principal, $request): array {
+        $seconds = $plan['requests'] * Assistant::maxSeconds($this->config->longestTimeout()) + 60
+            // The audio overview's turns (2026-11-19), each a speech request after the script
+            + ($task === 'audio' ? AudioScript::MAX_TURNS * ($this->config->longestTimeout() + 15) : 0);
+        $basePath = $request->basePath;
+        $run = function (\Closure $progress, ?\Closure $speaking = null) use ($task, $page, $principal, $request, $basePath): array {
             $done = $this->analysis->run($task, $page, $principal, $request, $progress);
+            // The audio overview of one source: read aloud as Studio's is, a failure keeps the script
+            $extra = [];
+            $done['audio'] = null;
+            $done['notices'] = [];
+            if ($task === 'audio' && $this->audio !== null && trim($done['result']) !== '') {
+                try {
+                    $made = $this->audio->make($done['result'], $speaking ?? static function (int $step, int $steps): void {
+                    });
+                    $extra['audio'] = $this->storage->storeOriginal($made['bytes'], $made['ext']) + ['seconds' => $made['seconds'], 'turns' => $made['turns']];
+                    if ($made['cut']) {
+                        $done['notices'][] = t('studio.audio_cut');
+                    }
+                } catch (AiException $e) {
+                    $done['notices'][] = t('studio.audio_failed', [AiController::message($e)]);
+                }
+            }
+            $done['saved'] = $this->keep($page, SourceAnalysis::TASKS[$task], t('library.ai.' . $task), $done['result'], $principal, $done['provider'], $request, $extra, $done['from']);
+            if (isset($extra['audio']) && $done['saved'] !== null) {
+                $kept = $this->index->findByPath($done['saved']['path'], $principal);
+                $done['audio'] = $kept !== null ? ['href' => $basePath . '/library/audio/' . $kept['pid'], 'seconds' => $extra['audio']['seconds'], 'ext' => $extra['audio']['ext']] : null;
+            }
 
-            return $done + ['saved' => $this->keep($page, SourceAnalysis::TASKS[$task], t('library.ai.' . $task), $done['result'], $principal, $done['provider'], $request, from: $done['from'])];
+            return $done;
         };
 
         if (($fields['stream'] ?? false) !== true) {
@@ -209,7 +236,10 @@ final class LibraryAiController
                 flush();
             };
             try {
-                $done = $run(static fn (int $step, int $steps) => $send('progress', ['step' => $step, 'steps' => $steps]));
+                $done = $run(
+                    static fn (int $step, int $steps) => $send('progress', ['step' => $step, 'steps' => $steps]),
+                    static fn (int $step, int $steps) => $send('speaking', ['step' => $step, 'steps' => $steps]),
+                );
                 $send('done', $done);
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => AiController::message($e)]);
@@ -474,7 +504,9 @@ final class LibraryAiController
         $fields = $request->json();
         $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
         $page = $principal !== null && $path !== '' ? $this->notebook($path, $principal) : null;
-        $row = $page !== null ? $this->index->findByPath(Analyses::pathFor($page->path, Studio::TASKS['audio']), $principal) : null;
+        // A notebook's Studio overview, or (2026-11-19) a library source's own
+        $prompt = $page !== null && LibrarySource::isSource($page->frontmatter) ? SourceAnalysis::TASKS['audio'] : Studio::TASKS['audio'];
+        $row = $page !== null ? $this->index->findByPath(Analyses::pathFor($page->path, $prompt), $principal) : null;
         if ($principal === null || $page === null || $row === null || $this->analyses === null) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
@@ -495,7 +527,7 @@ final class LibraryAiController
         $seconds = AudioScript::MAX_TURNS * ($this->config->longestTimeout() + 15) + 60;
         $basePath = $request->basePath;
         $audio = $this->audio;
-        $run = function (\Closure $speaking) use ($audio, $kept, $principal, $request, $basePath): array {
+        $run = function (\Closure $speaking) use ($audio, $kept, $principal, $request, $basePath, $prompt): array {
             $notices = [];
             // A failure replaces nothing: the earlier file, if any, stays
             $made = $audio->make($kept->body, $speaking);
@@ -503,8 +535,8 @@ final class LibraryAiController
                 $notices[] = t('studio.audio_cut');
             }
             $file = $this->storage->storeOriginal($made['bytes'], $made['ext']) + ['seconds' => $made['seconds'], 'turns' => $made['turns']];
-            $saved = $this->storage->save($kept->path, ['audio' => $file] + $kept->frontmatter, $kept->body, $kept->rev, $principal->username, 'assisted: studio-audio (read aloud again)');
-            $this->audit?->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['assisted' => ['studio-audio']]);
+            $saved = $this->storage->save($kept->path, ['audio' => $file] + $kept->frontmatter, $kept->body, $kept->rev, $principal->username, 'assisted: ' . $prompt . ' (read aloud again)');
+            $this->audit?->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['assisted' => [$prompt]]);
 
             return ['audio' => ['href' => $basePath . '/library/audio/' . $saved->pid, 'seconds' => $file['seconds'], 'ext' => $file['ext']], 'notices' => $notices];
         };

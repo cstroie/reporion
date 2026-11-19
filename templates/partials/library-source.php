@@ -108,6 +108,8 @@ $savedLabels = [];
 foreach (\Reporion\Service\Library\SourceAnalysis::TASKS as $savedTask => $savedPrompt) {
     $savedLabels[$savedPrompt] = t('library.ai.' . $savedTask);
 }
+$savedCanSpeak = $source['canSpeak'] ?? false;
+$savedSpeakPath = $source['path'];
 include __DIR__ . '/saved-analyses.php';
 ?>
 <details class="wk-disclosure wk-lib-related" data-island="library-tools" data-tool="related">
@@ -169,6 +171,7 @@ include __DIR__ . '/saved-analyses.php';
     'strings' => [
         'working' => t('library.ai.working'), 'progress' => t('library.ai.progress'), 'failed' => t('library.ai.failed'), 'note' => t('library.ai.note'), 'from_abstract' => t('library.ai.from_abstract'),
         'copy' => t('library.ai.copy'), 'copied' => t('library.ai.copied'), 'use_summary' => t('library.ai.use_summary'), 'saved' => t('library.saved.as'),
+        'speaking' => t('studio.speaking'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </div>

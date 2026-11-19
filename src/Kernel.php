@@ -734,7 +734,7 @@ final class Kernel
         $libraryAi = new LibraryAiController(
             $aiConfig,
             $assistant,
-            new SourceAnalysis($aiActions, $assistant, $libraryTokens, new Abstracts($storage)),
+            new SourceAnalysis($aiActions, $assistant, $libraryTokens, new Abstracts($storage), \is_string($config['ai']['speech_language'] ?? null) ? $config['ai']['speech_language'] : ''),
             $notebookAsk,
             new Studio($aiActions, $assistant, $notebookAsk, $libraryTokens, self::libraryLanguage($config), \is_string($config['ai']['speech_language'] ?? null) ? $config['ai']['speech_language'] : '', new Analyses($storage, $index)),
             self::libraryNamespace($config),

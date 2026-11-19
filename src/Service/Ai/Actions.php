@@ -78,7 +78,7 @@ final class Actions
      * These ids and `special` itself cannot be rail actions.
      */
     /** The library's (docs/library.md, phases 5 and 6): one analysis of a source each, the condensing of one part of a long source, Ask the notebook and its search words, Studio's texts of a notebook, and flashcards (phase 8) */
-    public const LIBRARY = ['source-part', 'source-points', 'source-pie','source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-outline', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template', 'source-flashcards', 'studio-flashcards', 'studio-audio', 'ask-library'];
+    public const LIBRARY = ['source-part', 'source-points', 'source-pie','source-definitions', 'source-classification', 'source-design', 'source-limitations', 'source-questions', 'ask-notebook', 'notebook-terms', 'studio-overview', 'studio-outline', 'studio-glossary', 'studio-faq', 'studio-timeline', 'studio-compare', 'studio-check', 'studio-template', 'source-flashcards', 'studio-flashcards', 'studio-audio', 'source-audio', 'ask-library'];
 
     public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand', 'workup', 'dossier', 'dossier-onco', 'dossier-neuro', ...self::LIBRARY];
 
@@ -96,7 +96,7 @@ final class Actions
         'summary' => 'buttons:summary', 'tags' => 'buttons:tags', 'evolution' => 'buttons:evolution', 'presign' => 'buttons:presign',
         'ask-archive' => 'questions:archive', 'ask-expand' => 'questions:archive-expand', 'ask-library' => 'questions:library', 'ask-notebook' => 'questions:notebook', 'notebook-terms' => 'questions:notebook-terms',
         'source-points' => 'library:points', 'source-pie' => 'library:pie', 'source-definitions' => 'library:definitions', 'source-classification' => 'library:classification',
-        'source-design' => 'library:design', 'source-limitations' => 'library:limitations', 'source-questions' => 'library:questions', 'source-flashcards' => 'library:flashcards', 'source-part' => 'library:part',
+        'source-design' => 'library:design', 'source-limitations' => 'library:limitations', 'source-questions' => 'library:questions', 'source-flashcards' => 'library:flashcards', 'source-audio' => 'library:audio', 'source-part' => 'library:part',
         'studio-overview' => 'studio:overview', 'studio-outline' => 'studio:outline', 'studio-glossary' => 'studio:glossary', 'studio-faq' => 'studio:faq', 'studio-timeline' => 'studio:timeline',
         'studio-compare' => 'studio:compare', 'studio-check' => 'studio:check', 'studio-template' => 'studio:template', 'studio-flashcards' => 'studio:flashcards', 'studio-audio' => 'studio:audio',
         'commit' => 'auto:commit', 'tags-review' => 'auto:tags-review',

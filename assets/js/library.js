@@ -854,6 +854,19 @@
       }
       var meta = [data.provider || '', ((data.ms || 0) / 1000).toFixed(1) + ' s'].concat(data.requests > 1 ? [data.requests + ' ×'] : []).filter(Boolean).join(' · ');
       out.appendChild(el('p', 'wk-dim wk-text-xs wk-mono', meta));
+      // The audio overview (2026-11-19): its player, and why there is none when reading it aloud failed
+      if (data.audio) {
+        var player = el('audio', '');
+        player.controls = true;
+        player.preload = 'none';
+        player.src = data.audio.href;
+        var line = el('p', 'wk-saved-audio');
+        line.appendChild(player);
+        line.appendChild(document.createTextNode(' '));
+        line.appendChild(el('span', 'wk-dim wk-text-xs wk-mono', Math.floor(data.audio.seconds / 60) + ':' + ('0' + (data.audio.seconds % 60)).slice(-2) + ' \u00b7 ' + String(data.audio.ext).toUpperCase()));
+        out.insertBefore(line, body);
+      }
+      (data.notices || []).forEach(function (n) { out.appendChild(notice('warn', n)); });
       out.appendChild(el('p', 'wk-dim wk-text-sm', data.from === 'abstract' ? s.from_abstract + ' ' + s.note : s.note));
       if (data.saved) out.appendChild(keptAs(data.saved, s.saved));
       var row = el('div', 'wk-actions');
@@ -926,6 +939,9 @@
             out.textContent = '';
             // N parts, then the analysis itself: the last step has no part number
             out.appendChild(notice('info', data.steps > 1 && data.step < data.steps ? (s.progress || '%s / %s').replace('%s', data.step).replace('%s', data.steps - 1) : s.working));
+          } else if (m[1] === 'speaking') {
+            out.textContent = '';
+            out.appendChild(notice('info', (s.speaking || '%s / %s').replace('%s', data.step).replace('%s', data.steps)));
           } else if (m[1] === 'done') {
             finished = true;
             show(task, data);
@@ -953,6 +969,71 @@
     });
   }
 
+  // A source's kept audio overview read aloud again (2026-11-19): POST /api/v1/notebook/audio with the
+  // source's path, the kept script as it is now; the player in the same kept item gets the new file
+  function mountAudioAgain(b) {
+    var s = {};
+    try { s = JSON.parse(b.getAttribute('data-strings') || '{}'); } catch (e) { /* the defaults */ }
+    var base = s.base || '';
+    b.addEventListener('click', function () {
+      var item = b.closest('[data-saved-prompt]');
+      var status = b.parentNode.querySelector('[data-audio-status]') || el('span', 'wk-dim wk-text-xs');
+      status.setAttribute('data-audio-status', '');
+      status.setAttribute('aria-live', 'polite');
+      b.parentNode.appendChild(status);
+      b.disabled = true;
+      status.textContent = s.working || '';
+      function end(message, failed) {
+        status.textContent = '';
+        if (failed) status.appendChild(notice('error', message || s.failed));
+        else status.textContent = message || '';
+        b.disabled = false;
+      }
+      fetch(base + '/api/v1/notebook/audio', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify({ path: b.getAttribute('data-audio-path'), stream: true })
+      }).then(function (response) {
+        if (!response.ok || !response.body) {
+          return response.json().then(function (j) { end(j && j.error && j.error.message, true); }, function () { end('', true); });
+        }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var finished = false;
+        function handle(block) {
+          var m = /^event: (\w+)\ndata: (.*)$/m.exec(block);
+          if (!m) return;
+          var data;
+          try { data = JSON.parse(m[2]); } catch (e) { return; }
+          if (m[1] === 'speaking') {
+            status.textContent = (s.speaking || '%s / %s').replace('%s', data.step).replace('%s', data.steps);
+          } else if (m[1] === 'done') {
+            finished = true;
+            var player = item && item.querySelector('audio');
+            // The same address, a new file: a query keeps the browser from playing its cached one
+            if (player && data.audio) { player.src = data.audio.href + '?v=' + Date.now(); player.load(); }
+            end([s.done].concat(data.notices || []).join(' '), false);
+          } else if (m[1] === 'error') {
+            finished = true;
+            end(data.message, true);
+          }
+        }
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (chunk.done) { if (!finished) end('', true); return; }
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var blocks = buffer.split('\n\n');
+            buffer = blocks.pop();
+            blocks.forEach(handle);
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function () { end('', true); });
+    });
+  }
+
   function start() {
     // A bookmarklet made before /library/add (2026-11-04) opens /library?clip=: the address goes on to the Add page
     var addLink = document.querySelector('[data-lib-add]');
@@ -965,6 +1046,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-list"]'), mountList);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-record"]'), mountRecord);
     Array.prototype.forEach.call(document.querySelectorAll('[data-island="library-ai"]'), mountAi);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-audio-again][data-audio-path]'), mountAudioAgain);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

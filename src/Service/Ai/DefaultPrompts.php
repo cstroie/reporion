@@ -110,6 +110,7 @@ final class DefaultPrompts
         'source-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Source: flashcards', 'file' => 'source-flashcards.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-flashcards' => ['kind' => self::SPECIAL, 'title' => 'Studio: flashcards', 'file' => 'studio-flashcards.txt', 'targets' => self::RESEARCH_ONLY],
         'studio-audio' => ['kind' => self::SPECIAL, 'title' => 'Studio: the audio overview\'s script', 'file' => 'studio-audio.txt', 'targets' => self::RESEARCH_ONLY],
+        'source-audio' => ['kind' => self::SPECIAL, 'title' => 'Source: the audio overview\'s script', 'file' => 'source-audio.txt', 'targets' => self::RESEARCH_ONLY],
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
         'create' => ['kind' => self::ACTION, 'title' => 'Create', 'file' => 'create.txt', 'targets' => self::RADIOLOGY_ONLY],
         'conclusion' => ['kind' => self::ACTION, 'title' => 'Conclusion', 'file' => 'conclusion.txt', 'targets' => self::BOTH],

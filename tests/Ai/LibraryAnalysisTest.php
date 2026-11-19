@@ -102,6 +102,41 @@ final class LibraryAnalysisTest extends HttpTestCase
         self::assertStringContainsString('older text', Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => $cookie]))->body);
     }
 
+    public function testASourcesAudioOverviewIsItsScriptReadAloudKeptAndReadAgain(): void
+    {
+        // The fake server answers a prompt saying STUDIO-AUDIO with a two-host script
+        $this->storage()->create('ai:profiles:wiki:' . \Reporion\Service\Ai\Actions::place('source-audio'), ['title' => 'source-audio', 'format' => 'text', 'visibility' => 'private'], "STUDIO-AUDIO {title}\n<a>{source}</a>\nin {language}\n", 'owner');
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('editor');
+        $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/library:short2024', cookies: ['reporion' => $cookie]))->body;
+        self::assertSame(422, $this->analyze('editor', 'library:short2024', ['task' => 'audio'])->status, 'no speech model: no audio overview');
+        self::assertStringNotContainsString('data-lib-ai-task="audio"', $view());
+
+        $this->config['ai'] += ['speech_server' => 1, 'speech_model' => 'tts-test', 'speech_voices' => 'host-a, host-b', 'speech_language' => 'ro'];
+        $this->config['library']['tools']['ffmpeg'] = '/nonexistent/ffmpeg';
+        self::assertStringContainsString('data-lib-ai-task="audio"', $view());
+
+        $data = json_decode($this->analyze('editor', 'library:short2024', ['task' => 'audio'])->body, true)['data'];
+
+        $speech = $this->server->speech();
+        self::assertSame(['host-a', 'host-b', 'host-a'], array_column($speech, 'voice'));
+        self::assertSame([], $data['notices']);
+        $kept = $this->storage()->read('library:short2024:source-audio');
+        self::assertSame(['wav', 3], [$kept->frontmatter['audio']['ext'], $kept->frontmatter['audio']['turns']]);
+        self::assertSame('/library/audio/' . $kept->pid, $data['audio']['href']);
+        self::assertSame(200, Kernel::boot($this->config)->handle(new Request('GET', '/library/audio/' . $kept->pid, cookies: ['reporion' => $cookie]))->status);
+        $page = $view();
+        self::assertStringContainsString('<audio controls preload="none" src="/library/audio/' . $kept->pid . '"></audio>', $page);
+        self::assertStringContainsString('data-audio-path="library:short2024"', $page);
+
+        // Read aloud again from the kept script: no chat request, a new revision with the new file
+        $chats = $this->server->requests();
+        $again = Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/notebook/audio', cookies: ['reporion' => $cookie], body: (string) json_encode(['path' => 'library:short2024'])));
+        self::assertSame(200, $again->status);
+        self::assertSame($kept->rev + 1, $this->storage()->read('library:short2024:source-audio')->rev);
+        self::assertSame($chats, $this->server->requests());
+        self::assertStringContainsString('"assisted":["source-audio"]', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+    }
+
     public function testAPageThereThatIsNoAnalysisIsNeverWrittenOver(): void
     {
         $this->storage()->create('library:short2024:source-points', ['title' => 'Mine', 'visibility' => 'private'], "My own notes.\n", 'owner');

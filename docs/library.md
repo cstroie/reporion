@@ -369,7 +369,12 @@ cleaned text, *Open original at page N* (`GET /library/file/{pid}`, same visibil
    **Read aloud again**: the kept script's *Read aloud again* button (`POST /api/v1/notebook/audio`) makes the audio from the script as the
    page holds it now (editable) with the speech model and voices set now, a new revision with the new `audio`, no script request; the
    earlier file stays in `data/sources/`; a failure replaces nothing. *Not built:*
-   per-voice language checks (the owner picks voices that speak the notebook's language), an audio overview of a single source.
+   per-voice language checks (the owner picks voices that speak the notebook's language).
+   *Added 2026-11-19:* **an audio overview of a single source**: the source's *Audio overview* analysis (`source-audio`, prompt folder
+   `library:audio`, shipped in the research target), offered only when a speech model is set: the two-voice script of the article
+   (its notes when long, as every analysis), written in the voices' language (`Studio::audioLanguage()`), read aloud and kept exactly as
+   Studio's (`{source}:source-audio` with `audio`, played in the source's kept analyses); *Read aloud again* works on it too
+   (`POST /api/v1/notebook/audio` with the source's path).
 
 ## Reference-manager features (2026-11-04, D60)
 

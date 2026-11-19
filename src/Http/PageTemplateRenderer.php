@@ -186,9 +186,11 @@ final class PageTemplateRenderer
             'notice' => \Reporion\Support\SourceNotice::clean($record->frontmatter['notice'] ?? null),
             // The analyses the assistant can make of it (docs/library.md, phase 5): those whose prompt page the serving profile has
             'aiTasks' => $currentRev === null && $principal->canWrite($record->path) && $this->aiActions !== null
-                ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))
+                ? array_values(array_filter(array_keys(\Reporion\Service\Library\SourceAnalysis::TASKS), fn (string $task): bool => ($task !== 'audio' || $this->speaks) && $this->aiActions->special($record->path, \Reporion\Service\Library\SourceAnalysis::TASKS[$task]) !== null))
                 : [],
             'canEdit' => $currentRev === null && $principal->canWrite($record->path),
+            // Its kept audio overview may be read aloud again: a speech model is set and the caller writes it
+            'canSpeak' => $this->speaks && $currentRev === null && $principal->canWrite($record->path),
             'canLookup' => $this->lookup && $currentRev === null && $principal->canWrite($record->path),
             // Find full text (D60): set up, a DOI and no file yet
             'canFulltext' => $this->fullText && $currentRev === null && $principal->canWrite($record->path) && !\is_array($record->frontmatter['original'] ?? null) && (\is_string(($record->frontmatter['csl'] ?? [])['DOI'] ?? null) || (string) (($record->frontmatter['csl'] ?? [])['PMID'] ?? '') !== ''),

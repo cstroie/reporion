@@ -44,6 +44,8 @@ final class SourceAnalysis
         'questions' => 'source-questions',
         // Phase 8: cards for learning it, kept and downloadable for Anki
         'flashcards' => 'source-flashcards',
+        // 2026-11-19: a two-voice script of this one article, read aloud as an audio overview (as Studio's)
+        'audio' => 'source-audio',
     ];
 
     /** The analyses an abstract answers well: they read it, when the source has one, instead of the whole text */
@@ -77,6 +79,8 @@ final class SourceAnalysis
         private readonly Assistant $assistant,
         private readonly int $contextTokens,
         private readonly ?Abstracts $abstracts = null,
+        /** The audio script's language, the voices' (`ai.speech_language`; '' the source's) */
+        private readonly string $speechLanguage = '',
     ) {
     }
 
@@ -181,7 +185,9 @@ final class SourceAnalysis
             $label = 'source text';
         }
         $progress($steps, $steps);
-        $done = $this->assistant->runSource($action, $page, $text, $label, '', 0, $user, $request);
+        // The audio script is written in the language the voices speak (Studio::audioLanguage())
+        $language = $task === 'audio' ? Studio::audioLanguage($page->frontmatter, $this->speechLanguage) : null;
+        $done = $this->assistant->runSource($action, $page, $text, $label, '', 0, $user, $request, $language);
         $note($done);
 
         return ['result' => trim($done['result']), 'parts' => $n, 'requests' => $steps, 'ms' => $ms, 'provider' => $done['provider'], 'usage' => $usage, 'context' => $context, 'from' => 'text'];
