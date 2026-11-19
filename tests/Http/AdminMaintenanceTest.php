@@ -40,8 +40,10 @@ final class AdminMaintenanceTest extends HttpTestCase
 
     public function testOwnerOnlyEverythingElseIs404(): void
     {
-        self::assertSame(200, $this->request('GET', '/admin/maintenance', 'owner')->status);
+        self::assertSame(200, $this->request('GET', '/admin/data', 'owner')->status);
+        self::assertSame(301, $this->request('GET', '/admin/maintenance', 'owner')->status, 'the old address goes to Data');
         foreach ([null, 'editor'] as $user) {
+            self::assertSame(404, $this->request('GET', '/admin/data', $user)->status);
             self::assertSame(404, $this->request('GET', '/admin/maintenance', $user)->status);
             self::assertSame(404, $this->request('POST', '/admin/maintenance/index:verify', $user, 'mode=check')->status);
         }
@@ -56,7 +58,7 @@ final class AdminMaintenanceTest extends HttpTestCase
 
         $post = $this->request('POST', '/admin/maintenance/trash:purge', 'owner', 'mode=check&older_than=30');
         self::assertSame(302, $post->status);
-        self::assertMatchesRegularExpression('~/admin/maintenance\?run=\d{8}-\d{6}-[0-9a-f]{6}#report$~', $post->headers['Location']);
+        self::assertMatchesRegularExpression('~/admin/data\?run=\d{8}-\d{6}-[0-9a-f]{6}#report$~', $post->headers['Location']);
         self::assertCount(1, $this->storage()->trash(), 'a check deletes nothing');
 
         $url = substr($post->headers['Location'], 0, (int) strpos($post->headers['Location'], '#'));
@@ -72,7 +74,7 @@ final class AdminMaintenanceTest extends HttpTestCase
 
     public function testTheTagTasksLiveOnTheTagsTabAndComeBackThereWithTheirReport(): void
     {
-        $maintenance = $this->request('GET', '/admin/maintenance', 'owner')->body;
+        $maintenance = $this->request('GET', '/admin/data', 'owner')->body;
         self::assertStringNotContainsString('action="/admin/maintenance/tags:prune"', $maintenance);
         self::assertStringNotContainsString('action="/admin/maintenance/pages:tag"', $maintenance);
         self::assertStringContainsString('action="/admin/maintenance/trash:purge"', $maintenance, 'the others stay');
@@ -80,7 +82,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         $tags = $this->request('GET', '/admin/tags', 'owner')->body;
         self::assertStringContainsString('action="/admin/maintenance/tags:prune"', $tags);
         self::assertStringContainsString('action="/admin/maintenance/pages:tag"', $tags);
-        self::assertStringContainsString('name="return" value="tags"', $tags);
+        self::assertStringNotContainsString('name="return"', $tags, 'the task, not the form, decides where a run comes back');
 
         $post = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=check&max_uses=1&return=tags');
         self::assertSame(302, $post->status);
@@ -89,7 +91,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertStringContainsString('tags:prune', $shown->body, 'the report is on the Tags tab');
         self::assertStringContainsString('tags to remove', $shown->body);
 
-        $recent = $this->request('GET', '/admin/maintenance', 'owner')->body;
+        $recent = $this->request('GET', '/admin/data', 'owner')->body;
         self::assertMatchesRegularExpression('~href="/admin/tags\?run=\d{8}-\d{6}-[0-9a-f]{6}#report"~', $recent, 'recent runs link a tag run to the Tags tab');
 
         $noConfirm = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=apply&return=tags');
@@ -97,11 +99,11 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertStringEndsWith('/admin/tags?maint=confirm', $noConfirm->headers['Location']);
         self::assertStringContainsString('Tick the confirmation box', $this->request('GET', '/admin/tags?maint=confirm', 'owner')->body);
 
-        // Without `return`, or for a task that is not a tag task, it stays on Maintenance
+        // The task decides where it comes back, not the form: a tag task to Tags, a storage task to Data
         $plain = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=check');
-        self::assertStringContainsString('/admin/maintenance?run=', $plain->headers['Location']);
+        self::assertStringContainsString('/admin/tags?run=', $plain->headers['Location']);
         $other = $this->request('POST', '/admin/maintenance/index:verify', 'owner', 'mode=check&return=tags');
-        self::assertStringContainsString('/admin/maintenance?run=', $other->headers['Location']);
+        self::assertStringContainsString('/admin/data?run=', $other->headers['Location']);
     }
 
     public function testBackupArchivesAreListedAndDownloadedByTheOwnerOnly(): void
@@ -112,7 +114,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         $made = (new BackupService($this->dataRoot, $conf))->create();
         $url = '/admin/maintenance/backups/' . $made['file'];
 
-        $list = $this->request('GET', '/admin/maintenance', 'owner');
+        $list = $this->request('GET', '/admin/data', 'owner');
         self::assertStringContainsString($made['file'], $list->body);
         self::assertStringContainsString('href="' . $url . '"', $list->body);
         self::assertStringContainsString('action="/admin/maintenance/backup:create"', $list->body);
@@ -136,7 +138,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         foreach ([null, 'editor'] as $user) {
             self::assertSame(404, $this->request('GET', $url, $user)->status);
         }
-        self::assertStringNotContainsString($made['file'], $this->request('GET', '/admin/maintenance', 'editor')->body);
+        self::assertStringNotContainsString($made['file'], $this->request('GET', '/admin/data', 'editor')->body);
         foreach (['reporion-backup-20260101-000000.tar.gz', 'reporion-backup-x.tar.gz', '..%2Findex.sqlite', 'secret.tar.gz'] as $bad) {
             self::assertSame(404, $this->request('GET', '/admin/maintenance/backups/' . $bad, 'owner')->status, $bad);
         }
@@ -147,7 +149,7 @@ final class AdminMaintenanceTest extends HttpTestCase
     {
         $this->createPage(self::PATH, 'private', 'RM lombar', 'text');
 
-        $page = $this->request('GET', '/admin/maintenance', 'owner');
+        $page = $this->request('GET', '/admin/data', 'owner');
         self::assertStringContainsString('Archive integrity', $page->body);
         self::assertStringContainsString('name="backup"', $page->body);
         self::assertStringContainsString('bin/reporion integrity:verify', $page->body);
@@ -185,10 +187,10 @@ final class AdminMaintenanceTest extends HttpTestCase
         $lock = MaintenanceRunner::lock($this->dataRoot);
         try {
             $busy = $this->request('POST', '/admin/maintenance/trash:purge', 'owner', 'mode=apply&confirm=1');
-            self::assertStringEndsWith('/admin/maintenance?busy=1', $busy->headers['Location']);
-            self::assertStringContainsString('in progress', $this->request('GET', '/admin/maintenance?busy=1', 'owner')->body);
+            self::assertStringEndsWith('/admin/data?busy=1', $busy->headers['Location']);
+            self::assertStringContainsString('in progress', $this->request('GET', '/admin/data?busy=1', 'owner')->body);
             self::assertSame(302, $this->request('POST', '/admin/maintenance/index:verify', 'owner', 'mode=check')->status, 'a check needs no lock');
-            self::assertStringEndsWith('/admin/index?busy=1', $this->request('POST', '/admin/index/rebuild', 'owner')->headers['Location'], 'nor does a rebuild run beside it');
+            self::assertStringEndsWith('/admin/data?busy=1#rebuild', $this->request('POST', '/admin/index/rebuild', 'owner')->headers['Location'], 'nor does a rebuild run beside it');
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);
@@ -230,14 +232,14 @@ final class AdminMaintenanceTest extends HttpTestCase
         $runner = MaintenanceRunner::standard(new FileTree($this->dataRoot, $index), $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30);
         $owner = (new FlatFileUserStore($this->dataRoot))->find('owner');
 
-        $post = (new AdminMaintenanceController($runner, $index, detach: true))
+        $post = (new AdminMaintenanceController($runner, detach: true))
             ->run(new Request('POST', '/admin/maintenance/trash:purge', body: 'mode=check&older_than=30'), 'trash:purge', $owner);
 
         self::assertSame(302, $post->status);
         self::assertNotNull($post->stream, 'the run waits for the response to be out');
         self::assertSame(1, preg_match('~\?run=(\d{8}-\d{6}-[0-9a-f]{6})#report$~', $post->headers['Location'], $m));
         self::assertSame('', $runner->load($m[1])?->finishedAt(), 'its file is there, not finished');
-        $running = $this->request('GET', '/admin/maintenance?run=' . $m[1], 'owner');
+        $running = $this->request('GET', '/admin/data?run=' . $m[1], 'owner');
         self::assertStringContainsString('Still running', $running->body);
         self::assertStringContainsString('window.location.reload()', $running->body);
 
@@ -248,7 +250,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertNotSame('', $report->finishedAt());
         self::assertSame(['would_purge' => 1], array_filter($report->summary()));
         self::assertCount(1, glob($this->dataRoot . '/maintenance/runs/*.json') ?: [], 'the report took the placeholder\'s place');
-        $done = $this->request('GET', '/admin/maintenance?run=' . $m[1], 'owner');
+        $done = $this->request('GET', '/admin/data?run=' . $m[1], 'owner');
         self::assertStringNotContainsString('Still running', $done->body);
         self::assertStringContainsString('would purge', $done->body);
     }
@@ -259,7 +261,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         mkdir(\dirname($file), 0775, true);
         file_put_contents($file, (string) json_encode(['task' => 'trash:purge', 'mode' => 'check', 'actor' => 'owner', 'options' => [], 'started' => '2026-01-01T00:00:00+00:00', 'finished' => '']));
 
-        $page = $this->request('GET', '/admin/maintenance?run=20260101-000000-abcdef', 'owner');
+        $page = $this->request('GET', '/admin/data?run=20260101-000000-abcdef', 'owner');
 
         self::assertStringContainsString('stopped before writing its report', $page->body);
         self::assertStringNotContainsString('http-equiv="refresh"', $page->body);

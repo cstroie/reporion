@@ -30,7 +30,7 @@ declare(strict_types=1);
 /** @var int $conflicts */
 /** @var ?string $error */
 /** @var string $basePath */
-/** @var array<string, \Reporion\Service\Maintenance\MaintenanceTask> $tasks the tag tasks (Admin → Maintenance's, moved here) */
+/** @var array<string, \Reporion\Service\Maintenance\MaintenanceTask> $tasks the tag tasks (Support\AdminTabs::TASK_TAB) */
 /** @var bool $busy */
 /** @var ?string $maintError */
 /** @var ?string $runId */
@@ -155,9 +155,9 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 })();
 </script>
 <?php endif; ?>
-<?php /* The tag tasks of Admin → Maintenance: they post to the same route and come back here with their report */ ?>
+<?php /* The tag tasks (Support\AdminTabs::TASK_TAB): they post to /admin/maintenance/{task} and come back here with their report */ ?>
 <?php foreach ($tasks as $name => $task): ?>
-<?php $return = 'tags'; include __DIR__ . '/partials/maint-task.php'; ?>
+<?php include __DIR__ . '/partials/maint-task.php'; ?>
 <?php endforeach; ?>
 </div></div></div>
 </div>

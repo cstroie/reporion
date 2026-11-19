@@ -17,7 +17,7 @@ use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\RecordingIndex;
 
 /**
- * GET /admin/index and POST /admin/index/rebuild (owner-only).
+ * GET /admin/data (the index's panels; GET /admin/index redirects there) and POST /admin/index/rebuild (owner-only).
  */
 final class AdminIndexTest extends HttpTestCase
 {
@@ -30,10 +30,13 @@ final class AdminIndexTest extends HttpTestCase
 
     public function testOnlyAnOwnerReachesIt(): void
     {
-        self::assertSame(200, $this->as('owner', 'GET', '/admin/index')->status);
-        self::assertSame(404, $this->as('mihai', 'GET', '/admin/index')->status);
+        self::assertSame(200, $this->as('owner', 'GET', '/admin/data')->status);
+        $old = $this->as('owner', 'GET', '/admin/index');
+        self::assertSame(301, $old->status, 'the old address');
+        self::assertSame('/admin/data#health', $old->headers['Location']);
+        self::assertSame(404, $this->as('mihai', 'GET', '/admin/data')->status);
         self::assertSame(404, $this->as('mihai', 'POST', '/admin/index/rebuild')->status);
-        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/admin/index'))->status);
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/admin/data'))->status);
     }
 
     public function testDriftIsReportedAndARebuildFixesItAndIsAudited(): void
@@ -43,15 +46,15 @@ final class AdminIndexTest extends HttpTestCase
         // update after a successful write leaves behind
         (new FileTree($this->dataRoot, new RecordingIndex()))->create('reports:mri:mioveni:260101-not-indexed', ['title' => 'Unindexed', 'visibility' => 'private'], 'body', 'owner');
 
-        $before = $this->as('owner', 'GET', '/admin/index');
+        $before = $this->as('owner', 'GET', '/admin/data');
         self::assertStringContainsString(t('admin.index.drift_counts', [1, 0, 0]), $before->body);
         self::assertStringNotContainsString('not-indexed', $before->body, 'counts only, never a page path');
 
         $rebuild = $this->as('owner', 'POST', '/admin/index/rebuild');
         self::assertSame(302, $rebuild->status);
-        self::assertSame('/admin/index?rebuilt=2', $rebuild->headers['Location']);
+        self::assertSame('/admin/data?rebuilt=2#rebuild', $rebuild->headers['Location']);
 
-        $after = $this->as('owner', 'GET', '/admin/index', ['rebuilt' => '2']);
+        $after = $this->as('owner', 'GET', '/admin/data', ['rebuilt' => '2']);
         self::assertStringContainsString(t('admin.index.clean'), $after->body);
         self::assertStringContainsString(t('admin.index.rebuilt', [2]), $after->body);
         self::assertStringContainsString('"action":"index.rebuild"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));

@@ -2,8 +2,8 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * A maintenance run's report panel (id "report"), shared by Admin →
- * Maintenance and Admin → Tags (the tag tasks run from there).
+ * A maintenance run's report panel (id "report"), on the admin tab whose
+ * task card started the run (partials/admin-run.php).
  *
  * Variables in scope: ?string $runId; ?MaintenanceReport $report; ?bool $running;
  * array<string, ?array{path: string, title: string}> $pages; int $shownItems; string $basePath

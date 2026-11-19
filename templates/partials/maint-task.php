@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * One maintenance task's card: its options, and the Check / Apply buttons.
- * Shared by Admin → Maintenance and Admin → Tags (the tag tasks). A non-empty
- * $return sends the owner back to that screen with the run's report.
+ * On the admin tab that owns the task (Support\AdminTabs::TASK_TAB), which
+ * the run comes back to with its report.
  *
- * Variables in scope: string $name; MaintenanceTask $task; string $basePath; string $return
+ * Variables in scope: string $name; MaintenanceTask $task; string $basePath
  */
 
 declare(strict_types=1);
@@ -20,7 +20,6 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-panel" id="<?= $e(Maint::anchor($name)) ?>">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></h2><p><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p></hgroup></header>
 <form data-busy class="wk-form wk-maint-form" action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
-<?php if ($return !== ''): ?><input type="hidden" name="return" value="<?= $e($return) ?>"><?php endif; ?>
 <?php $fid = 'opt-' . Maint::anchor($name); ?>
 <?php if ($name === 'journal:replay'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-min-age"><?= $e(t('admin.maint.opt.min_age')) ?>

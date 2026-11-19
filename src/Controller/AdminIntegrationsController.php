@@ -20,15 +20,18 @@ use Reporion\Plugin\Registry;
 use Reporion\Service\InstanceSettings;
 
 /**
- * GET /admin/plugins, POST /admin/plugins/{id}/toggle and POST
- * /admin/plugins/{id}/settings: Admin → Plugins, owner-only. Every plugin
+ * GET /admin/integrations, POST /admin/plugins/{id}/toggle and POST
+ * /admin/plugins/{id}/settings: Admin → Integrations, owner-only. First the
+ * MCP server's settings (SettingsPanels, saved by POST /admin/settings/mcp),
+ * then every plugin
  * directory found, whether it is enabled, loaded or failed, and a form for
  * its settings built from its manifest. Both writes go to
  * data/settings.yaml (`plugins`), are audited `settings.change`, and take
  * effect from the next request (the loader runs at boot). A `secret`
- * setting is never shown back; left blank, the stored one stays.
+ * setting is never shown back; left blank, the stored one stays. GET
+ * /admin/plugins, the plugins' old screen, redirects here.
  */
-final class AdminPluginsController
+final class AdminIntegrationsController
 {
     /**
      * @param array<string, mixed> $config the effective config (after InstanceSettings::applyTo())
@@ -39,10 +42,27 @@ final class AdminPluginsController
         private readonly Registry $plugins,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly SettingsPanels $panels,
     ) {
     }
 
-    public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorPlugin = null): Response
+    /** GET /admin/plugins: the plugins' old screen */
+    public function redirect(Request $request, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::redirect($request->basePath . '/admin/integrations', 301);
+    }
+
+    /** A refused save of a settings section shown here (mcp) */
+    public function refused(Request $request, User $principal, string $error, string $section): Response
+    {
+        return $this->show($request, $principal, null, null, $error, $section);
+    }
+
+    public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorPlugin = null, ?string $settingsError = null, ?string $section = null): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
@@ -52,7 +72,7 @@ final class AdminPluginsController
             $values[$id] = $manifest->settingValues($this->stored($id));
         }
 
-        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-plugins.php', [
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-integrations.php', [
             'manifests' => $this->plugins->manifests,
             'invalid' => $this->plugins->invalid,
             'enabled' => $this->plugins->enabled,
@@ -63,9 +83,11 @@ final class AdminPluginsController
             'saved' => isset($request->query['saved']) ? (string) $request->query['saved'] : null,
             'error' => $error,
             'errorPlugin' => $errorPlugin,
-            'adminTab' => 'plugins',
+            // The MCP panel's own variables: kept apart, its $values and $saved are not the plugins'
+            'settingsVars' => $this->panels->vars($request, $settingsError, $section) + ['basePath' => $request->basePath],
+            'adminTab' => 'integrations',
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.plugins.title')), $error === null ? 200 : 422);
+        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.integrations.title')), $error === null && $settingsError === null ? 200 : 422);
     }
 
     public function toggle(Request $request, string $id, ?User $principal): Response
@@ -90,7 +112,7 @@ final class AdminPluginsController
         }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'keys' => ['plugins.enabled'], 'plugin' => $id]);
 
-        return Response::redirect($request->basePath . '/admin/plugins?saved=' . rawurlencode($id));
+        return Response::redirect($request->basePath . '/admin/integrations?saved=' . rawurlencode($id));
     }
 
     public function save(Request $request, string $id, ?User $principal): Response
@@ -106,7 +128,7 @@ final class AdminPluginsController
             foreach ($manifest->settings as $key => $spec) {
                 $raw = $fields[$key] ?? ($spec['type'] === 'bool' ? '0' : ($spec['type'] === 'sites' ? [] : ''));
                 if ($spec['type'] === 'sites') {
-                    // Rows for the configured sites only (Admin → Sites)
+                    // Rows for the configured sites only (Admin → Reports → Sites)
                     $raw = array_intersect_key(\is_array($raw) ? $raw : [], $this->sites());
                 }
                 if ($spec['type'] === 'secret' && $raw === '') {
@@ -129,7 +151,7 @@ final class AdminPluginsController
         }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'plugin' => $id, 'keys' => $changed]);
 
-        return Response::redirect($request->basePath . '/admin/plugins?saved=' . rawurlencode($id) . '#plugin-' . rawurlencode($id));
+        return Response::redirect($request->basePath . '/admin/integrations?saved=' . rawurlencode($id) . '#plugin-' . rawurlencode($id));
     }
 
     /** @return array<string, string> site code → name, for `sites` settings */

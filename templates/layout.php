@@ -34,7 +34,7 @@
  * The browser tab's title (2026-10-09): who, then what, then the app: the
  * page's subject (its title: a report's is the patient's name, D30; or
  * $pageSubject), the function (the active tab's label, else $pageFunction,
- * else $pageTitle), the app name (Admin → Settings). A page with no subject
+ * else $pageTitle), the app name (Admin → General). A page with no subject
  * keeps "$pageTitle: app".
  */
 

@@ -49,6 +49,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <div class="wk-badges"><span class="wk-mono wk-dim"><?= $e(t('admin.ai.help')) ?></span></div>
 </header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
+<?php include __DIR__ . '/partials/admin-run.php'; ?>
 
 <?php /* Phase 33d: one panel: the state of the default server, on/off, which server, and which prompts serve where */ ?>
 <div class="wk-panel" id="use">
@@ -148,6 +149,8 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>
+
+<?php if (isset($tasks['index:vectors'])): $name = 'index:vectors'; $task = $tasks[$name]; include __DIR__ . '/partials/maint-task.php'; endif; ?>
 
 <?php /* Phase 8: the audio overview's speech model: an OpenAI-compatible /audio/speech on one of the servers below; its own form, it saves ai.speech_* alone */ ?>
 <div class="wk-panel" id="speech">
@@ -344,6 +347,8 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <button class="btn btn-primary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_new_button')) ?></button></form>
 </details>
 </div>
+
+<?php if (isset($tasks['ai:prompts-relocate'])): $name = 'ai:prompts-relocate'; $task = $tasks[$name]; include __DIR__ . '/partials/maint-task.php'; endif; ?>
 
 <?php /* Phase 34b: the assistant's use over a period, from the audit lines (ai.call, ai.refused): counts, times, tokens; never a prompt or an answer */ ?>
 <div class="wk-panel" id="usage">

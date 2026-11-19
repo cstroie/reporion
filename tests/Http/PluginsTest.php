@@ -48,7 +48,7 @@ final class PluginsTest extends HttpTestCase
     {
         self::assertSame(404, $this->get('owner', '/x/demo/hello')->status);
 
-        $admin = $this->get('owner', '/admin/plugins');
+        $admin = $this->get('owner', '/admin/integrations');
         self::assertSame(200, $admin->status);
         self::assertStringContainsString('Demo plugin', $admin->body);
         self::assertStringContainsString('<input type="radio" name="enabled" value="0" checked>', $admin->body, 'the Enabled | Disabled control shows it off');
@@ -146,7 +146,7 @@ final class PluginsTest extends HttpTestCase
 
         self::assertSame(200, $this->get('owner', '/admin/users')->status, 'the site keeps working');
         self::assertSame(404, $this->get('owner', '/x/demo/hello')->status);
-        self::assertStringContainsString('failed to load (InvalidArgumentException)', $this->get('owner', '/admin/plugins')->body);
+        self::assertStringContainsString('failed to load (InvalidArgumentException)', $this->get('owner', '/admin/integrations')->body);
     }
 
     public function testAnInvalidManifestIsListedAndNeverRun(): void
@@ -155,13 +155,13 @@ final class PluginsTest extends HttpTestCase
         file_put_contents($this->pluginsDir . '/broken/plugin.json', (string) json_encode(['id' => 'other', 'api' => 1]));
         $this->config['plugins']['enabled'] = ['broken'];
 
-        $admin = $this->get('owner', '/admin/plugins');
+        $admin = $this->get('owner', '/admin/integrations');
         self::assertStringContainsString('not a valid plugin', $admin->body);
         self::assertStringContainsString('plugin.json id must be its directory name', $admin->body);
 
         mkdir($this->pluginsDir . '/sneaky');
         file_put_contents($this->pluginsDir . '/sneaky/plugin.json', (string) json_encode(['id' => 'sneaky', 'api' => 1, 'ui' => ['page_tab' => ['label' => 'sneaky.tab', 'href' => '/x/demo/tab/{pid}']]]));
-        self::assertStringContainsString('plugin.json has an invalid ui slot', $this->get('owner', '/admin/plugins')->body, 'a tab links only into its own routes');
+        self::assertStringContainsString('plugin.json has an invalid ui slot', $this->get('owner', '/admin/integrations')->body, 'a tab links only into its own routes');
     }
 
     public function testTheOwnerEnablesAndConfiguresAPluginFromAdmin(): void
@@ -172,9 +172,9 @@ final class PluginsTest extends HttpTestCase
         self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '1'])->status);
         $this->config = Kernel::withInstanceSettings($this->config);
         self::assertSame(['demo'], $this->config['plugins']['enabled'], 'sets the state asked for: twice is still on, never a flip');
-        self::assertStringContainsString('<input type="radio" name="enabled" value="1" checked>', $this->get('owner', '/admin/plugins')->body);
+        self::assertStringContainsString('<input type="radio" name="enabled" value="1" checked>', $this->get('owner', '/admin/integrations')->body);
         self::assertSame(200, $this->get('owner', '/x/demo/hello')->status, 'from the next request');
-        self::assertStringNotContainsString('HIJACKED', $this->get('owner', '/admin/plugins')->body, "a plugin's strings stay under its own prefix");
+        self::assertStringNotContainsString('HIJACKED', $this->get('owner', '/admin/integrations')->body, "a plugin's strings stay under its own prefix");
 
         self::assertSame(302, $this->post('owner', '/admin/plugins/demo/settings', ['greeting' => 'buna', 'days' => '5', 'token' => 's3cret'])->status);
         $stored = Yaml::parseFile($this->dataRoot . '/' . InstanceSettings::FILE);
@@ -182,7 +182,7 @@ final class PluginsTest extends HttpTestCase
         $this->config = Kernel::withInstanceSettings($this->config);
         self::assertSame('hello owner, greeting=buna', $this->get('owner', '/x/demo/hello')->body);
 
-        $admin = $this->get('owner', '/admin/plugins');
+        $admin = $this->get('owner', '/admin/integrations');
         self::assertStringNotContainsString('s3cret', $admin->body, 'a secret is never shown back');
         self::assertSame(302, $this->post('owner', '/admin/plugins/demo/settings', ['greeting' => 'buna', 'days' => '5', 'token' => ''])->status);
         self::assertSame('s3cret', Yaml::parseFile($this->dataRoot . '/' . InstanceSettings::FILE)['plugins']['settings']['demo']['token'], 'blank keeps the stored secret');

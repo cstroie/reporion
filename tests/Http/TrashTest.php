@@ -40,8 +40,8 @@ final class TrashTest extends HttpTestCase
         $page = $this->storage()->create('reports:mri:mioveni:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
         $this->storage()->delete('reports:mri:mioveni:a', 'mihai');
 
-        self::assertSame(404, $this->as('mihai', 'GET', '/admin/trash')->status);
-        $list = $this->as('owner', 'GET', '/admin/trash');
+        self::assertSame(404, $this->as('mihai', 'GET', '/admin/data')->status);
+        $list = $this->as('owner', 'GET', '/admin/data');
         self::assertSame(200, $list->status);
         self::assertStringContainsString('Alpha', $list->body);
         self::assertStringContainsString('mihai', $list->body);
@@ -56,10 +56,10 @@ final class TrashTest extends HttpTestCase
     public function testEmptyTrashPostsAConfirmedPurgeOfEverythingUnsignedToTheMaintenanceTask(): void
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
-        self::assertStringNotContainsString('Empty trash', $this->as('owner', 'GET', '/admin/trash')->body);
+        self::assertStringNotContainsString('Empty trash', $this->as('owner', 'GET', '/admin/data')->body);
         $this->storage()->delete('reports:mri:mioveni:a', 'owner');
 
-        $body = $this->as('owner', 'GET', '/admin/trash')->body;
+        $body = $this->as('owner', 'GET', '/admin/data')->body;
         self::assertStringContainsString('action="/admin/maintenance/trash:purge"', $body);
         self::assertStringContainsString('name="older_than" value="0"', $body);
         self::assertStringContainsString('name="confirm" value="1"', $body);
@@ -69,7 +69,7 @@ final class TrashTest extends HttpTestCase
 
         $purge = $this->as('owner', 'POST', '/admin/maintenance/trash:purge', [], 'mode=apply&older_than=0&confirm=1');
         self::assertSame(302, $purge->status);
-        self::assertStringContainsString('The trash is empty.', $this->as('owner', 'GET', '/admin/trash')->body);
+        self::assertStringContainsString('The trash is empty.', $this->as('owner', 'GET', '/admin/data')->body);
     }
 
     public function testTheApiRestoresTheLatestDeletionAtAPath(): void

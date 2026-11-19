@@ -16,88 +16,59 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
-use Reporion\Service\Backup\RsyncBackup;
 use Reporion\Service\InstanceSettings;
 
 /**
- * Admin → Settings, owner-only (decided 2026-09-26): this instance's
- * settings: identity, publishing, limits and reports: kept in
+ * Admin → General, owner-only (decided 2026-09-26): this instance's
+ * site, editor, publishing, limits and debug settings, kept in
  * data/settings.yaml (Service\InstanceSettings), not in conf/local.php. The
- * AI assistant's settings have their own pane (AdminAiController), the sites
- * and devices theirs (AdminSitesController).
+ * other sections' forms are on the tab that owns their topic
+ * (SettingsPanels::SECTION_TAB: Reports, Library, Data, Integrations).
  *
  * GET /admin/settings; POST /admin/settings/{section} saves one section
- * and redirects back (Post/Redirect/Get); POST /admin/settings/icon takes
+ * and redirects back to its tab (Post/Redirect/Get); POST /admin/settings/icon takes
  * the icon image as the request body. Each save is audited
  * settings.change with the keys that changed. GET /site-icon/{file} and
  * /favicon.ico serve the icon to everyone.
  */
 final class AdminSettingsController
 {
-    /** Which settings each form saves */
-    public const SECTIONS = [
-        'site' => ['site.title', 'site.tagline', 'site.base_url', 'site.home_page', 'site.timezone'],
-        'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export'],
-        'mcp' => ['mcp.access', 'mcp.write_anywhere', 'mcp.reports', 'mcp.gate'],
-        'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
-        'editor' => ['editor.save_stays_open'],
-        'library' => ['library.lookup', 'library.web_clip', 'library.search', 'library.unpaywall_email', 'library.openalex_key', 'library.context_tokens', 'library.language'],
-        'debug' => ['debug.panels'],
-        'reports' => ['reports.modality_namespaces', 'references.namespaces'],
-        'backup' => ['backup.enabled', 'backup.transport', 'backup.module', 'backup.password_file', 'backup.host', 'backup.port', 'backup.user', 'backup.remote_dir', 'backup.ssh_key', 'backup.bwlimit', 'backup.include_conf', 'backup.keep', 'backup.interval_hours'],
-    ];
+    /** Which settings each form saves (SettingsPanels::SECTIONS) */
+    public const SECTIONS = SettingsPanels::SECTIONS;
 
     /**
-     * @param array<string, mixed> $config the effective config (settings already applied)
+     * @param array<string, \Closure(Request, User, string, string): Response> $tabs a tab key => the screen
+     *        that shows a section's form, for a refused save (SettingsPanels::SECTION_TAB); General is this one
      */
     public function __construct(
         private readonly InstanceSettings $settings,
-        private readonly array $config,
+        private readonly SettingsPanels $panels,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly array $tabs = [],
     ) {
     }
 
+    /** Admin → General: the site, editor, publishing, limits and debug panels */
     public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorSection = null): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
         }
-        $stored = $this->settings->load();
-        $fromFile = [];
-        foreach (self::SECTIONS as $keys) {
-            foreach ($keys as $key) {
-                [$section, $field] = explode('.', $key . '.', 2);
-                $field = rtrim($field, '.');
-                $fromFile[$key] = $field === '' ? \array_key_exists($section, $stored) : \is_array($stored[$section] ?? null) && \array_key_exists($field, $stored[$section]);
-            }
-        }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-settings.php', [
-            'values' => InstanceSettings::current($this->config),
-            'fromFile' => $fromFile,
-            'hasFile' => $stored !== [],
-            'backupState' => RsyncBackup::state((string) ($this->config['paths']['data'] ?? '')),
-            // A fresh suggestion for the X-Access-Token value at every load: long, random, URL-safe
-            'gateSuggestion' => rtrim(strtr(base64_encode(random_bytes(24)), '+/', '-_'), '='),
-            'saved' => (string) ($request->query['saved'] ?? ''),
-            'error' => $error,
-            'errorSection' => $errorSection,
-            'adminTab' => 'settings',
+            'adminTab' => 'general',
             'basePath' => $request->basePath,
-            'mcpUrl' => $this->mcpUrl($request),
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.settings.title')), $error === null ? 200 : 422);
+        ] + $this->panels->vars($request, $error, $errorSection)
+          + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.general.title')), $error === null ? 200 : 422);
     }
 
-    /** The address a client is given for the MCP server: site.base_url when set, else the one this page came by */
-    private function mcpUrl(Request $request): string
+    /** A refused save, shown on the tab that holds its form */
+    private function refused(Request $request, User $principal, string $section, string $error): Response
     {
-        $base = rtrim((string) (InstanceSettings::current($this->config)['site.base_url'] ?? ''), '/');
-        if ($base === '' && preg_match('/^[A-Za-z0-9.-]+(:[0-9]{1,5})?$|^\[[0-9A-Fa-f:]+\](:[0-9]{1,5})?$/', $request->host) === 1) {
-            $base = ($request->secure ? 'https' : 'http') . '://' . $request->host . $request->basePath;
-        }
+        $tab = SettingsPanels::SECTION_TAB[$section] ?? 'general';
 
-        return $base === '' ? '' : $base . '/mcp';
+        return isset($this->tabs[$tab]) ? ($this->tabs[$tab])($request, $principal, $error, $section) : $this->show($request, $principal, $error, $section);
     }
 
     public function save(Request $request, string $section, ?User $principal): Response
@@ -120,7 +91,7 @@ final class AdminSettingsController
             $needed = ($fields['backup_transport'] ?? 'ssh') === 'daemon' ? ['backup_host', 'backup_module'] : ['backup_host', 'backup_user', 'backup_remote_dir'];
             foreach ($needed as $field) {
                 if (trim((string) ($fields[$field] ?? '')) === '') {
-                    return $this->show($request, $principal, t('admin.settings.err.backup.incomplete'), $section);
+                    return $this->refused($request, $principal, $section, t('admin.settings.err.backup.incomplete'));
                 }
             }
         }
@@ -128,13 +99,15 @@ final class AdminSettingsController
         try {
             $changed = $this->settings->save($changes);
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage(), $section);
+            return $this->refused($request, $principal, $section, $e->getMessage());
         }
         if ($changed !== []) {
             $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => $section, 'keys' => $changed]);
         }
 
-        return Response::redirect($request->basePath . '/admin/settings?saved=' . $section . '#' . $section);
+        [$route, $anchor] = explode('#', SettingsPanels::home($section), 2);
+
+        return Response::redirect($request->basePath . $route . '?saved=' . $section . '#' . $anchor);
     }
 
     public function uploadIcon(Request $request, ?User $principal): Response

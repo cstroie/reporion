@@ -93,13 +93,15 @@ final class AdminSettingsTest extends HttpTestCase
     public function testPublishingSwitchesAndLimitsOverrideTheConfig(): void
     {
         $this->request('POST', '/admin/settings/publishing', 'owner', 'feeds_namespaces=docs%2C+teaching&export_allow_public_export=1');
-        $this->request('POST', '/admin/settings/limits', 'owner', 'pages_trash_purge_days=7&media_max_bytes=2');
+        $this->request('POST', '/admin/settings/limits', 'owner', 'media_max_bytes=2');
+        $trash = $this->request('POST', '/admin/settings/trash', 'owner', 'pages_trash_purge_days=7');
+        self::assertStringEndsWith('/admin/data?saved=trash#trash', $trash->headers['Location'], 'back to the tab that holds the form');
 
         $yaml = (string) file_get_contents($this->dataRoot . '/settings.yaml');
         self::assertStringContainsString("namespaces:\n    - docs\n    - teaching", $yaml);
         self::assertStringContainsString('pseudonymise_public: false', $yaml, 'an unticked box is off');
         self::assertStringContainsString('max_bytes: 2097152', $yaml);
-        self::assertStringContainsString('7 days', $this->request('GET', '/admin/trash', 'owner')->body, 'the trash reads the saved limit');
+        self::assertStringContainsString('7 days', $this->request('GET', '/admin/data', 'owner')->body, 'the trash reads the saved limit');
     }
 
     public function testTheBackupSectionIsSavedAndTheScheduleNeedsATarget(): void
@@ -116,14 +118,14 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString('  host: backup.example.org', $yaml);
         self::assertStringContainsString('  transport: ssh', $yaml);
         self::assertStringContainsString('keep: month', $yaml);
-        self::assertStringContainsString('bin/reporion backup:rsync --if-due', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringContainsString('bin/reporion backup:rsync --if-due', $this->request('GET', '/admin/data', 'owner')->body);
 
         self::assertSame(422, $this->request('POST', '/admin/settings/backup', 'owner', http_build_query(['backup_host' => '-oProxyCommand=x'] + $form))->status);
     }
 
     public function testTheLibraryLookupIsOffUntilTheOwnerTurnsItOn(): void
     {
-        $form = $this->request('GET', '/admin/settings', 'owner')->body;
+        $form = $this->request('GET', '/admin/library', 'owner')->body;
         self::assertStringContainsString('action="/admin/settings/library"', $form);
         self::assertStringNotContainsString('name="library_lookup" value="1" checked', $form);
 
@@ -139,7 +141,7 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_context_tokens' => '100']))->status, 'below 4000');
 
         // The library's language, Romanian unless chosen
-        self::assertStringContainsString('<option value="ro" selected>Romanian</option>', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringContainsString('<option value="ro" selected>Romanian</option>', $this->request('GET', '/admin/library', 'owner')->body);
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'en']))->status);
         self::assertStringContainsString('language: en', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_language' => 'xx']))->status, 'a language the assistant does not know');
@@ -147,7 +149,7 @@ final class AdminSettingsTest extends HttpTestCase
 
     public function testSearchingPubmedIsOffUntilTheOwnerTurnsItOn(): void
     {
-        self::assertStringNotContainsString('name="library_search" value="1" checked', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringNotContainsString('name="library_search" value="1" checked', $this->request('GET', '/admin/library', 'owner')->body);
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_search' => '1']))->status);
         self::assertStringContainsString('search: true', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(404, $this->request('POST', '/admin/settings/library', 'editor', http_build_query(['library_search' => '1']))->status);
@@ -155,13 +157,13 @@ final class AdminSettingsTest extends HttpTestCase
 
     public function testFindFullTextNeedsAnAddressAndTakesOnlyAnAddress(): void
     {
-        self::assertStringContainsString('name="library_unpaywall_email"', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringContainsString('name="library_unpaywall_email"', $this->request('GET', '/admin/library', 'owner')->body);
 
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'library@example.org']))->status);
         self::assertStringContainsString('unpaywall_email: library@example.org', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'not an address']))->status);
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_unpaywall_email' => 'a@example.org?x=1&y']))->status);
-        self::assertStringContainsString('name="library_openalex_key"', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringContainsString('name="library_openalex_key"', $this->request('GET', '/admin/library', 'owner')->body);
         self::assertSame(302, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_openalex_key' => 'k3y-made_up1']))->status);
         self::assertStringContainsString('openalex_key: k3y-made_up1', (string) file_get_contents($this->dataRoot . '/settings.yaml'));
         self::assertSame(422, $this->request('POST', '/admin/settings/library', 'owner', http_build_query(['library_openalex_key' => 'a key&x=1']))->status, 'a key is one token');
@@ -223,11 +225,11 @@ final class AdminSettingsTest extends HttpTestCase
 
     public function testTheMcpSectionKeepsTheGateValueAndShowsTheRule(): void
     {
-        $page = $this->request('GET', '/admin/settings', 'owner')->body;
+        $page = $this->request('GET', '/admin/integrations', 'owner')->body;
         self::assertStringContainsString('id="mcp"', $page);
         self::assertStringNotContainsString('X-Access-Token" !=', $page, 'no rule before a value is saved');
         preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $page, $first);
-        preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $this->request('GET', '/admin/settings', 'owner')->body, $second);
+        preg_match('/name="mcp_gate"[^>]*placeholder="([^"]+)"/', $this->request('GET', '/admin/integrations', 'owner')->body, $second);
         self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{32}$/', $first[1]);
         self::assertNotSame($first[1], $second[1], 'a new suggestion at every load');
 
@@ -238,7 +240,7 @@ final class AdminSettingsTest extends HttpTestCase
         $ok = $this->request('POST', '/admin/settings/mcp', 'owner', 'mcp_access=token&mcp_gate=' . $first[1]);
         self::assertSame(302, $ok->status);
         self::assertStringContainsString('gate: ' . $first[1], (string) file_get_contents($this->dataRoot . '/settings.yaml'));
-        $shown = $this->request('GET', '/admin/settings', 'owner')->body;
+        $shown = $this->request('GET', '/admin/integrations', 'owner')->body;
         self::assertStringContainsString('$REQUEST_HEADER["X-Access-Token"] != "' . $first[1] . '"', $shown);
         self::assertStringContainsString('value="' . $first[1] . '"', $shown);
 
@@ -250,11 +252,11 @@ final class AdminSettingsTest extends HttpTestCase
     public function testTheMcpSectionShowsTheAddressToGiveTheClient(): void
     {
         $session = ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner')];
-        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/settings', cookies: $session, secure: true, host: 'wiki.example.org', basePath: '/reporion'))->body;
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/integrations', cookies: $session, secure: true, host: 'wiki.example.org', basePath: '/reporion'))->body;
         self::assertStringContainsString('value="https://wiki.example.org/reporion/mcp" readonly', $page, 'the address this page came by');
 
         $this->request('POST', '/admin/settings/site', 'owner', str_replace('reports.test.example%2F', 'reports.example.org%2Frep%2F', self::SITE));
-        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/settings', cookies: $session, host: 'other.example'))->body;
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/admin/integrations', cookies: $session, host: 'other.example'))->body;
         self::assertStringContainsString('value="https://reports.example.org/rep/mcp" readonly', $page, 'site.base_url wins, no doubled slash');
     }
 

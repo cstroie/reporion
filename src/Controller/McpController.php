@@ -33,7 +33,7 @@ final class McpController
     public const PROTOCOL = '2025-06-18';
     public const VERSION = '0.2.0';
     /**
-     * Admin → Settings `mcp.access`: off, local network only (Claude Code), everywhere with a token
+     * Admin → Integrations `mcp.access`: off, local network only (Claude Code), everywhere with a token
      * only (a client that sends its own Authorization header, as claude.ai's custom connector can:
      * no OAuth endpoint answers), everywhere with OAuth sign-in too
      */
@@ -46,7 +46,7 @@ final class McpController
         private readonly IndexInterface $index,
         private readonly StorageInterface $storage,
         private readonly AuditLog $audit,
-        // Admin → Settings `mcp.reports` (phase 2): patient pages served de-identified, by pid
+        // Admin → Integrations `mcp.reports` (phase 2): patient pages served de-identified, by pid
         private readonly bool $reports = false,
         // site.base_url: a 401 then names the OAuth metadata (RFC 9728), so a client can connect on its own
         private readonly string $baseUrl = '',
@@ -61,7 +61,7 @@ final class McpController
     }
 
     /**
-     * Whether /mcp answers this request at all (Admin → Settings `mcp.access`). Asked before the
+     * Whether /mcp answers this request at all (Admin → Integrations `mcp.access`). Asked before the
      * token is looked at: a disabled server must not tell a bad token from a good one (404 for
      * both) nor touch the account behind it.
      */

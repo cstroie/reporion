@@ -102,7 +102,7 @@ final class EditorController
         private readonly ?AiConfig $aiConfig = null,
         private readonly ?Checklists $checklists = null,
         private readonly ?References $references = null,
-        /** Admin → Settings `editor.save_stays_open`: a save returns to the editor, not the page */
+        /** Admin → General `editor.save_stays_open`: a save returns to the editor, not the page */
         private readonly bool $saveStaysOpen = false,
         /** The revision note for a Save that leaves *What changed?* empty (2026-10-10) */
         private readonly ?CommitNote $commitNote = null,
@@ -672,7 +672,7 @@ final class EditorController
 
     /**
      * Where a successful save goes: the page, or: with "Save keeps the
-     * editor open" (Admin → Settings, 2026-10-10): back to the editor at
+     * editor open" (Admin → General, 2026-10-10): back to the editor at
      * the revision just written (the same one, for a minor edit), raw mode
      * kept, with `saved` for its notice
      */

@@ -122,7 +122,7 @@ final class NamespaceController
 
         if ($action === 'delete') {
             // Soft delete, like the single page's (Storage::delete(): to data/trash/, back through
-            // Admin → Trash). A signed report is left alone, as Tag does: delete it on its own page.
+            // Admin → Data → Trash). A signed report is left alone, as Tag does: delete it on its own page.
             $deleted = 0;
             $failed = 0;
             $signed = 0;

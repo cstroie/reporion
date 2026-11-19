@@ -11,16 +11,21 @@ use Reporion\Auth\ApiTokens;
 use Reporion\Auth\OAuth;
 use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Auth\User;
 use Reporion\Controller\AdminAiController;
+use Reporion\Controller\AdminDataController;
 use Reporion\Controller\AdminGroupsController;
 use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminMaintenanceController;
-use Reporion\Controller\AdminPluginsController;
+use Reporion\Controller\AdminIntegrationsController;
+use Reporion\Controller\AdminLibraryController;
 use Reporion\Controller\AdminSettingsController;
-use Reporion\Controller\AdminSitesController;
+use Reporion\Controller\AdminReportsController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
+use Reporion\Controller\SettingsPanels;
+use Reporion\Controller\TaskPanels;
 use Reporion\Controller\AiController;
 use Reporion\Controller\AskController;
 use Reporion\Controller\AuthController;
@@ -200,7 +205,7 @@ final class Kernel
 
     /**
      * What conf/local.php does not have to say: the built-in value of every
-     * setting that Admin → Settings overlays from data/settings.yaml. conf/
+     * setting that the admin screens overlay from data/settings.yaml. conf/
      * keeps only the data directory and the session secret; a local.php that
      * still carries any of these keeps winning over the default.
      */
@@ -220,7 +225,7 @@ final class Kernel
     ];
 
     /**
-     * The library's language (Admin → Settings → Library, `library.language`): what the assistant
+     * The library's language (Admin → Library, `library.language`): what the assistant
      * writes in and the References heading reads, for a notebook or source with no `language`
      *
      * @param array<string, mixed> $config
@@ -303,7 +308,7 @@ final class Kernel
     }
 
     /**
-     * $config with data/settings.yaml (Admin → Settings) laid over it, and
+     * $config with data/settings.yaml (the admin screens) laid over it, and
      * the instance's timezone, site name, tagline and icon put in place
      * for the front controller and bin/reporion alike.
      *
@@ -374,7 +379,7 @@ final class Kernel
     }
 
     /**
-     * pages:summarize: bulk Summarize (TODO idea 12), for Admin → Maintenance
+     * pages:summarize: bulk Summarize (TODO idea 12), for Admin → Reports
      * and bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -387,7 +392,7 @@ final class Kernel
     }
 
     /**
-     * pages:tag: bulk Suggest tags (2026-10-08), for Admin → Maintenance and
+     * pages:tag: bulk Suggest tags (2026-10-08), for Admin → Tags and
      * bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -414,7 +419,7 @@ final class Kernel
 
     /**
      * index:vectors: the embeddings of Similar reports (phase 34e), for
-     * Admin → Maintenance and bin/reporion alike
+     * Admin → AI and bin/reporion alike
      *
      * @param array<string, mixed> $config
      */
@@ -424,7 +429,7 @@ final class Kernel
     }
 
     /**
-     * library:abstracts: each library source's abstract page, for Admin → Maintenance and
+     * library:abstracts: each library source's abstract page, for Admin → Library and
      * bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -436,7 +441,7 @@ final class Kernel
 
     /**
      * library:digest: the assistant's one-line summary and key points of each library source that
-     * lacks them, for Admin → Maintenance and the CLI
+     * lacks them, for Admin → Library and the CLI
      *
      * @param array<string, mixed> $config
      */
@@ -509,7 +514,7 @@ final class Kernel
                 // Files kept only until used (data/tmp): the dicom plugin's uploaded file
                 TempUploads::class => new TempUploads((string) $config['paths']['data']),
                 // The sites' devices: read, and link a PACS scanner to one (the dicom plugin)
-                // Whether an owner sees the collapsed Debug panels (Admin → Settings → Debug)
+                // Whether an owner sees the collapsed Debug panels (Admin → General → Debug)
                 DebugPanels::class => new DebugPanels(($config['debug']['panels'] ?? false) === true),
                 SiteDevices::class => new SiteDevices(new InstanceSettings((string) $config['paths']['data']), \is_array($config['sites'] ?? null) ? $config['sites'] : []),
             ],
@@ -634,7 +639,7 @@ final class Kernel
             $stats,
             new \Reporion\Service\StorageStats((string) $config['paths']['data']),
         );
-        // /stats site filter: site key => its name (Admin → Sites)
+        // /stats site filter: site key => its name (Admin → Reports → Sites)
         $siteNames = [];
         foreach (\is_array($config['sites'] ?? null) ? $config['sites'] : [] as $key => $site) {
             $siteNames[(string) $key] = \is_array($site) && \is_string($site['name'] ?? null) && $site['name'] !== '' ? $site['name'] : (string) $key;
@@ -645,9 +650,11 @@ final class Kernel
         $search = new SearchController($index, static function () use (&$ask): bool {
             return $ask instanceof AskController && $ask->available();
         }, self::libraryNamespace($config));
-        $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
+        $settingsPanels = new SettingsPanels(new InstanceSettings((string) $config['paths']['data']), $config);
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index), self::libraryAbstractsTask($config, $storage, $index, $audit), self::libraryNoticesTask($config, $storage, $index, $audit), self::libraryDigestTask($config, $storage, $index, $audit)]);
-        $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
+        $backupService = new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory());
+        $taskPanels = new TaskPanels($maintenanceRunner, $index);
+        $adminLibrary = new AdminLibraryController($index, $settingsPanels, $taskPanels);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, new TagCuration($index, $tags, $tagDictionary, $audit, $maintenanceRunner), $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
@@ -683,7 +690,7 @@ final class Kernel
             (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
             (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
         );
-        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
+        $adminReports = new AdminReportsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit, $settingsPanels, $taskPanels);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions, self::libraryNamespace($config));
         // The MCP server (D56): the wiki for MCP clients, by bearer token only
@@ -758,7 +765,7 @@ final class Kernel
             $tagDictionary,
             $editorPage,
         );
-        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit, new DefaultPrompts($storage, $rootDir . '/resources/prompts'), self::libraryNamespace($config));
+        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit, new DefaultPrompts($storage, $rootDir . '/resources/prompts'), self::libraryNamespace($config), $taskPanels);
         $adminUsers = new AdminUsersController($users, $groups, $index, $audit);
         $adminGroups = new AdminGroupsController($groups, $users, $index, $audit);
         $revisions = new RevisionsController($storage, $index, $audit, $render);
@@ -785,21 +792,34 @@ final class Kernel
             new \Reporion\Service\HeadChildren($index, $storage, $render),
         );
         $profile = new ProfileController($users, $index, $audit, $apiTokens, $groups);
-        $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
-        $adminIndex = new AdminIndexController(
-            new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
-            $index,
-            $audit,
-        );
+        $adminTrash = new AdminTrashController($storage, $audit);
+        $indexMaintenance = new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory());
+        $adminIndex = new AdminIndexController($indexMaintenance, $audit);
+        $adminData = new AdminDataController($indexMaintenance, $storage, $index, $taskPanels, $settingsPanels, $backupService, $trashPurgeDays);
         $newReport = self::newReport($config, $rootDir, $index, $storage, $accessions, $schemas);
         $join = new JoinController(new Joins($storage, $index, $moves, $audit, $newReport->modalityNamespaces()), $index);
         [$pluginLoader, $plugins] = self::loadPlugins($config, $rootDir, $storage, $index, $audit, $newReport, $render, $hooks);
         reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
         reporion_plugin_ui($plugins->ui());
-        $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
+        $adminIntegrations = new AdminIntegrationsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit, $settingsPanels);
         $debugPanels = new DebugPanels(($config['debug']['panels'] ?? false) === true);
         $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks, $editor, $debugPanels, self::libraryNamespace($config));
         $namespace = new NamespaceController($index, $storage, $render, $moves, $tags, $audit);
+
+        // The admin tabs (Support\AdminTabs): a settings save or a task run refused is shown on the tab
+        // that holds its form, so these two are made once every tab's screen exists
+        $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $settingsPanels, $index, $audit, [
+            'data' => static fn (Request $r, User $u, string $error, string $section): Response => $adminData->show($r, $u, $error, $section),
+            'reports' => static fn (Request $r, User $u, string $error, string $section): Response => $adminReports->refused($r, $u, $error, $section),
+            'library' => static fn (Request $r, User $u, string $error, string $section): Response => $adminLibrary->show($r, $u, $error, $section),
+            'integrations' => static fn (Request $r, User $u, string $error, string $section): Response => $adminIntegrations->refused($r, $u, $error, $section),
+        ]);
+        $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, null, $backupService, $audit, [
+            'data' => static fn (Request $r, User $u, string $error): Response => $adminData->show($r, $u, $error),
+            'reports' => static fn (Request $r, User $u, string $error): Response => $adminReports->refused($r, $u, $error),
+            'library' => static fn (Request $r, User $u, string $error): Response => $adminLibrary->show($r, $u, $error),
+            'ai' => static fn (Request $r, User $u, string $error): Response => $adminAi->refusedTask($r, $u, $error),
+        ]);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -1021,6 +1041,10 @@ final class Kernel
             => $adminGroups->show($request, $params['name'], $session->principal($request)));
         $router->post('/admin/groups/{name}', static fn (Request $request, array $params): Response
             => $adminGroups->update($request, $params['name'], $session->principal($request)));
+        $router->get('/admin/data', static fn (Request $request, array $params): Response
+            => $adminData->show($request, $session->principal($request)));
+        $router->get('/admin/library', static fn (Request $request, array $params): Response
+            => $adminLibrary->show($request, $session->principal($request)));
         $router->get('/admin/index', static fn (Request $request, array $params): Response
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
@@ -1055,14 +1079,16 @@ final class Kernel
             => $adminSettings->uploadIcon($request, $session->principal($request)));
         $router->post('/admin/settings/{section}', static fn (Request $request, array $params): Response
             => $adminSettings->save($request, $params['section'], $session->principal($request)));
+        $router->get('/admin/reports', static fn (Request $request, array $params): Response
+            => $adminReports->show($request, $session->principal($request)));
         $router->get('/admin/sites', static fn (Request $request, array $params): Response
-            => $adminSites->show($request, $session->principal($request)));
+            => $adminReports->redirect($request, $session->principal($request)));
         $router->post('/admin/sites', static fn (Request $request, array $params): Response
-            => $adminSites->add($request, $session->principal($request)));
+            => $adminReports->add($request, $session->principal($request)));
         $router->post('/admin/sites/{code}', static fn (Request $request, array $params): Response
-            => $adminSites->save($request, $params['code'], $session->principal($request)));
+            => $adminReports->save($request, $params['code'], $session->principal($request)));
         $router->post('/admin/sites/{code}/remove', static fn (Request $request, array $params): Response
-            => $adminSites->remove($request, $params['code'], $session->principal($request)));
+            => $adminReports->remove($request, $params['code'], $session->principal($request)));
         $router->get('/site-icon/{file}', static fn (Request $request, array $params): Response
             => $adminSettings->icon($request, true));
         $router->get('/favicon.ico', static fn (Request $request, array $params): Response
@@ -1075,12 +1101,14 @@ final class Kernel
             => $adminMaintenance->download($request, $params['file'], $session->principal($request)));
         $router->post('/admin/maintenance/{task}', static fn (Request $request, array $params): Response
             => $adminMaintenance->run($request, $params['task'], $session->principal($request)));
+        $router->get('/admin/integrations', static fn (Request $request, array $params): Response
+            => $adminIntegrations->show($request, $session->principal($request)));
         $router->get('/admin/plugins', static fn (Request $request, array $params): Response
-            => $adminPlugins->show($request, $session->principal($request)));
+            => $adminIntegrations->redirect($request, $session->principal($request)));
         $router->post('/admin/plugins/{id}/toggle', static fn (Request $request, array $params): Response
-            => $adminPlugins->toggle($request, $params['id'], $session->principal($request)));
+            => $adminIntegrations->toggle($request, $params['id'], $session->principal($request)));
         $router->post('/admin/plugins/{id}/settings', static fn (Request $request, array $params): Response
-            => $adminPlugins->save($request, $params['id'], $session->principal($request)));
+            => $adminIntegrations->save($request, $params['id'], $session->principal($request)));
         $router->get('/admin/tags', static fn (Request $request, array $params): Response
             => $adminTags->show($request, $session->principal($request)));
         $router->post('/admin/tags/rename', static fn (Request $request, array $params): Response

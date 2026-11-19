@@ -27,7 +27,7 @@ final class GroffSettingsTest extends HttpTestCase
 
     public function testThePreambleIsATextareaWithTheShippedDefault(): void
     {
-        $screen = $this->request('GET', '/admin/plugins')->body;
+        $screen = $this->request('GET', '/admin/integrations')->body;
 
         self::assertMatchesRegularExpression('#<textarea class="input wk-mono wk-text-sm" name="preamble"[^>]*>\.nr PO 2c\n\.nr LL 17c\n\.nr PS 11p\n\.nr VS 14p\n\.nr PD 4p\n\.ds FAM \{font\}</textarea>#', $screen);
     }
@@ -41,7 +41,7 @@ final class GroffSettingsTest extends HttpTestCase
         $stored = (new InstanceSettings($this->dataRoot))->load()['plugins']['settings']['groff'];
         self::assertSame($preamble, $stored['preamble']);
         self::assertSame('BT', $stored['font']);
-        self::assertStringContainsString("\n.nr LL 16c\n", $this->request('GET', '/admin/plugins')->body);
+        self::assertStringContainsString("\n.nr LL 16c\n", $this->request('GET', '/admin/integrations')->body);
     }
 
     public function testALineThatCouldReadAFileOrRunACommandIsRefused(): void

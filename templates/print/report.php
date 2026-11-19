@@ -16,7 +16,7 @@
  *
  * Variables in scope: string $css, $title, $studyDate, $studyDateTime,
  * list<string> $accessions (one per exam on a multi-exam report), $referrer, $indication, $device, $protocol, $region, $bodyHtml,
- * $verifyUrl; bool $letterhead (the site's switch, Admin → Sites: off prints no header block at all); array $site; ?array $patient; bool $isDraft; int $rev;
+ * $verifyUrl; bool $letterhead (the site's switch, Admin → Reports → Sites: off prints no header block at all); array $site; ?array $patient; bool $isDraft; int $rev;
  * ?array $signer; optional string $printAction (the preview's print button)
  */
 

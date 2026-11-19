@@ -20,19 +20,22 @@ use Reporion\Support\Devices;
 use Reporion\Support\MetaText;
 
 /**
- * Admin → Sites, owner-only: each site's letterhead on printed reports, its
- * accession code and its devices, kept in data/settings.yaml
- * (Service\InstanceSettings) like the rest of Admin → Settings, from which
- * this screen was split out. A card per site, each saved on its own.
+ * Admin → Reports, owner-only: the reports' settings (modality namespaces,
+ * references: SettingsPanels, saved by POST /admin/settings/reports), each
+ * site's letterhead on printed reports, its accession code and its devices,
+ * kept in data/settings.yaml (Service\InstanceSettings), and the report
+ * tasks (pages:summarize, pages:apply-patient-csv: TaskPanels). A card per
+ * site, each saved on its own.
  *
- * GET /admin/sites[?open=code]; POST /admin/sites adds a site (code, name);
+ * GET /admin/reports[?open=code] (GET /admin/sites redirects there); POST
+ * /admin/sites adds a site (code, name);
  * POST /admin/sites/{code} saves one site; POST /admin/sites/{code}/remove
  * removes it (a site reports still name needs `confirm=1`). Each redirects
  * back (Post/Redirect/Get), or answers 422 with the message, the card that
  * caused it showing what was typed, and writes nothing. Audited
  * settings.change with section "sites" and the site's code.
  */
-final class AdminSitesController
+final class AdminReportsController
 {
     /**
      * @param array<string, mixed> $config the effective config (settings already applied)
@@ -42,7 +45,26 @@ final class AdminSitesController
         private readonly array $config,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly SettingsPanels $panels,
+        private readonly TaskPanels $tasks,
     ) {
+    }
+
+    /** GET /admin/sites: the sites' old screen */
+    public function redirect(Request $request, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true) {
+            throw new PageNotFoundException();
+        }
+        $open = (string) ($request->query['open'] ?? '');
+
+        return Response::redirect($request->basePath . '/admin/reports' . ($open !== '' ? '?open=' . rawurlencode($open) . '#site-' . rawurlencode($open) : '#sites'), 301);
+    }
+
+    /** Admin → Reports with a refused settings save or task run: $where is the settings section, or null for a task */
+    public function refused(Request $request, User $principal, string $error, ?string $where = null): Response
+    {
+        return $this->render($request, $principal, null, null, null, $where === null ? $error : null, $where !== null ? $error : null, $where);
     }
 
     /**
@@ -50,6 +72,12 @@ final class AdminSitesController
      * @param ?array<string, mixed> $draft what was posted there, shown back
      */
     public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorSite = null, ?array $draft = null): Response
+    {
+        return $this->render($request, $principal, $error, $errorSite, $draft);
+    }
+
+    /** @param ?array<string, mixed> $draft */
+    private function render(Request $request, ?User $principal, ?string $error, ?string $errorSite, ?array $draft, ?string $maintError = null, ?string $settingsError = null, ?string $section = null): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
@@ -66,17 +94,21 @@ final class AdminSitesController
         $saved = (string) ($request->query['saved'] ?? '');
         $open = $errorSite !== null && $errorSite !== '' ? $errorSite : (string) ($request->query['open'] ?? '');
 
-        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-sites.php', [
+        $failed = $error ?? $maintError ?? $settingsError;
+
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-reports.php', [
             'cards' => $cards,
             'open' => $open,
             'saved' => $saved,
-            'fromFile' => ['sites' => \array_key_exists('sites', $stored)],
+            'sitesFromFile' => \array_key_exists('sites', $stored),
             'error' => $error,
             'errorSite' => $errorSite,
             'addDraft' => $errorSite === '' ? ($draft ?? []) : [],
-            'adminTab' => 'sites',
+            'adminTab' => 'reports',
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.sites.title')), $error === null ? 200 : 422);
+        ] + $this->tasks->vars($request, $principal, 'reports', $maintError)
+          + $this->panels->vars($request, $settingsError, $section)
+          + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.reports.title')), $failed === null ? 200 : 422);
     }
 
     public function add(Request $request, ?User $principal): Response
@@ -130,12 +162,12 @@ final class AdminSitesController
         }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'sites', 'site' => $code, 'keys' => ['sites'], 'removed' => true]);
 
-        return Response::redirect($request->basePath . '/admin/sites?saved=removed#sites');
+        return Response::redirect($request->basePath . '/admin/reports?saved=removed#sites');
     }
 
     private function done(Request $request, string $code): Response
     {
-        return Response::redirect($request->basePath . '/admin/sites?saved=' . rawurlencode($code) . '&open=' . rawurlencode($code) . '#site-' . rawurlencode($code));
+        return Response::redirect($request->basePath . '/admin/reports?saved=' . rawurlencode($code) . '&open=' . rawurlencode($code) . '#site-' . rawurlencode($code));
     }
 
     /** The owner, and a site that exists: 404 otherwise */

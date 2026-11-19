@@ -11,22 +11,21 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Exception\PageNotFoundException;
-use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
-use Reporion\Http\View;
-use Reporion\Index\IndexInterface;
 use Reporion\Service\Backup\BackupService;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
-use Reporion\Service\Maintenance\ReportView;
+use Reporion\Support\AdminTabs;
 
 /**
- * GET /admin/maintenance[?run={id}] and POST /admin/maintenance/{task}
- * Admin → Maintenance, owner-only (decided 2026-09-26): the maintenance
- * commands of bin/reporion, run from the browser through the same
- * Service\Maintenance tasks.
+ * POST /admin/maintenance/{task}, owner-only (decided 2026-09-26): the
+ * maintenance commands of bin/reporion, run from the browser through the
+ * same Service\Maintenance tasks. Their cards are on the admin tab that owns
+ * their topic (Support\AdminTabs::TASK_TAB, Controller\TaskPanels): Data,
+ * Reports, Library, AI, Tags; a run comes back there with its report. GET
+ * /admin/maintenance, the cards' old screen, redirects to Data.
  *
  * Nothing runs on GET. Every run is a POST, which stores its report and
  * redirects to it (Post/Redirect/Get), so a refresh never repeats a repair
@@ -37,60 +36,49 @@ use Reporion\Service\Maintenance\ReportView;
  */
 final class AdminMaintenanceController
 {
-    /** The tasks about tags: their cards are on Admin → Tags, which they send the owner back to */
-    public const TAG_TASKS = ['pages:tag', 'tags:prune', 'tags:review'];
-
     /** Seconds after which an unfinished run is taken as stopped, not running */
     private const UNFINISHED_AFTER = 3600;
 
     /** Under PHP-FPM a run finishes after its response: the form answers at once */
     private readonly bool $detach;
 
-    private readonly ReportView $view;
-
+    /**
+     * @param array<string, \Closure(Request, User, string): Response> $tabs a tab key => its screen with a
+     *        refused run's message (Support\AdminTabs::TASK_TAB)
+     */
     public function __construct(
         private readonly MaintenanceRunner $runner,
-        private readonly IndexInterface $index,
         ?bool $detach = null,
         private readonly ?BackupService $backups = null,
         private readonly ?AuditLog $audit = null,
+        private readonly array $tabs = [],
     ) {
         $this->detach = $detach ?? \function_exists('fastcgi_finish_request');
-        $this->view = new ReportView($runner, $index);
     }
 
-    public function show(Request $request, ?User $principal, ?string $error = null): Response
+    /** GET /admin/maintenance: the old address of the task cards, now on Data and the tabs that own them */
+    public function show(Request $request, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
         }
+        $run = (string) ($request->query['run'] ?? '');
+        $report = $run !== '' ? $this->runner->load($run) : null;
+        $home = $report !== null ? AdminTabs::taskRoute($report->task) . '?run=' . rawurlencode($run) . '#report' : AdminTabs::route('data');
 
-        $view = $this->view->forRun((string) ($request->query['run'] ?? ''), $principal);
-
-        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-maintenance.php', [
-            'tasks' => array_diff_key($this->runner->tasks(), array_flip(self::TAG_TASKS)),
-            'recent' => $this->runner->recent(15),
-            'backups' => $this->backups?->backups() ?? [],
-            'busy' => isset($request->query['busy']),
-            'error' => $error,
-            'cronRoot' => \dirname(__DIR__, 2),
-            'cronUser' => self::processUser(),
-            'adminTab' => 'maintenance',
-            'basePath' => $request->basePath,
-        ] + $view + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.maint.title')), $error === null ? 200 : 422);
+        return Response::redirect($request->basePath . $home, 301);
     }
 
-    /** The account PHP runs as: whose crontab the scheduled jobs belong in */
-    private static function processUser(): string
+    /** A run refused before it began: its message on the tab whose card sent it */
+    private function refused(Request $request, User $principal, string $task, string $error, string $code = 'invalid'): Response
     {
-        if (\function_exists('posix_geteuid') && \function_exists('posix_getpwuid')) {
-            $info = posix_getpwuid(posix_geteuid());
-            if (\is_array($info) && $info['name'] !== '') {
-                return (string) $info['name'];
-            }
+        $tab = AdminTabs::taskTab($task);
+        if (isset($this->tabs[$tab])) {
+            return ($this->tabs[$tab])($request, $principal, $error);
         }
 
-        return 'www-data';
+        // A tab without its own error screen (Tags) shows the generic message
+        return Response::redirect($request->basePath . AdminTabs::route($tab) . '?maint=' . $code);
     }
 
     public function run(Request $request, string $task, ?User $principal): Response
@@ -100,12 +88,10 @@ final class AdminMaintenanceController
         }
         parse_str($request->body, $fields);
         $mode = (string) ($fields['mode'] ?? MaintenanceTask::CHECK);
-        // A tag task started from Admin → Tags comes back there, with its report
-        $home = ($fields['return'] ?? '') === 'tags' && \in_array($task, self::TAG_TASKS, true) ? '/admin/tags' : '/admin/maintenance';
+        // A run comes back, with its report, to the tab whose card started it
+        $home = AdminTabs::taskRoute($task);
         if ($mode === MaintenanceTask::APPLY && ($fields['confirm'] ?? '') !== '1') {
-            return $home === '/admin/tags'
-                ? Response::redirect($request->basePath . $home . '?maint=confirm')
-                : $this->show($request, $principal, t('admin.maint.err_confirm'));
+            return $this->refused($request, $principal, $task, t('admin.maint.err_confirm'), 'confirm');
         }
 
         // A full pass over every page; don't let a default 30 s limit cut it off
@@ -115,9 +101,7 @@ final class AdminMaintenanceController
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . $home . '?busy=1');
         } catch (InvalidArgumentException $e) {
-            return $home === '/admin/tags'
-                ? Response::redirect($request->basePath . $home . '?maint=invalid')
-                : $this->show($request, $principal, $e->getMessage());
+            return $this->refused($request, $principal, $task, $e->getMessage());
         }
         if ($begun['id'] === null) {
             $run = $this->runner->complete($begun, $request);

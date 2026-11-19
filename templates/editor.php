@@ -173,7 +173,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     : '';
 ?>
 <div class="wk-tbar" id="editor-toolbar" role="toolbar" aria-label="<?= $e(t('editor.toolbar')) ?>">
-<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings): over the toolbar, same size, then fades away; assets/js/editor.js removes it */ ?>
+<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → General): over the toolbar, same size, then fades away; assets/js/editor.js removes it */ ?>
 <div class="wk-tbar-toast">
 <?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
 </div>

@@ -41,9 +41,9 @@ final class AdminSitesTest extends HttpTestCase
     public function testEveryRouteIsOwnerOnly(): void
     {
         $this->add('mioveni', 'Spital');
-        self::assertSame(200, $this->request('GET', '/admin/sites', 'owner')->status);
+        self::assertSame(200, $this->request('GET', '/admin/reports', 'owner')->status);
         foreach ([null, 'editor'] as $user) {
-            self::assertSame(404, $this->request('GET', '/admin/sites', $user)->status);
+            self::assertSame(404, $this->request('GET', '/admin/reports', $user)->status);
             self::assertSame(404, $this->request('POST', '/admin/sites', $user, 'code=x&name=X')->status);
             self::assertSame(404, $this->request('POST', '/admin/sites/mioveni', $user, 'name=X')->status);
             self::assertSame(404, $this->request('POST', '/admin/sites/mioveni/remove', $user)->status);
@@ -58,13 +58,13 @@ final class AdminSitesTest extends HttpTestCase
     {
         $added = $this->request('POST', '/admin/sites', 'owner', 'code=Mioveni&name=Spital+Test');
         self::assertSame(302, $added->status);
-        self::assertStringEndsWith('/admin/sites?saved=mioveni&open=mioveni#site-mioveni', $added->headers['Location']);
+        self::assertStringEndsWith('/admin/reports?saved=mioveni&open=mioveni#site-mioveni', $added->headers['Location']);
         self::assertSame('Spital Test', $this->stored()['mioveni']['name']);
 
-        $screen = $this->request('GET', '/admin/sites', 'owner', query: ['saved' => 'mioveni', 'open' => 'mioveni'])->body;
+        $screen = $this->request('GET', '/admin/reports', 'owner', query: ['saved' => 'mioveni', 'open' => 'mioveni'])->body;
         self::assertStringContainsString('<details class="wk-site" name="site" id="site-mioveni" open>', $screen);
         self::assertStringContainsString('0 reports · 0 devices', $screen);
-        self::assertStringNotContainsString('id="site-mioveni" open>', $this->request('GET', '/admin/sites', 'owner')->body, 'entering the page, every site is closed');
+        self::assertStringNotContainsString('id="site-mioveni" open>', $this->request('GET', '/admin/reports', 'owner')->body, 'entering the page, every site is closed');
         self::assertStringContainsString('role="status"', $screen, 'saved, in the card');
 
         $bad = $this->request('POST', '/admin/sites', 'owner', 'code=' . rawurlencode('Bad Code!') . '&name=X');
@@ -101,12 +101,12 @@ final class AdminSitesTest extends HttpTestCase
     {
         $this->add('mioveni', 'Spital Test');
         self::assertFalse($this->stored()['mioveni']['letterhead'] ?? false, 'a new site prints no letterhead');
-        $page = $this->request('GET', '/admin/sites', 'owner')->body;
+        $page = $this->request('GET', '/admin/reports', 'owner')->body;
         self::assertMatchesRegularExpression('#<input type="checkbox" name="letterhead" value="1" data-lh-switch>#', $page);
 
         $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital Test', 'letterhead' => '1']));
         self::assertTrue($this->stored()['mioveni']['letterhead']);
-        self::assertMatchesRegularExpression('#name="letterhead" value="1" checked data-lh-switch#', $this->request('GET', '/admin/sites', 'owner')->body);
+        self::assertMatchesRegularExpression('#name="letterhead" value="1" checked data-lh-switch#', $this->request('GET', '/admin/reports', 'owner')->body);
 
         // An unticked box posts nothing
         $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital Test']));
@@ -122,7 +122,7 @@ final class AdminSitesTest extends HttpTestCase
 
         self::assertSame(['name' => 'Sempra', 'pacs' => ['SIEMENS Aera / MR1', 'AWP181840', 'SN 181840'], 'inst' => ['Medima Health']], $this->stored()['scuc']['devices']['SC-MR-05']);
 
-        $page = $this->request('GET', '/admin/sites', 'owner')->body;
+        $page = $this->request('GET', '/admin/reports', 'owner')->body;
         self::assertStringContainsString('pacs:AWP181840', $page);
         self::assertStringContainsString('sn:181840', $page);
         self::assertStringContainsString('inst:Medima Health', $page);
@@ -142,7 +142,7 @@ final class AdminSitesTest extends HttpTestCase
         self::assertSame('Plain', $devices['SC-CT-02']);
 
         // Shown back as ticked chips: a save of the form as it stands keeps them
-        $screen = $this->request('GET', '/admin/sites', 'owner')->body;
+        $screen = $this->request('GET', '/admin/reports', 'owner')->body;
         self::assertStringContainsString('name="devices[1][pacs][]" value="SIEMENS Aera / MR1" checked>', $screen);
         self::assertStringContainsString('name="devices[0][inst][]" value="Sala 2" checked>', $screen);
 
@@ -179,7 +179,7 @@ final class AdminSitesTest extends HttpTestCase
         $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital', 'accession_code' => 'mv']));
 
         self::assertSame('MV', $this->stored()['mioveni']['accession_code']);
-        self::assertStringNotContainsString('Next (', $this->request('GET', '/admin/sites', 'owner')->body, 'no preview: it walks every page on disk');
+        self::assertStringNotContainsString('Next (', $this->request('GET', '/admin/reports', 'owner')->body, 'no preview: it walks every page on disk');
     }
 
     public function testRemovingASiteReportsStillNameNeedsConfirmation(): void
@@ -189,7 +189,7 @@ final class AdminSitesTest extends HttpTestCase
         (new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
             ->create('reports:mri:mioveni:260101-test-subject', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni'], "text\n", 'owner');
 
-        self::assertStringContainsString('1 report ·', $this->request('GET', '/admin/sites', 'owner')->body, 'counted');
+        self::assertStringContainsString('1 report ·', $this->request('GET', '/admin/reports', 'owner')->body, 'counted');
         $refused = $this->request('POST', '/admin/sites/mioveni/remove', 'owner');
         self::assertSame(422, $refused->status);
         self::assertStringContainsString('named by 1 reports', $refused->body);
@@ -204,7 +204,7 @@ final class AdminSitesTest extends HttpTestCase
     public function testTheFirstSaveCopiesConfsSitesIntoTheFileAndTheAuditNamesTheSite(): void
     {
         $this->config['sites'] = ['a' => ['name' => 'Site A', 'devices' => ['A-1' => 'One']], 'b' => ['name' => 'Site B']];
-        self::assertStringContainsString('conf/local.php', $this->request('GET', '/admin/sites', 'owner')->body);
+        self::assertStringContainsString('conf/local.php', $this->request('GET', '/admin/reports', 'owner')->body);
 
         $this->request('POST', '/admin/sites/a', 'owner', http_build_query(['name' => 'Site A+', 'devices' => [['code' => 'A-1', 'name' => 'One']]]));
 

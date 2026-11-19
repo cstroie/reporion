@@ -2,14 +2,16 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Sites (Controller\AdminSitesController): a card per site, each its own form:
+ * Admin → Reports (Controller\AdminReportsController): the reports' settings
+ * (partials/settings/reports.php), then a card per site, each its own form:
  * the letterhead on printed reports (with a preview of it), the accession code, and the site's devices as rows, the PACS scanner names and
  * institution texts linked to a device as chips (a ticked box: untick it to drop it).
- * From data/settings.yaml, else from conf/local.php (marked as such).
+ * From data/settings.yaml, else from conf/local.php (marked as such). Then the
+ * report tasks' cards (TaskPanels).
  *
  * Variables in scope: list<array<string, mixed>> $cards; string $open, $saved;
- * array<string, bool> $fromFile; ?string $error, $errorSite; array<string, mixed> $addDraft;
- * string $adminTab, $basePath
+ * bool $sitesFromFile; ?string $error, $errorSite; array<string, mixed> $addDraft;
+ * SettingsPanels::vars(); TaskPanels::vars(); string $adminTab, $basePath
  */
 
 declare(strict_types=1);
@@ -17,27 +19,29 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $cards */
 /** @var string $open */
 /** @var string $saved */
-/** @var array<string, bool> $fromFile */
+/** @var bool $sitesFromFile */
+/** @var array<string, \Reporion\Service\Maintenance\MaintenanceTask> $tasks */
 /** @var ?string $error */
 /** @var ?string $errorSite */
 /** @var array<string, mixed> $addDraft */
 /** @var string $basePath */
 
-$b = htmlspecialchars($basePath, ENT_QUOTES);
-$e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
-$source = $fromFile['sites'] ?? false ? '' : ' <span class="wk-mono wk-dim wk-text-xs">' . $e(t('admin.settings.from_local')) . '</span>';
+include __DIR__ . '/partials/settings/helpers.php';
+$sitesSource = $sitesFromFile ? '' : ' <span class="wk-mono wk-dim wk-text-xs">' . $e(t('admin.settings.from_local')) . '</span>';
 $count = static fn (int $n, string $key): string => $n === 1 ? t($key . '_one') : t($key, [$n]);
 $blankDevices = 1;
 ?>
 <div class="wk-doc">
 <header class="wk-doc-head">
-<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.sites.title')]]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.sites.title')) ?></h1></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.reports.title')]]) ?>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.reports.title')) ?></h1></div>
 </header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
+<?php include __DIR__ . '/partials/admin-run.php'; ?>
+<?php include __DIR__ . '/partials/settings/reports.php'; ?>
 
 <div class="wk-panel" id="sites">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></h2><p class="wk-dim"><?= $e(t('admin.sites.help')) ?></p></hgroup><?= $source ?></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></h2><p class="wk-dim"><?= $e(t('admin.sites.help')) ?></p></hgroup><?= $sitesSource ?></header>
 <?php if ($saved === 'removed'): ?><?php $noticeKind = 'ok'; $noticeText = t('admin.sites.removed'); include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <?php if ($cards === []): ?><p class="wk-dim"><?= $e(t('admin.sites.empty')) ?></p><?php endif; ?>
 <div class="wk-sites">
@@ -111,5 +115,8 @@ $blankDevices = 1;
 <button class="btn btn-primary" type="submit"><i class="ph ph-plus" aria-hidden="true"></i><?= $e(t('admin.sites.add')) ?></button>
 </form>
 </div>
+<?php foreach ($tasks as $name => $task): ?>
+<?php include __DIR__ . '/partials/maint-task.php'; ?>
+<?php endforeach; ?>
 </div>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/admin-sites.js')) ?>" defer></script>

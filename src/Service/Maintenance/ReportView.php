@@ -14,7 +14,7 @@ use Reporion\Index\IndexInterface;
  * What a screen needs to show one stored run (`?run=`): the report, whether
  * it is still running, and the title and path of the pages its first items
  * name (the report holds pids only: this owner-only lookup is the one place
- * they are resolved). Shared by Admin → Maintenance and Admin → Tags.
+ * they are resolved). Shared by the admin tabs that run tasks (Controller\TaskPanels).
  */
 final class ReportView
 {

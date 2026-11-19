@@ -21,6 +21,7 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\ReportView;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\TagCuration;
+use Reporion\Support\AdminTabs;
 use Reporion\Support\TagProposals;
 
 /**
@@ -89,8 +90,8 @@ final class AdminTagsController
             'error' => $error,
             'adminTab' => 'tags',
             'basePath' => $request->basePath,
-            // The tag tasks (Admin → Maintenance's, moved here): their cards, and the report of the run just made
-            'tasks' => $this->maintenance !== null ? array_intersect_key($this->maintenance->tasks(), array_flip(AdminMaintenanceController::TAG_TASKS)) : [],
+            // The tag tasks (Support\AdminTabs::TASK_TAB): their cards, and the report of the run just made
+            'tasks' => $this->maintenance !== null ? AdminTabs::tasksFor($this->maintenance->tasks(), 'tags') : [],
             'busy' => isset($request->query['busy']),
             'maintError' => match ($request->query['maint'] ?? null) {
                 'confirm' => t('admin.maint.err_confirm'),

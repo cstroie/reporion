@@ -58,11 +58,19 @@ final class AdminAiController
         private readonly ?DefaultPrompts $defaults = null,
         /** The library's namespace: the profile routed there is offered the research examples */
         private readonly string $libraryNamespace = 'library',
+        /** The AI tasks' cards (index:vectors, ai:prompts-relocate: Support\AdminTabs::TASK_TAB) */
+        private readonly ?TaskPanels $tasks = null,
     ) {
     }
 
+    /** Admin → AI with a task run refused before it began */
+    public function refusedTask(Request $request, User $principal, string $error): Response
+    {
+        return $this->show($request, $principal, maintError: $error);
+    }
+
     /** @param ?array<string, mixed> $check a server check's report, when one was asked for */
-    public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorSection = null, ?array $check = null): Response
+    public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorSection = null, ?array $check = null, ?string $maintError = null): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
@@ -145,7 +153,8 @@ final class AdminAiController
             'errorSection' => $errorSection,
             'adminTab' => 'ai',
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.ai.title')), $error === null ? 200 : 422);
+        ] + ($this->tasks?->vars($request, $principal, 'ai', $maintError) ?? ['tasks' => [], 'busy' => false, 'maintError' => null, 'runId' => null, 'report' => null, 'running' => null, 'pages' => [], 'shownItems' => 0])
+          + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.ai.title')), $error === null && $maintError === null ? 200 : 422);
     }
 
     public function save(Request $request, string $section, ?User $principal): Response

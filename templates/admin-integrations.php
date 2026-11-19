@@ -2,15 +2,16 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Plugins (Controller\AdminPluginsController): content only. One
- * panel per plugin found under plugins/: its manifest, enable/disable, and
+ * Admin → Integrations (Controller\AdminIntegrationsController): content
+ * only. The MCP server's panel (partials/settings/mcp.php, drawn in its own
+ * scope from $settingsVars), then one panel per plugin found under plugins/: its manifest, enable/disable, and
  * its settings as a form built from the manifest's types. A `secret` is
  * never printed back. Setting labels and help come from the manifest.
  *
  * Variables in scope: array<string, \Reporion\Plugin\Manifest> $manifests;
  * array<string, string> $invalid, $failed; list<string> $enabled, $loaded;
  * array<string, array<string, mixed>> $values; ?string $saved, $error,
- * $errorPlugin; string $adminTab, $basePath
+ * $errorPlugin; array<string, mixed> $settingsVars (SettingsPanels::vars()); string $adminTab, $basePath
  */
 
 declare(strict_types=1);
@@ -32,16 +33,24 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-doc">
 <header class="wk-doc-head">
-<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.plugins.title')]]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.plugins.title')) ?></h1></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.integrations.title')]]) ?>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.integrations.title')) ?></h1></div>
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.plugins.count', [\count($manifests)])) ?></span><span class="wk-mono wk-dim"><?= $e(t('admin.plugins.explain')) ?></span></div>
 </header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <?php if ($error !== null): ?>
 <?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
-<?php elseif ($saved !== null): ?>
+<?php elseif ($saved !== null && isset($manifests[$saved])): ?>
 <?php $noticeKind = 'ok'; $noticeText = t('admin.plugins.saved', [$saved]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
+<?= (static function (array $vars): string {
+    extract($vars);
+    ob_start();
+    include __DIR__ . '/partials/settings/helpers.php';
+    include __DIR__ . '/partials/settings/mcp.php';
+
+    return (string) ob_get_clean();
+})($settingsVars) ?>
 <?php if ($manifests === [] && $invalid === []): ?>
 <p class="wk-dim"><?= $e(t('admin.plugins.empty')) ?></p>
 <?php endif; ?>
