@@ -100,7 +100,7 @@ and every allocation also stays above the
 highest number the index holds for that key, so a batch brought in since cannot be collided with.
 Formatted with `accession.pattern` / `seq_pad` from config: the live archive reads
 `SCUC-MR-23-1764`:`{SITE}` is the site code upper-cased (or the site's `accession_code` from
-Admin → Settings), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
+Admin → General), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
 The accession is for the team (screen, search, index); it is not printed: an export shows the
 PACS's `pacs_accession` instead (§3f, 2026-10-12). Lost with the database, the counters are
 re-seeded from the accessions on disk by `db:recover` (docs/architecture-v2.md §10).
@@ -124,9 +124,9 @@ yet. The names exist only in the database: `db:recover` cannot bring them back, 
 
 ## 3c. `data/maintenance/`: maintenance runs
 
-(Also here: `backup-rsync.json` `{last_attempt, last_success, last_exit, snapshot, files, bytes}` (D49): the rsync backup's status note, epoch seconds, read by `--if-due`, Admin → Settings and `doctor`; a cache of nothing on disk that matters: deleting it makes the next hourly check run a snapshot. `rsync_known_hosts`: ssh's pinned host key of the backup machine.)
+(Also here: `backup-rsync.json` `{last_attempt, last_success, last_exit, snapshot, files, bytes}` (D49): the rsync backup's status note, epoch seconds, read by `--if-due`, Admin → General and `doctor`; a cache of nothing on disk that matters: deleting it makes the next hourly check run a snapshot. `rsync_known_hosts`: ssh's pinned host key of the backup machine.)
 
-`runs/{yyyymmdd-hhmmss-xxxxxx}.json`: one report per maintenance run, from Admin → Maintenance or
+`runs/{yyyymmdd-hhmmss-xxxxxx}.json`: one report per maintenance run, from Admin → Data or
 `bin/reporion` (the same JSON `--json` prints; the last 100 are kept). Pages appear by pid only,
 never by path (invariant 8). `.lock`: the lock every maintenance write takes (apply runs,
 `index:rebuild`). Nothing here is needed to rebuild anything: deleting the directory loses only
@@ -134,7 +134,7 @@ the run history.
 
 ## 3d. `data/settings.yaml`: this instance's settings (decided 2026-09-26)
 
-Edited from Admin → Settings and Admin → AI (`Service\InstanceSettings`), one section per save, each audited
+Edited from Admin → General and Admin → AI (`Service\InstanceSettings`), one section per save, each audited
 `settings.change` with the keys that changed. YAML, written atomically; hand edits are fine, the
 next save rewrites the file (comments are not kept). It mirrors the config keys the code reads and
 is laid over `conf/local.php` at every boot, for the front controller and `bin/reporion` alike;
@@ -176,7 +176,7 @@ mcp:
   write_anywhere: false       # create_page/update_page/update_meta also from outside the local network
   redirect_uris: []           # OAuth return addresses allowed besides Claude's callbacks and http://localhost (settings.yaml only)
   reports: false              # D56 phase 2: /mcp serves reports de-identified (by pid), off by default
-  gate: ''                    # the value of the X-Access-Token header the web server requires on /mcp (16-128 of A-Za-z0-9_-); PHP never checks it, Admin → Settings shows the server rule
+  gate: ''                    # the value of the X-Access-Token header the web server requires on /mcp (16-128 of A-Za-z0-9_-); PHP never checks it, Admin → General shows the server rule
 pages:
   trash_purge_days: 30
 media:
@@ -193,7 +193,7 @@ library:
   language: ro                     # the library's language: the assistant's answers and the References heading for a notebook or source with no `language` (ro, en, fr, de, es, it, hu)
 debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)
-backup:                              # the periodic rsync backup (D49), edited in Admin → Settings → Backup
+backup:                              # the periodic rsync backup (D49), edited in Admin → Data → Backup
   enabled: false                     # true: `bin/reporion backup:rsync --if-due` (cron) makes a snapshot when one is due; a hand-run needs only a target
   transport: ssh                     # ssh | daemon: an rsync daemon (`rsync://host/module/`), not encrypted: a trusted network only
   host: backup.example.org           # host name or IPv4 address (never starts with `-`)
@@ -253,7 +253,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
     - {name: '', endpoint: '', tiers: {}}
                                      # `extra`: a JSON object merged into the request last, ≤ 2 KB,
                                      # never model/messages/stream/stream_options.
-plugins:                             # Admin → Plugins (docs/architecture-api.md §5)
+plugins:                             # Admin → Integrations (docs/architecture-api.md §5)
   enabled: [hipobridge]              # laid over conf/local.php's plugins.enabled
   settings:                          # per plugin id, validated by its plugin.json settings
     hipobridge:
@@ -401,7 +401,7 @@ Assistant, it is the rail's *Reference* section (an accordion. Reference, Checkl
 one open at a time). Read and rendered when the report is shown.
 A page the reader cannot see, or one that does not exist, gives no button (invariant 6). The
 template's Metadata view picks it from the pages under the reference namespaces
-(`references.namespaces` in `data/settings.yaml`, Admin → Settings → Reports; default
+(`references.namespaces` in `data/settings.yaml`, Admin → General → Reports; default
 `radiology`). Moving the reference page (`page:move`, the bulk move) rewrites it in every unsigned
 template. Never printed or exported.
 
@@ -791,7 +791,7 @@ the byte count for `dicom.file`). `login.fail` names the attempted username only
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
 in the log.
 
-**Pseudouser actors (D41, 2026-10-12).** `actor` is `system:summarizer|tagger|importer|pacs|admin` (`system:ai` reserved, not yet written) on the `page.save`/`page.create` lines of maintenance tasks (`pages:summarize`, `pages:tag`, `tags:prune`, `pages:apply-patient-csv`, `pacs:link`) and the HippoBridge import. `tags:prune` writes `page.save` with `reason: tag-remove`. Those lines also carry `on_behalf_of`: the username of whoever ran the CLI (`--actor`) or clicked in Admin → Maintenance / the HippoBridge tab. The revision's revlog `by` and the page's `created_by` name the same pseudouser. A pseudouser is not an account (no `data/users/` file); `page.sign` is never one. `maintenance.run` and the maintenance reports still name the human.
+**Pseudouser actors (D41, 2026-10-12).** `actor` is `system:summarizer|tagger|importer|pacs|admin` (`system:ai` reserved, not yet written) on the `page.save`/`page.create` lines of maintenance tasks (`pages:summarize`, `pages:tag`, `tags:prune`, `pages:apply-patient-csv`, `pacs:link`) and the HippoBridge import. `tags:prune` writes `page.save` with `reason: tag-remove`. Those lines also carry `on_behalf_of`: the username of whoever ran the CLI (`--actor`) or clicked a task card in the admin tabs / the HippoBridge tab. The revision's revlog `by` and the page's `created_by` name the same pseudouser. A pseudouser is not an account (no `data/users/` file); `page.sign` is never one. `maintenance.run` and the maintenance reports still name the human.
 
 **Built so far (`Audit\AuditLog`):** page create/save/revert/sign/delete from the browser, the
 JSON API, exports, logins, password changes (own, with
@@ -1114,7 +1114,7 @@ screen; `patient` is the parents' together, `tags` and `priors` their union (min
 The path is the first exam's modality folder (or one of the others', picked), the site, then a
 last segment the user edits on the check screen (2026-10-09): it defaults to the earliest exam's day
 and what the parents' names share, whole words only (`…-rk` and `…-lk` give `…`), and must start with
-that day, be a report name and not be another page's path (a parent's is free). The parents go to the trash (`Storage::delete`; Admin → Trash
+that day, be a report name and not be another page's path (a parent's is free). The parents go to the trash (`Storage::delete`; Admin → Data → Trash
 restores them, a signed one with its signatures); links to them in unsigned pages: body links,
 `priors`: are pointed at the joined report. A parent saved since the check screen was shown stops
 the join, nothing written. Audited: `page.join` (the new pid; the parents as `pid@rev`), plus

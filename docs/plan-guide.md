@@ -32,7 +32,7 @@ and official.
   (the 13 columns, by name), UTF-8, the `Tip`/`Indicație`/`Grad` values against their legends
   (unknown → a warning, the row kept), writes the file atomically (temp + fsync + rename,
   invariant 7), then fills the index tables (§2). Audited `guide.load` with the sha and the row count.
-  Also from Admin → Maintenance (`Service\Maintenance`), with an upload, for an owner.
+  Also from Admin → Data (`Service\Maintenance`), with an upload, for an owner.
 - No patient data can be in it, but the loader still refuses a CNP-shaped number (as the library).
 
 ### 2. Index tables (disposable, index.sqlite: **schema change to approve**)

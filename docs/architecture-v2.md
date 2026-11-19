@@ -272,7 +272,7 @@ Nothing legal is in the last row: every revision and signature is in a zip.
 
 `tools/migrate-v2.php`, run once by hand as the owner of `data/` with the instance stopped. It
 uses the autoloader and the 1.x reading code (`Support\Revlog`, the canonicaliser), so it checks
-rather than only copies. Not a `bin/reporion` command, not in Admin → Maintenance.
+rather than only copies. Not a `bin/reporion` command, not in Admin → Data.
 
 ```
 php tools/migrate-v2.php --from=data --to=data.v2 [--dry-run] [--json]

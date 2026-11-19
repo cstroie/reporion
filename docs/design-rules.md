@@ -75,6 +75,13 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   the document, a status bar.
 - **Admin is one route per tab**, with the shared tab row `templates/admin-tabs.php`; not one tabbed
   island.
+- **An admin tab owns its settings and its tasks** (2026-11-19, owner's request: the tabs had grown one
+  feature at a time). Eight tabs, `Support\AdminTabs`: People (Users, Groups as a `.seg` sub-row) ·
+  General · Reports · Library · AI · Tags · Data · Integrations. A settings section's form
+  (`templates/partials/settings/{section}.php`) and a maintenance task's card sit on the tab of their
+  topic (`SettingsPanels::SECTION_TAB`, `AdminTabs::TASK_TAB`), never on a catch-all Settings or
+  Maintenance screen; what is about storage (index, journal, integrity, trash, backups, cron, recent
+  runs) is Data. A new setting or task names its tab in the same commit; a plugin's task is on Data.
 
 ## Page head
 
@@ -295,7 +302,7 @@ exactly one is on, drawn as a bar with the chosen one filled in accent.
 ### Disabled | Enabled
 
 The switch for turning a thing on or off (a plugin, the assistant) is **one markup, on every page**
-(`admin-plugins.php`, `admin-ai.php`):
+(`admin-integrations.php`, `admin-ai.php`):
 
 ```html
 <span class="wk-actions">

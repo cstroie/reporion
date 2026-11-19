@@ -8,7 +8,7 @@ tidy-up. The *Proposal* section is for the owner to approve **before any live pa
 
 | Kind | Path | Read by | Notes |
 |---|---|---|---|
-| **Report** | `reports:{modality ns}:{site}:{yymmdd}-{name}` | everything: `ReportPath::isReport()` | The leaf shape is what makes it one; other pages under `reports:` (a site or modality description) are ordinary pages. Modality ns from `reports.modality_namespaces` (Admin → Settings). |
+| **Report** | `reports:{modality ns}:{site}:{yymmdd}-{name}` | everything: `ReportPath::isReport()` | The leaf shape is what makes it one; other pages under `reports:` (a site or modality description) are ordinary pages. Modality ns from `reports.modality_namespaces` (Admin → General). |
 | **Template** | `templates:{modality ns}:{name}` | new-report form, editor pickers, checklist, reference (D45, FORMATS §3i-b) | `PageKind::TEMPLATE`. Metadata and the exam name are used; the text is only inserted on request. |
 | **Snippet** | `templates:snippets:{name}` (shared), `templates:snippets:{modality ns}:{name}` | editor `;name` expansion (D24) | Exactly 3 or 4 segments (`Service\Snippets`). A modality's wins over a shared one. |
 | **Prompt** | `ai:profiles:{profile}:{id}` | the assistant (FORMATS §13) | The profile page `ai:profiles:{profile}` is a table. Where the assistant is offered: `ai.namespaces` (default `reports`); which profile: `ai.prompt_profile`. |

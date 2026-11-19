@@ -162,7 +162,7 @@ assistant's own, with its retries, so the worst case is 7 × (4 × `ai.timeout` 
 time. `max_execution_time` (the pool's `php_admin_value`) and `request_terminate_timeout` must allow what the owner
 accepts: with a 60 s model, 10 minutes covers a normal long article. The page shows "part k of n" as the events come
 (`server.stream-response-body = 2`, above), so an idle timeout in front of PHP does not cut it; a source needing more
-than 6 parts is refused before any request (raise *Assistant context for the library* in Admin → Settings → Library, `library.context_tokens`, if the model allows).
+than 6 parts is refused before any request (raise *Assistant context for the library* in Admin → Library, `library.context_tokens`, if the model allows).
 
 **Studio is longer still.** A Studio text of a notebook (docs/library.md, phase 6) whose sources do not fit one request
 condenses them source by source, then writes; the comparison asks each source on its own. At most 16 requests in one
@@ -225,7 +225,7 @@ an embedding model (e.g. `nomic-embed-text`), or a dedicated slot among the six 
 Configured as `ai.embed_server` + `ai.embed_model` (one model for the whole instance, not one per
 server, docs/FORMATS.md §3d). The same egress rule as any AI call applies: a server outside the
 private network needs the owner's acknowledgement before de-identified text is sent to it.
-`index:rebuild --vectors` / `index:vectors` (Admin → Maintenance) call it in batches: expect
+`index:rebuild --vectors` / `index:vectors` (Admin → AI) call it in batches: expect
 minutes, not seconds, on a large archive (see the `max_execution_time` note above).
 
 ## Checks
@@ -270,8 +270,8 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
        sudo -u www-data ssh-copy-id -i /var/www/.ssh/reporion_backup.pub backup@host
 
    (`/var/www` is `www-data`'s home on Debian/Ubuntu; check with `getent passwd www-data`.)
-3. Admin → Settings → Backup: host, user, directory, the key file's path, how long to keep
-   snapshots, how often. Admin → Maintenance → *Rsync backup* → **Check** asks the target without
+3. Admin → Data → Backup: host, user, directory, the key file's path, how long to keep
+   snapshots, how often. Admin → Data → *Rsync backup* → **Check** asks the target without
    storing anything.
 4. `sudo -u www-data bin/reporion backup:rsync` once by hand (the first copy is everything), then
    in `sudo crontab -u www-data -e`: `7 * * * *  cd /var/www/reporion && bin/reporion backup:rsync --if-due`.
@@ -292,7 +292,7 @@ daemon running (`systemctl enable --now rsync`):
         secrets file = /etc/rsyncd.secrets  # reporion:thepassword, mode 600
 
 then, here, as the web user, the same password alone in a file of mode 600
-(`/var/www/.rsync_backup_pass`) and in Admin → Settings → Backup: *Reach the machine through* the
+(`/var/www/.rsync_backup_pass`) and in Admin → Data → Backup: *Reach the machine through* the
 rsync daemon, host, port 873, module `reporion`, user `reporion`, the password file's path.
 The module must be writable and must not list `delete` under `refuse options`. A snapshot is
 written under its final name and a `.reporion-complete` file is sent into it last; there is no
@@ -310,10 +310,10 @@ revision exists byte for byte in a snapshot.
 
 ## MCP clients (D56)
 
-`POST /mcp` is the MCP server; it takes a bearer token only. Admin → Settings → *MCP clients* turns it off, limits it to the local network (loopback and private addresses, so Claude Code over the VPN still works and claude.ai cannot connect), or opens it everywhere. Behind a reverse proxy PHP sees the proxy's address, not the client's: sign-in, bad-token and OAuth limits would then count all clients as one, and *local network only* could not tell them apart. List the proxy in `data/settings.yaml` (`site: {trusted_proxies: [10.0.0.5, 192.168.0.0/16]}`, addresses or CIDR ranges, IPv4 or IPv6) and the proxy must send `X-Forwarded-For`: it is then read from the right, skipping the listed proxies, and only when the connection itself comes from one; a header from any other connection is ignored. With no list (the default, lighttpd exposed directly) the connection's address is used as it is, and a proxy that does not send `X-Forwarded-For` makes every request look local. More than 20 invalid bearer tokens from one address in 15 minutes get 429 `too_many_attempts`; each is audited `auth.token_failed`. The default is *Local network only*. For claude.ai prefer *Everywhere, token only*: make a read token on `/profile` (namespaces, expiry) and put `Authorization: Bearer rpn_…` in the custom connector's request headers; nothing of OAuth is served then. *Everywhere, with OAuth sign-in* is for a client that cannot send headers.
+`POST /mcp` is the MCP server; it takes a bearer token only. Admin → General → *MCP clients* turns it off, limits it to the local network (loopback and private addresses, so Claude Code over the VPN still works and claude.ai cannot connect), or opens it everywhere. Behind a reverse proxy PHP sees the proxy's address, not the client's: sign-in, bad-token and OAuth limits would then count all clients as one, and *local network only* could not tell them apart. List the proxy in `data/settings.yaml` (`site: {trusted_proxies: [10.0.0.5, 192.168.0.0/16]}`, addresses or CIDR ranges, IPv4 or IPv6) and the proxy must send `X-Forwarded-For`: it is then read from the right, skipping the listed proxies, and only when the connection itself comes from one; a header from any other connection is ignored. With no list (the default, lighttpd exposed directly) the connection's address is used as it is, and a proxy that does not send `X-Forwarded-For` makes every request look local. More than 20 invalid bearer tokens from one address in 15 minutes get 429 `too_many_attempts`; each is audited `auth.token_failed`. The default is *Local network only*. For claude.ai prefer *Everywhere, token only*: make a read token on `/profile` (namespaces, expiry) and put `Authorization: Bearer rpn_…` in the custom connector's request headers; nothing of OAuth is served then. *Everywhere, with OAuth sign-in* is for a client that cannot send headers.
 
 The token always travels as `Authorization: Bearer rpn_…`. To refuse scanners before PHP runs, give
-the web server a gate of its own: Admin → Settings → *MCP clients* → *X-Access-Token
+the web server a gate of its own: Admin → General → *MCP clients* → *X-Access-Token
 header value* (any 16 to 128 letters, digits, `-` or `_`; the box suggests a new random one at every
 page load). Once saved, the page shows the rule for lighttpd, nginx and Apache. For lighttpd
 (`mod_access`, 1.4.46 or newer for `$REQUEST_HEADER`):
@@ -338,7 +338,7 @@ nothing more: make a token on `/profile` (Namespaces to limit it) and
 **claude.ai and Claude Desktop** connect from Anthropic's servers, so `/mcp`, `/oauth/*`,
 `/.well-known/*`, `/login` and `/assets/` must be reachable from the internet (expose only these at
 a TLS proxy if the rest stays on a VPN; the proxy sends `X-Forwarded-Proto: https`).
-`site.base_url` (Admin → Settings) must be the public `https://` address, with the subfolder if
+`site.base_url` (Admin → General) must be the public `https://` address, with the subfolder if
 there is one (`https://example.org/reporion`, no trailing slash): it is the OAuth issuer, and with
 no base URL no OAuth is offered. A 401 from `/mcp` names its metadata
 (`{base}/.well-known/oauth-protected-resource`), and the front controller answers every
@@ -362,5 +362,5 @@ Check: `curl https://<host>/.well-known/oauth-authorization-server/reporion` and
 
 In the client, add a custom connector with the URL `{base}/mcp`. Each connection made is an API
 token named `Claude: …` on the account's `/profile`, read only; revoking it disconnects the
-client. Reports reach the client only with Admin → Settings → Publishing *Let Claude … read
+client. Reports reach the client only with Admin → General → Publishing *Let Claude … read
 reports, de-identified* on.

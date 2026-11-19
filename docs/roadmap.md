@@ -153,7 +153,7 @@ Timeline still carries an unused `$storage` (phpstan).
 15. ~~Audit log.~~ `data/audit/YYYY-MM.ndjson`: writes, signs, exports, logins (reads not yet);
     best-effort by design, `doctor` checks the directory.
 16. milestone-1 checklist updated (the file was later removed; its open items live in INSTALL.md): 7 of 10 met at the end of phase 2; the dashboard landed in phase 3: open now: `doctor` on
-    the real server with a real `base_url` (operator: the address is set in Admin → Settings; the
+    the real server with a real `base_url` (operator: the address is set in Admin → General; the
     check passes once the site is public behind its TLS proxy). Sitemap/feed: settled in phase 4.
 
 **Surfaced by phase 2:** PHPStan reports 14 errors that predate this work (import commands,
@@ -171,7 +171,7 @@ patterns (harmless so far).
 20. ~~Timeline to mockup.~~ Counted stats + `.wk-tl`; `/patient/{key}` decided against (a
     brute-forceable CNP hash must not be in URLs).
 21. ~~Profile and admin tabs.~~ `/profile` (own password, current required, ≥ 10 chars),
-    owner password reset, Admin → Index & storage (status, drift, rebuild as the web user;
+    owner password reset, Admin → Data (status, drift, rebuild as the web user;
     `Service\IndexMaintenance` shared with the CLI). Site settings and plugins tabs not built.
 
 **Surfaced by phase 3:** changing a password does not end other sessions (no session
@@ -186,7 +186,7 @@ by those routes.
     signed digest: publish a duplicate or correct-and-re-sign).
 24. ~~Move, duplicate, restore, purge, `page:new`.~~ Redirect stubs (chains collapse at write
     time), links rewritten in unsigned pages only; duplicate carries exam fields, never patient
-    fields; Admin → Trash + API restore; `DELETE ?purge=1` and `trash:purge` with the D3b
+    fields; Admin → Data → Trash + API restore; `DELETE ?purge=1` and `trash:purge` with the D3b
     override; `page:new --template=`. Journal intents for rev-keeping ops are keyed by op.
 25. ~~Sitemap and feed.~~ Feeds for allowlisted non-report namespaces only (`feeds.namespaces`),
     public and patient-free pages; sitemap decided against.
@@ -235,11 +235,11 @@ damage from the last intact revision (signed pages listed, not repaired).
 ### Phase 6: admin tools: done
 Asked for 2026-09-26.
 
-33. ~~**Admin → Maintenance.**~~ The maintenance commands (`journal:replay`,
+33. ~~**Admin → Data.**~~ The maintenance commands (`journal:replay`,
     `pages:check-frontmatter` (removed 2026-10-09), `index:verify`, `trash:purge`) as `Service\Maintenance` tasks run
     from the browser and the CLI alike: check first, confirmed apply, Post/Redirect/Get, one lock
     shared with `index:rebuild`, stored run reports (pid-only JSON, also `--json` on the CLI).
-34. ~~**Admin → Settings.**~~ This instance's settings: site name, tagline, public address, home
+34. ~~**Admin → General.**~~ This instance's settings: site name, tagline, public address, home
     page, time zone, icon, sites and devices, feeds, export switches, limits: in
     `data/settings.yaml`, edited from the admin screen; `conf/local.php` keeps paths and secrets
     (and fallbacks until the first save). Not moved: default theme/palette (a per-browser cookie
@@ -260,7 +260,7 @@ panel entered by hand: the place a DICOM prefill (TODO.md idea 1) plugs in later
   birth date and age at the exam date are shown and stored; without one, sex (M/F) and birth year
   by hand. A CNP that fails its checksum, or disagrees with a hand-entered sex, is refused.
 - *Exam*: date (`<input type="date">`, today by default) and optional time; modality (from
-  `resources/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Sites and
+  `resources/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Reports → Sites and
   devices, devices filtered by site); regions (checkboxes, the `region` enum: a list, D29);
   referrer and indication (optional; indication is required later, to sign).
 - *Template*: the pages under `templates:{modality-ns}:` (D19), or an empty body. The body and
@@ -280,7 +280,7 @@ panel entered by hand: the place a DICOM prefill (TODO.md idea 1) plugs in later
    Tests use CNPs *generated* by the checksum rule, never real ones (invariant 10).
 2. `Service\NewReport`: validates the form into a path and a frontmatter; the path is D1's
    `reports:{modality-ns}:{site}:{yymmdd}-{slug(name)}` (`Support\Slug`, 64 chars), with a
-   modality → namespace map (MR → mri, CT → ct, US → us, XR → xr, MG → mg) in Admin → Settings.
+   modality → namespace map (MR → mri, CT → ct, US → us, XR → xr, MG → mg) in Admin → General.
    `patient: {name, sex, born, cnp?}` (born = year, as the schema has it), `study_date`,
    `modality: [..]`, `region: [..]`, `site`, `device`, `referrer`, `indication`, `template`,
    `visibility: private`.
@@ -291,7 +291,7 @@ panel entered by hand: the place a DICOM prefill (TODO.md idea 1) plugs in later
    the docs say "inside the journal-protected create"; they get corrected to this. Checked
    against live: imported accessions read `SCUC-MR-23-1764`:`{SITE}` is the site code upper-cased,
    `{MOD}` the schema's modality code (MR, not RM), a 4-digit sequence, so new reports continue
-   the same series. An optional per-site `accession code` in Admin → Sites (e.g. MV)
+   the same series. An optional per-site `accession code` in Admin → Reports → Sites (e.g. MV)
    overrides the upper-cased site code; left empty, nothing changes.
 4. `NewPageController`: the guided form for `reports:`, the raw-document form everywhere else
    and behind an "advanced: path and raw document" link; `?from=` duplicates keep working.
@@ -811,9 +811,9 @@ what they printed: the signature record stores the signer's name at signing time
 `data/pages/reports/mri/mioveni/current.md`: an old welcome text, no `meta.json`, no `rev/`, not
 in the journal: made the directory look like a page, so creating the `reports` description
 page gave `reports-2`. Storage is right to treat a half-written page as taken; what is missing is
-seeing it: `index:verify` (and Admin → Maintenance) should list page files with no `meta.json`
+seeing it: `index:verify` (and Admin → Data) should list page files with no `meta.json`
 that the journal does not account for, as a report line: never deleting them itself.
-**Built 2026-10-09** in `integrity:verify` (so Admin → Maintenance and cron too), not
+**Built 2026-10-09** in `integrity:verify` (so Admin → Data and cron too), not
 `index:verify`: `FlatFile::strayPaths()` lists directories with `current.md` or `rev/` but no
 `meta.json` that no open journal intent explains; each is a `stray_files` problem by path hash,
 left in place.
@@ -987,7 +987,7 @@ prompt**; DokuLLM sends the whole page (name heading included) and example pages
 Decided with the owner 2026-09-27: provider **OpenAI-compatible server** only; **all 12 reports
 actions + custom**; prompts in **new `ai:` pages converted to Markdown**; style examples by **FTS5
 now, vectors later**. New endpoints `POST /api/v1/ai/complete` and `GET /api/v1/ai/providers` and
-the Admin → Settings AI section approved with the plan; a **remote** provider still needs the
+the Admin → General AI section approved with the plan; a **remote** provider still needs the
 explicit external opt-in (`ai.external_ack`).
 
 
@@ -1086,7 +1086,7 @@ the editor's island config: no endpoint.
   note and audit say which parts the assistant proposed (there is no separate `assistant` actor).
 
 #### 6. Settings, audit, operations
-- Admin → Settings gains an **AI** section (`InstanceSettings`/`AdminSettingsController::SECTIONS`):
+- Admin → General gains an **AI** section (`InstanceSettings`/`AdminSettingsController::SECTIONS`):
   `ai.enabled, ai.endpoint, ai.model (dropdown from models()), ai.temperature, ai.top_p,
   ai.max_tokens, ai.timeout, ai.profiles, ai.allow_egress_to, ai.external_ack`; `ai.api_key` stays
   in `conf/local.php`. `bin/reporion ai:check` (and a doctor line): reach the endpoint, list models,
@@ -1129,7 +1129,7 @@ the editor's island config: no endpoint.
 
 
 **Built 2026-09-27** on `feat/ai-assistant` (15a–15e, one commit each). Where it differs from the plan:
-- **No `models()` dropdown** in Admin → Settings: the model is typed; `bin/reporion ai:check` lists the
+- **No `models()` dropdown** in Admin → General: the model is typed; `bin/reporion ai:check` lists the
   server's models and says whether the configured one is among them.
 - **Streaming is asked for in the JSON** (`"stream": true`), not by `Accept`; `Response` gained a
   streamed body rather than a separate class. No `doctor` check for lighttpd's
@@ -1314,7 +1314,7 @@ before building: plugin loader + plugin in this repository; priors under the `re
 appended; one service account; CT + MR performed in the last 3 days by default.
 
 - **Loader** (`src/Plugin/`, docs/architecture-api.md §5): only what the plugin uses: one hook
-  (`report.prefill`), routes under `/x/{id}`, two ui slots, Admin → Plugins with manifest-typed
+  (`report.prefill`), routes under `/x/{id}`, two ui slots, Admin → Integrations with manifest-typed
   settings. `order_ref` + `Index::findByOrderRefs()` (FORMATS §3e).
 - **Direction 1**:`GET /x/hipobridge/worklist`: `/fhir/Schedule` per modality (HippoBridge's
   own notes: an unfiltered query can drop CT rows), performed statuses only, reported orders link
@@ -1562,7 +1562,7 @@ from the HIS plugin; both fill report metadata.
   modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
   revision; a different CNP or another linked study is refused (422, nothing written).
 - **Test the PACS**:`GET /x/dicom/echo[?site=]` (owner): echoscu to each PACS or one: a *Test*
-  button on each site's row in Admin → Plugins (the `sites` table's `row_link`) and on the Test
+  button on each site's row in Admin → Integrations (the `sites` table's `row_link`) and on the Test
   screen; a failure shows the reason and echoscu's verbose log (an echo carries no patient data).
 - **Tests**:`tests/Plugin/DicomTest.php` (a fake findscu writing dcmtk-shaped ISO-8859-1 answers),
   `tests/Plugin/DicomScuTest.php` (real findscu/echoscu against dcmqrscp; skipped without dcmtk).
@@ -1627,7 +1627,7 @@ HippoBridge"; 2026-10-09: will not be created. D38 stays read-only). D39 amended
 ### Phase 23: integrity check of the archive: built (2026-10-02)
 
 The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
-`bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron
+`bin/reporion integrity:verify [--json]` and as a card in Admin → Data (and from cron
 `doctor` reports the age of the last run):
 
 - every `rev/NNNN.md.gz` reads and gunzips; revisions are 1..N without a gap; `current.md` equals
@@ -1647,7 +1647,7 @@ Nothing is repaired automatically; a failure is the owner's to look at. Saved un
 
 **Built 2026-10-02**:`Service\Maintenance\IntegrityVerifyTask` (check only), `bin/reporion
 integrity:verify [--backup=<dir>] [--json]` (exit 1 on any problem, for cron), the *Archive
-integrity* card in Admin → Maintenance (with the backup path field), and a `doctor` line: when it
+integrity* card in Admin → Data (with the backup path field), and a `doctor` line: when it
 last ran and whether it found anything (a warning past 8 days, never a failure). Reason codes:
 `rev_missing`, `rev_corrupt`, `rev_changed` (bytes ≠ the revlog's sha256), `revlog_gap`,
 `rev_extra`, `current_stale`, `signature_mismatch`, `media_missing`, `media_changed`,
@@ -1954,7 +1954,7 @@ with that row's `Model` cell.
   affordable.
   The save's stopgap summary (first sentence of the conclusion, FORMATS §12) is refreshed while it is
   still that stopgap, and counts as "no summary" for the bulk run; a typed or assistant's one is never touched.
-  **Bulk** (2026-10-08): `pages:summarize` (`Service\Maintenance\SummarizeTask`, also Admin → Maintenance)
+  **Bulk** (2026-10-08): `pages:summarize` (`Service\Maintenance\SummarizeTask`, also Admin → Reports)
   unsigned reports under `--namespace` with no summary (`--overwrite`: all), at most `--limit`
   per run; dry run by default and sends nothing, `--apply --actor=<u>` asks `Assistant::run()` page by
   page (de-identified, audited `ai.call`), tidies the answer (`Support\SummaryLine`) and writes one
@@ -2124,7 +2124,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   background of the next run (never on the save's request path). (Index schema change approved
   2026-10-08.)
 - Built as: `migrations/005_page_vectors.sql` (`pid, model, sha, dim, vec`; no foreign key, so a
-  rebuild keeps vectors and `sha` says which still match), `index:vectors` (Admin → Maintenance,
+  rebuild keeps vectors and `sha` says which still match), `index:vectors` (Admin → AI,
   `index:rebuild --vectors`), `GET /api/v1/pages/{path}/similar` and the report footer's panel.
   Search results do not show it yet. Follow-up (2026-10-08): a minimum similarity
   (`ai.embed_min_score`, default 0.5) instead of always ten rows, each row's status, and a note on
@@ -2180,7 +2180,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   institutions, other people's names, rare details. Shown in the publish confirmation (D16's
   acknowledgement screen) as a checklist the person ticks or fixes; never edits the text itself.
 - Plus a rule-based pass that needs no assistant: full dates, CNP-shaped and phone-shaped numbers,
-  the site names from Admin → Sites.
+  the site names from Admin → Reports → Sites.
 - Tests: the rules on fixtures; the AI list shown; publishing still requires the existing
   acknowledgement.
 
@@ -2226,7 +2226,7 @@ edge, tap targets) and looked at; then again at 1400 px for regressions. Fixed:
 - **Tables**:`table.table-cards` (each row a card on a phone) extended with `.wk-card-head` (the
   row's title as the card heading), `.table-cards-compact` (page lists: title, then one wrapped line
   of details: recent changes, namespace index) and `.table-cards-form` (rows of inputs: each label
-  above its control: Admin → Sites, a plugin's per-site table); also Admin → Users, Admin → Tags and
+  above its control: Admin → Reports → Sites, a plugin's per-site table); also Admin → Users, Admin → Tags and
   the statistics' modality/site/signer tables.
 - **Editor**: crumbs line in two rows (path, then badges and icon-only buttons); toolbar in two rows
   without separators, character count, code, copy and side-by-side preview; text box 62 % of the
@@ -2234,7 +2234,7 @@ edge, tap targets) and looked at; then again at 1400 px for regressions. Fixed:
 - **Report**: crumbs on one line (root crumb dropped, namespaces cut with an ellipsis, the page's
   segment last); text left-aligned instead of justified.
 - **Forms**: stacked search bars (PACS tab, PACS worklist) put each icon or label beside its field;
-  Admin → Settings keeps "from conf/local.php" inline with its checkbox label and lets the icon row
+  Admin → General keeps "from conf/local.php" inline with its checkbox label and lets the icon row
   wrap; search hides the relevance score and shortens the namespace placeholder.
 - **Touch**: on a coarse pointer, small buttons, switches and icon buttons are at least 36 px.
 - **Text**:"+ + exam" on the new-report form (now "Add exam").
