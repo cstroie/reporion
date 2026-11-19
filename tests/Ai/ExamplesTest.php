@@ -12,6 +12,8 @@ use Reporion\Auth\User;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\Action;
 use Reporion\Service\Ai\Context;
+use Reporion\Service\Ai\Examples;
+use Reporion\Storage\PageRecord;
 use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\Redactor;
 use Reporion\Storage\FileTree;
@@ -79,6 +81,31 @@ final class ExamplesTest extends StorageTestCase
         self::assertMatchesRegularExpression('/^\d+ snippets$/', $prompt->contextSet[1]);
         foreach (['Vasile', 'Ionescu', 'Popescu', 'POPESCU', 'Ioana', 'reports:'] as $identifier) {
             self::assertStringNotContainsString($identifier, $prompt->user, $identifier);
+        }
+    }
+
+    public function testOtherReportsAreSearchedByTheDeIdentifiedTextNeverTheName(): void
+    {
+        // The name is the text's most frequent word here: searched by, it found namesakes' reports first
+        $spy = new class () implements Examples {
+            public string $asked = '';
+
+            public function for(PageRecord $page, string $text, ?User $principal, Redactor $redactor): array
+            {
+                $this->asked .= $text . "\n";
+
+                return [];
+            }
+        };
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $action = new Action('create', 'Create', '', '', 'insert', "{snippets} {recall}\n{text}", '');
+        $text = "# POPESCU Ana\n\nPopescu Ana, Popescu Ana: " . self::TEXT;
+
+        (new Context($this->storage, $this->index, $spy, null, $spy))->build($action, $this->storage->read(self::PATH), $text, $owner);
+
+        self::assertStringContainsString('meniscului', $spy->asked, 'the findings are searched by');
+        foreach (['Popescu', 'POPESCU', 'pacient'] as $word) {
+            self::assertStringNotContainsString($word, $spy->asked, $word);
         }
     }
 }

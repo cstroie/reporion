@@ -210,9 +210,13 @@ final class Context
             }
         }
 
+        // The words other reports are searched by: the de-identified text, its placeholders taken out,
+        // so the patient's own name is never a search term (it found their namesakes' reports first)
+        $searchText = (string) preg_replace('/\[\p{L}+\]/u', ' ', $vars['text']);
+
         $vars['snippets'] = '( fără exemple )';
         if ($wants('snippets') && $this->examples !== null) {
-            $snippets = $this->examples->for($page, $text, $principal, $redactor);
+            $snippets = $this->examples->for($page, $searchText, $principal, $redactor);
             if ($snippets !== []) {
                 $vars['snippets'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . self::escape($s) . "\n</exemplu>", $snippets, array_keys($snippets)));
                 $contextSet[] = \count($snippets) . ' snippets';
@@ -222,7 +226,7 @@ final class Context
         // D50: the passages that describe the line in {text}, the doctor's own first
         $vars['recall'] = '( fără pasaje )';
         if ($wants('recall') && $this->recall !== null) {
-            $passages = $this->recall->for($page, $text, $principal, $redactor);
+            $passages = $this->recall->for($page, $searchText, $principal, $redactor);
             if ($passages !== []) {
                 $vars['recall'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . self::escape($s) . "\n</exemplu>", $passages, array_keys($passages)));
                 $contextSet[] = \count($passages) . ' recalled';
