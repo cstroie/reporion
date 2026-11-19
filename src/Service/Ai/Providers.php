@@ -17,10 +17,13 @@ final class Providers
     {
         $egress ??= new EgressGuard();
 
-        return new OpenAiCompatibleProvider($config, $egress);
+        return match ($config->api) {
+            'anthropic' => new AnthropicProvider($config, $egress),
+            default => new OpenAiCompatibleProvider($config, $egress),
+        };
     }
 
-    /** The server's embedding side, or null when its protocol has none */
+    /** The server's embedding side, or null when its protocol has none (Anthropic) */
     public static function embedder(AiConfig $config, ?EgressGuard $egress = null): ?EmbeddingProvider
     {
         $provider = self::for($config, $egress);

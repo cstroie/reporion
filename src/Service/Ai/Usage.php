@@ -25,7 +25,7 @@ final class Usage
     }
 
     /**
-     * @return array{days: int, calls: int, errors: int, refused: int, tokensIn: int, tokensOut: int, p50: ?int, p90: ?int,
+     * @return array{days: int, calls: int, errors: int, refused: int, tokensIn: int, tokensOut: int, tokensCached: int, p50: ?int, p90: ?int,
      *               actions: array<string, array<string, mixed>>, models: array<string, array<string, mixed>>,
      *               users: array<string, int>, reasons: array<string, int>}
      */
@@ -33,7 +33,7 @@ final class Usage
     {
         $days = \in_array($days, self::PERIODS, true) ? $days : 30;
         $since = $now->modify('-' . $days . ' days');
-        $out = ['days' => $days, 'calls' => 0, 'errors' => 0, 'refused' => 0, 'tokensIn' => 0, 'tokensOut' => 0, 'p50' => null, 'p90' => null, 'actions' => [], 'models' => [], 'users' => [], 'reasons' => []];
+        $out = ['days' => $days, 'calls' => 0, 'errors' => 0, 'refused' => 0, 'tokensIn' => 0, 'tokensOut' => 0, 'tokensCached' => 0, 'p50' => null, 'p90' => null, 'actions' => [], 'models' => [], 'users' => [], 'reasons' => []];
         $times = [];
         $byAction = [];
         $byModel = [];
@@ -57,6 +57,8 @@ final class Usage
             $out['errors'] += $ok ? 0 : 1;
             $out['tokensIn'] += $in;
             $out['tokensOut'] += $tokens;
+            // Of the prompt's tokens, those read back from Anthropic's cache (2026-11-19)
+            $out['tokensCached'] += \is_int($line['usage']['cache_read_tokens'] ?? null) ? $line['usage']['cache_read_tokens'] : 0;
             $out['users'][$actor] = ($out['users'][$actor] ?? 0) + 1;
             if (!$ok) {
                 $out['reasons'][$reason !== '' ? $reason : 'error'] = ($out['reasons'][$reason !== '' ? $reason : 'error'] ?? 0) + 1;

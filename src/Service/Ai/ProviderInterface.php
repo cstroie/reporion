@@ -24,7 +24,7 @@ interface ProviderInterface
      */
     public function stream(Prompt $prompt): Generator;
 
-    /** @return array{prompt_tokens?: int, completion_tokens?: int} what the last stream() used, when the server said */
+    /** @return array{prompt_tokens?: int, completion_tokens?: int, cache_read_tokens?: int, cache_write_tokens?: int} what the last stream() used, when the server said (cache counts: Anthropic's, part of prompt_tokens) */
     public function usage(): array;
 
     /** @return list<string> the models the server offers */

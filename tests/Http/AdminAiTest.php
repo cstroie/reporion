@@ -59,10 +59,10 @@ final class AdminAiTest extends HttpTestCase
 
         $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
         self::assertCount(6, $ai['servers']);
-        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'api_key' => '', 'timeout' => 90, 'external_ack' => false, 'fallback' => '', 'model_filter' => '', 'tiers' => [
-            'lite' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'extra' => []],
-            'normal' => ['model' => 'qwen2.5:32b', 'temperature' => 0.2, 'top_p' => 0.9, 'top_k' => '', 'min_p' => '', 'max_tokens' => 2048, 'extra' => []],
-            'expert' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'extra' => []],
+        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'api' => 'auto', 'api_key' => '', 'timeout' => 90, 'external_ack' => false, 'fallback' => '', 'model_filter' => '', 'tiers' => [
+            'lite' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'effort' => '', 'num_ctx' => '', 'extra' => []],
+            'normal' => ['model' => 'qwen2.5:32b', 'temperature' => 0.2, 'top_p' => 0.9, 'top_k' => '', 'min_p' => '', 'max_tokens' => 2048, 'effort' => '', 'num_ctx' => '', 'extra' => []],
+            'expert' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'effort' => '', 'num_ctx' => '', 'extra' => []],
         ]], $ai['servers'][0], 'per alias (phase 33a), the flat fields of before gone');
         self::assertSame($secret, $ai['servers'][1]['api_key']);
         self::assertTrue($ai['servers'][1]['external_ack']);
@@ -340,6 +340,12 @@ final class AdminAiTest extends HttpTestCase
             $server->stop();
         }
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'model_filter' => '/(unclosed/']]))->status);
+        // 2026-11-19: the protocol and an alias's effort are one of a fixed few
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'api' => 'grpc']]))->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['normal' => ['model' => 'm', 'effort' => 'extreme']]]]))->status);
+        self::assertSame(302, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'https://api.anthropic.com/v1', 'api' => 'anthropic', 'tiers' => ['normal' => ['model' => 'claude-opus-5-5', 'effort' => 'high', 'num_ctx' => '32768']]]]))->status);
+        $saved = (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][0];
+        self::assertSame(['anthropic', 'high', 32768], [$saved['api'], $saved['tiers']['normal']['effort'], $saved['tiers']['normal']['num_ctx']]);
     }
 
     /**

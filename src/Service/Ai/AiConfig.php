@@ -28,10 +28,16 @@ final class AiConfig
     public const SLOTS = 6;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'api_key', 'timeout', 'external_ack', 'tiers', 'model_filter', 'fallback'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'api', 'api_key', 'timeout', 'external_ack', 'tiers', 'model_filter', 'fallback'];
+
+    /** The protocols a server may speak (`ai.servers[i].api`); `auto` picks one from its address (apiFor()) */
+    public const APIS = ['auto', 'openai', 'anthropic', 'ollama'];
 
     /** What each alias of a server carries (`ai.servers[i].tiers.{alias}`), in the form's row order */
-    public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'extra'];
+    public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'effort', 'num_ctx', 'extra'];
+
+    /** What `effort` may say: Anthropic's `output_config.effort`; blank leaves the model's default */
+    public const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
     /**
      * The model aliases an action's `Model` column names; each server defines
@@ -73,6 +79,8 @@ final class AiConfig
         public readonly array $serverMap = [],
         /** @var array<string, mixed> the config's `ai` section, for forPath() and longestTimeout() */
         private readonly array $section = [],
+        /** The protocol the server speaks: openai, anthropic or ollama (apiFor() has resolved `auto`) */
+        public readonly string $api = 'openai',
     ) {
     }
 
@@ -156,6 +164,8 @@ final class AiConfig
                 $number($row['min_p']),
                 is_numeric($row['max_tokens']) ? max(0, (int) $row['max_tokens']) : 0,
                 \is_array($row['extra']) ? $row['extra'] : [],
+                \is_string($row['effort']) && \in_array($row['effort'], self::EFFORTS, true) ? $row['effort'] : '',
+                is_numeric($row['num_ctx']) ? max(0, (int) $row['num_ctx']) : 0,
             );
         }
 
@@ -232,7 +242,7 @@ final class AiConfig
 
         return new self(
             enabled: ($ai['enabled'] ?? false) === true,
-            endpoint: self::base(\is_string($server['endpoint'] ?? null) ? $server['endpoint'] : ''),
+            endpoint: $endpoint = self::base(\is_string($server['endpoint'] ?? null) ? $server['endpoint'] : ''),
             model: $normal->model,
             temperature: $normal->temperature,
             topP: $normal->topP,
@@ -251,7 +261,29 @@ final class AiConfig
             profileMap: self::profileMap($ai),
             serverMap: self::serverMap($ai),
             section: $ai,
+            api: self::apiFor($endpoint, \is_string($server['api'] ?? null) ? $server['api'] : 'auto'),
         );
+    }
+
+    /**
+     * The protocol a server speaks: the one Admin → AI names, or for `auto`
+     * (and anything unknown) the one its address gives away: Anthropic's own
+     * host speaks the Messages API, Ollama's port 11434 its native API, any
+     * other server the OpenAI-compatible one.
+     */
+    public static function apiFor(string $endpoint, string $setting): string
+    {
+        if ($setting !== 'auto' && \in_array($setting, self::APIS, true)) {
+            return $setting;
+        }
+        $parts = parse_url($endpoint);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        return match (true) {
+            $host === 'api.anthropic.com' => 'anthropic',
+            ($parts['port'] ?? null) === 11434 => 'ollama',
+            default => 'openai',
+        };
     }
 
     /**
@@ -323,7 +355,7 @@ final class AiConfig
      */
     public static function base(string $endpoint): string
     {
-        return (string) preg_replace('~/(?:chat/completions|completions|models)$~i', '', rtrim(trim($endpoint), '/'));
+        return (string) preg_replace('~/(?:chat/completions|completions|models|messages|api/chat|api/tags)$~i', '', rtrim(trim($endpoint), '/'));
     }
 
     /** Whether the assistant is switched on and has somewhere to go */

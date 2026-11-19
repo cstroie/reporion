@@ -21,13 +21,14 @@ final class Check
     }
 
     /**
-     * @return array{enabled: bool, endpoint: string, model: string, tiers: array<string, string>, params: array<string, array<string, mixed>>, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
+     * @return array{enabled: bool, endpoint: string, api: string, model: string, tiers: array<string, string>, params: array<string, array<string, mixed>>, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
      */
     public function run(AiConfig $ai, bool $reachServer = true): array
     {
         $report = [
             'enabled' => $ai->enabled,
             'endpoint' => $ai->endpoint,
+            'api' => $ai->api,
             'model' => $ai->model,
             // The model each alias stands for here, an empty lite/expert being the normal one
             'tiers' => array_combine(AiConfig::TIERS, array_map(static fn (string $tier): string => $ai->modelFor($tier), AiConfig::TIERS)),

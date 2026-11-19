@@ -28,11 +28,16 @@ final class TierSettings
         public readonly ?float $minP = null,
         public readonly int $maxTokens = 0,
         public readonly array $extra = [],
+        /** Anthropic's `output_config.effort` (AiConfig::EFFORTS); '' leaves the model's default */
+        public readonly string $effort = '',
+        /** Ollama's context window (`options.num_ctx`); 0: OllamaProvider::NUM_CTX */
+        public readonly int $numCtx = 0,
     ) {
     }
 
     /**
-     * The parameters as the request carries them, blank ones left out
+     * The parameters as an OpenAI-compatible request carries them, blank ones
+     * left out (`effort` and `num_ctx` are the other protocols' own)
      *
      * @return array<string, mixed>
      */

@@ -197,6 +197,9 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <div class="wk-ai-server-body">
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
 <label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.endpoint_hint')) ?>"><small><?= $e(t('admin.ai.endpoint_help')) ?></small></label>
+<label><?= $e(t('admin.ai.api')) ?><select class="input" name="<?= $n ?>[api]">
+<?php foreach (\Reporion\Service\Ai\AiConfig::APIS as $api): ?><option value="<?= $e($api) ?>"<?= (string) ($server['api'] ?? 'auto') === $api ? ' selected' : '' ?>><?= $e(t('admin.ai.api.' . $api)) ?></option><?php endforeach; ?>
+</select><small><?= $e(t('admin.ai.api_help')) ?></small></label>
 <label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="<?= $e(t('admin.ai.model_filter_hint')) ?>"><small><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
 <?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
 <p class="wk-dim wk-ai-params-help"><?= $e(t('admin.ai.params')) ?></p>
@@ -213,7 +216,8 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 ?>
 <td data-label="<?= $e(t('admin.ai.tier.' . $tier)) ?>"><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_hint')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
 <?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_hint')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
-<?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="n/a"><?php endif; ?></td>
+<?php elseif ($field === 'effort'): ?><select class="input" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>"><option value="">n/a</option><?php foreach (\Reporion\Service\Ai\AiConfig::EFFORTS as $effort): ?><option value="<?= $e($effort) ?>"<?= (string) $cell === $effort ? ' selected' : '' ?>><?= $e($effort) ?></option><?php endforeach; ?></select>
+<?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000'], 'num_ctx' => ['512', '512', '2000000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="n/a"><?php endif; ?></td>
 <?php endforeach; ?>
 </tr>
 <?php endforeach; ?>
@@ -353,7 +357,7 @@ $serverOptions = static function (string $selected, ?string $blank) use ($server
 <div class="wk-start-stat"><b><?= (int) $usage['calls'] ?></b><span><?= $e(t('admin.ai.usage_calls')) ?></span></div>
 <div class="wk-start-stat<?= $usage['errors'] + $usage['refused'] > 0 ? ' wk-start-stat-warn' : '' ?>"><b><?= (int) ($usage['errors'] + $usage['refused']) ?></b><span><?= $e(t('admin.ai.usage_failed', [$usage['errors'], $usage['refused']])) ?></span></div>
 <div class="wk-start-stat"><b><?= $e($sec($usage['p50'])) ?></b><span><?= $e(t('admin.ai.usage_time', [$sec($usage['p90'])])) ?></span></div>
-<div class="wk-start-stat"><b><?= $e(number_format((int) $usage['tokensOut'])) ?></b><span><?= $e(t('admin.ai.usage_tokens', [number_format((int) $usage['tokensIn'])])) ?></span></div>
+<div class="wk-start-stat"><b><?= $e(number_format((int) $usage['tokensOut'])) ?></b><span><?= $e(t('admin.ai.usage_tokens', [number_format((int) $usage['tokensIn'])])) ?><?php if ((int) ($usage['tokensCached'] ?? 0) > 0): ?> (<?= $e(t('admin.ai.usage_cached', [number_format((int) $usage['tokensCached'])])) ?>)<?php endif; ?></span></div>
 </div>
 <?php foreach (['actions' => 'admin.ai.usage_by_action', 'models' => 'admin.ai.usage_by_model'] as $group => $heading): ?>
 <?php if ($usage[$group] !== []): ?>

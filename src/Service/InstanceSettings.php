@@ -446,6 +446,9 @@ final class InstanceSettings
             'unit_or_none' => $text === '' ? null : (is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail()),
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 200000 ? (int) $text : $fail(),
             'top_k' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 1000 ? (int) $text : $fail(),
+            'api' => \in_array($text, AiConfig::APIS, true) ? $text : $fail(),
+            'effort' => \in_array($text, AiConfig::EFFORTS, true) ? $text : $fail(),
+            'num_ctx' => ctype_digit($text) && (int) $text >= 512 && (int) $text <= 2000000 ? (int) $text : $fail(),
             'extra_json' => self::validExtra($text, $fail),
             'model_filter' => $text === '' || (mb_strlen($text) <= 200 && AiConfig::filterPattern($text) !== null) ? $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
@@ -570,7 +573,7 @@ final class InstanceSettings
      * The six AI server slots from the form (servers[i][name|endpoint|
      * api_key|remove_api_key|timeout|external_ack], and per alias
      * servers[i][tiers][lite|normal|expert][model|temperature|top_p|top_k|
-     * min_p|max_tokens|extra]: phase 33a). A blank key keeps the slot's stored one; the box
+     * min_p|max_tokens|effort|num_ctx|extra]: phase 33a), servers[i][api] (2026-11-19). A blank key keeps the slot's stored one; the box
      * clears it: the key is never shown, so never sent back.
      *
      * @param list<array<string, mixed>> $stored the slots as stored now
@@ -604,12 +607,16 @@ final class InstanceSettings
                     'top_k' => $opt('top_k', 'ai.top_k', 'top_k'),
                     'min_p' => $opt('min_p', 'ai.min_p', 'unit'),
                     'max_tokens' => $opt('max_tokens', 'ai.max_tokens', 'tokens'),
+                    'effort' => $opt('effort', 'ai.effort', 'effort'),
+                    'num_ctx' => $opt('num_ctx', 'ai.num_ctx', 'num_ctx'),
                     'extra' => self::blank($cells['extra'] ?? '') ? [] : $at('ai.extra', 'extra_json', $cells['extra']),
                 ];
             }
             $servers[] = [
                 'name' => mb_substr(trim(\is_string($row['name'] ?? null) ? $row['name'] : ''), 0, 40),
                 'endpoint' => $in('ai.endpoint', 'url', $row['endpoint'] ?? ''),
+                // The protocol it speaks (2026-11-19): auto reads it from the address
+                'api' => $in('ai.api', 'api', self::blank($row['api'] ?? '') ? 'auto' : $row['api']),
                 'api_key' => $key,
                 'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
                 'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),

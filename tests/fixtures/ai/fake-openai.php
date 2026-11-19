@@ -15,7 +15,59 @@ declare(strict_types=1);
 $log = getenv('FAKE_AI_LOG') ?: sys_get_temp_dir() . '/fake-openai-last.json';
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $body = (string) file_get_contents('php://input');
-file_put_contents($log, json_encode(['path' => $path, 'auth' => $_SERVER['HTTP_AUTHORIZATION'] ?? '', 'body' => json_decode($body, true)]));
+file_put_contents($log, json_encode(['path' => $path, 'auth' => $_SERVER['HTTP_AUTHORIZATION'] ?? '', 'body' => json_decode($body, true), 'x-api-key' => $_SERVER['HTTP_X_API_KEY'] ?? '', 'anthropic-version' => $_SERVER['HTTP_ANTHROPIC_VERSION'] ?? '']));
+
+// Anthropic's Messages API (2026-11-19): model "refuse" stops with a refusal, "cut-mid-stream" stops
+// without message_stop, "fail-mid-stream" sends an error event, "overloaded" a 529 on every other request
+if ($path === '/v1/messages') {
+    $request = json_decode($body, true);
+    $model = (string) ($request['model'] ?? '');
+    $counter = $log . '.count';
+    $count = (int) @file_get_contents($counter) + 1;
+    file_put_contents($counter, (string) $count);
+    if ($model === 'overloaded' && $count % 2 === 1) {
+        http_response_code(529);
+        header('Retry-After: 0');
+        header('Content-Type: application/json');
+        echo json_encode(['type' => 'error', 'error' => ['type' => 'overloaded_error', 'message' => 'Overloaded']]);
+
+        return;
+    }
+    header('Content-Type: text/event-stream');
+    $event = static function (string $type, array $data): void {
+        echo 'event: ' . $type . "\n" . 'data: ' . json_encode(['type' => $type] + $data, JSON_UNESCAPED_UNICODE) . "\n\n";
+        flush();
+    };
+    $event('message_start', ['message' => ['id' => 'msg_1', 'usage' => ['input_tokens' => 10, 'cache_read_input_tokens' => 30, 'cache_creation_input_tokens' => 2, 'output_tokens' => 1]]]);
+    $event('content_block_start', ['index' => 0, 'content_block' => ['type' => 'thinking', 'thinking' => '']]);
+    $event('content_block_delta', ['index' => 0, 'delta' => ['type' => 'thinking_delta', 'thinking' => 'secret reasoning']]);
+    $event('content_block_stop', ['index' => 0]);
+    $event('content_block_start', ['index' => 1, 'content_block' => ['type' => 'text', 'text' => '']]);
+    $event('content_block_delta', ['index' => 1, 'delta' => ['type' => 'text_delta', 'text' => 'Concluzie: ']]);
+    if ($model === 'cut-mid-stream') {
+        return;
+    }
+    if ($model === 'fail-mid-stream') {
+        $event('error', ['error' => ['type' => 'overloaded_error', 'message' => 'Overloaded']]);
+
+        return;
+    }
+    $event('content_block_delta', ['index' => 1, 'delta' => ['type' => 'text_delta', 'text' => 'fără leziuni.']]);
+    $event('content_block_stop', ['index' => 1]);
+    $event('message_delta', ['delta' => ['stop_reason' => $model === 'refuse' ? 'refusal' : 'end_turn'], 'usage' => ['output_tokens' => 7]]);
+    $event('message_stop', []);
+
+    return;
+}
+if ($path === '/v1/models' && ($_SERVER['HTTP_ANTHROPIC_VERSION'] ?? '') !== '') {
+    // Anthropic's list, in two pages
+    header('Content-Type: application/json');
+    echo json_encode(($_GET['after_id'] ?? '') === ''
+        ? ['data' => [['id' => 'claude-b'], ['id' => 'claude-a']], 'has_more' => true, 'last_id' => 'claude-a']
+        : ['data' => [['id' => 'claude-c']], 'has_more' => false, 'last_id' => 'claude-c']);
+
+    return;
+}
 
 if ($path === '/api/v1/models') {
     // LM Studio's own API, not the OpenAI-compatible one: no `data` list
