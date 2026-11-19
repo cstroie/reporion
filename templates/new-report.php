@@ -116,7 +116,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-panel wk-mt-4">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"><small><?= $e(t('newr.referrer_help')) ?></small></label>
+<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>" autocomplete="on"><small><?= $e(t('newr.referrer_help')) ?></small></label>
 <label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
