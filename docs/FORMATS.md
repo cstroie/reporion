@@ -226,24 +226,30 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   speech_language: ''               # the script's language, the voices' own (ro, en, fr, de, es, it, hu; '' the notebook's `language`); a notebook's frontmatter `speech_language` wins (2026-11-01)
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5
   embed_common_min: 5                # a conclusion this many reports share word for word is a stock one, left out; 0: off; null or absent: 5
-  servers:                           # up to six OpenAI-compatible servers (phase 33a)
+  servers:                           # up to six servers (phase 33a)
     - name: 'Local'
-      endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
+      endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base (Ollama native: http://host:11434)
+      api: auto                      # 2026-11-19: auto | openai | anthropic | ollama; auto: api.anthropic.com → anthropic
+                                     # (Messages API, prompt caching), port 11434 → ollama (/api/chat, num_ctx), else openai
       api_key: ''                    # if the server needs one: never shown back; the file is 0640
       timeout: 120                   # seconds
       external_ack: false            # the owner's yes that de-identified text may leave for it
       fallback: ''                   # another slot (1–6) when this one cannot answer: 34f
       model_filter: ''               # which models its lists show: `free`, `qwen|llama` (any case) or /…/i (33c)
       tiers:                         # per model alias; '' = not sent, the server decides
-        normal: {model: 'qwen2.5:32b', temperature: 0.3, top_p: 0.8, top_k: '', min_p: '', max_tokens: '', extra: {}}
-        lite:   {model: '', temperature: '', top_p: '', top_k: '', min_p: '', max_tokens: '', extra: {}}   # no model: the normal alias, parameters too
+        normal: {model: 'qwen2.5:32b', temperature: 0.3, top_p: 0.8, top_k: '', min_p: '', max_tokens: '', effort: '', num_ctx: '', extra: {}}
+        lite:   {model: '', temperature: '', top_p: '', top_k: '', min_p: '', max_tokens: '', effort: '', num_ctx: '', extra: {}}   # no model: the normal alias, parameters too
+                                     # effort: anthropic only, low|medium|high|xhigh|max → output_config.effort
+                                     # num_ctx: ollama only, 512–2000000 (blank: 16384)
         expert: {model: 'qwen3:235b', temperature: '', top_p: '', top_k: 20, min_p: 0.05, max_tokens: 32000, extra: {}}
-    - name: 'Cloud'
-      endpoint: 'https://llm.example.com/v1'
+    - name: 'Claude'
+      endpoint: 'https://api.anthropic.com/v1'
+      api: auto                      # → anthropic: temperature/top_p/top_k/min_p are never sent (current models refuse them)
       api_key: '…'
       external_ack: true
       tiers:
-        normal: {model: 'claude-x', extra: {reasoning_effort: low}}   # newer Claude models refuse temperature/top_p/top_k
+        normal: {model: 'claude-sonnet-5-5', effort: medium}
+        expert: {model: 'claude-opus-5-5', effort: high}
     - {name: '', endpoint: '', tiers: {}}
                                      # `extra`: a JSON object merged into the request last, ≤ 2 KB,
                                      # never model/messages/stream/stream_options.
