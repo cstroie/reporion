@@ -249,11 +249,38 @@ final class Context
         $user = $header . self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         // The final guard: nothing identifying leaves, whatever the prompt pages say
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, ['header' => $header] + $vars);
         }
         $contextSet[] = 'no patient identifiers';
 
         return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * A request refused by the final guard, saying what was found and where:
+     * the identifier as written, and the {placeholder} that brought it in
+     * (else the prompt page's own text). That detail is shown only to the
+     * user who asked (AiException::$detail): never audited or logged, since
+     * it is a patient's name or number (invariant 8).
+     *
+     * @param array<string, mixed> $vars the placeholders' values
+     */
+    private static function leak(Redactor $redactor, string $text, array $vars, bool $near = false): AiException
+    {
+        $find = static fn (string $t): ?string => $near ? $redactor->leakedNear($t) : $redactor->leaked($t);
+        $found = $find($text);
+        $where = '';
+        foreach ($vars as $name => $value) {
+            if ($found !== null && \is_string($value) && $find($value) !== null && mb_stripos($value, $found) !== false) {
+                $where = (string) $name;
+                break;
+            }
+        }
+        $detail = $found === null ? '' : ($where === ''
+            ? t('ai.err.identifier_leak_prompt', [$found])
+            : t($where === 'header' ? 'ai.err.identifier_leak_header' : 'ai.err.identifier_leak_in', [$found, $where]));
+
+        return new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent', detail: $detail);
     }
 
     /**
@@ -449,7 +476,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
         $counts = [\count($blocks['library']), \count($blocks['context']['studies']), \count($blocks['similar']), $n];
 
@@ -497,7 +524,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaksNear($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars, near: true);
         }
 
         return new Prompt($system, $user, ['dossier ' . \count($out) . '/' . \count($pages) . ' pages', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -619,7 +646,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
 
         return new Prompt($system, $user, [$label, 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -655,7 +682,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
 
         return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -696,7 +723,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
         $set = [\count($blocks) . ' sources'];
         if ($page !== '') {
@@ -744,7 +771,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
 
         return new Prompt($system, $user, ['question', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -771,7 +798,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
 
         return new Prompt($system, $user, [\count($history) . ' turns', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -815,7 +842,7 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         if ($redactor->leaks($system . "\n" . $user)) {
-            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+            throw self::leak($redactor, $system . "\n" . $user, $vars);
         }
 
         return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);

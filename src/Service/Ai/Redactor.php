@@ -160,22 +160,34 @@ final class Redactor
      */
     public function leaks(string $text): bool
     {
+        return $this->leaked($text) !== null;
+    }
+
+    /**
+     * The first identifier learned that still appears in $text, as it is
+     * written there (a name part, a CNP, an accession, a report's path), or
+     * null. For the message of a refused request, shown to its user only:
+     * never logged or audited (invariant 8).
+     */
+    public function leaked(string $text): ?string
+    {
         foreach ($this->exact as $value) {
-            if (stripos($text, $value) !== false) {
-                return true;
+            $at = mb_stripos($text, $value);
+            if ($at !== false) {
+                return mb_substr($text, $at, mb_strlen($value));
             }
         }
         if ($this->names === []) {
-            return false;
+            return null;
         }
         preg_match_all('/\p{L}+/u', $text, $words);
         foreach ($words[0] as $word) {
             if (\in_array(self::fold($word), $this->names, true)) {
-                return true;
+                return $word;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -199,20 +211,27 @@ final class Redactor
     /** leaks(), or a word one OCR slip from a learned name part (redactNear()'s rule) */
     public function leaksNear(string $text): bool
     {
-        if ($this->leaks($text)) {
-            return true;
+        return $this->leakedNear($text) !== null;
+    }
+
+    /** leaked(), or the first word one OCR slip from a learned name part */
+    public function leakedNear(string $text): ?string
+    {
+        $leaked = $this->leaked($text);
+        if ($leaked !== null) {
+            return $leaked;
         }
         $long = array_values(array_filter($this->names, static fn (string $n): bool => mb_strlen($n) >= 5));
         if ($long === [] || preg_match_all('/[\p{L}0-9][\p{L}0-9\'’-]{3,}/u', $text, $words) < 1) {
-            return false;
+            return null;
         }
         foreach ($words[0] as $word) {
             if (self::near($word, $long)) {
-                return true;
+                return $word;
             }
         }
 
-        return false;
+        return null;
     }
 
     /** @param list<string> $names folded, five letters or more */

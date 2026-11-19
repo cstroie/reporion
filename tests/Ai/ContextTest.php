@@ -326,6 +326,24 @@ final class ContextTest extends StorageTestCase
             self::fail('expected identifier_leak');
         } catch (AiException $e) {
             self::assertSame('identifier_leak', $e->reason);
+            self::assertStringNotContainsString('Popescu', $e->getMessage(), 'the message is audited: no name in it');
+            self::assertSame('“Popescu”, a patient identifier, is in the prompt page\'s own text', $e->detail, 'the user who asked is told what and where');
+        }
+    }
+
+    public function testARefusalNamesThePlaceholderThatBroughtTheIdentifierIn(): void
+    {
+        // {exam} is not de-identified (an exam title names no one): a title that does is caught, and said
+        $page = $this->storage->read(self::PATH);
+        $this->storage->save(self::PATH, ['exams' => [['title' => 'IRM genunchi Popescu']]] + $page->frontmatter, $page->body, $page->rev, 'owner');
+        $action = new Action('bad', 'Bad', '', '', 'show', '{exam}: {text}', '');
+
+        try {
+            (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());
+            self::fail('expected identifier_leak');
+        } catch (AiException $e) {
+            self::assertSame('identifier_leak', $e->reason);
+            self::assertStringStartsWith('“Popescu”, a patient identifier, came in through', $e->detail);
             self::assertStringNotContainsString('Popescu', $e->getMessage());
         }
     }
