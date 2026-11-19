@@ -19,7 +19,7 @@ use Reporion\Support\Devices;
 final class SiteDevices
 {
     /**
-     * @param array<string, mixed> $sites the config's `sites` (Admin → Sites, after InstanceSettings::applyTo())
+     * @param array<string, mixed> $sites the config's `sites` (Admin → Reports → Sites, after InstanceSettings::applyTo())
      */
     public function __construct(
         private readonly InstanceSettings $settings,

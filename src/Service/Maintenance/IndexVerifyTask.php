@@ -12,7 +12,7 @@ use Reporion\Service\IndexMaintenance;
  * index:verify: the cheap stat/hash drift pass: pages indexed but gone
  * from disk (orphans), on disk but not indexed (missing), indexed but stale
  * (drifted). Only reports; disk stays authoritative (invariant 1) and the
- * fix is a rebuild (Admin → Index & storage, or index:rebuild).
+ * fix is a rebuild (Admin → Data, or index:rebuild).
  */
 final class IndexVerifyTask implements MaintenanceTask
 {
@@ -49,7 +49,7 @@ final class IndexVerifyTask implements MaintenanceTask
             }
         }
         if ($report->items() !== []) {
-            $report->note('Rebuild the index to fix drift: Admin → Index & storage, or bin/reporion index:rebuild.');
+            $report->note('Rebuild the index to fix drift: Admin → Data, or bin/reporion index:rebuild.');
             $report->fail();
         }
 

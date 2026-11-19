@@ -16,7 +16,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * Takes off the tags carried by no more than N reports (1 to 5, default 1)
  * one new revision per report, by system:admin (D41); signed reports keep
  * theirs; RADS categories and the tags of Admin → Tags are never pruned.
- * Service\Maintenance\TagPruneTask, the same task Admin → Maintenance runs.
+ * Service\Maintenance\TagPruneTask, the same task Admin → Tags runs.
  */
 final class TagsPruneCommand implements CommandInterface
 {

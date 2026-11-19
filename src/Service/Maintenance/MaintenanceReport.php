@@ -90,7 +90,7 @@ final class MaintenanceReport
         return $this;
     }
 
-    /** When it finished; '' while it is still running (a run Admin → Maintenance finishes after its response) */
+    /** When it finished; '' while it is still running (a run Admin → Data finishes after its response) */
     public function finishedAt(): string
     {
         return $this->finished;

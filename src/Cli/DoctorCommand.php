@@ -312,7 +312,7 @@ final class DoctorCommand implements CommandInterface
     {
         $tz = (string) ($this->config['site']['timezone'] ?? '');
         if ($tz === '') {
-            return CheckResult::fail('Timezone configured', 'site.timezone is empty: Admin → Settings');
+            return CheckResult::fail('Timezone configured', 'site.timezone is empty: Admin → General');
         }
 
         return \in_array($tz, DateTimeZone::listIdentifiers(), true)
@@ -505,7 +505,7 @@ final class DoctorCommand implements CommandInterface
     /**
      * conf/local.php is for the data directory and the session secret
      * alone. Any other section it still carries is read as a fallback
-     * under data/settings.yaml, but belongs in Admin → Settings.
+     * under data/settings.yaml, but belongs in the admin screens.
      */
     private function checkLocalConfigIsStrict(): CheckResult
     {
@@ -516,7 +516,7 @@ final class DoctorCommand implements CommandInterface
 
         return $extra === []
             ? CheckResult::pass($label)
-            : CheckResult::warn($label, 'still carries ' . implode(', ', $extra) . ': fallbacks only; set them in Admin → Settings and remove them from the file');
+            : CheckResult::warn($label, 'still carries ' . implode(', ', $extra) . ': fallbacks only; set them in the admin screens and remove them from the file');
     }
 
     /**
@@ -597,7 +597,7 @@ final class DoctorCommand implements CommandInterface
             $finished = strtotime((string) ($run['finished'] ?? $run['started'] ?? '')) ?: 0;
             $age = (int) floor((time() - $finished) / 86400);
             if ((int) ($run['exit'] ?? 1) !== 0) {
-                return CheckResult::warn($label, 'the last run, ' . $age . ' day(s) ago, found ' . (int) ($run['summary']['problems'] ?? 0) . ' problem(s): Admin → Maintenance');
+                return CheckResult::warn($label, 'the last run, ' . $age . ' day(s) ago, found ' . (int) ($run['summary']['problems'] ?? 0) . ' problem(s): Admin → Data');
             }
             if ($age > 8) {
                 return CheckResult::warn($label, 'last run ' . $age . ' days ago: schedule bin/reporion integrity:verify (cron)');
@@ -651,7 +651,7 @@ final class DoctorCommand implements CommandInterface
         $data = (string) ($this->config['paths']['data'] ?? '');
         $config = RsyncConfig::fromSettings((new InstanceSettings($data))->load());
         if (!$config->enabled) {
-            return CheckResult::pass($label, 'schedule off (Admin → Settings → Backup)');
+            return CheckResult::pass($label, 'schedule off (Admin → Data → Backup)');
         }
         if (!$config->configured()) {
             return CheckResult::warn($label, 'on, but host, user and directory are not set');
@@ -668,7 +668,7 @@ final class DoctorCommand implements CommandInterface
         }
         $state = RsyncBackup::state($data);
         if ($state['last_success'] === 0) {
-            return CheckResult::warn($label, 'no snapshot yet: bin/reporion backup:rsync, then the cron line (Admin → Maintenance)');
+            return CheckResult::warn($label, 'no snapshot yet: bin/reporion backup:rsync, then the cron line (Admin → Data)');
         }
         $age = (int) floor((time() - $state['last_success']) / 3600);
         if ($age > $config->intervalHours * 2 + 1) {
@@ -713,7 +713,7 @@ final class DoctorCommand implements CommandInterface
         return CheckResult::pass($label, $found['pdftohtml'] ? 'every type, scans by OCR' : 'every type, scans by OCR (no pdftohtml: titles are guessed from the text only)');
     }
 
-    /** The online lookups (Admin → Settings → Library) need PHP to open an https address; without it every lookup only says it could not be reached */
+    /** The online lookups (Admin → Library) need PHP to open an https address; without it every lookup only says it could not be reached */
     private function checkLibraryLookup(): CheckResult
     {
         $label = 'Library online lookups (CrossRef, PubMed) and web clip';

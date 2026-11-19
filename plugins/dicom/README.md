@@ -52,7 +52,7 @@ asked, audited `page.save` with `via: dicom-bulk`, `match: institution`. Signed 
 Reports that already hold a `study_uid` but lack a CNP, accession or institution are refreshed by
 asking for that UID (exact, so the CNP is certain); a dry run only counts them. Signed reports are linked too and return to draft (they must be signed again); the
 dry run says how many. A dry run queries the PACS as well, so use `--limit` on a big site. CLI only (no
-Admin → Maintenance card).
+Admin → Data card).
 - **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a signed report's Export ▾ menu, for signed-in readers): the report's
   **signed** revision as a DICOM Basic Text SR file (named by the page path, `-` for `:`, like every signed-in export, 2026-10-11), for any
   signed-in reader of the report; a draft or an unsigned revision is refused (409), an anonymous
@@ -80,7 +80,7 @@ Admin → Maintenance card).
   the site's own AE title. Offered only when the report's current revision is **signed**, it is
   **linked** to a study (`study_uid`; in a multi-exam report each exam's: one SR per study, each
   the whole report, with that exam's accession and its own series and instance) and the site's row
-  in Admin → Plugins ticks **send SR** (off by default). Never automatic. Sending a revision again
+  in Admin → Integrations ticks **send SR** (off by default). Never automatic. Sending a revision again
   is the same instance (the PACS keeps one); a corrected, re-signed revision is a new instance in
   the same series. The file goes through a private 0700 temporary directory, never on a command
   line. Each attempt: sent or refused: is a line in the page's `meta.json` `deliveries`
@@ -91,28 +91,28 @@ Admin → Maintenance card).
   only; 2026-10-07): a linked study keeps the scanner as the PACS names it (`pacs_device`:
   Manufacturer, model, station). When that is not one of the site's devices yet, an owner links it
   once: a new device (a code in the site's own numbering is suggested, the name is yours: "Virtutii
-  GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
+  GE 1.5T") or an existing one. It is stored on the device in Admin → Reports → Sites (`| pacs:` after its
   name), and from then on the worklist's *Start* and every study link fill the device by themselves
   (blanks only, never a guess from the name). The names are compared whole; when a study's station has
   several values (`AWP196388\PXD Server`, DICOM's backslash) a link made on the first value alone
   (`AWP196388`) matches it too (2026-10-12): a link made on the two-valued form matches that form
   only. Others see the box without the form.
 - **Institution-name fallback** (2026-10-12): a scanner the PACS does not name usefully can be told by
-  its DICOM InstitutionName. In Admin → Sites the device line is `CODE = name | pacs: a; b | inst: Somatom16; other`
+  its DICOM InstitutionName. In Admin → Reports → Sites the device line is `CODE = name | pacs: a; b | inst: Somatom16; other`
   (segments in any order; stored as `inst` beside `pacs`). A device claims a study when its `inst` text is
   contained in the institution name (case and spacing folded) and no other device of the site does
   none or several, no device. Used only when the exact `pacs` link finds nothing: the worklist
   prefill, study links, bulk link, and a DICOM file upload (site and device when exactly one site claims
   the text). The Scanner box (exact link) is unchanged.
 -  (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
-  with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
+  with its *Test* button (on its row in Admin → Integrations, and on this screen). A failure shows the
   reason and echoscu's own verbose log: an echo carries no patient data.
 
 ## Setup
 
 1. dcmtk ≥ 3.6.4 on the server (`findscu --version`). Each of `findscu`, `echoscu`, `storescu` has a path setting; empty = the *dcmtk directory* setting, else next to `findscu`. `DCMDICTPATH` / `LD_LIBRARY_PATH` settings serve a dcmtk outside its usual prefix; *Test the PACS* shows each tool's path and version.
-2. Admin → Sites: the sites.
-3. Admin → Plugins → *DICOM (PACS query)*: enable, then set the full path of `findscu` and, for
+2. Admin → Reports → Sites: the sites.
+3. Admin → Integrations → *DICOM (PACS query)*: enable, then set the full path of `findscu` and, for
    each site, the PACS host, port and AE title, and **our AE title for that PACS**: the calling AE
    title it identifies us by, each site its own. A site missing any of these is not queried (leave
    the host empty for a site without a PACS).

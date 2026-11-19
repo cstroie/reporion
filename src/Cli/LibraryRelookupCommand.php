@@ -21,7 +21,7 @@ use Reporion\Service\Library\Library;
  * (Library::relookup(): owner's choice, 2026-10-31). Because it replaces what a writer may have
  * corrected, it warns and refuses to write without --yes; --dry-run asks and shows what would change,
  * writes nothing. One new revision per source that changed, audited `page.save` as the actor
- * (default `cli`). Needs Admin → Settings → Library → online lookups on.
+ * (default `cli`). Needs Admin → Library → online lookups on.
  */
 final class LibraryRelookupCommand implements CommandInterface
 {
@@ -47,7 +47,7 @@ final class LibraryRelookupCommand implements CommandInterface
                 '--dry-run' => 'ask, and print what would change; write nothing',
                 '--json' => 'print the results as JSON',
             ],
-            details: 'WARNING: the fields the lookup returns REPLACE the record\'s, including any corrected by hand; fields it does not return stay, and PubMed\'s MeSH terms are added to the tags, none removed. The earlier record stays in the page\'s history. Only the DOI or PMID is sent (the DOI\'s PMID is looked up too); a source with neither is skipped. Needs the online lookups on in Admin → Settings → Library.',
+            details: 'WARNING: the fields the lookup returns REPLACE the record\'s, including any corrected by hand; fields it does not return stay, and PubMed\'s MeSH terms are added to the tags, none removed. The earlier record stays in the page\'s history. Only the DOI or PMID is sent (the DOI\'s PMID is looked up too); a source with neither is skipped. Needs the online lookups on in Admin → Library.',
         );
     }
 

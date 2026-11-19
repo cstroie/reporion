@@ -18,7 +18,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * D3b override is given: --include-signed together with --operator,
  * the person taking responsibility, who is named in the audit line.
  * Meant for a daily cron as the web server's user. Service\Maintenance\
- * TrashPurgeTask, the same task Admin → Maintenance runs.
+ * TrashPurgeTask, the same task Admin → Data runs.
  */
 final class TrashPurgeCommand implements CommandInterface
 {

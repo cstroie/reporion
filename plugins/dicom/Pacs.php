@@ -68,7 +68,7 @@ final class Pacs
     }
 
     /**
-     * The device a study's scanner is linked to at $site (Admin → Sites,
+     * The device a study's scanner is linked to at $site (Admin → Reports → Sites,
      * Support\Devices), '' when it is not: never a guess from the name
      *
      * @param array<string, string> $row
@@ -689,7 +689,7 @@ final class Pacs
 
     /**
      * A report's blank `device` (the report's one scanner), from the InstitutionName it
-     * kept (`pacs_institution`) and the site's `inst` texts (Admin → Sites):
+     * kept (`pacs_institution`) and the site's `inst` texts (Admin → Reports → Sites):
      * one new revision with that and nothing else, no PACS asked. Null when
      * there is nothing to fill: a device already there, no institution
      * kept, no (or no single) device saying so.

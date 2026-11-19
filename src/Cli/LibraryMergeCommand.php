@@ -35,7 +35,7 @@ final class LibraryMergeCommand implements CommandInterface
                 '--dry-run' => 'say that both are sources and write nothing',
                 '--json' => 'print the result as JSON',
             ],
-            details: 'An unsigned page citing <from> gets a new revision citing <keep>; a signed page is never edited (its old key still finds <keep> through the redirect). The second source\'s comments and saved analyses go to the trash with it; Admin → Trash brings it back.',
+            details: 'An unsigned page citing <from> gets a new revision citing <keep>; a signed page is never edited (its old key still finds <keep> through the redirect). The second source\'s comments and saved analyses go to the trash with it; Admin → Data → Trash brings it back.',
         );
     }
 

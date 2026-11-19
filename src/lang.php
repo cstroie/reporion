@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 if (!\function_exists('reporion_instance')) {
     /**
-     * This instance's display values from Admin → Settings
+     * This instance's display values from the admin screens
      * (Service\InstanceSettings): strings laid over lang/en.php:`app.name`,
      * `auth.tagline`, and `icon`, the site icon's versioned file name. Set
      * once per boot by the Kernel; with no argument, returns them.

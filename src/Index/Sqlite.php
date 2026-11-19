@@ -151,7 +151,7 @@ final class Sqlite implements IndexInterface
      * @return array{orphans: list<string>, missing: list<string>, drifted: list<string>}
      */
     /**
-     * Page counts per status × visibility. Admin → Index & storage. Every
+     * Page counts per status × visibility. Admin → Data. Every
      * page, deliberately unfiltered: only an owner reaches that screen, and
      * an owner can read everything anyway.
      *

@@ -104,7 +104,7 @@ final class BackupRestoreCommand implements CommandInterface
         $failed = false;
         $output->write('finishing unfinished writes (journal:replay) … ');
         $replay = $runner->run('journal:replay', MaintenanceTask::APPLY, $actor, ['min_age' => 0])['report'];
-        $output->line($replay->exit() === 0 ? 'ok' : 'problems, see Admin → Maintenance');
+        $output->line($replay->exit() === 0 ? 'ok' : 'problems, see Admin → Data');
         $failed = $failed || $replay->exit() !== 0;
 
         $output->write('rebuilding the index … ');
@@ -112,7 +112,7 @@ final class BackupRestoreCommand implements CommandInterface
 
         $output->write('checking integrity … ');
         $integrity = $runner->run('integrity:verify', MaintenanceTask::CHECK, $actor, ['backup' => ''])['report'];
-        $output->line($integrity->exit() === 0 ? 'ok' : 'problems found, see Admin → Maintenance or run integrity:verify');
+        $output->line($integrity->exit() === 0 ? 'ok' : 'problems found, see Admin → Data or run integrity:verify');
         $failed = $failed || $integrity->exit() !== 0;
 
         $audit->record('backup.restore', $actor, extra: ['files' => $restored['files'], 'bytes' => $restored['bytes'], 'conf' => $restored['conf']]);

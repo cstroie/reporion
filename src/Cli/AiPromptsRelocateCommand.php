@@ -13,7 +13,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 /**
  * bin/reporion ai:prompts-relocate [--dry-run] [--json]
  *
- * Service\Maintenance\PromptRelocateTask, the same task as Admin → Maintenance: every profile's
+ * Service\Maintenance\PromptRelocateTask, the same task as Admin → AI: every profile's
  * reserved prompts moved from `special:{id}` to their place (Actions::PLACES). Run it as the
  * web server's user on a live install.
  */

@@ -1462,7 +1462,7 @@
       });
     }
 
-    // Save keeps the editor open (Admin → Settings, 2026-10-10): the place
+    // Save keeps the editor open (Admin → General, 2026-10-10): the place
     // the save was made from: exam tab, cursor, scroll, the Metadata view
     // is kept for the editor that comes back (?saved={rev}), and only there
     var POS_KEY = 'reporion-editor-pos:' + path;

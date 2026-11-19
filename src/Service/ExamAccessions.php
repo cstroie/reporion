@@ -20,7 +20,7 @@ use Reporion\Support\ReportPath;
 final class ExamAccessions
 {
     /**
-     * @param array<string, array<string, mixed>> $sites config `sites` (Admin → Settings)
+     * @param array<string, array<string, mixed>> $sites config `sites` (Admin → Reports → Sites)
      */
     public function __construct(
         private readonly Accessions $accessions,

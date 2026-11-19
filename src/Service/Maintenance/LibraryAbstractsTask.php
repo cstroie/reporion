@@ -14,7 +14,7 @@ use RuntimeException;
 /**
  * library:abstracts: the abstract page (Service\Library\Abstracts) of every library source that has
  * none, for the sources added before abstracts were kept (2026-11-01). The record's `csl.abstract`;
- * else, with the lookups on (Admin → Settings → Library) and not `offline`, the abstract PubMed or
+ * else, with the lookups on (Admin → Library) and not `offline`, the abstract PubMed or
  * CrossRef has for its DOI or PMID (only the identifier is sent, the record is not rewritten);
  * else the article's own, when its text marks it plainly. No AI. Each page one revision by
  * `system:librarian` (D41), audited on behalf of whoever ran it. Check says what would be made
@@ -106,7 +106,7 @@ final class LibraryAbstractsTask implements MaintenanceTask, ProgressAware
             $report->note('PubMed or CrossRef did not answer for some sources (not reached, or too many requests): run it again later for their records\' abstracts.');
         }
         if ($online === false && $options['offline'] !== true) {
-            $report->note('The online lookups are off (Admin → Settings → Library): only the records and the articles\' own texts were read.');
+            $report->note('The online lookups are off (Admin → Library): only the records and the articles\' own texts were read.');
         }
 
         return $report;

@@ -251,7 +251,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
                 isset($intent['pid']) ? (string) $intent['pid'] : null,
                 isset($intent['rev']) ? (int) $intent['rev'] : null,
                 'journal_open',
-                'A write a crash left unfinished. Admin → Maintenance → Unfinished writes',
+                'A write a crash left unfinished. Admin → Data → Unfinished writes',
             );
         }
     }

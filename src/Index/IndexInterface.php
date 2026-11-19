@@ -278,7 +278,7 @@ interface IndexInterface
 
     /**
      * How many reports (`reports:` pages) name each site in `site:`, among those the caller can list
-     * (Search\Query::visibilityClause(), invariant 6); for Admin → Sites. Sites no report names are
+     * (Search\Query::visibilityClause(), invariant 6); for Admin → Reports → Sites. Sites no report names are
      * absent.
      *
      * @return array<string, int> site code → reports

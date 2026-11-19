@@ -324,7 +324,7 @@ final class Installer
         }
         $this->update(['owner' => $username]);
 
-        // Admin → Settings → Site, so the values live where the owner edits them later
+        // Admin → General → Site, so the values live where the owner edits them later
         (new InstanceSettings($dataDir))->save([
             'site.title' => $title,
             'site.base_url' => $baseUrl,

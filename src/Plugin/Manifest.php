@@ -10,14 +10,14 @@ use InvalidArgumentException;
 
 /**
  * `plugins/{id}/plugin.json`: who the plugin is, the hooks it uses, its
- * settings (each with a type and a default, edited in Admin → Plugins) and
+ * settings (each with a type and a default, edited in Admin → Integrations) and
  * the interface slots it fills. A manifest that does not parse, names a
  * different id than its directory or targets another api version is not a
  * plugin: the loader lists it as broken and never runs its code.
  *
  * Setting types: text, url, secret (never shown back), int, bool, enum
  * (with `values`), list (comma-separated in the form, a list on disk), and
- * sites: a table with one row per site of Admin → Sites and the
+ * sites: a table with one row per site of Admin → Reports → Sites and the
  * declared `columns` (text, int, bool, enum), stored as site code → row;
  * an optional `row_link` {label, href} puts a button on each row, `{site}`
  * in its href being the row's site code (shown while the plugin is loaded).
@@ -221,7 +221,7 @@ final class Manifest
     {
         $type = (string) $spec['type'];
         if ($type === 'sites') {
-            // One row per site code (Admin → Sites), each column validated on its own
+            // One row per site code (Admin → Reports → Sites), each column validated on its own
             $rows = [];
             foreach (\is_array($raw) ? $raw : [] as $site => $row) {
                 if (!\is_string($site) || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $site) !== 1 || !\is_array($row)) {

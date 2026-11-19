@@ -16,7 +16,7 @@ use Reporion\Support\MetaText;
 
 /**
  * bin/reporion backup:rsync [--dry-run] [--if-due] [--json] (D49): a dated,
- * differential rsync snapshot of data/ on the machine Admin → Settings →
+ * differential rsync snapshot of data/ on the machine Admin → Data →
  * Backup names. Service\Maintenance\RsyncBackupTask, the same task Admin →
  * Maintenance runs. The cron line is `backup:rsync --if-due`, hourly: what
  * it does follows the settings, so switching the schedule on or off or
@@ -37,10 +37,10 @@ final class BackupRsyncCommand implements CommandInterface
             usage: '[--dry-run] [--if-due] [--json]',
             options: [
                 '--dry-run' => 'ask the target without storing anything: reachable, key accepted, how much would be sent',
-                '--if-due' => 'for cron: do nothing unless the schedule is on (Admin → Settings → Backup) and the last snapshot is older than its interval',
+                '--if-due' => 'for cron: do nothing unless the schedule is on (Admin → Data → Backup) and the last snapshot is older than its interval',
                 '--json' => 'print the run report as JSON',
             ],
-            details: "The target, key, retention and interval are set in Admin → Settings → Backup. Without --if-due a run works as soon as the target is set, whether or not the schedule is on.\nRun as the web server's user (sudo -u www-data) so it can read data/ and the key. Nothing rsync or ssh print is kept or shown: a failure is a fixed message with the exit status. The copy holds patient data: keep the target on an encrypted volume.\nTakes the maintenance lock; refused while another run is in progress (exit 75).",
+            details: "The target, key, retention and interval are set in Admin → Data → Backup. Without --if-due a run works as soon as the target is set, whether or not the schedule is on.\nRun as the web server's user (sudo -u www-data) so it can read data/ and the key. Nothing rsync or ssh print is kept or shown: a failure is a fixed message with the exit status. The copy holds patient data: keep the target on an encrypted volume.\nTakes the maintenance lock; refused while another run is in progress (exit 75).",
         );
     }
 

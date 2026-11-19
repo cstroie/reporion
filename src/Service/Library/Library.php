@@ -62,7 +62,7 @@ final class Library
         private readonly TempUploads $temp,
         private readonly string $namespace = 'library',
         private readonly int $maxBytes = 50 * 1024 * 1024,
-        // The online lookups (Admin → Settings → Library, off by default): null sends nothing anywhere
+        // The online lookups (Admin → Library, off by default): null sends nothing anywhere
         private readonly ?Lookup $lookup = null,
         ?Abstracts $abstracts = null,
         // Find full text (D60): the fetch of the free PDF Unpaywall names, and the address Unpaywall asks for; either missing: off
@@ -274,7 +274,7 @@ final class Library
         return ['page' => $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'library: tags'), 'tags' => $tags, 'changed' => true];
     }
 
-    /** Whether the online lookups are on (Admin → Settings → Library `library.lookup`) */
+    /** Whether the online lookups are on (Admin → Library `library.lookup`) */
     public function lookupOn(): bool
     {
         return $this->lookup !== null;
@@ -357,7 +357,7 @@ final class Library
         return $result;
     }
 
-    /** Whether Find full text is on: the online lookups, Unpaywall's address and the fetch (Admin → Settings → Library) */
+    /** Whether Find full text is on: the online lookups, Unpaywall's address and the fetch (Admin → Library) */
     public function fullTextOn(): bool
     {
         return $this->lookup !== null && $this->clip !== null && $this->unpaywallEmail !== null && $this->unpaywallEmail !== '';

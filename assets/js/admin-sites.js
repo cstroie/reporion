@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Sites (templates/admin-sites.php): each card's preview of the printed
+ * Admin → Reports → Sites (templates/admin-reports.php): each card's preview of the printed
  * letterhead follows the fields as they are typed (the server renders the same
  * lines to begin with, an empty name showing the app's name as the print view
  * does), and an accession code is kept in capitals. The page works without it.

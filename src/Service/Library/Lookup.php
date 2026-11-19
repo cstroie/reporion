@@ -13,7 +13,7 @@ use Reporion\Support\ArticleIds;
 use Reporion\Support\SourceNotice;
 
 /**
- * The online lookups of docs/library.md (phase 4, opt-in: Admin → Settings → Library): a DOI to
+ * The online lookups of docs/library.md (phase 4, opt-in: Admin → Library): a DOI to
  * CrossRef, a PMID to PubMed (efetch), a DOI to the PMID it has in PubMed (esearch). Only the
  * identifier leaves the box, never page text, a title or a file name (invariant 8): the records
  * that come back are proposals for the writer to correct (D8). The fetch is a closure, so tests send
@@ -342,7 +342,7 @@ final class Lookup
 
     /**
      * OpenAlex's own copy of a work's PDF (content.openalex.org, 2026-11-04): asked by the DOI and the
-     * library's OpenAlex key (Admin → Settings → Library, `library.openalex_key`; content downloads need
+     * library's OpenAlex key (Admin → Library, `library.openalex_key`; content downloads need
      * one). The address of the PDF with the key, to be fetched by WebClip, or null when OpenAlex has none
      * or was not reached (a fallback: it never fails Find full text by itself)
      */

@@ -44,13 +44,13 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
 
 ## Setup
 
-Admin → Plugins → *HippoBridge (FHIR HIS)*: set it to *Enabled*, then set
+Admin → Integrations → *HippoBridge (FHIR HIS)*: set it to *Enabled*, then set
 
 | setting | |
 |---|---|
 | HippoBridge address | e.g. `http://127.0.0.1:44660` |
 | Hipocrate user / password | one service account; HippoBridge forwards it to Hipocrate |
-| Site code | the site (Admin → Sites) for pages made from HIS data |
+| Site code | the site (Admin → Reports → Sites) for pages made from HIS data |
 | Worklist modalities | HIS codes: `ct`, `irm`, `eco`, `radio` |
 | Worklist days back | 1–31; default 7 (one week) |
 | Worklist rows per modality | `limit=` sent with each modality's Schedule request; default 200 |

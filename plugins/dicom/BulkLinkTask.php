@@ -268,7 +268,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
 
     /**
      * The local pass: reports with a blank device whose kept InstitutionName a
-     * device of the site claims (Admin → Sites `inst:`). One revision each, by
+     * device of the site claims (Admin → Reports → Sites `inst:`). One revision each, by
      * system:pacs, only the device; a signed report keeps its blank (a device
      * is not worth turning it back into a draft). Nothing is asked of the PACS.
      *

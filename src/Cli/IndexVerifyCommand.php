@@ -13,7 +13,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * bin/reporion index:verify [--json]: the cheap stat/hash drift pass:
  * orphans (indexed, not on disk), missing (on disk, not indexed) and
  * drifted (indexed but stale) pids. Service\Maintenance\IndexVerifyTask,
- * the same task Admin → Maintenance runs. Disk stays authoritative
+ * the same task Admin → Data runs. Disk stays authoritative
  * regardless (invariant 1): this command only ever reports.
  */
 final class IndexVerifyCommand implements CommandInterface

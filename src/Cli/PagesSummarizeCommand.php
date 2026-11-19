@@ -22,7 +22,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  * would ask and sends nothing; without it, it writes. Each page becomes one new revision by
  * the pseudouser (D41; --actor is only on whose behalf); signed reports are never touched (D3). One line per page to the
  * terminal ("[n/total] pid … ok"); pages are named by pid
- * Service\Maintenance\SummarizeTask, the same task Admin → Maintenance runs.
+ * Service\Maintenance\SummarizeTask, the same task Admin → Reports runs.
  *
  * bin/reporion pages:tag takes the same options for the `tags` prompt
  * (Service\Maintenance\TagTask, 2026-10-08): reports with no tags.

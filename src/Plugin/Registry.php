@@ -9,7 +9,7 @@ namespace Reporion\Plugin;
 /**
  * What the loader found and ran this boot: every plugin directory (with its
  * manifest, or why it is not a valid one), which are enabled, which loaded
- * and which failed. Admin → Plugins shows all of it; the templates read the
+ * and which failed. Admin → Integrations shows all of it; the templates read the
  * interface slots of the loaded ones (reporion_plugin_ui()).
  */
 final class Registry

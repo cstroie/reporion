@@ -19,12 +19,12 @@ use Symfony\Component\Yaml\Yaml;
 use Throwable;
 
 /**
- * This instance's settings: what an owner tunes from Admin → Settings,
+ * This instance's settings: what an owner tunes from the admin screens,
  * kept in data/settings.yaml (decided 2026-09-26): on disk with the data it
  * describes, backed up with it, human-readable, never PHP. conf/local.php
  * keeps only what is needed before data/ can be found (paths) and secrets
  * (the session key); any setting it still carries is the fallback until
- * the first save from Admin → Settings.
+ * the first save from the admin screens.
  *
  * The file mirrors the config keys the code already reads (site.*, sites,
  * feeds, export, pages, media), so applyTo() overlays it onto the config
@@ -104,7 +104,7 @@ final class InstanceSettings
         'ai.speech_language' => 'language_or_none',
         // The sample rate of a server's raw `pcm` (2026-11-02; blank: 24000, OpenAI's and Kokoro's): the WAV header written round it
         'ai.speech_rate' => 'rate_or_none',
-        // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
+        // The periodic rsync backup (D49), edited in Admin → Data → Backup: whether the schedule is on, where the snapshots go,
         // how often and how long they are kept. The ssh key is a path to a file, never the key itself
         'backup.enabled' => 'bool',
         'backup.transport' => 'transport',
@@ -200,7 +200,7 @@ final class InstanceSettings
         if (\is_array($stored['servers'] ?? null)) {
             $config['ai']['servers'] = $stored['servers'];
         }
-        // Plugins (Admin → Plugins): which are enabled, and each one's settings
+        // Plugins (Admin → Integrations): which are enabled, and each one's settings
         $plugins = \is_array($settings['plugins'] ?? null) ? $settings['plugins'] : [];
         if (\is_array($plugins['enabled'] ?? null)) {
             $config['plugins']['enabled'] = array_values(array_filter($plugins['enabled'], 'is_string'));
@@ -213,7 +213,7 @@ final class InstanceSettings
     }
 
     /**
-     * Which plugins are enabled (Admin → Plugins). Ids only; the loader
+     * Which plugins are enabled (Admin → Integrations). Ids only; the loader
      * skips one that is not installed.
      *
      * @param list<string> $ids
@@ -856,7 +856,7 @@ final class InstanceSettings
         }
         AtomicWriter::put(
             $this->file(),
-            "# This instance's settings: edited from Admin → Settings (docs/FORMATS.md).\n"
+            "# This instance's settings: edited from the admin screens (docs/FORMATS.md).\n"
             . "# Hand edits are fine; the next save from the admin screen rewrites the file.\n"
             . Yaml::dump($settings, 4, 2)
         );

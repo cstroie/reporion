@@ -144,7 +144,7 @@ final class Analyses
 
     /**
      * The saved analyses under $path to the trash with it (after it went there), each audited
-     * `page.delete` as the caller's; back through Admin → Trash, each on its own
+     * `page.delete` as the caller's; back through Admin → Data → Trash, each on its own
      *
      * @return int how many went
      */

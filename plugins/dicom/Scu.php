@@ -502,7 +502,7 @@ final class Scu
     /**
      * The host and AE titles are arguments of their own on a dcmtk command
      * line: one that starts with "-" (or is empty) would be read as an
-     * option, so none is run with it. Admin → Plugins' patterns refuse such
+     * option, so none is run with it. Admin → Integrations' patterns refuse such
      * a value already; this holds for any caller.
      *
      * @param array{host: string, port: int, aet: string, calling: string} $server

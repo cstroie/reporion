@@ -80,7 +80,7 @@
       "group": "Reports from HIS data",
       "default": "",
       "label": "Site code",
-      "help": "the site (Admin → Sites) of reports made from HIS data; empty = the first site"
+      "help": "the site (Admin → Reports → Sites) of reports made from HIS data; empty = the first site"
     },
     "prior_types": {
       "type": "list",

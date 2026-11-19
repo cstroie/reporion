@@ -31,7 +31,7 @@ final class LibraryNoticesCommand extends PagesSummarizeCommand
                 '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are system:librarian\'s (D41)',
                 '--json' => 'print the run report as JSON',
             ],
-            details: 'Needs the online lookups on (Admin → Settings → Library). Only a source\'s DOI or PMID is sent, never its text. A source whose notice is unchanged gets no revision. No AI.',
+            details: 'Needs the online lookups on (Admin → Library). Only a source\'s DOI or PMID is sent, never its text. A source whose notice is unchanged gets no revision. No AI.',
         );
     }
 }

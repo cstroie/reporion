@@ -13,7 +13,7 @@ use Reporion\Storage\Journal;
 
 /**
  * The index's health and its rebuild: one implementation behind both
- * `bin/reporion index:verify|index:rebuild` and Admin → Index & storage.
+ * `bin/reporion index:verify|index:rebuild` and Admin → Data.
  * Disk is authoritative (invariant 1): verify compares disk facts with the
  * index, rebuild recreates the index from disk alone.
  *

@@ -16,7 +16,7 @@ use Reporion\Support\CslJson;
  * Add by search (docs/library.md, D60; EndNote's online search, Zotero's "add by identifier"): PubMed
  * asked for articles by the words a writer types, or CrossRef / PubMed for a DOI or PMID typed
  * whole; the records that come back are proposals the writer picks from and adds as sources with no
- * file (D8). Opt-in (`library.search`, Admin → Settings → Library), apart from the lookups by
+ * file (D8). Opt-in (`library.search`, Admin → Library), apart from the lookups by
  * identifier: **this is the one lookup that sends what was typed**, so the screen says so, a query
  * holding a patient's CNP (or any run of thirteen digits shaped like one) is refused before anything
  * is sent, and the audit keeps a count, never the words (invariant 8). Nothing is stored by searching.
@@ -33,7 +33,7 @@ final class OnlineSearch
     {
     }
 
-    /** Whether Admin → Settings → Library has the search on */
+    /** Whether Admin → Library has the search on */
     public function available(): bool
     {
         return $this->lookup !== null;

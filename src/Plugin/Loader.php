@@ -18,7 +18,7 @@ use Throwable;
  * configuration (`plugins.enabled`), never code.
  *
  * A plugin that throws while registering is skipped, never fatal: the rest
- * of the site keeps working, and Admin → Plugins says which one failed.
+ * of the site keeps working, and Admin → Integrations says which one failed.
  * Logged by exception class only: a message might carry patient data
  * (invariant 8).
  */

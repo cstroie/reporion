@@ -10,7 +10,7 @@ use Reporion\Auth\User;
 
 /**
  * Whether a page shows its collapsed Debug panel: the instance switch
- * (Admin → Settings → Debug, `debug.panels`, off unless an owner turns it
+ * (Admin → General → Debug, `debug.panels`, off unless an owner turns it
  * on) and an owner as the caller. One answer for the core and for plugins,
  * since a panel may hold patient data.
  */

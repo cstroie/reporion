@@ -79,7 +79,7 @@ final class Application
 
             return [$storage, $index];
         };
-        // The same maintenance tasks Admin → Maintenance runs (Service\Maintenance)
+        // The same maintenance tasks Admin → Data runs (Service\Maintenance)
         $maintenance = static fn (FileTree $storage, Sqlite $index): MaintenanceRunner => MaintenanceRunner::standard(
             $storage,
             $index,
@@ -126,7 +126,7 @@ final class Application
 
             return new LibraryNoticesCommand($maintenance($storage, $index));
         });
-        // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
+        // Not in standard(): the table is a file on the server, so Admin → Data cannot offer it
         $app->register('pages:apply-patient-csv', PagesApplyPatientCsvCommand::class, static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

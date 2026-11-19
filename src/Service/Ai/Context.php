@@ -86,7 +86,7 @@ final class Context
         private readonly ?TagDictionary $tags = null,
         /** {recall}: passages for one line (Service\Recall, D50) */
         private readonly ?Examples $recall = null,
-        // The library's language for a notebook or source with no `language` of its own (Admin → Settings → Library)
+        // The library's language for a notebook or source with no `language` of its own (Admin → Library)
         private readonly string $libraryLanguage = 'ro',
     ) {
     }

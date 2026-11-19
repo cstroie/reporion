@@ -22,7 +22,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * named by pid and table rows by line number: the output never carries a name
  * or a CNP. --loose-names also applies a row whose name and a report's differ
  * by a given name (same day, two name tokens or more in common, still only when
- * exactly one report fits). Not in Admin → Maintenance: it needs a file on the server.
+ * exactly one report fits). Not in Admin → Data: it needs a file on the server.
  */
 final class PagesApplyPatientCsvCommand implements CommandInterface
 {

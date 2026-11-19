@@ -24,13 +24,13 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Runs maintenance tasks for Admin → Maintenance and bin/reporion alike:
+ * Runs maintenance tasks for Admin → Data and bin/reporion alike:
  * validates mode and options, takes the maintenance lock for anything that
  * writes, audits the run (maintenance.run: task, mode, counts: no pages)
  * and keeps the report in data/maintenance/runs/{id}.json, so the admin
  * screen shows CLI runs too and a page refresh never re-runs a repair.
  *
- * run() is begin() then complete(). Admin → Maintenance calls them apart:
+ * run() is begin() then complete(). Admin → Data calls them apart:
  * begin() with a placeholder: the run's file, not finished yet: answers
  * the form at once, and complete() runs the task after the response
  * (fastcgi_finish_request()) and writes the report over the placeholder.
@@ -168,7 +168,7 @@ final class MaintenanceRunner
 
     /**
      * The lock every maintenance write takes: the runner's apply mode,
-     * index:rebuild from the CLI and from Admin → Index, so a web repair
+     * index:rebuild from the CLI and from Admin → Data, so a web repair
      * never races a CLI rebuild. Non-blocking: busy means busy.
      *
      * @return resource release with flock($lock, LOCK_UN) + fclose()

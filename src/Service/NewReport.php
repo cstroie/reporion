@@ -57,7 +57,7 @@ final class NewReport
 
     /**
      * @param list<string>                         $modalities         resources/schema modality codes (MR, CT, …)
-     * @param array<string, array<string, mixed>>  $sites              config `sites` (Admin → Settings)
+     * @param array<string, array<string, mixed>>  $sites              config `sites` (Admin → Reports → Sites)
      * @param array<string, string>                $modalityNamespaces modality code → namespace segment
      */
     public function __construct(

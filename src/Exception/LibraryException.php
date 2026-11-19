@@ -28,7 +28,7 @@ final class LibraryException extends RuntimeException
     public const SCAN_TOO_LONG = 'scan_too_long';
     /** A scan, and no OCR tools to read it */
     public const NO_OCR = 'no_ocr';
-    /** The online lookups are off (Admin → Settings → Library) */
+    /** The online lookups are off (Admin → Library) */
     public const LOOKUP_OFF = 'lookup_off';
     /** The source has its file already (Library::attachFile()) */
     public const HAS_FILE = 'has_file';

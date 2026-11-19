@@ -30,7 +30,7 @@ heading equal to the title is dropped; `#` becomes `.SH 1`, `##` `.SH 2`, `###` 
 headings a bold paragraph. Lists become `.IP` / `.RS`, tables `tbl`, code, quotes and text-format
 pages literal blocks. Images become their alt text. Special characters are escaped (`Ms\Escape`).
 
-## Settings (Admin → Plugins → groff export)
+## Settings (Admin → Integrations → groff export)
 
 | Setting | Meaning |
 |---|---|

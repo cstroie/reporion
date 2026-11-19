@@ -455,7 +455,7 @@ final class Joins
      * @param list<PageRecord> $trashed
      *
      * @return int how many could not be restored: left in the trash, which
-     *             the error then says (Admin → Trash restores them)
+     *             the error then says (Admin → Data → Trash restores them)
      */
     private function undo(array $trashed, string $actor): int
     {

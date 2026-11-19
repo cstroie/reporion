@@ -16,7 +16,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * Pages whose meta.json names another path than the directory they are in
  * (moved or copied by hand): meta.json is made to say where the page is, and
  * the page is indexed there. Service\Maintenance\PathRepairTask, the same task
- * Admin → Maintenance runs. Output names pages by pid, never by path
+ * Admin → Data runs. Output names pages by pid, never by path
  * (invariant 8).
  */
 final class PagesRepairPathsCommand implements CommandInterface

@@ -21,7 +21,7 @@ use Reporion\Support\MetaText;
  * signed current revision; only into the study the report is linked to
  * (`study_uid`; each exam's own in a multi-exam report: one SR per study,
  * each the whole report); only at a site whose PACS row the owner ticked
- * "send SR" (Admin → Plugins → DICOM). The SR is the same document the download gives; a second
+ * "send SR" (Admin → Integrations → DICOM). The SR is the same document the download gives; a second
  * send of the same revision is the same instance (the PACS keeps one), a
  * corrected revision a new instance in the same series.
  *

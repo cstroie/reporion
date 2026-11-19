@@ -65,7 +65,7 @@ return [
     'hipobridge.priors.done_nothing' => 'Nothing to change.',
     'hipobridge.priors.done_updated' => 'This report was updated (new revision).',
     'hipobridge.priors.done_empty' => '%d exams had no report text yet and were skipped.',
-    'hipobridge.err.not-configured' => 'HippoBridge is not configured. Admin → Plugins.',
+    'hipobridge.err.not-configured' => 'HippoBridge is not configured. Admin → Integrations.',
     'hipobridge.err.unreachable' => 'HippoBridge did not answer.',
     'hipobridge.err.auth' => 'HippoBridge refused the configured Hipocrate account.',
     'hipobridge.err.http' => 'HippoBridge answered with an error.',

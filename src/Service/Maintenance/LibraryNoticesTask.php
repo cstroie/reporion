@@ -70,7 +70,7 @@ final class LibraryNoticesTask implements MaintenanceTask, ProgressAware
             $report->count($key, 0);
         }
         if (!$this->library->lookupOn()) {
-            $report->note('The online lookups are off (Admin → Settings → Library): nothing was asked.');
+            $report->note('The online lookups are off (Admin → Library): nothing was asked.');
 
             return $report;
         }

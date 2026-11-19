@@ -17,7 +17,7 @@ use Reporion\Service\Library\Library;
  * bin/reporion library:fulltext [<key>...] [--limit=<n>] [--actor=<u>] [--dry-run] [--json]: the free
  * PDF of the sources that have a DOI or a PMID and no file (Library::findFullText(), D60): the DOI and the
  * library's e-mail address to Unpaywall, the PDF fetched with the web clip's safeguards and read like
- * an upload. Needs Admin → Settings → Library: the online lookups and the e-mail address.
+ * an upload. Needs Admin → Library: the online lookups and the e-mail address.
  */
 final class LibraryFulltextCommand implements CommandInterface
 {
@@ -41,7 +41,7 @@ final class LibraryFulltextCommand implements CommandInterface
                 '--dry-run' => 'ask the services and fetch the file, but keep nothing',
                 '--json' => 'print the results as JSON',
             ],
-            details: 'Only the DOI and the library\'s e-mail address go to Unpaywall (a source with a PMID only: PubMed is asked for its DOI and PMCID first); each PDF address it lists is fetched in turn with the web clip\'s safeguards (public addresses only, the size limit), then OpenAlex\'s own copy (the DOI and the key, when an OpenAlex key is set), then Europe PMC\'s open-access text by the PMCID. A refusal is reported as refused. A file that names another DOI, holds a patient\'s CNP or is the library\'s already is not kept. Needs the online lookups on and an e-mail address in Admin → Settings → Library.',
+            details: 'Only the DOI and the library\'s e-mail address go to Unpaywall (a source with a PMID only: PubMed is asked for its DOI and PMCID first); each PDF address it lists is fetched in turn with the web clip\'s safeguards (public addresses only, the size limit), then OpenAlex\'s own copy (the DOI and the key, when an OpenAlex key is set), then Europe PMC\'s open-access text by the PMCID. A refusal is reported as refused. A file that names another DOI, holds a patient\'s CNP or is the library\'s already is not kept. Needs the online lookups on and an e-mail address in Admin → Library.',
         );
     }
 
@@ -64,7 +64,7 @@ final class LibraryFulltextCommand implements CommandInterface
             }
         }
         if (!$this->library->fullTextOn()) {
-            $output->error('Find full text is not set up: turn on the online lookups and give an e-mail address in Admin → Settings → Library.');
+            $output->error('Find full text is not set up: turn on the online lookups and give an e-mail address in Admin → Library.');
 
             return 1;
         }
