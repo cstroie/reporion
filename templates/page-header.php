@@ -17,7 +17,7 @@
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
  * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $headerIsReport, $canWrite,
- * $canSign, $canCorrect, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
+ * $canSign, $canCorrect, $canArchive, $canUnarchive, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
  * $headerTabs (false: crumbs, title and badges only: the print preview)
  * every gate is computed there, the template only reads it.
  */
@@ -62,10 +62,21 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 ?>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1>
-<?php if (($canFollowUp ?? false) || ($canSign ?? false) || ($canCorrect ?? false)): ?>
+<?php if (($canFollowUp ?? false) || ($canSign ?? false) || ($canCorrect ?? false) || ($canUnarchive ?? false)): ?>
 <div class="wk-actions">
 <?php if ($canFollowUp ?? false): ?>
 <a class="btn btn-secondary" href="<?= $p ?>/new" title="<?= htmlspecialchars(t('page.follow_up_title'), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.follow_up'), ENT_QUOTES) ?></span></a>
+<?php endif; ?>
+<?php if ($canArchive ?? false): /* D65: a report by someone else, kept but never signed here */ ?>
+<form class="wk-inline-form" action="<?= $p ?>/archive" method="post" data-confirm="<?= htmlspecialchars(t('page.archive_confirm'), ENT_QUOTES) ?>">
+<input type="hidden" name="base_rev" value="<?= (int) $headerRev ?>">
+<button class="btn btn-secondary" type="submit" title="<?= htmlspecialchars(t('page.archive_title'), ENT_QUOTES) ?>"><i class="ph ph-archive"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.archive'), ENT_QUOTES) ?></span></button>
+</form>
+<?php elseif ($canUnarchive ?? false): ?>
+<form class="wk-inline-form" action="<?= $p ?>/unarchive" method="post">
+<input type="hidden" name="base_rev" value="<?= (int) $headerRev ?>">
+<button class="btn btn-secondary" type="submit" title="<?= htmlspecialchars(t('page.unarchive_title'), ENT_QUOTES) ?>"><i class="ph ph-arrow-counter-clockwise"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.unarchive'), ENT_QUOTES) ?></span></button>
+</form>
 <?php endif; ?>
 <?php if ($canSign ?? false): ?>
 <a class="btn btn-primary" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-signature"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>

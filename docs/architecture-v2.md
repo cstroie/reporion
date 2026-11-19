@@ -74,8 +74,9 @@ entry" machinery goes away: the two never share a directory.
 ```
 
 `revlog.json` has the fields of today's `meta.json` that are history: `revlog` (with `chain`,
-`sha256` = sha256 of the revision's bytes), `signatures` (with `field_order`), `status` and the
-`archived` marker. Nothing operational (moves, share token, deliveries) goes in it.
+`sha256` = sha256 of the revision's bytes), `signatures` (with `field_order`), `status`, the
+`archived` marker, and (D65) `status_log`, the trace of each archive/unarchive (append-only,
+absent until the first). Nothing operational (moves, share token, deliveries) goes in it.
 
 **Write-once, by verification.** A zip cannot be appended to atomically, so every save rewrites
 the container, but no entry is ever changed:
@@ -85,7 +86,7 @@ the container, but no entry is ever changed:
    compressed bytes as they were (`ZipEntry::sameAs()`), never re-encoded; the new `NNNN.md`
    and `revlog.json` are raw DEFLATE;
 2. before writing, check the record only grows: same pid, every earlier revlog entry and
-   signature unchanged, the `archived` marker never taken away, the new entry chained;
+   signature unchanged, the `status_log` only grown, the `archived` marker never taken away, the new entry chained;
 3. write a temp file beside `x.zip`, `fsync` it, then **read it back and check**
    (`AtomicWriter::putChecked()`): exactly one entry per revision `1..N` plus `revlog.json`,
    each entry inflates and matches its CRC, its revlog `sha256` and `bytes`, the chain holds,

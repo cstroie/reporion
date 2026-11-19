@@ -242,6 +242,11 @@ final class Attic
         if (\array_slice($new['signatures'], 0, \count($old['signatures'])) !== $old['signatures']) {
             throw new AtticException('signature_removed');
         }
+        // D65: the status trace only grows (absent in a zip written before it: an empty list)
+        $oldLog = $old['status_log'] ?? [];
+        if (\array_slice($new['status_log'] ?? [], 0, \count($oldLog)) !== $oldLog) {
+            throw new AtticException('status_log_removed');
+        }
         if ($old['archived'] !== null && $new['archived'] !== $old['archived']) {
             throw new AtticException('archived_changed');
         }
@@ -255,7 +260,8 @@ final class Attic
             && \in_array($history['status'] ?? null, self::STATUSES, true)
             && \array_key_exists('archived', $history) && ($history['archived'] === null || \is_array($history['archived']))
             && \is_array($history['revlog'] ?? null) && array_is_list($history['revlog'])
-            && \is_array($history['signatures'] ?? null) && array_is_list($history['signatures']);
+            && \is_array($history['signatures'] ?? null) && array_is_list($history['signatures'])
+            && (!\array_key_exists('status_log', $history) || (\is_array($history['status_log']) && array_is_list($history['status_log'])));
         if ($ok) {
             foreach ($history['revlog'] as $i => $entry) {
                 $ok = $ok && \is_array($entry) && ($entry['n'] ?? null) === $i + 1

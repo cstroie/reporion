@@ -112,6 +112,9 @@ final class ChromeVars
             'canFollowUp' => $principal !== null && $isReport && NewReport::canCreateReports($principal),
             // The Sign button: a draft report that a radiologist may write (D37, amended 2026-10-13); the tab row shows it
             'canSign' => $status === 'draft' && $isReport && $principal?->canSign($path) === true,
+            // Archive a draft report that will not be signed here, and back (D65): a radiologist with the write grant
+            'canArchive' => $status === 'draft' && $isReport && $principal?->canActOnReport($path) === true,
+            'canUnarchive' => $status === 'archived' && $isReport && $principal?->canActOnReport($path) === true,
             // Correct, in the same slot once signed: a new revision, signed again (D3, D37)
             'canCorrect' => $status === 'signed' && $isReport && $principal?->canSign($path) === true,
             // The loaded plugins' slots (reporion_plugin_ui()): tabs on a report the caller may write,

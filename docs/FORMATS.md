@@ -581,7 +581,8 @@ its history `data/attic/a/b/c.zip`:
 0001.md … NNNN.md   each revision's exact bytes, raw DEFLATE
 revlog.json         {"v": 2, "pid": "…", "status": "draft|signed|archived", "archived": null|{…},
                      "revlog": [{n, ts, by, note, bytes, sha256, minor, kind, chain}],
-                     "signatures": [{rev, by, ts, alg, digest, parafa, field_order}]}
+                     "signatures": [{rev, by, ts, alg, digest, parafa, field_order}],
+                     "status_log": [{rev, status, by, ts}]}   (D65; only once a status was set by hand)
 ```
 
 - `Storage` writes a `pid` key as the **last** frontmatter key of every page file it saves; an incoming `pid` is
@@ -740,11 +741,16 @@ study UID. Also an audit `report.deliver` line (pid, rev, outcome: never the pat
 
 ## 4c. `archived`: a page that is not worked on any more (2026-10-02)
 
-A page starts `archived` only when its frontmatter says so at creation (the imported archive's
+A page starts `archived` when its frontmatter says so at creation (the imported archive's
 `status: archived`, and the HIS reports a plugin brings in, D38), and an edit never takes that
-away. Nothing archives an existing page: the `pages:archive` command and `Storage::archive()`
-were removed 2026-10-09. There is no way back to draft: archived pages show no Sign button
-(D38).
+away. **D65 (2026-11-19):** a radiologist with the write grant also archives a draft report that
+will not be signed here (a finished report by someone else), and unarchives it back to a draft:
+the page header's *Archive* / *Unarchive*, `POST /api/v1/pages/{path}/archive|unarchive`,
+`Service\Archiving` over `Storage::setStatus()`. No revision is written; each flip appends
+`{rev, status, by, ts}` to the zip's `status_log` (append-only, checked by `Storage\Attic`; a zip
+written before has none, read as empty) and to the audit (`page.archive`, `page.unarchive`). A
+page that carries any signature is refused (409 `signed`): it is corrected and signed again (D3).
+Archived pages show no Sign button.
 
 ## 5. Namespace-level defaults (D6; `_defaults` dropped 2026-10-13)
 

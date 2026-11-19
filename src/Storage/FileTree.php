@@ -18,6 +18,7 @@ use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\SourceVisibilityException;
 use Reporion\Exception\RevisionConflictException;
+use Reporion\Exception\SignedPageException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
 use Reporion\Support\Canonical;
@@ -319,6 +320,58 @@ final class FileTree implements StorageInterface
             $this->state->transaction(fn () => $this->state->mirror($pid, $history));
             $this->reindex($path);
             $journal->appendDone($pid, $rev, 'sign');
+
+            return $this->read($path);
+        });
+    }
+
+    /**
+     * A report's status flipped between `draft` and `archived` (D65): a
+     * finished report by someone else, kept but never signed here, and back.
+     * No revision is written (the text is unchanged); the flip is traced in
+     * the attic's record as a `status_log` entry (append-only, Attic checks
+     * it only grows), then mirrored; journalled like sign(). A page that
+     * carries any signature is refused: a signed report is corrected and
+     * signed again (D3), never archived. Same status: a no-op.
+     *
+     * @param 'draft'|'archived' $status
+     *
+     * @throws RevisionConflictException when $baseRev is not the current rev
+     * @throws SignedPageException when the page carries a signature
+     */
+    public function setStatus(string $path, string $status, int $baseRev, string $actor): PageRecord
+    {
+        if (!\in_array($status, ['draft', 'archived'], true)) {
+            throw new InvalidArgumentException('status must be draft or archived');
+        }
+
+        return $this->locked(function () use ($path, $status, $baseRev, $actor): PageRecord {
+            $row = $this->liveRow($path);
+            $pid = (string) $row['pid'];
+            $history = $this->historyOf($path);
+            $rev = \count($history['revlog']);
+            if ($baseRev !== $rev) {
+                throw new RevisionConflictException($this->read($path), $baseRev);
+            }
+            if ($history['signatures'] !== [] || $history['status'] === 'signed') {
+                throw new SignedPageException();
+            }
+            if ($history['status'] === $status) {
+                return $this->read($path);
+            }
+
+            $now = self::now();
+            $log = \is_array($history['status_log'] ?? null) ? $history['status_log'] : [];
+            $log[] = ['rev' => $rev, 'status' => $status, 'by' => $actor, 'ts' => $now];
+            $history['status_log'] = $log;
+            $history['status'] = $status;
+
+            $journal = $this->journal();
+            $journal->appendIntent('status', $pid, $path, $rev, null, (string) $history['revlog'][$rev - 1]['sha256'], $actor);
+            $this->attic->writeHistory($this->atticFile($path), $history, self::at($now));
+            $this->state->transaction(fn () => $this->state->mirror($pid, $history));
+            $this->reindex($path);
+            $journal->appendDone($pid, $rev, 'status');
 
             return $this->read($path);
         });
@@ -1292,6 +1345,7 @@ final class FileTree implements StorageInterface
 
                 return 'recovered';
             case 'sign':
+            case 'status':
                 if ($row === null || !is_file($this->atticFile($path))) {
                     return 'discarded';
                 }
@@ -1396,6 +1450,10 @@ final class FileTree implements StorageInterface
             'visibility' => (string) $row['visibility'],
             'share_token' => null,
         ];
+        // D65: who archived or unarchived it, and when: only once there is one
+        if (($history['status_log'] ?? []) !== []) {
+            $meta['status_log'] = $history['status_log'];
+        }
         // As meta.json had them: only once there is one
         foreach (['moves' => $this->state->moves($pid), 'deliveries' => $this->state->deliveries($pid)] as $key => $rows) {
             if ($rows !== []) {

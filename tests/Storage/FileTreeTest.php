@@ -11,6 +11,7 @@ use PDO;
 use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
+use Reporion\Exception\SignedPageException;
 use Reporion\Storage\Attic;
 use Reporion\Storage\FileTree;
 use Reporion\Storage\Journal;
@@ -595,6 +596,73 @@ final class FileTreeTest extends StorageTestCase
         self::assertSame([$deleted->pid], array_column($storage->trash(), 'pid'));
         self::assertFileExists($this->dataRoot . '/trash/' . $deleted->pid . '/attic.zip');
         self::assertSame('signed', $this->row($signed->pid)['status']);
+    }
+
+    public function testArchiveAndUnarchiveFlipTheStatusWithoutARevisionAndLeaveATraceInTheZip(): void
+    {
+        $storage = $this->storage();
+        $created = $storage->create(self::PATH, $this->frontmatter(), 'body', 'owner');
+
+        $archived = $storage->setStatus(self::PATH, 'archived', 1, 'rad');
+        self::assertSame('archived', $archived->status);
+        self::assertSame(1, $archived->rev, 'no revision written');
+        self::assertSame('archived', $this->row($created->pid)['status']);
+
+        $saved = $storage->save(self::PATH, $this->frontmatter(), 'body 2', 1, 'rad');
+        self::assertSame('archived', $saved->status, 'an edit keeps it archived');
+
+        $back = $storage->setStatus(self::PATH, 'draft', 2, 'rad');
+        self::assertSame('draft', $back->status);
+        self::assertSame('draft', $this->row($created->pid)['status']);
+
+        $log = (new Attic())->history($this->dataRoot . self::ZIP)['status_log'];
+        self::assertSame([['archived', 1, 'rad'], ['draft', 2, 'rad']], array_map(static fn (array $e): array => [$e['status'], $e['rev'], $e['by']], $log));
+        self::assertSame($log, $back->meta['status_log']);
+        self::assertSame([], (new Attic())->problems($this->dataRoot . self::ZIP));
+        self::assertSame($back->status, $storage->setStatus(self::PATH, 'draft', 2, 'rad')->status, 'the same status is a no-op');
+        self::assertCount(2, (new Attic())->history($this->dataRoot . self::ZIP)['status_log']);
+    }
+
+    public function testASignedPageOrAStaleRevIsNeverArchived(): void
+    {
+        $storage = $this->storage();
+        $storage->create(self::PATH, $this->frontmatter(), 'v1', 'owner');
+        try {
+            $storage->setStatus(self::PATH, 'archived', 2, 'rad');
+            self::fail('a stale rev is a conflict');
+        } catch (RevisionConflictException) {
+        }
+        $storage->sign(self::PATH, 'owner', []);
+        $storage->save(self::PATH, $this->frontmatter(), 'v2', 1, 'owner');
+        $this->expectException(SignedPageException::class);
+        $storage->setStatus(self::PATH, 'archived', 2, 'rad');
+    }
+
+    public function testTheStatusTraceOnlyGrows(): void
+    {
+        $storage = $this->storage();
+        $storage->create(self::PATH, $this->frontmatter(), 'v1', 'owner');
+        $storage->setStatus(self::PATH, 'archived', 1, 'rad');
+        $history = (new Attic())->history($this->dataRoot . self::ZIP);
+        $history['status_log'] = [];
+
+        $this->expectException(\Reporion\Exception\AtticException::class);
+        (new Attic())->writeHistory($this->dataRoot . self::ZIP, $history, new \DateTimeImmutable());
+    }
+
+    public function testReplayFinishesAStatusChangeStoppedHalfWay(): void
+    {
+        $storage = $this->storage();
+        $page = $storage->create('reports:arc', $this->frontmatter(), 'body', 'owner');
+        // Stopped after the zip was rewritten, before the state transaction
+        $history = (new Attic())->history($this->dataRoot . '/attic/reports/arc.zip');
+        $history['status'] = 'archived';
+        $history['status_log'] = [['rev' => 1, 'status' => 'archived', 'by' => 'rad', 'ts' => 't']];
+        (new Attic())->writeHistory($this->dataRoot . '/attic/reports/arc.zip', $history, new \DateTimeImmutable());
+        (new Journal($this->dataRoot . '/journal'))->appendIntent('status', $page->pid, 'reports:arc', 1, null, '', 'rad');
+
+        self::assertSame(['recovered'], array_column($storage->replayJournal(), 'outcome'));
+        self::assertSame('archived', $this->row($page->pid)['status']);
     }
 
     public function testADeleteMergedIntoAnotherPageLeavesARedirectToItAndRestoringDropsIt(): void

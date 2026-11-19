@@ -149,7 +149,7 @@ final class SignButtonTest extends HttpTestCase
         $form = $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body;
         self::assertStringContainsString('Summary and tags', $form, 'a required summary is filled here');
         self::assertStringContainsString('"reload":true', $form);
-        self::assertStringNotContainsString('name="base_rev"', $form, 'still nothing to sign');
+        self::assertStringNotContainsString('/sign" method="post"', $form, 'still nothing to sign');
     }
 
     public function testARevisionSavedMeanwhileIsNotSigned(): void
@@ -173,7 +173,7 @@ final class SignButtonTest extends HttpTestCase
         $form = $this->as('owner', 'GET', '/' . self::PATH . '/sign');
         self::assertSame(200, $form->status);
         self::assertStringContainsString('Indication', $form->body);
-        self::assertStringNotContainsString('name="base_rev"', $form->body);
+        self::assertStringNotContainsString('/sign" method="post"', $form->body);
 
         self::assertSame(422, $this->as('owner', 'POST', '/' . self::PATH . '/sign', 'base_rev=1')->status);
         self::assertSame('draft', $this->storage()->read(self::PATH)->status);

@@ -683,6 +683,7 @@ final class Kernel
         $theme = new ThemeController();
         $notes = new NotesController();
         $signing = new Signing($storage, $schemas, $audit);
+        $archivePage = new \Reporion\Controller\ArchiveController($storage, new \Reporion\Service\Archiving($storage, $audit));
         $signPage = new SignController($storage, $index, $signing, $aiActions, $audit);
         $accessions = new Accessions(
             $storage,
@@ -1014,6 +1015,11 @@ final class Kernel
             => $pagesApi->duplicate($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/move', static fn (Request $request, array $params): Response
             => $pagesApi->move($request, $params['path'], $session->principal($request)));
+        // D65: archive / unarchive a report that will not be signed here
+        $router->post('/api/v1/pages/{path}/archive', static fn (Request $request, array $params): Response
+            => $archivePage->api($request, $params['path'], $session->principal($request), true));
+        $router->post('/api/v1/pages/{path}/unarchive', static fn (Request $request, array $params): Response
+            => $archivePage->api($request, $params['path'], $session->principal($request), false));
         $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response
             => $pagesApi->sign($request, $params['path'], $session->principal($request)));
         // Must be registered before the /{path} catch-all: first match wins.
@@ -1204,6 +1210,10 @@ final class Kernel
             => $visibility->form($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/visibility', static fn (Request $request, array $params): Response
             => $visibility->change($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/archive', static fn (Request $request, array $params): Response
+            => $archivePage->form($request, $params['path'], $session->principal($request), true));
+        $router->post('/{path}/unarchive', static fn (Request $request, array $params): Response
+            => $archivePage->form($request, $params['path'], $session->principal($request), false));
         $router->get('/{path}/sign', static fn (Request $request, array $params): Response
             => $signPage->form($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/sign', static fn (Request $request, array $params): Response

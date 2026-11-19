@@ -144,6 +144,16 @@ interface StorageInterface
     public function sign(string $path, string $actor, array $schemaFields, ?string $parafa = null): PageRecord;
 
     /**
+     * A report's status set to `draft` or `archived` (D65): no revision, a
+     * `status_log` entry in the attic's record. Refused on a page that
+     * carries a signature (SignedPageException) or a stale $baseRev
+     * (RevisionConflictException); the same status is a no-op.
+     *
+     * @param 'draft'|'archived' $status
+     */
+    public function setStatus(string $path, string $status, int $baseRev, string $actor): PageRecord;
+
+    /**
      * Replay any journal write-intents left open by a crash. Idempotent
      * safe to call repeatedly, safe to call when there is nothing to do.
      *

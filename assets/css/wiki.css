@@ -2659,3 +2659,6 @@ body .wk-side a.wk-row:hover, body .wk-side a.wk-row:focus-visible { color: inhe
 /* Headings outside report prose: Manrope, tracked tight (docs/design-rules.md, Typefaces). */
 :is(h1, h2, h3):not(.wk-prose *, .wk-preview *) { font-family: var(--font-heading); letter-spacing: -.02em; }
 :is(.wk-stat, .wk-start-stat, .wk-ins-total) :is(b, dd) { letter-spacing: -.04em; }
+
+/* D65: Archive / Unarchive are one-button forms in the header's action row */
+.wk-inline-form { display: contents; }

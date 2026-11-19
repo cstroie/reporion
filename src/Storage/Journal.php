@@ -18,10 +18,10 @@ use RuntimeException;
 final class Journal
 {
     /**
-     * Ops that keep the page's rev, so their op is part of their key(); `sign`
-     * is FileTree's (D54: signing rewrites the attic zip, then the state DB)
+     * Ops that keep the page's rev, so their op is part of their key(); `sign` and
+     * `status` (D65) are FileTree's (D54: signing rewrites the attic zip, then the state DB)
      */
-    public const KEYED_OPS = ['move', 'restore', 'purge', 'delete', 'minor', 'sign'];
+    public const KEYED_OPS = ['move', 'restore', 'purge', 'delete', 'minor', 'sign', 'status'];
 
     public function __construct(private readonly string $dir)
     {
