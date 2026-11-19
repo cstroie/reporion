@@ -19,6 +19,7 @@ final class Providers
 
         return match ($config->api) {
             'anthropic' => new AnthropicProvider($config, $egress),
+            'ollama' => new OllamaProvider($config, $egress),
             default => new OpenAiCompatibleProvider($config, $egress),
         };
     }

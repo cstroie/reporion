@@ -69,6 +69,35 @@ if ($path === '/v1/models' && ($_SERVER['HTTP_ANTHROPIC_VERSION'] ?? '') !== '')
     return;
 }
 
+// Ollama's native API (2026-11-19): one JSON object per line; model "cut-mid-stream" never says done
+if ($path === '/api/chat') {
+    $request = json_decode($body, true);
+    header('Content-Type: application/x-ndjson');
+    foreach (['<think>x</think>Concluzie: ', 'fără leziuni.'] as $piece) {
+        echo json_encode(['model' => $request['model'] ?? '', 'message' => ['role' => 'assistant', 'content' => $piece], 'done' => false], JSON_UNESCAPED_UNICODE) . "\n";
+        flush();
+        if (($request['model'] ?? '') === 'cut-mid-stream') {
+            return;
+        }
+    }
+    echo json_encode(['message' => ['role' => 'assistant', 'content' => ''], 'done' => true, 'prompt_eval_count' => 42, 'eval_count' => 7]) . "\n";
+
+    return;
+}
+if ($path === '/api/tags') {
+    header('Content-Type: application/json');
+    echo json_encode(['models' => [['name' => 'qwen3:32b'], ['name' => 'llama3.3:70b']]]);
+
+    return;
+}
+if ($path === '/api/embed') {
+    $request = json_decode($body, true);
+    header('Content-Type: application/json');
+    echo json_encode(['embeddings' => array_map(static fn (mixed $t): array => [1.0, (float) strlen((string) $t), 0.5], (array) ($request['input'] ?? []))]);
+
+    return;
+}
+
 if ($path === '/api/v1/models') {
     // LM Studio's own API, not the OpenAI-compatible one: no `data` list
     header('Content-Type: application/json');
