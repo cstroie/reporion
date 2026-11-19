@@ -48,7 +48,8 @@ final class Redactor
     public function learn(array $frontmatter, string $path, string $body = ''): void
     {
         $patient = \is_array($frontmatter['patient'] ?? null) ? $frontmatter['patient'] : [];
-        $known = $this->learnName(MetaText::text($patient['name'] ?? null));
+        // The name field of an older report may carry the exam after the name, as its heading did
+        $known = $this->learnName(self::nameOfHeading(MetaText::text($patient['name'] ?? null)));
         $exact = [MetaText::text($patient['cnp'] ?? null), ...array_map(MetaText::text(...), array_column(Exams::of($frontmatter), 'accession'))];
         // Only a report's path names its patient (D1); a template's leaf is an ordinary word
         if (ReportPath::isReport($path)) {
@@ -110,7 +111,7 @@ final class Redactor
     private const EXAM_WORDS = ['irm', 'rmn', 'rm', 'mri', 'ct', 'cbct', 'tc', 'pet', 'eco', 'ecografie', 'rx', 'radiografie', 'mamografie', 'examen', 'ex', 'angio', 'angiorm', 'angioct', 'uroct', 'uro'];
 
     /**
-     * The name in a report's first heading, without what an older report
+     * The name in a report's first heading or name field, without what an older report
      * wrote after it on the same line ("Popescu Ion Vasile genunchi drept",
      * "POPESCU ION - IRM GENUNCHI"): the words up to a separator (" - ", "–",
      * ":", ",", "/", "("), a digit, a word in lower case or a modality
@@ -121,8 +122,10 @@ final class Redactor
     {
         $head = (string) preg_split('/\s+[-–—]\s+|[–—:,\/(\[]|\d/u', $heading, 2)[0];
         $words = [];
+        // A name typed all in lower case is a name all the same: the case only tells where it ends when it is capitalised
+        $capitalised = preg_match('/(?:^|\s)\p{Lu}/u', $head) === 1;
         foreach (preg_split('/\s+/u', trim($head)) ?: [] as $word) {
-            if ($word === '' || preg_match('/^\p{Ll}/u', $word) === 1 || \in_array(self::fold($word), self::EXAM_WORDS, true)) {
+            if ($word === '' || ($capitalised && preg_match('/^\p{Ll}/u', $word) === 1) || \in_array(self::fold($word), self::EXAM_WORDS, true)) {
                 break;
             }
             $words[] = $word;

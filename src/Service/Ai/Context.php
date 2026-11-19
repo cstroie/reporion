@@ -252,12 +252,41 @@ final class Context
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = $header . self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         // The final guard: nothing identifying leaves, whatever the prompt pages say
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, ['header' => $header] + $vars);
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, ['header' => $header] + $vars);
+        if ($late) {
+            $contextSet[] = 'identifier removed at the last check';
         }
         $contextSet[] = 'no patient identifiers';
 
         return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * The final guard (invariant 8): an identifier learned from any source
+     * still in the prompt (an older report's name, learned after the parts
+     * before it were de-identified) is taken out of the whole prompt again,
+     * which is then sent: the doctor cannot fix a snippet they never see.
+     * Refused only when a second pass still finds one (leak()).
+     *
+     * @param array<string, mixed> $vars the placeholders' values
+     *
+     * @return array{0: string, 1: string, 2: bool} system, user, whether the second pass was needed
+     *
+     * @throws AiException identifier_leak
+     */
+    private static function lastCheck(Redactor $redactor, string $system, string $user, array $vars, bool $near = false): array
+    {
+        $leaks = static fn (string $t): bool => $near ? $redactor->leaksNear($t) : $redactor->leaks($t);
+        if (!$leaks($system . "\n" . $user)) {
+            return [$system, $user, false];
+        }
+        $clean = static fn (string $t): string => $near ? $redactor->redactNear($redactor->redact($t)) : $redactor->redact($t);
+        [$system, $user] = [$clean($system), $clean($user)];
+        if ($leaks($system . "\n" . $user)) {
+            throw self::leak($redactor, $system . "\n" . $user, $vars, $near);
+        }
+
+        return [$system, $user, true];
     }
 
     /**
@@ -479,9 +508,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
         $counts = [\count($blocks['library']), \count($blocks['context']['studies']), \count($blocks['similar']), $n];
 
         return new Prompt($system, $user, ['workup ' . implode('/', $counts), 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
@@ -527,9 +554,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaksNear($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars, near: true);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars, near: true);
 
         return new Prompt($system, $user, ['dossier ' . \count($out) . '/' . \count($pages) . ' pages', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
@@ -649,9 +674,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
 
         return new Prompt($system, $user, [$label, 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
@@ -685,9 +708,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
 
         return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
@@ -726,9 +747,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
         $set = [\count($blocks) . ' sources'];
         if ($page !== '') {
             $set[] = 'page text';
@@ -774,9 +793,7 @@ final class Context
         $vars = ['question' => self::escape($this->safeQuestion($question)), 'language' => $this->language(null), 'current_date' => date('Y-m-d'), 'action' => $action->id];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
 
         return new Prompt($system, $user, ['question', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
@@ -801,9 +818,7 @@ final class Context
         $redactor = new Redactor();
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
 
         return new Prompt($system, $user, [\count($history) . ' turns', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
@@ -845,9 +860,7 @@ final class Context
         ];
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
         $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
-        if ($redactor->leaks($system . "\n" . $user)) {
-            throw self::leak($redactor, $system . "\n" . $user, $vars);
-        }
+        [$system, $user, $late] = self::lastCheck($redactor, $system, $user, $vars);
 
         return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }

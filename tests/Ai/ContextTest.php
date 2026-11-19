@@ -315,37 +315,31 @@ final class ContextTest extends StorageTestCase
         }
     }
 
-    public function testThePromptIsRefusedWhenAnIdentifierWouldStillLeave(): void
+    public function testAnIdentifierStillInThePromptIsTakenOutAtTheLastCheckAndSaid(): void
     {
-        // A prompt page that writes the name itself: the redaction runs on
-        // what was filled in, the final guard on everything
+        // A prompt page that writes the name itself: the redaction runs on what was filled in,
+        // the final guard on everything, and takes it out there rather than refusing
         $action = new Action('bad', 'Bad', '', '', 'show', 'Pacient: Popescu. {text}', '');
 
-        try {
-            (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());
-            self::fail('expected identifier_leak');
-        } catch (AiException $e) {
-            self::assertSame('identifier_leak', $e->reason);
-            self::assertStringNotContainsString('Popescu', $e->getMessage(), 'the message is audited: no name in it');
-            self::assertSame('“Popescu”, a patient identifier, is in the prompt page\'s own text', $e->detail, 'the user who asked is told what and where');
-        }
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());
+
+        self::assertStringNotContainsString('Popescu', $prompt->user);
+        self::assertStringContainsString('Pacient: [pacient].', $prompt->user);
+        self::assertContains('identifier removed at the last check', $prompt->contextSet, 'the rail says so');
+        self::assertNotContains('identifier removed at the last check', (new Context($this->storage, $this->index))->build(new Action('ok', 'Ok', '', '', 'show', '{text}', ''), $this->storage->read(self::PATH), 'x', $this->owner())->contextSet, 'only when it was needed');
     }
 
-    public function testARefusalNamesThePlaceholderThatBroughtTheIdentifierIn(): void
+    public function testAPlaceholderThatBringsTheNameInIsCleanedToo(): void
     {
-        // {exam} is not de-identified (an exam title names no one): a title that does is caught, and said
+        // {exam} is not de-identified (an exam title names no one): a title that does is cleaned at the last check
         $page = $this->storage->read(self::PATH);
         $this->storage->save(self::PATH, ['exams' => [['title' => 'IRM genunchi Popescu']]] + $page->frontmatter, $page->body, $page->rev, 'owner');
         $action = new Action('bad', 'Bad', '', '', 'show', '{exam}: {text}', '');
 
-        try {
-            (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());
-            self::fail('expected identifier_leak');
-        } catch (AiException $e) {
-            self::assertSame('identifier_leak', $e->reason);
-            self::assertStringStartsWith('“Popescu”, a patient identifier, came in through', $e->detail);
-            self::assertStringNotContainsString('Popescu', $e->getMessage());
-        }
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());
+
+        self::assertStringNotContainsString('Popescu', $prompt->user . $prompt->system);
+        self::assertStringContainsString('IRM genunchi [pacient]', $prompt->user);
     }
 
     public function testAnOlderReportsHeadingTeachesItsNameNotItsExam(): void
@@ -360,6 +354,15 @@ final class ContextTest extends StorageTestCase
         self::assertFalse($redactor->leaks('exam: IRM Genunchi drept, stang'), 'exam words are not a name');
         self::assertTrue($redactor->leaks('Exemplu'), 'the name is still learned');
         self::assertTrue($redactor->leaks('Maria'), 'a name word only the heading has, too');
+
+        // The name field of such a report, the same
+        $field = new Redactor();
+        $field->learn(['patient' => ['name' => 'Exemplu Ana genunchi drept']], 'reports:mri:demo:240101-exemplu-ana');
+        self::assertFalse($field->leaks('IRM Genunchi drept'));
+        self::assertTrue($field->leaks('Ana'));
+        $lower = new Redactor();
+        $lower->learn(['patient' => ['name' => 'exemplu ana']], 'reports:mri:demo:240101-x');
+        self::assertTrue($lower->leaks('Exemplu'), 'a name typed in lower case is learned whole');
     }
 
     public function testRedactionIgnoresCaseAndDiacriticsButNotShortOrOrdinaryWords(): void
