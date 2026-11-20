@@ -20,7 +20,7 @@ final class WebsearchTest extends TestCase
 {
     public static function setUpBeforeClass(): void
     {
-        foreach (['Http', 'Search', 'Fetch'] as $class) {
+        foreach (['Http', 'Search', 'Fetch', 'Plugin'] as $class) {
             require_once \dirname(__DIR__, 2) . '/plugins/websearch/' . $class . '.php';
         }
     }
@@ -114,5 +114,18 @@ final class WebsearchTest extends TestCase
         }
         self::assertSame('https://e.org/a/c', Http::resolve('https://e.org/a/b', 'c'));
         self::assertSame('https://e.org/c', Http::resolve('https://e.org/a/b', '/c'));
+    }
+
+    public function testPreferredDomainsComeFirstInTheEnginesOrder(): void
+    {
+        $r = static fn (string $url): array => ['title' => $url, 'url' => $url, 'snippet' => ''];
+        $results = [$r('https://blog.example/a'), $r('https://pmc.ncbi.nlm.nih.gov/x'), $r('https://notradiopaedia.org/'), $r('https://radiopaedia.org/y')];
+
+        self::assertSame(
+            ['https://pmc.ncbi.nlm.nih.gov/x', 'https://radiopaedia.org/y', 'https://blog.example/a', 'https://notradiopaedia.org/'],
+            array_column(\Reporion\Plugin\Websearch\Plugin::preferred($results, ['radiopaedia.org', 'ncbi.nlm.nih.gov']), 'url'),
+            'a subdomain counts, a look-alike does not',
+        );
+        self::assertSame($results, \Reporion\Plugin\Websearch\Plugin::preferred($results, []));
     }
 }

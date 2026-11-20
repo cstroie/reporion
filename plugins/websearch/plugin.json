@@ -1,7 +1,7 @@
 {
   "id": "websearch",
   "name": "Web search for Ask",
-  "version": "0.1",
+  "version": "0.2",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Ask the archive also draws on the web (hook ask.sources): the assistant writes a short English search query (the ask-expand prompt's web: line, checked for identifiers), Brave Search or DuckDuckGo answers, and the top pages are read for their best passage. Sends the query only, never the question or a report.",
@@ -27,6 +27,29 @@
       "min": 1,
       "max": 10,
       "label": "Results asked for"
+    },
+    "prefer_domains": {
+      "type": "list",
+      "group": "Search",
+      "default": [
+        "radiopaedia.org",
+        "radiologyassistant.nl",
+        "ncbi.nlm.nih.gov",
+        "pubs.rsna.org",
+        "ajnr.org",
+        "ajronline.org",
+        "eurorad.org",
+        "insightsimaging.springeropen.com",
+        "link.springer.com",
+        "sciencedirect.com",
+        "acr.org",
+        "esr.org",
+        "merckmanuals.com",
+        "msdmanuals.com",
+        "nice.org.uk"
+      ],
+      "label": "Preferred sites",
+      "help": "results from these domains (and their subdomains) come first; empty = the engine's order"
     },
     "fetch_pages": {
       "type": "int",

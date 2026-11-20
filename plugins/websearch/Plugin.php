@@ -30,6 +30,12 @@ final class Plugin implements PluginInterface
     private int $max = 5;
     private int $pages = 3;
 
+    /** @var list<string> */
+    private array $prefer = [];
+
+    /** Results asked of the engine, so preferred sites further down can come first */
+    private const POOL = 10;
+
     public function register(Hooks $hooks, Container $container): void
     {
         $settings = $container->settings();
@@ -38,6 +44,7 @@ final class Plugin implements PluginInterface
         $this->fetch = new Fetch($http);
         $this->max = (int) ($settings['max_results'] ?? 5);
         $this->pages = (int) ($settings['fetch_pages'] ?? 3);
+        $this->prefer = array_values(array_filter(array_map(static fn (mixed $d): string => strtolower(trim((string) $d, " .\t")), (array) ($settings['prefer_domains'] ?? [])), static fn (string $d): bool => $d !== ''));
         $hooks->on('ask.sources', $this->askSources(...));
     }
 
@@ -48,7 +55,7 @@ final class Plugin implements PluginInterface
             return [];
         }
         try {
-            $results = $this->search->search($web, $this->max);
+            $results = \array_slice(self::preferred($this->search->search($web, max($this->max, $this->prefer !== [] ? self::POOL : 0)), $this->prefer), 0, $this->max);
         } catch (RuntimeException $e) {
             return [['notice' => $e->getMessage() === 'no_key' ? t('websearch.no_key') : t('websearch.failed', [$e->getMessage()])]];
         }
@@ -74,5 +81,36 @@ final class Plugin implements PluginInterface
         }
 
         return $out;
+    }
+
+    /**
+     * $results with those on a preferred domain (or a subdomain of one) first, each group in
+     * the engine's order
+     *
+     * @param list<array{title: string, url: string, snippet: string}> $results
+     * @param list<string> $domains
+     *
+     * @return list<array{title: string, url: string, snippet: string}>
+     */
+    public static function preferred(array $results, array $domains): array
+    {
+        $first = $rest = [];
+        foreach ($results as $result) {
+            $host = strtolower((string) parse_url($result['url'], PHP_URL_HOST));
+            $hit = false;
+            foreach ($domains as $domain) {
+                if ($host === $domain || str_ends_with($host, '.' . $domain)) {
+                    $hit = true;
+                    break;
+                }
+            }
+            if ($hit) {
+                $first[] = $result;
+            } else {
+                $rest[] = $result;
+            }
+        }
+
+        return [...$first, ...$rest];
     }
 }

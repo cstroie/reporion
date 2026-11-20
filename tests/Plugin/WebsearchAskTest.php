@@ -74,7 +74,7 @@ final class WebsearchAskTest extends HttpTestCase
 
         self::assertSame(200, $response->status, $response->body);
         $data = json_decode($response->body, true)['data'];
-        self::assertSame('https://api.search.brave.com/res/v1/web/search?q=white%20matter%20lesions%20MRI&count=5', $this->asked[0], 'only the web line goes out');
+        self::assertSame('https://api.search.brave.com/res/v1/web/search?q=white%20matter%20lesions%20MRI&count=10', $this->asked[0], 'only the web line goes out, a pool for the preferred sites');
         self::assertSame(['https://ref.example/wml'], \array_slice($this->asked, 1), 'one page read (fetch_pages 1), the other its snippet');
         self::assertCount(2, $data['sources']);
         self::assertSame('https://ref.example/wml', $data['sources'][0]['url']);
