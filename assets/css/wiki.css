@@ -2285,6 +2285,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 /* the same shape as the metadata panel (.wk-meta): its padding open or closed, its ▸ turning a quarter */
 details.wk-tool { padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
 details.wk-tool[open] { margin-bottom: var(--space-6); }
+/* one tool panel straight after another: closer together, open or closed */
+details.wk-tool:has(+ details.wk-tool) { margin-bottom: var(--space-3); }
 details.wk-tool > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-2); }
 details.wk-tool > summary::-webkit-details-marker { display: none; }
 details.wk-tool > summary::before { content: "▸"; display: inline-block; width: 1.1em; margin-right: calc(-1 * var(--space-2)); transition: transform .15s; }
