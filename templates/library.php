@@ -50,7 +50,7 @@ $total = \count($entries);
 <div class="field"><label><?= $e(t('library.ask.question')) ?>
 <textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('library.ask.hint')) ?>"></textarea>
 </label></div>
-<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button><button class="btn btn-ghost" type="button" data-notebook-clear hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('library.ask.clear')) ?></button></footer>
+<footer class="wk-actions"><button class="btn btn-ghost" type="button" data-notebook-clear hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('library.ask.clear')) ?></button><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button></footer>
 </form>
 <div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
 <script type="application/json"><?= json_encode([

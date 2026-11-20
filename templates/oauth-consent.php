@@ -40,8 +40,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <p class="wk-opts"><label class="radio"><input type="checkbox" name="write" value="1"><span class="dot"></span><span><?= $e(t('oauth.write')) ?></span></label></p>
 <?php $noticeKind = 'info'; $noticeText = t('oauth.readonly'); include __DIR__ . '/partials/notice.php'; ?>
 <footer>
-<button class="btn btn-primary" type="submit" name="decision" value="approve"><i class="ph ph-check"></i><?= $e(t('oauth.approve')) ?></button>
 <button class="btn btn-secondary" type="submit" name="decision" value="deny"><?= $e(t('oauth.deny')) ?></button>
+<button class="btn btn-primary" type="submit" name="decision" value="approve"><i class="ph ph-check"></i><?= $e(t('oauth.approve')) ?></button>
 </footer>
 </form>
 <?php endif; ?>
