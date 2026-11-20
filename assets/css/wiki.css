@@ -2280,13 +2280,11 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-ask-open { margin-top: var(--space-1); font-size: var(--text-xs); display: inline-flex; align-items: center; gap: var(--space-1); }
 
 /* Tool panels and disclosures (2026-11-05, docs/design-rules.md): the library's and the notebooks' collapsible panels share one look.
- * .wk-tools stacks .wk-tool panels (a <details class="wk-panel wk-tool"> whose <summary class="wk-eyebrow"> is its header, with the
+ * .wk-tool panels (a <details class="wk-panel wk-tool">, placed directly in the page like .wk-meta, whose <summary class="wk-eyebrow"> is its header, with the
  * Metadata panel's caret and compact padding when closed); .wk-disclosure is the same idea inside a panel, a dim line that opens a block. */
-.wk-tools { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-6); }
-.wk-tools > .wk-panel { margin-bottom: 0; }
-.wk-tools:not(:has(> *)) { display: none; }
 /* the same shape as the metadata panel (.wk-meta): its padding open or closed, its ▸ turning a quarter */
-details.wk-tool { padding: var(--space-3) var(--space-4); }
+details.wk-tool { padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
+details.wk-tool[open] { margin-bottom: var(--space-6); }
 details.wk-tool > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-2); }
 details.wk-tool > summary::-webkit-details-marker { display: none; }
 details.wk-tool > summary::before { content: "▸"; display: inline-block; width: 1.1em; margin-right: calc(-1 * var(--space-2)); transition: transform .15s; }

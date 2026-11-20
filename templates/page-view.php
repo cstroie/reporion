@@ -142,15 +142,13 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <?php include __DIR__ . '/partials/library-ask-source.php'; ?>
 <?php endif; ?>
 <?php endif; ?>
-<?php if (($notebookAsk ?? null) !== null || ($notebookStudio ?? null) !== null): /* Ask and Studio: tool panels, one stack (docs/design-rules.md) */ ?>
-<div class="wk-tools">
+<?php if (($notebookAsk ?? null) !== null || ($notebookStudio ?? null) !== null): /* Ask and Studio: tool panels, placed like the Metadata panel (docs/design-rules.md) */ ?>
 <?php if (($notebookAsk ?? null) !== null): ?>
 <?php include __DIR__ . '/partials/notebook-ask.php'; ?>
 <?php endif; ?>
 <?php if (($notebookStudio ?? null) !== null): ?>
 <?php include __DIR__ . '/partials/notebook-studio.php'; ?>
 <?php endif; ?>
-</div>
 <?php endif; ?>
 
 <div class="wk-docbody">

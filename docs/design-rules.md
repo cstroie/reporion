@@ -434,8 +434,9 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
 The library's and the notebooks' collapsible features (Ask, Studio, Possible duplicates)
 share one look, so a new one only needs the classes:
 
-- **`.wk-tools`** stacks tool panels with `--space-3` between them (and `--space-6` after the stack); it
-  hides itself when nothing is in it. One stack per page, above the content it works on.
+- **Tool panels sit directly in the page, like the Metadata panel** (`details.wk-meta`), never in a wrapper
+  div (2026-11-20, owner): each spaces itself as `wk-meta` does, `--space-4` below when closed, `--space-6`
+  when open, above the content it works on.
 - **`<details class="wk-panel wk-tool">`**: its `<summary class="wk-eyebrow">` is the header (an icon, the
   title, a `.wk-count` when there is one) with the Metadata panel's `▸`/`▾` caret and compact padding when
   closed; open, the description (`p.wk-dim`) and the content follow as in any panel. A tool's field label

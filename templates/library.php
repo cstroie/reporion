@@ -42,7 +42,6 @@ $total = \count($entries);
 </header>
 
 <?php $query = (string) ($query ?? ''); $searched = ($searched ?? false) === true; ?>
-<div class="wk-tools">
 <?php if (($libraryAsk ?? false) === true): /* Ask the library (2026-11-02): every source, never reports; assets/js/notebook-ask.js */ ?>
 <details class="wk-panel wk-tool wk-notebook-ask" data-island="notebook-ask">
 <summary class="wk-eyebrow"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('library.ask.title')) ?></summary>
@@ -89,7 +88,6 @@ $total = \count($entries);
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </details>
 <?php endif; ?>
-</div>
 <?php if (($libraryAsk ?? false) === true): ?>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/render-client.js')) ?>" defer></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/notebook-ask.js')) ?>" defer></script>
