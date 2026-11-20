@@ -28,15 +28,17 @@ use Reporion\Http\Response;
  *     answers of every listener are merged (Hooks::all()). Not offered in Admin →
  *     Maintenance: its labels are core strings.
  *
- *   ask.sources (string $question, User $principal): list<array>
+ *   ask.sources (string $question, User $principal, ?string $web): list<array>
  *     Passages for Ask the archive (D53) from outside the wiki: the answers of every
  *     listener are merged (Hooks::all()). Each is {text: string, date: ?string, label:
- *     string, heading?: string, names: list<string>, cnp: string, extra?: list<string>}
+ *     string, heading?: string, names: list<string>, cnp: string, extra?: list<string>, url?: string}
  *     (`names`, `cnp` and `extra`, other identifiers the source states, are the patient the
  *     text is about, for the redactor only: they never reach the prompt, the screen,
  *     the audit or a log) or {notice: string}, a line the screen shows when a source
  *     could not be read. A listener answers nothing for a caller it does not serve.
- *     Core numbers the passages after the wiki's and de-identifies them.
+ *     Core numbers the passages after the wiki's and de-identifies them. `$web` is the
+ *     short English query the `ask-expand` prompt wrote (its `web:` line), already
+ *     checked for identifiers, or null; a passage from the web carries its `url` (D67).
  *
  * Routes live under the plugin's own prefix, `/x/{plugin-id}/…`, and are
  * mounted before the page catch-all.

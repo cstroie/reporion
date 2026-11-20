@@ -1304,6 +1304,8 @@ return [
     'ask.err_question'  => 'Write a question of at most 1 000 characters.',
     'ask.sources'       => 'Sources',
     'ask.expand_failed' => 'The question could not be widened by the assistant: the search used its own words.',
+    'ask.web_held'      => 'The web search was left out: its query held something taken for a name or a number.',
+    'ask.web'           => 'Open the page',
     'ask.embed_failed'  => 'Search by meaning was not available: the search used words only.',
     'ask.mine'          => 'yours',
     'ask.open'          => 'Open the report',

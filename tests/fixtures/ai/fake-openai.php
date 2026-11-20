@@ -261,6 +261,8 @@ $chunks = match ($model) {
         'Done.',
     ],
     // Ask the archive's first step (D53): the question made standalone, then the words to search for
+    'ask-expand-web' => ["Cum descriem leziunile de substanță albă?\n", "leziuni\n", "web: white matter lesions MRI\n"],
+    'ask-expand-leak' => ["Cum descriem leziunile de substanță albă?\n", "leziuni\n", "web: Ionescu white matter 2026\n"],
     'ask-expand' => ["Cum descriem leziunile de substanță albă la copii?\n", "leziuni\n", "substanță albă\n", "hiperintensitate\n"],
     default => ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'],
 };

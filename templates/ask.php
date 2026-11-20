@@ -67,7 +67,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
     'basePath' => $basePath,
     'strings' => [
         'asking' => t('ask.asking'), 'failed' => t('ask.failed'), 'none' => t('ask.none'),
-        'mine' => t('ask.mine'), 'open' => t('ask.open'), 'context' => t('ask.context'),
+        'mine' => t('ask.mine'), 'open' => t('ask.open'), 'web' => t('ask.web'), 'context' => t('ask.context'),
         'copy' => t('ask.copy'), 'copied' => t('ask.copied'),
         'followup' => t('ask.followup_hint'), 'meaning' => t('ask.meaning'),
     ],

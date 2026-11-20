@@ -27,7 +27,7 @@ final class AskExpansionTest extends TestCase
         $keywords = AskExpansion::parse("Keywords:\nmeningiom\nFLAIR\n");
         self::assertSame('', $keywords['question'], 'no question line: the caller keeps the user\'s');
         self::assertSame(['meningiom', 'flair'], $keywords['terms']);
-        self::assertSame(['question' => '', 'terms' => [], 'lines' => []], AskExpansion::parse(''));
+        self::assertSame(['question' => '', 'terms' => [], 'lines' => [], 'web' => ''], AskExpansion::parse(''));
     }
 
     public function testTheWordsAreCapped(): void
@@ -35,5 +35,14 @@ final class AskExpansionTest extends TestCase
         $many = "Care este?\n" . implode("\n", array_map(static fn (int $i): string => 'cuvant' . str_repeat('x', $i), range(1, 40)));
 
         self::assertCount(AskExpansion::MAX_TERMS, AskExpansion::parse($many)['terms']);
+    }
+
+    public function testTheWebLineIsKeptApart(): void
+    {
+        $parsed = AskExpansion::parse("Cum descriem un meningiom în FLAIR?\nmeningiom\n- Web: \"meningioma FLAIR MRI appearance\"\nweb: second ignored");
+
+        self::assertSame('meningioma FLAIR MRI appearance', $parsed['web']);
+        self::assertSame(['meningiom'], $parsed['terms'], 'the web query is never a keyword');
+        self::assertSame('', AskExpansion::parse("Ce este?\nnodul")['web']);
     }
 }

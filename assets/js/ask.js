@@ -108,7 +108,7 @@
         li.setAttribute('data-n', src.n);
         li.appendChild(el('span', 'wk-ask-num', String(src.n)));
         var head = el('div', 'wk-ask-source-meta');
-        head.appendChild(icon(src.href ? 'file-text' : 'hospital'));
+        head.appendChild(icon(src.url ? 'globe' : src.href ? 'file-text' : 'hospital'));
         var date = String(src.study_date || '').replace('T', ' ').slice(0, 16);
         if (date) head.appendChild(el('span', 'wk-mono', date));
         if (src.modality) head.appendChild(el('span', 'tag ' + (src.href ? 'tag-outline' : 'tag-neutral'), src.modality));
@@ -122,6 +122,14 @@
           a.href = (cfg.basePath || '') + src.href;
           a.insertBefore(icon('arrow-square-out'), a.firstChild);
           li.appendChild(a);
+        } else if (src.url && /^https:\/\//.test(src.url)) {
+          // A web page (D67): opened apart, telling it nothing of where it was linked from
+          var w = el('a', 'wk-ask-open', s.web || '');
+          w.href = src.url;
+          w.target = '_blank';
+          w.rel = 'noopener noreferrer';
+          w.insertBefore(icon('arrow-square-out'), w.firstChild);
+          li.appendChild(w);
         }
         li.addEventListener('mouseenter', function () { light(src.n, true); });
         li.addEventListener('mouseleave', function () { light(src.n, false); });

@@ -6,5 +6,6 @@ Pregătești o căutare într-o arhivă de rapoarte radiologice. Nu răspunzi la
 Scrie, în limba română:
 1. Pe prima linie, întrebarea ca o întrebare completă, care nu are nevoie de o replică anterioară ca să fie înțeleasă: rezolvă „și la coloana cervicală?” sau „dar la CT?” din replicile anterioare de mai sus. Dacă întrebarea este deja completă, copiaz-o.
 2. Apoi cel mult 10 linii, câte una: un cuvânt sau o expresie scurtă pe care un raport radiologic le-ar folosi pentru ce se întreabă: constatarea, formularea ei obișnuită, un sinonim, forma românească și termenul latin sau englez, când se folosesc amândouă.
+3. La sfârșit, o linie care începe cu „web:”, urmată de o căutare scurtă în limba engleză (cel mult 8 cuvinte, termenii medicali), pentru un motor de căutare pe internet. Fără nume, fără date, fără numere de identificare.
 
 Fără numerotare, fără explicații, fără nume de pacient, fără dată, nimic altceva.

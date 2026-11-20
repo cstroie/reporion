@@ -1,0 +1,49 @@
+{
+  "id": "websearch",
+  "name": "Web search for Ask",
+  "version": "0.1",
+  "api": 1,
+  "license": "GPL-3.0-or-later",
+  "description": "Ask the archive also draws on the web (hook ask.sources): the assistant writes a short English search query (the ask-expand prompt's web: line, checked for identifiers), Brave Search or DuckDuckGo answers, and the top pages are read for their best passage. Sends the query only, never the question or a report.",
+  "hooks": [],
+  "settings": {
+    "provider": {
+      "type": "text",
+      "group": "Search",
+      "default": "ddg",
+      "pattern": "#^(ddg|brave)$#D",
+      "label": "Search engine",
+      "help": "ddg (DuckDuckGo's HTML page, no key) or brave (Brave Search API, needs a key)"
+    },
+    "brave_key": {
+      "type": "secret",
+      "group": "Search",
+      "label": "Brave Search API key"
+    },
+    "max_results": {
+      "type": "int",
+      "group": "Search",
+      "default": 5,
+      "min": 1,
+      "max": 10,
+      "label": "Results asked for"
+    },
+    "fetch_pages": {
+      "type": "int",
+      "group": "Search",
+      "default": 3,
+      "min": 0,
+      "max": 4,
+      "label": "Pages read",
+      "help": "the top results read for their best passage; 0 = the search snippets only"
+    },
+    "timeout": {
+      "type": "int",
+      "group": "Search",
+      "default": 8,
+      "min": 1,
+      "max": 30,
+      "label": "Time limit (seconds)"
+    }
+  }
+}

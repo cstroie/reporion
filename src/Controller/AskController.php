@@ -50,6 +50,9 @@ final class AskController
     /** Places the passages from outside the wiki may take of the sources */
     private const OUTSIDE = 4;
 
+    /** Places of the OUTSIDE ones the web's passages keep when the HIS also answered */
+    private const WEB = 2;
+
     /** Earlier turns of the conversation the browser may send (question and answer each), the latest kept */
     private const HISTORY = 5;
 
@@ -102,12 +105,14 @@ final class AskController
         // Step 1: the question as a standalone one (an earlier turn resolved) and the words a report would use
         $standalone = $question;
         $extra = [];
+        $web = null;
         $expand = $this->expandAction();
         if ($expand !== null) {
             try {
                 $parsed = AskExpansion::parse($this->assistant->runExpand($expand, $question, self::history($fields['history'] ?? null), $principal, $request)['result']);
                 $standalone = $parsed['question'] !== '' ? $parsed['question'] : $question;
                 $extra = $parsed['terms'];
+                $web = $this->webQuery($parsed['web'], $notices);
             } catch (AiException) {
                 // The search goes on with the question's own words
                 $notices[] = t('ask.expand_failed');
@@ -126,15 +131,19 @@ final class AskController
         $sources = $this->archive->sources($standalone, $principal, $extra, $vector);
         // Passages from outside the wiki (the `ask.sources` hook: HippoBridge), waited for with the rest
         $passages = [];
-        foreach ($this->hooks->all('ask.sources', $standalone, $principal) as $item) {
+        foreach ($this->hooks->all('ask.sources', $standalone, $principal, $web) as $item) {
             if (\is_array($item) && \is_string($item['notice'] ?? null)) {
                 $notices[] = $item['notice'];
             } elseif (\is_array($item) && \is_string($item['text'] ?? null)) {
                 $passages[] = $item + ['date' => null, 'label' => '', 'names' => [], 'cnp' => ''];
             }
         }
-        // At most SOURCES in all: the outside ones keep a few places so a full archive does not hide them
-        $passages = \array_slice($passages, 0, self::OUTSIDE);
+        // At most SOURCES in all: the outside ones keep a few places so a full archive does not hide them;
+        // the web's (a `url`, D67) keep WEB of those places when the HIS also answered
+        $fromWeb = array_values(array_filter($passages, static fn (array $p): bool => \is_string($p['url'] ?? null)));
+        $fromHis = array_values(array_filter($passages, static fn (array $p): bool => !\is_string($p['url'] ?? null)));
+        $fromHis = \array_slice($fromHis, 0, self::OUTSIDE - min(self::WEB, \count($fromWeb)));
+        $passages = [...$fromHis, ...\array_slice($fromWeb, 0, self::OUTSIDE - \count($fromHis))];
         $sources = \array_slice($sources, 0, ArchiveAsk::SOURCES - \count($passages));
         foreach ($passages as $i => $passage) {
             $passages[$i]['n'] = \count($sources) + $i + 1;
@@ -152,7 +161,8 @@ final class AskController
         // What the model reads of the outside texts, not what their system holds: no name or CNP on the page either
         $labels = array_column($passages, 'label', 'n');
         foreach (Context::deidentifyPassages($passages)[1] as $passage) {
-            $shown[] = ['n' => $passage['n'], 'heading' => (string) ($passage['heading'] ?? ''), 'text' => $passage['text'], 'study_date' => $passage['date'], 'modality' => $labels[$passage['n']], 'mine' => false];
+            $url = \is_string($passage['url'] ?? null) && str_starts_with($passage['url'], 'https://') ? $passage['url'] : null;
+            $shown[] = ['n' => $passage['n'], 'url' => $url, 'heading' => (string) ($passage['heading'] ?? ''), 'text' => $passage['text'], 'study_date' => $passage['date'], 'modality' => $labels[$passage['n']], 'mine' => false];
         }
         if ($sources === [] && $passages === []) {
             return ApiResponse::json(['data' => ['answer' => null, 'sources' => [], 'notices' => $notices, 'understood' => $standalone !== $question ? $standalone : null]]);
@@ -174,6 +184,29 @@ final class AskController
             'ms' => $done['ms'],
             'provider' => $done['provider'],
         ]]);
+    }
+
+    /**
+     * The `web:` line of the expansion as it may leave the box (D67), or null: de-identified as
+     * any question (Context::safeQuestion()); a query in which anything was taken out, or holding
+     * a run of four digits, is not sent at all (a notice says so)
+     *
+     * @param list<string> $notices
+     */
+    private function webQuery(string $web, array &$notices): ?string
+    {
+        $web = trim((string) preg_replace('/\s+/u', ' ', $web));
+        if ($web === '') {
+            return null;
+        }
+        $safe = $this->assistant->safeQuestion($web);
+        if ($safe !== $web || preg_match('/\d{4}/', $web) === 1) {
+            $notices[] = t('ask.web_held');
+
+            return null;
+        }
+
+        return $web;
     }
 
     /** Whether there is anything to ask: the assistant on and the prompt there */

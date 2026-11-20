@@ -9,7 +9,9 @@ namespace Reporion\Support;
 /**
  * What the `ask-expand` prompt answers (D53): the question as a standalone
  * one, then the words a report would use for it, one per line. Parsed
- * defensively: a model may number its lines, quote them or add a lead-in. Pure.
+ * defensively: a model may number its lines, quote them or add a lead-in.
+ * An optional `web: …` line is a short English query for a web search (D67):
+ * kept apart, never a keyword. Pure.
  */
 final class AskExpansion
 {
@@ -19,15 +21,24 @@ final class AskExpansion
     /** Longest standalone question kept, as the question itself */
     public const MAX_QUESTION = 1_000;
 
+    /** Longest web query kept (the `web:` line, D67) */
+    public const MAX_WEB = 200;
+
     /**
-     * @return array{question: string, terms: list<string>, lines: list<string>} question '' when the answer has none (keywords only);
+     * @return array{question: string, terms: list<string>, lines: list<string>, web: string} question '' when the answer has none (keywords only);
+     *         web '' when there is no `web:` line;
      *         lines: the keyword lines as written (a caller keeping words `terms` leaves out: `age`, `CT`)
      */
     public static function parse(string $answer): array
     {
         $lines = [];
+        $web = '';
         foreach (preg_split('/\R/u', trim($answer)) ?: [] as $line) {
             $line = trim((string) preg_replace('/^\s*(?:[-*•]+|\d+[.)])\s*/u', '', trim($line)), " \t\"'«»„”`");
+            if (preg_match('/^(?:web|internet)\s*:\s*(.*)$/iu', $line, $m) === 1) {
+                $web = $web === '' ? mb_substr(trim($m[1], " \t\"'«»„”`"), 0, self::MAX_WEB) : $web;
+                continue;
+            }
             if ($line !== '' && preg_match('/^(?:keywords|cuvinte|words|termeni)\s*:\s*$/iu', $line) !== 1) {
                 $lines[] = $line;
             }
@@ -48,6 +59,6 @@ final class AskExpansion
             }
         }
 
-        return ['question' => $question, 'terms' => \array_slice(array_keys($terms), 0, self::MAX_TERMS), 'lines' => \array_slice($lines, 0, self::MAX_TERMS)];
+        return ['question' => $question, 'terms' => \array_slice(array_keys($terms), 0, self::MAX_TERMS), 'lines' => \array_slice($lines, 0, self::MAX_TERMS), 'web' => $web];
     }
 }
