@@ -179,7 +179,7 @@ final class AskController
             'notices' => $notices,
             // The question as searched, when the first step made it another; and what was searched
             'understood' => $standalone !== $question ? $standalone : null,
-            'searched' => ['terms' => \array_slice(array_values(array_unique([...ArchiveAsk::terms($standalone), ...$extra])), 0, 12), 'meaning' => $vector !== null],
+            'searched' => ['terms' => \array_slice(array_values(array_unique([...ArchiveAsk::terms($standalone), ...$extra])), 0, 12), 'meaning' => $vector !== null, 'web' => $web],
             'context' => $done['contextSet'],
             'ms' => $done['ms'],
             'provider' => $done['provider'],
