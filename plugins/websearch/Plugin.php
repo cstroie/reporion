@@ -52,6 +52,9 @@ final class Plugin implements PluginInterface
         } catch (RuntimeException $e) {
             return [['notice' => $e->getMessage() === 'no_key' ? t('websearch.no_key') : t('websearch.failed', [$e->getMessage()])]];
         }
+        if ($results === []) {
+            return [['notice' => t('websearch.none', [$web])]];
+        }
         $out = [];
         foreach ($results as $i => $result) {
             $text = $i < $this->pages ? $this->fetch->passage($result['url'], $web) : '';

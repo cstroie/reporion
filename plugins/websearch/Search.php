@@ -49,6 +49,11 @@ final class Search
             throw new RuntimeException('HTTP ' . $status);
         }
 
+        // DuckDuckGo answers a client it takes for a robot with a challenge page, status 200
+        if (preg_match('/anomaly-modal|challenge-form/i', $body) === 1) {
+            throw new RuntimeException('DuckDuckGo asked for a robot check');
+        }
+
         return self::parseDdg($body, $max);
     }
 

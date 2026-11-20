@@ -8,5 +8,6 @@ declare(strict_types=1);
 return [
     'websearch.label' => 'Web',
     'websearch.failed' => 'The web search did not answer: %s.',
+    'websearch.none' => 'The web search found nothing for: %s.',
     'websearch.no_key' => 'The web search needs a Brave Search API key (Admin → Plugins).',
 ];
