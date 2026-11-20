@@ -28,13 +28,12 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="field"><label><?= $e(t('notebook.question')) ?>
 <textarea class="input" name="question" rows="2" maxlength="1000" required placeholder="<?= $e(t('notebook.hint')) ?>"></textarea>
 </label></div>
-<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button></footer>
-</form>
-<div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
-<footer class="wk-actions wk-notebook-more">
+<footer class="wk-actions"><button class="btn btn-primary" type="submit" data-notebook-ask><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('notebook.ask')) ?></button>
 <a class="btn btn-ghost btn-sm" data-notebook-kept href="<?= $e($notebookAsk['kept'] ?? '') ?>"<?= $notebookAsk['kept'] === null ? ' hidden' : '' ?>><i class="ph ph-bookmarks" aria-hidden="true"></i><?= $e(t('notebook.kept_link')) ?></a>
 <button class="btn btn-ghost btn-sm" type="button" data-notebook-compose title="<?= $e(t('notebook.compose_title')) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= $e(t('notebook.compose')) ?></button>
 </footer>
+</form>
+<div class="wk-notebook-out" data-notebook-out aria-live="polite" hidden></div>
 <script type="application/json"><?= json_encode([
     'basePath' => $basePath,
     'path' => $notebookAsk['path'],
