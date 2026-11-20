@@ -87,9 +87,10 @@ final class TagPruneTaskTest extends StorageTestCase
 
         self::assertSame(['twice', 'thrice', 'curated'], $this->tags('uno'));
         self::assertSame(['twice', 'thrice', 'rads:birads-4a'], $this->tags('doi'), 'RADS stays');
-        self::assertSame(['only-signed'], $this->tags('signed'), 'a signed report keeps its tag (D3)');
-        self::assertSame(1, $run->summary()['pages_changed']);
-        self::assertSame(1, $run->summary()['signed_pages_kept']);
+        self::assertNull($this->storage->read('reports:mri:mioveni:260927-test-signed')->frontmatter['tags'] ?? null, 'a signed report loses it too');
+        self::assertSame('signed', $this->storage->read('reports:mri:mioveni:260927-test-signed')->status, 'and stays signed (D66)');
+        self::assertSame(2, $run->summary()['pages_changed']);
+        self::assertSame(0, $run->summary()['signed_pages_kept']);
         $revlog = $this->storage->read('reports:mri:mioveni:260927-test-uno')->revlog;
         self::assertSame(SystemActor::ADMIN, end($revlog)['by']);
 

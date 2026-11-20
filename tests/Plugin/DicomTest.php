@@ -1132,19 +1132,26 @@ final class DicomTest extends HttpTestCase
         self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
     }
 
-    public function testBulkLinkReturnsASignedReportToDraftAndSaysSo(): void
+    public function testBulkLinkGivesASignedReportOnlyTheStudyUidAndKeepsItSigned(): void
     {
         $storage = $this->storage();
         $storage->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp]], "# IONESCU Maria\n", 'owner');
         $storage->sign(self::REPORT, 'owner', []);
 
+        $before = $storage->read(self::REPORT);
         $check = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
-        self::assertSame(1, $check->summary()['would_unsign']);
+        self::assertSame(1, $check->summary()['would_link_signed']);
         self::assertSame('signed', $storage->read(self::REPORT)->status);
 
         $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
-        self::assertSame(1, $run->summary()['signed_to_draft']);
-        self::assertSame('draft', $storage->read(self::REPORT)->status);
+        self::assertSame(1, $run->summary()['linked_signed']);
+        $after = $storage->read(self::REPORT);
+        self::assertSame(['signed', 2], [$after->status, $after->rev], 'stays signed (D66)');
+        self::assertNotSame('', $after->frontmatter['exams'][0]['study_uid'] ?? '', 'the study is linked');
+        self::assertSame($before->frontmatter['patient'], $after->frontmatter['patient'], 'no printed blank filled');
+        self::assertArrayNotHasKey('pacs_accession', $after->frontmatter['exams'][0]);
+        $signatures = $after->meta['signatures'];
+        self::assertSame(1, end($signatures)['carried_from'] ?? null);
     }
 
     public function testBulkLinkStopsWhenThePacsDoesNotAnswerAndNeedsAConfiguredSite(): void

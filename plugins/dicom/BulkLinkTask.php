@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\SystemActor;
 use Reporion\Exception\RevisionConflictException;
+use Reporion\Exception\SignedPageException;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\ProgressAware;
@@ -29,8 +30,9 @@ use RuntimeException;
  * patient (a multi-part scan) link no study but fill the report's blank
  * patient fields. Everything else is listed (ambiguous, no
  * match) for the PACS tab. A name-only match never imports the study's
- * CNP. Signed reports are linked too, which: as any edit of a signed
- * report (D3): returns them to draft: the check reports how many. Pages
+ * CNP. Signed reports are linked too and stay signed (D66): they take only
+ * the study UID, through a carried signature; the printed blanks the study
+ * would fill stay blank, and a signed report is never refreshed. Pages
  * are named by pid only (invariant 8). Check mode asks the PACS as well,
  * so it costs the same queries; --limit bounds both.
  */
@@ -78,7 +80,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
         $site = (string) $options['site'];
         $limit = (int) $options['limit'];
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'device_filled' : 'would_device', 'device_signed_kept', $apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'signed_to_draft' : 'would_unsign', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'unreadable', 'remaining'] as $key) {
+        foreach ([$apply ? 'device_filled' : 'would_device', 'device_signed_kept', $apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'linked_signed' : 'would_link_signed', 'signed_kept', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'unreadable', 'remaining'] as $key) {
             $report->count($key, 0);
         }
 
@@ -229,11 +231,10 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             if (!$apply) {
                 $report->count('would_link');
                 if ($signed) {
-                    $report->count('would_unsign');
-                    $report->item($page->pid, $page->rev, 'would_unsign', 'signed; linking returns it to draft', ['match' => $match['match']]);
+                    $report->count('would_link_signed');
                 }
                 $held[(string) $match['uid']] = true;
-                $say('done', ['status' => 'would link (' . $match['match'] . ')' . ($signed ? ', signed: would return to draft' : '')]);
+                $say('done', ['status' => 'would link (' . $match['match'] . ')' . ($signed ? ', signed: the study link only, stays signed' : '')]);
                 continue;
             }
             try {
@@ -248,6 +249,11 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
                 $report->item($page->pid, $page->rev, 'error', 'edited meanwhile');
                 $say('done', ['status' => 'error: edited meanwhile']);
                 continue;
+            } catch (SignedPageException) {
+                // D66 refused the carry (more than the link would change): left as signed
+                $report->count('signed_kept');
+                $say('done', ['status' => 'signed: left as signed']);
+                continue;
             }
             $held[(string) $match['uid']] = true;
             if ($saved === null) {
@@ -256,11 +262,10 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             }
             $report->count('linked');
             if ($signed) {
-                $report->count('signed_to_draft');
-                $report->item($page->pid, $saved->rev, 'signed_to_draft', 'linked; sign it again', ['match' => $match['match']]);
+                $report->count('linked_signed');
             }
-            $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $match['match'], 'on_behalf_of' => $actor]);
-            $say('done', ['status' => 'linked (' . $match['match'] . ')' . ($signed ? ', signed: now a draft' : '')]);
+            $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $match['match'], 'on_behalf_of' => $actor] + ($signed ? ['signature' => 'carried'] : []));
+            $say('done', ['status' => 'linked (' . $match['match'] . ')' . ($signed ? ', signed: still signed' : '')]);
         }
 
         return $report;
@@ -333,13 +338,16 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
     private function refresh(PageRecord $page, string $uid, string $site, string $actor, bool $apply, MaintenanceReport $report, callable $say): void
     {
         $signed = $page->status === 'signed';
+        if ($signed) {
+            // D66: a refresh fills printed blanks only, and a signed report keeps them as signed
+            $report->count('signed_kept');
+            $say('done', ['status' => 'signed: left as signed']);
+
+            return;
+        }
         if (!$apply) {
             $report->count('would_refresh');
-            if ($signed) {
-                $report->count('would_unsign');
-                $report->item($page->pid, $page->rev, 'would_unsign', 'signed; refreshing returns it to draft');
-            }
-            $say('done', ['status' => 'would refresh from its study' . ($signed ? ', signed: would return to draft' : '')]);
+            $say('done', ['status' => 'would refresh from its study']);
 
             return;
         }
@@ -364,11 +372,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             return;
         }
         $report->count('refreshed');
-        if ($signed) {
-            $report->count('signed_to_draft');
-            $report->item($page->pid, $saved->rev, 'signed_to_draft', 'refreshed; sign it again');
-        }
         $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => 'uid', 'on_behalf_of' => $actor]);
-        $say('done', ['status' => 'refreshed' . ($signed ? ', signed: now a draft' : '')]);
+        $say('done', ['status' => 'refreshed']);
     }
 }

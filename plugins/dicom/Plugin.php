@@ -13,6 +13,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\PrefillUnavailableException;
+use Reporion\Exception\SignedPageException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -330,9 +331,12 @@ final class Plugin implements PluginInterface
             return $this->study($request, $params, $principal, $e->getMessage(), $site, $day);
         } catch (InvalidArgumentException $e) {
             return $this->study($request, $params, $principal, $e->getMessage(), $site, $day);
+        } catch (SignedPageException) {
+            // D66: a signed report takes only the study link; this one would change more
+            return $this->study($request, $params, $principal, 'signed', $site, $day);
         }
         if ($updated !== null) {
-            $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $updated->rev, extra: ['via' => Pacs::SOURCE]);
+            $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $updated->rev, extra: ['via' => Pacs::SOURCE] + ($updated->status === 'signed' ? ['signature' => 'carried'] : []));
         }
 
         // The notice says which revision this made, and the device when this link is what identified it

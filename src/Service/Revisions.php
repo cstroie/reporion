@@ -87,7 +87,7 @@ final class Revisions
      * not be read or parsed, so nothing was compared (`matches` is false, but
      * that is not a mismatch).
      *
-     * @return array{by: string, ts: string, alg: string, digest: string, parafa: ?string, matches: bool, unreadable: bool}|null
+     * @return array{by: string, ts: string, alg: string, digest: string, parafa: ?string, matches: bool, unreadable: bool, carried_from: ?int, keys: list<string>}|null
      */
     public function signature(PageRecord $current, int $rev): ?array
     {
@@ -130,6 +130,9 @@ final class Revisions
             'parafa' => isset($found['parafa']) && \is_string($found['parafa']) ? $found['parafa'] : null,
             'matches' => $matches,
             'unreadable' => $unreadable,
+            // D66: a signature carried onto a revision that changed only what never prints
+            'carried_from' => isset($found['carried_from']) ? (int) $found['carried_from'] : null,
+            'keys' => array_values(array_filter((array) ($found['keys'] ?? []), \is_string(...))),
         ];
     }
 }

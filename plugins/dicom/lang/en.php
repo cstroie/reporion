@@ -137,4 +137,5 @@ return [
     'dicom.study.exam_none' => 'which exam?',
     'dicom.study.exam_n' => 'Exam %d: %s',
     'dicom.err.linked-other' => 'This report is already linked to another study: nothing was changed.',
+    'dicom.err.signed' => 'This report is signed: it takes only the study link, and here the link would change more than that. Nothing was changed.',
 ];

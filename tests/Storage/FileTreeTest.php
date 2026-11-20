@@ -598,6 +598,68 @@ final class FileTreeTest extends StorageTestCase
         self::assertSame('signed', $this->row($signed->pid)['status']);
     }
 
+    public function testALinkOrSummaryOnASignedReportCarriesTheSignature(): void
+    {
+        $storage = $this->storage();
+        $created = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
+        $schemaFields = ['modality' => [], 'title' => []];
+        $storage->sign(self::PATH, 'rad', $schemaFields, 'AG-1');
+        $current = $storage->read(self::PATH);
+
+        $saved = $storage->saveCarryingSignature(self::PATH, ['summary' => 'Normal.', 'tags' => ['normal']] + $current->frontmatter, $current->body, 1, 'system:summarizer', 'summary');
+
+        self::assertSame([2, 'signed', 'meta'], [$saved->rev, $saved->status, $saved->revlog[1]['kind']]);
+        self::assertSame('signed', $this->row($created->pid)['status']);
+        $signature = $saved->meta['signatures'][1];
+        self::assertSame(['rad', 'AG-1', 2, 1, 'system:summarizer', ['summary', 'tags']], [$signature['by'], $signature['parafa'], $signature['rev'], $signature['carried_from'], $signature['carried_by'], $signature['keys']]);
+        [$frontmatter, $body] = DocumentFormat::parse($storage->readRevision(self::PATH, 2));
+        self::assertSame(hash('sha256', Canonical::bytes($frontmatter, $body, $schemaFields)), $signature['digest']);
+        self::assertSame('v1 body', trim($body));
+        self::assertSame(2, (int) $this->state()->query('SELECT COUNT(*) FROM signature')?->fetchColumn());
+        self::assertSame($saved->rev, $storage->saveCarryingSignature(self::PATH, $saved->frontmatter, $saved->body, 2, 'system:summarizer')->rev, 'nothing changed: a no-op');
+    }
+
+    public function testACarryIsRefusedForAPrintedKeyTheBodyOrAnUnsignedPage(): void
+    {
+        $storage = $this->storage();
+        $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
+        foreach ([
+            static fn () => $storage->saveCarryingSignature(self::PATH, ['summary' => 'x'] + $storage->read(self::PATH)->frontmatter, 'v1 body', 1, 'system:summarizer'),
+            static function () use ($storage) {
+                $storage->sign(self::PATH, 'rad', []);
+                $storage->saveCarryingSignature(self::PATH, ['title' => 'Other'] + $storage->read(self::PATH)->frontmatter, 'v1 body', 1, 'system:pacs');
+            },
+            static fn () => $storage->saveCarryingSignature(self::PATH, $storage->read(self::PATH)->frontmatter, 'v2 body', 1, 'system:pacs'),
+        ] as $attempt) {
+            try {
+                $attempt();
+                self::fail('expected a refusal');
+            } catch (SignedPageException) {
+                self::addToAssertionCount(1);
+            }
+        }
+        self::assertSame([1, 'signed'], [$storage->read(self::PATH)->rev, $storage->read(self::PATH)->status]);
+    }
+
+    public function testReplayAfterACarryCrashedBeforeThePageFileLeavesItSigned(): void
+    {
+        $storage = $this->storage();
+        $created = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
+        $storage->sign(self::PATH, 'rad', []);
+        $before = (string) file_get_contents($this->dataRoot . self::FILE);
+        $current = $storage->read(self::PATH);
+        $storage->saveCarryingSignature(self::PATH, ['tags' => ['a']] + $current->frontmatter, $current->body, 1, 'system:tagger');
+        // the zip took rev 2 and its signature; the page file and the row did not
+        file_put_contents($this->dataRoot . self::FILE, $before);
+        (new Journal($this->dataRoot . '/journal'))->appendIntent('save', $created->pid, self::PATH, 2, 1, '', 'system:tagger');
+
+        $storage->replayJournal();
+
+        $read = $storage->read(self::PATH);
+        self::assertSame([2, 'signed', ['a']], [$read->rev, $read->status, $read->frontmatter['tags']]);
+        self::assertSame('signed', $this->row($created->pid)['status']);
+    }
+
     public function testArchiveAndUnarchiveFlipTheStatusWithoutARevisionAndLeaveATraceInTheZip(): void
     {
         $storage = $this->storage();

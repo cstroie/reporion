@@ -49,7 +49,7 @@ return [
     'hipobridge.priors.col_his' => 'HippoBridge',
     'hipobridge.priors.present' => 'present',
     'hipobridge.priors.no_exams' => 'No imaging exam of the configured types for this patient in HippoBridge.',
-    'hipobridge.priors.explain' => 'Ticked exams are brought in as archived reports (their radiologist\'s text, never signed here) and added to this report\'s priors. The exam this report answers fills what the report is missing: the patient\'s CNP, sex and birth year, the referrer, indication, order, exam title and region, and the study time or modality when they agree with where the report is filed. The report\'s text and any value already in it are never changed.',
+    'hipobridge.priors.explain' => 'Ticked exams are brought in as archived reports (their radiologist\'s text, never signed here) and added to this report\'s priors. The exam this report answers fills what the report is missing: the patient\'s CNP, sex and birth year, the referrer, indication, order, exam title and region, and the study time or modality when they agree with where the report is filed. The report\'s text and any value already in it are never changed. A signed report stays signed: it takes only its priors and the order it answers, which never print.',
     'hipobridge.priors.col_import' => 'import',
     'hipobridge.priors.col_this' => 'this report',
     'hipobridge.priors.link' => 'link as prior',

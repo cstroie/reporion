@@ -15,6 +15,7 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\ReportSummary;
 use Reporion\Storage\FileTree;
+use Reporion\Storage\PageRecord;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
@@ -26,7 +27,7 @@ use Throwable;
  * (docs/FORMATS.md §13) for the one-line `summary` of each report under a
  * namespace that has none (or only the save's stopgap first sentence, Support\ConclusionSummary), and writes it as one new revision by the actor
  * (TODO.md idea 12). Check lists what it would ask and sends nothing. Only
- * `draft` and `archived` reports: a signed one is counted, never rewritten
+ * `draft` and `archived` reports: a signed one keeps its signature (D66: a carried signature, Storage::saveCarryingSignature())
  * (D3). Where there is no `summary` prompt (no assistant, or the profile
  * has no page) the summary is the conclusion's first sentence instead, the
  * save's rule (Support\ConclusionSummary): nothing sent anywhere. Each page goes through Assistant::run() like the
@@ -97,7 +98,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'summarized' : 'would_summarize', $apply ? 'from_conclusion' : 'would_take_conclusion', 'has_summary', 'up_to_date', 'no_conclusion', 'signed', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'summarized' : 'would_summarize', $apply ? 'from_conclusion' : 'would_take_conclusion', 'has_summary', 'up_to_date', 'no_conclusion', 'signed_carried', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -110,10 +111,6 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $page = $this->storage->read($path);
             } catch (RuntimeException) {
                 $report->unreadable($path);
-                continue;
-            }
-            if ($page->status === 'signed') {
-                $report->count('signed');
                 continue;
             }
             // A summary nobody wrote: the stopgap first sentence of the conclusion: counts as none
@@ -155,8 +152,8 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $line = (new ReportSummary($this->assistant))->run($action, $page, $user)['summary'];
                 $frontmatter = $page->frontmatter;
                 $frontmatter['summary'] = $line;
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::SUMMARIZER, 'assisted: summary', auto: true);
-                $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-summary', 'on_behalf_of' => $actor]);
+                $saved = $this->write($page, $frontmatter, SystemActor::SUMMARIZER, 'assisted: summary');
+                $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-summary', 'on_behalf_of' => $actor] + self::carried($saved, $report));
                 $report->count('summarized');
                 $streak = 0;
                 $this->tell('done', ['status' => 'ok']);
@@ -222,13 +219,37 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         try {
             $frontmatter = $page->frontmatter;
             $frontmatter['summary'] = $line;
-            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::SUMMARIZER, 'summary from conclusion', auto: true);
-            $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'conclusion-summary', 'on_behalf_of' => $actor]);
+            $saved = $this->write($page, $frontmatter, SystemActor::SUMMARIZER, 'summary from conclusion');
+            $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'conclusion-summary', 'on_behalf_of' => $actor] + self::carried($saved, $report));
             $report->count('from_conclusion');
         } catch (Throwable $e) {
             $report->count('failed');
             $report->item($page->pid, $page->rev, 'failed', $e::class);
         }
+    }
+
+    /**
+     * One revision of $page with $frontmatter: a signed report stays signed (D66),
+     * since summary and tags never print; any other a normal save
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private function write(PageRecord $page, array $frontmatter, string $actor, string $note): PageRecord
+    {
+        return $page->status === 'signed'
+            ? $this->storage->saveCarryingSignature($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true)
+            : $this->storage->save($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true);
+    }
+
+    /** @return array<string, string> the audit line's mark of a carried signature, counted */
+    private static function carried(PageRecord $saved, MaintenanceReport $report): array
+    {
+        if ($saved->status !== 'signed') {
+            return [];
+        }
+        $report->count('signed_carried');
+
+        return ['signature' => 'carried'];
     }
 
     /** What an early stop leaves for the next run, counted */

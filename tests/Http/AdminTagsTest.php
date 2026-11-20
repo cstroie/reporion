@@ -18,8 +18,8 @@ use Reporion\Storage\FileTree;
 
 /**
  * Admin → Tags (decided 2026-09-26): counts, rename and merge rewrite the
- * frontmatter of unsigned pages as new revisions; signed reports keep
- * their tags; owner-only, 404 for everyone else.
+ * frontmatter of pages as new revisions (a signed report stays
+ * signed, D66: a carried signature); owner-only, 404 for everyone else.
  */
 final class AdminTagsTest extends HttpTestCase
 {
@@ -46,7 +46,7 @@ final class AdminTagsTest extends HttpTestCase
         self::assertSame(404, $this->request('POST', '/admin/tags/rename', 'editor', 'from=SM&to=x')->status);
     }
 
-    public function testRenamingRewritesUnsignedPagesAndLeavesSignedOnes(): void
+    public function testRenamingRewritesEveryPageAndASignedOneStaysSigned(): void
     {
         $this->page('reports:a', ['SM', 'follow-up']);
         $this->page('reports:b', ['SM']);
@@ -55,11 +55,11 @@ final class AdminTagsTest extends HttpTestCase
         $response = $this->request('POST', '/admin/tags/rename', 'owner', 'from=SM&to=scleroza-multipla');
 
         self::assertSame(302, $response->status);
-        self::assertStringEndsWith('/admin/tags?changed=2&signed=1&conflicts=0', $response->headers['Location']);
+        self::assertStringEndsWith('/admin/tags?changed=3&signed=0&conflicts=0', $response->headers['Location']);
         $storage = $this->storage();
         self::assertSame(['scleroza-multipla', 'follow-up'], $storage->read('reports:a')->frontmatter['tags']);
         self::assertSame(2, $storage->read('reports:a')->rev);
-        self::assertSame(['SM'], $storage->read('reports:c')->frontmatter['tags'], 'signed: untouched (D3)');
+        self::assertSame(['scleroza-multipla'], $storage->read('reports:c')->frontmatter['tags'], 'signed too (D66)');
         self::assertSame('signed', $storage->read('reports:c')->status);
         self::assertStringContainsString('"reason":"tag-rename"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
 
@@ -192,12 +192,13 @@ final class AdminTagsTest extends HttpTestCase
         self::assertSame(404, $this->request('POST', '/admin/tags/review/' . $m[1], 'editor', 'pick[]=1')->status);
         $apply = $this->request('POST', '/admin/tags/review/' . $m[1], 'owner', 'pick[]=1&to[1]=Leziune&reject[]=0');
         self::assertSame(302, $apply->status);
-        self::assertStringContainsString('changed=1&signed=1', $apply->headers['Location']);
+        self::assertStringContainsString('changed=2&signed=0', $apply->headers['Location']);
 
         $storage = $this->storage();
         self::assertSame(['leziune', 'hernie discală L4-L5 stângă'], $storage->read('reports:b')->frontmatter['tags']);
         self::assertSame('system:admin', $storage->read('reports:b')->revlog[1]['by']);
-        self::assertSame(['leziuni'], $storage->read('reports:c')->frontmatter['tags'], 'signed: untouched (D3)');
+        self::assertSame(['leziune'], $storage->read('reports:c')->frontmatter['tags'], 'signed too (D66)');
+        self::assertSame('signed', $storage->read('reports:c')->status);
         $yaml = (string) file_get_contents($this->dataRoot . '/tags.yaml');
         self::assertMatchesRegularExpression('~leziune:\s+synonyms:\s+- leziuni~', $yaml, 'a merged name stays a synonym');
         self::assertStringContainsString('hernie discală L4-L5 stângă → hernie discală', $yaml, 'never suggested again');
@@ -207,9 +208,9 @@ final class AdminTagsTest extends HttpTestCase
 
         $again = $this->request('POST', '/admin/maintenance/tags:review', 'owner', 'mode=check&return=tags&ai=0');
         preg_match('~run=([0-9a-f-]+)~', $again->headers['Location'], $m2);
-        // The generalisation turned down is not made again; only the signed report's leftover tag is still there to merge
+        // The generalisation turned down is not made again, and the merge left nothing behind
         $items = json_decode($this->request('GET', '/admin/maintenance/runs/' . $m2[1] . '.json', 'owner')->body, true)['items'];
-        self::assertSame(['leziuni → leziune'], array_column($items, 'detail'));
+        self::assertSame([], array_column($items, 'detail'));
     }
 
     private function page(string $path, array $tags, bool $sign = false, string $body = "text\n"): void

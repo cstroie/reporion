@@ -16,11 +16,11 @@ use Reporion\Service\Maintenance\ProgressAware;
  * bin/reporion pages:summarize [--actor=<username>] [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]
  *
  * Asks the assistant's `summary` prompt for the one-line summary of each
- * unsigned report under --namespace that has none (--overwrite: all of
+ * report under --namespace that has none (--overwrite: all of
  * them), at most --limit per run; where there is no `summary` prompt (no
  * assistant), the conclusion's first sentence instead, nothing sent. With --dry-run it only lists what it
  * would ask and sends nothing; without it, it writes. Each page becomes one new revision by
- * the pseudouser (D41; --actor is only on whose behalf); signed reports are never touched (D3). One line per page to the
+ * the pseudouser (D41; --actor is only on whose behalf); a signed report stays signed (D66, a carried signature). One line per page to the
  * terminal ("[n/total] pid … ok"); pages are named by pid
  * Service\Maintenance\SummarizeTask, the same task Admin → Reports runs.
  *
@@ -47,7 +47,7 @@ class PagesSummarizeCommand implements CommandInterface
     public static function help(): CommandHelp
     {
         return new CommandHelp(
-            summary: 'Writes the assistant\'s one-line summary for unsigned reports that have none; without an assistant, the conclusion\'s first sentence.',
+            summary: 'Writes the assistant\'s one-line summary for reports that have none (a signed one stays signed, D66); without an assistant, the conclusion\'s first sentence.',
             usage: '[--actor=<username>] [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]',
             options: [
                 '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',

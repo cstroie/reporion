@@ -10,8 +10,10 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
+use Reporion\Exception\SignedPageException;
 use Reporion\Http\Request;
 use Reporion\Index\IndexInterface;
+use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
 /**
@@ -76,14 +78,14 @@ final class Tags
             if (array_intersect($tags, $from) === []) {
                 continue;
             }
-            if ($page->status === 'signed') {
-                ++$skippedSigned;
-                continue;
-            }
             $frontmatter = $page->frontmatter;
             $frontmatter['tags'] = array_values(array_unique(array_map(static fn (string $tag): string => \in_array($tag, $from, true) ? $into : $tag, $tags)));
             try {
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: ' . implode(', ', $from) . ' → ' . $into, auto: true);
+                $saved = $this->write($page, $frontmatter, $actor, 'tags: ' . implode(', ', $from) . ' → ' . $into);
+            } catch (SignedPageException) {
+                // D66 refused the carry (an older signed shape it cannot keep as signed): left as it is
+                ++$skippedSigned;
+                continue;
             } catch (RevisionConflictException) {
                 // Saved by someone else in between: it keeps the old tag, counted so a rerun is asked for
                 ++$conflicts;
@@ -130,17 +132,17 @@ final class Tags
                 ++$unchanged;
                 continue;
             }
-            if ($page->status === 'signed') {
-                ++$skippedSigned;
-                continue;
-            }
             $frontmatter = $page->frontmatter;
             $frontmatter['tags'] = $add ? [...$tags, $tag] : array_values(array_diff($tags, [$tag]));
             if ($frontmatter['tags'] === []) {
                 unset($frontmatter['tags']);
             }
             try {
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, ($add ? 'tag + ' : 'tag − ') . $tag, auto: true);
+                $saved = $this->write($page, $frontmatter, $actor, ($add ? 'tag + ' : 'tag − ') . $tag);
+            } catch (SignedPageException) {
+                // D66 refused the carry (an older signed shape it cannot keep as signed): left as it is
+                ++$skippedSigned;
+                continue;
             } catch (RevisionConflictException) {
                 ++$conflicts;
                 continue;
@@ -157,7 +159,7 @@ final class Tags
      * new revision with all of them gone (note `tag − a, b, c`), not one
      * revision per tag: a page with five rare tags is one change in its
      * history, and one chance for an open editor to be outdated, not five.
-     * Same rules as apply(): a signed report is left alone (D3) and counted
+     * Same rules as apply(): a signed report stays signed (D66); one it cannot keep signed is counted
      * once; a page saved by someone else meanwhile is counted in `conflicts`.
      *
      * @param list<string> $tags
@@ -188,17 +190,17 @@ final class Tags
             if ($remove === []) {
                 continue;
             }
-            if ($page->status === 'signed') {
-                ++$skippedSigned;
-                continue;
-            }
             $frontmatter = $page->frontmatter;
             $frontmatter['tags'] = array_values(array_diff($have, $remove));
             if ($frontmatter['tags'] === []) {
                 unset($frontmatter['tags']);
             }
             try {
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tag − ' . implode(', ', $remove), auto: true);
+                $saved = $this->write($page, $frontmatter, $actor, 'tag − ' . implode(', ', $remove));
+            } catch (SignedPageException) {
+                // D66 refused the carry (an older signed shape it cannot keep as signed): left as it is
+                ++$skippedSigned;
+                continue;
             } catch (RevisionConflictException) {
                 ++$conflicts;
                 continue;
@@ -218,5 +220,18 @@ final class Tags
         }
 
         return $tag;
+    }
+
+    /**
+     * One revision with $frontmatter's tags: a signed report stays signed (D66,
+     * a carried signature: tags never print); any other page a normal save.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private function write(PageRecord $page, array $frontmatter, string $actor, string $note): PageRecord
+    {
+        return $page->status === 'signed'
+            ? $this->storage->saveCarryingSignature($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true)
+            : $this->storage->save($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true);
     }
 }

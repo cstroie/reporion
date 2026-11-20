@@ -15,6 +15,7 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\FileTree;
+use Reporion\Storage\PageRecord;
 use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
 use Reporion\Support\TagList;
@@ -26,7 +27,7 @@ use Throwable;
  * §13) for the tags of each report under a namespace that has none
  * (--overwrite: all of them), and writes them as one new revision by the
  * actor (2026-10-08). Check lists what it would ask and sends nothing. Only
- * `draft` and `archived` reports: a signed one is counted, never rewritten
+ * `draft` and `archived` reports: a signed one keeps its signature (D66: a carried signature, Storage::saveCarryingSignature())
  * (D3). Each page goes through Assistant::run() like the Suggest tags
  * button: the whole report, de-identified (Context), audited `ai.call`, one
  * request at a time, and its answer through Support\TagList, the button's
@@ -103,7 +104,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'tagged' : 'would_tag', 'rads', 'has_tags', 'no_prompt', 'no_tags', 'signed', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'tagged' : 'would_tag', 'rads', 'has_tags', 'no_prompt', 'no_tags', 'signed_carried', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -117,10 +118,6 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 $page = $this->storage->read($path);
             } catch (RuntimeException) {
                 $report->unreadable($path);
-                continue;
-            }
-            if ($page->status === 'signed') {
-                $report->count('signed');
                 continue;
             }
             if (!$overwrite && self::existing($page->frontmatter) !== []) {
@@ -180,8 +177,8 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 }
                 $frontmatter = $page->frontmatter;
                 $frontmatter['tags'] = $tags;
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::TAGGER, 'assisted: tags', auto: true);
-                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-tags', 'on_behalf_of' => $actor]);
+                $saved = $this->write($page, $frontmatter, SystemActor::TAGGER, 'assisted: tags');
+                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-tags', 'on_behalf_of' => $actor] + self::carried($saved, $report));
                 $report->count('tagged');
                 $streak = 0;
                 $this->tell('done', ['status' => 'ok']);
@@ -216,6 +213,30 @@ final class TagTask implements MaintenanceTask, ProgressAware
     }
 
     /**
+     * One revision of $page with $frontmatter: a signed report stays signed (D66),
+     * since summary and tags never print; any other a normal save
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private function write(PageRecord $page, array $frontmatter, string $actor, string $note): PageRecord
+    {
+        return $page->status === 'signed'
+            ? $this->storage->saveCarryingSignature($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true)
+            : $this->storage->save($page->path, $frontmatter, $page->body, $page->rev, $actor, $note, auto: true);
+    }
+
+    /** @return array<string, string> the audit line's mark of a carried signature, counted */
+    private static function carried(PageRecord $saved, MaintenanceReport $report): array
+    {
+        if ($saved->status !== 'signed') {
+            return [];
+        }
+        $report->count('signed_carried');
+
+        return ['signature' => 'carried'];
+    }
+
+    /**
      * Adds the RADS categories a page states and its tags lack, as one
      * revision (or counts it, in a check); false when there are none to add
      */
@@ -224,14 +245,14 @@ final class TagTask implements MaintenanceTask, ProgressAware
         try {
             $page = $this->storage->read($path);
             $missing = self::missingRads($page->frontmatter, $page->body);
-            if ($missing === [] || $page->status === 'signed') {
+            if ($missing === []) {
                 return false;
             }
             if ($apply) {
                 $frontmatter = $page->frontmatter;
                 $frontmatter['tags'] = Rads::merge(self::existing($page->frontmatter), $missing);
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::TAGGER, 'tags: rads', auto: true);
-                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'rads-tags', 'on_behalf_of' => $actor]);
+                $saved = $this->write($page, $frontmatter, SystemActor::TAGGER, 'tags: rads');
+                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'rads-tags', 'on_behalf_of' => $actor] + self::carried($saved, $report));
             }
             $report->count('rads');
         } catch (Throwable $e) {

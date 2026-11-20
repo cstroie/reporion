@@ -65,13 +65,16 @@ final class TagTaskTest extends StorageTestCase
     {
         $task = $this->task();
         $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['namespace' => 'reports']));
-        self::assertSame(1, $check->summary()['would_tag']);
+        self::assertSame(2, $check->summary()['would_tag'], 'the signed one too (D66)');
         self::assertSame(1, $check->summary()['has_tags']);
-        self::assertSame(1, $check->summary()['signed']);
         self::assertNull($this->server->lastRequest()['body'], 'a check sends nothing');
 
         $apply = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports']));
-        self::assertSame(1, $apply->summary()['tagged']);
+        self::assertSame(2, $apply->summary()['tagged']);
+        self::assertSame(1, $apply->summary()['signed_carried']);
+        $signed = $this->storage->read('reports:mri:mioveni:260927-test-trei');
+        $last = $signed->meta['signatures'][\count($signed->meta['signatures']) - 1];
+        self::assertSame(['signed', 'owner', 1], [$signed->status, $last['by'], $last['carried_from']], 'it stays signed by its radiologist');
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $this->storage->read('reports:mri:mioveni:260927-test-unu')->frontmatter['tags']);
         self::assertSame(['manual'], $this->storage->read('reports:mri:mioveni:260927-test-doi')->frontmatter['tags'], 'tags already there stay');
         self::assertSame(30, $this->server->lastRequest()['body']['max_tokens'], 'the page\'s own cap');
@@ -93,7 +96,7 @@ final class TagTaskTest extends StorageTestCase
             }
         }
         $saves = array_values(array_filter($lines, static fn (array $l): bool => $l['action'] === 'page.save'));
-        self::assertCount(1, $saves);
+        self::assertCount(2, $saves);
         self::assertSame(SystemActor::TAGGER, $saves[0]['actor']);
         self::assertSame('owner', $saves[0]['on_behalf_of']);
     }
@@ -116,7 +119,7 @@ final class TagTaskTest extends StorageTestCase
     {
         $none = $this->task(false);
         $report = $none->run(MaintenanceTask::APPLY, 'owner', $none->options([]));
-        self::assertSame(1, $report->summary()['no_prompt'], 'the untagged one');
+        self::assertSame(2, $report->summary()['no_prompt'], 'the untagged one');
         self::assertNull($this->server->lastRequest()['body']);
 
         $task = $this->task();
@@ -133,18 +136,18 @@ final class TagTaskTest extends StorageTestCase
 
         $task = $this->task(false);
         $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['namespace' => 'reports:mg']));
-        self::assertSame(1, $check->summary()['rads']);
-        self::assertSame(1, $check->summary()['signed']);
+        self::assertSame(2, $check->summary()['rads']);
         self::assertSame(['mamografie'], $this->storage->read('reports:mg:mioveni:260927-test-patru')->frontmatter['tags'], 'a check writes nothing');
 
         $apply = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports:mg']));
-        self::assertSame(1, $apply->summary()['rads']);
+        self::assertSame(2, $apply->summary()['rads']);
         self::assertSame(['mamografie', 'rads:birads-4a'], $this->storage->read('reports:mg:mioveni:260927-test-patru')->frontmatter['tags']);
-        self::assertSame(['mamografie'], $this->storage->read('reports:mg:mioveni:260927-test-cinci')->frontmatter['tags'], 'never a signed report');
+        self::assertSame(['mamografie', 'rads:birads-2'], $this->storage->read('reports:mg:mioveni:260927-test-cinci')->frontmatter['tags']);
+        self::assertSame('signed', $this->storage->read('reports:mg:mioveni:260927-test-cinci')->status, 'a signed report stays signed (D66)');
         self::assertNull($this->server->lastRequest()['body'], 'no assistant asked');
 
         $again = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports:mg']));
         self::assertSame(0, $again->summary()['rads']);
-        self::assertSame(1, $again->summary()['has_tags']);
+        self::assertSame(2, $again->summary()['has_tags']);
     }
 }

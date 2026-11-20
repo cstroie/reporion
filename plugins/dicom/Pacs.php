@@ -674,6 +674,19 @@ final class Pacs
                 }
             }
         }
+        if ($page->status === 'signed') {
+            // D66: a signed report takes only the link (the study UID), which never prints, and stays
+            // signed; the printed blanks the study would fill stay blank
+            $link = $before;
+            if ($at !== null && $blank($link['exams'][$at]['study_uid'] ?? null)) {
+                $link['exams'][$at]['study_uid'] = $uid;
+            }
+            if ($link === $before) {
+                return null;
+            }
+
+            return $this->storage->saveCarryingSignature($page->path, $link, $page->body, $page->rev, $actor, 'study link from the PACS', $auto);
+        }
         if ($fm === $before) {
             return null;
         }
@@ -701,7 +714,7 @@ final class Pacs
         $fm = $page->frontmatter;
         $institution = \is_scalar($fm['pacs_institution'] ?? null) ? self::text((string) $fm['pacs_institution']) : '';
         $device = $institution !== '' ? ($this->devices?->forInstitution($site, $institution) ?? '') : '';
-        if ($device === '' || Exams::report($fm)['device'] !== '') {
+        if ($device === '' || Exams::report($fm)['device'] !== '' || $page->status === 'signed') {
             return null;
         }
         $fm['device'] = $device;
@@ -722,6 +735,10 @@ final class Pacs
      */
     public function linkPatient(PageRecord $page, string $actor, array $row, bool $auto = false, bool $fillCnp = true): ?PageRecord
     {
+        if ($page->status === 'signed') {
+            // D66: patient fields print; a signed report keeps them as signed
+            return null;
+        }
         $own = self::pagePatient($page);
         $cnp = (string) ($row['cnp'] ?? '');
         if ($own['cnp'] !== '' && $cnp !== '' && $own['cnp'] !== $cnp) {

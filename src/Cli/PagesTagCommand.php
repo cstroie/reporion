@@ -22,7 +22,7 @@ final class PagesTagCommand extends PagesSummarizeCommand
     public static function help(): CommandHelp
     {
         return new CommandHelp(
-            summary: 'Writes 3 to 5 tags from the assistant for unsigned reports that have none, plus the RADS categories the conclusion states.',
+            summary: 'Writes 3 to 5 tags from the assistant for reports that have none (a signed one stays signed, D66), plus the RADS categories the conclusion states.',
             usage: '[--actor=<username>] [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]',
             options: [
                 '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',

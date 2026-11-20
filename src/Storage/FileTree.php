@@ -27,6 +27,7 @@ use Reporion\Support\LibrarySource;
 use Reporion\Support\Fsync;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
+use Reporion\Support\SignedMeta;
 use Reporion\Support\Revlog;
 use Reporion\Support\Ulid;
 use RuntimeException;
@@ -204,6 +205,90 @@ final class FileTree implements StorageInterface
             if ($history['status'] !== 'archived') {
                 $history['status'] = 'draft';
             }
+            $this->attic->append($this->atticFile($path), $document, $history, self::at($now));
+            $this->writePageFile($path, $document);
+            $this->commitWrite($path, $pid, $history, $visibility, $actor);
+            $journal->appendDone($pid, $next);
+
+            return $this->read($path);
+        });
+    }
+
+    /**
+     * D66: a new revision of a signed report that changes only keys of
+     * Support\SignedMeta (links, summary, tags: nothing that prints) and
+     * stays signed. The new revision gets a carried signature record: the
+     * newest signature's signer, parafa and field order, a fresh digest over
+     * the new bytes, `carried_from`, `carried_by` and the changed `keys`.
+     * The revision and its signature reach the zip in one write, so a crash
+     * leaves either rev N or a signed rev N+1 (replay re-syncs from the zip).
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @throws SignedPageException when the page is not signed, or the change is not only allowlisted keys
+     */
+    public function saveCarryingSignature(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord
+    {
+        return $this->locked(function () use ($path, $frontmatter, $body, $baseRev, $actor, $note, $auto): PageRecord {
+            $row = $this->liveRow($path);
+            $pid = (string) $row['pid'];
+            $history = $this->historyOf($path);
+            $rev = \count($history['revlog']);
+            if ($rev !== $baseRev) {
+                throw new RevisionConflictException($this->read($path), $baseRev);
+            }
+            $last = null;
+            foreach ($history['signatures'] as $signature) {
+                if ((int) ($signature['rev'] ?? 0) === $rev) {
+                    $last = $signature;
+                }
+            }
+            if ($history['status'] !== 'signed' || $last === null) {
+                throw new SignedPageException();
+            }
+
+            [$before, $beforeBody] = $this->parseDocument($this->attic->revision($this->atticFile($path), $rev));
+            $before = self::withoutPid($before);
+            $frontmatter = self::withoutPid($frontmatter);
+            if (ReportPath::isReport($path)) {
+                $frontmatter = Exams::normalize($frontmatter, $before);
+                // D48: an older shape read in the current one, so a format change alone is no change
+                $before = Exams::normalize($before, $before);
+            }
+            $order = \is_array($last['field_order'] ?? null) ? $last['field_order'] : [];
+            $keys = SignedMeta::changedKeys($before, $frontmatter);
+            if ($keys === null || Canonical::bytes([], $body) !== Canonical::bytes([], $beforeBody)) {
+                throw new SignedPageException();
+            }
+            if ($keys === []) {
+                return $this->read($path);
+            }
+
+            $document = $this->encodeDocument($frontmatter, $beforeBody, $pid);
+            $sha = hash('sha256', $document);
+            $visibility = (string) ($frontmatter['visibility'] ?? $row['visibility']);
+            [$storedFm, $storedBody] = $this->parseDocument($document);
+
+            $next = $rev + 1;
+            $journal = $this->journal();
+            $journal->appendIntent('save', $pid, $path, $next, $baseRev, $sha, $actor);
+
+            $now = self::now();
+            $history['revlog'][] = Revlog::chained(self::revlogEntry($next, $now, $actor, $note, \strlen($document), $sha, 'meta', $auto), $history['revlog'], $pid);
+            $history['signatures'][] = [
+                'rev' => $next,
+                'by' => (string) $last['by'],
+                'ts' => (string) ($last['ts'] ?? $now),
+                // the original signing time stays the signature's (print, SR, stats); when it was carried is its own
+                'carried_at' => $now,
+                'alg' => 'sha256',
+                'digest' => hash('sha256', Canonical::bytes($storedFm, $storedBody, $order)),
+                'parafa' => $last['parafa'] ?? null,
+                'field_order' => $order,
+                'carried_from' => $rev,
+                'carried_by' => $actor,
+                'keys' => $keys,
+            ];
             $this->attic->append($this->atticFile($path), $document, $history, self::at($now));
             $this->writePageFile($path, $document);
             $this->commitWrite($path, $pid, $history, $visibility, $actor);

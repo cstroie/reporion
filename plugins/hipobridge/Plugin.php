@@ -158,10 +158,10 @@ final class Plugin implements PluginInterface
             return $this->priors($request, $params, $principal, $e->getMessage(), $patientId);
         }
         foreach ($result['created'] as $record) {
-            $this->audit->record('page.create', SystemActor::IMPORTER, $request, $record->pid, $record->path, $record->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username]);
+            $this->audit->record('page.create', SystemActor::IMPORTER, $request, $record->pid, $record->path, $record->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username] + ($result['updated']->status === 'signed' ? ['signature' => 'carried'] : []));
         }
         if ($result['updated'] !== null) {
-            $this->audit->record('page.save', SystemActor::IMPORTER, $request, $page->pid, $page->path, $result['updated']->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username]);
+            $this->audit->record('page.save', SystemActor::IMPORTER, $request, $page->pid, $page->path, $result['updated']->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username] + ($result['updated']->status === 'signed' ? ['signature' => 'carried'] : []));
         }
 
         // The HIS patient id and counts: never a name: in the URL (D1)

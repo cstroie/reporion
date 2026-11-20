@@ -581,7 +581,7 @@ its history `data/attic/a/b/c.zip`:
 0001.md … NNNN.md   each revision's exact bytes, raw DEFLATE
 revlog.json         {"v": 2, "pid": "…", "status": "draft|signed|archived", "archived": null|{…},
                      "revlog": [{n, ts, by, note, bytes, sha256, minor, kind, chain}],
-                     "signatures": [{rev, by, ts, alg, digest, parafa, field_order}],
+                     "signatures": [{rev, by, ts, alg, digest, parafa, field_order, carried_from?, carried_by?, keys?}],   (D66: a carried signature)
                      "status_log": [{rev, status, by, ts}]}   (D65; only once a status was set by hand)
 ```
 
@@ -837,6 +837,11 @@ document into "does not match". So each `signatures[]` entry also carries `field
 object fields): `Service\Revisions::signature()` reorders by *that*, not by resolving
 `resources/schema/*.json` fresh, when checking a past signature. A signature recorded before this field
 existed has no `field_order` and falls back to today's schema, same as before.
+
+A **carried signature** (D66) is an ordinary entry for a revision that changed only `Support\SignedMeta`'s keys
+(summary, tags, priors, an exam's `study_uid` or `order_ref`) of a signed one: the same `by`, `parafa` and
+`field_order` as the signature it follows, its own `digest` over its own revision, plus `carried_from` (that
+revision), `carried_by` (who wrote the change) and `keys`. It is checked like any other.
 
 ## 9. Colon paths in URLs
 
@@ -1410,8 +1415,8 @@ Several values are worked out from other ones. Each has its own trigger and its 
 | **Exam keys** (an older shape's top-level `exam_title`, `region`, `accession`, `template`, `protocol`; an exam's `modality`, `device`, `study_date`) | the report's `exams[]` and the report's own `modality`, `device`, `study_date` (§12, D48) | every save of a report path, in `Storage` | a top-level value *present and changed since the revision before* is an edit and goes into the exam; an unchanged or absent one is dropped | `Support\Exams::normalize()` |
 | **Accession** (`exams[].accession`) | the site's code, modality, year and the counter (D20) | the guided form's first Save; an exam added in the editor, on its Save | the exam has one (never reissued) | `Service\ExamAccessions` |
 | **Stopgap `summary`** | the first sentence of the first conclusion section | a user's save of a report (editor, `POST`/`PUT /api/v1/pages`) with a `summary` empty or still equal to what this rule made of the revision being replaced | a hand-written or assistant-written `summary`; a text with no conclusion | `Support\ConclusionSummary` |
-| **Assistant `summary`** | the assistant's `summary` prompt | the editor rail; `pages:summarize` for unsigned reports with none (or only a stopgap; no assistant: the stopgap sentence) | a summary that is not a stopgap, unless `--overwrite` | `Service\Maintenance\SummarizeTask` |
-| **Tags** | the assistant's `tags` prompt (3–5 tags) | the editor rail; `pages:tag` for unsigned reports with none | existing tags (unless `--overwrite`); signed reports | `Service\Maintenance\TagTask`, `Support\TagList` |
+| **Assistant `summary`** | the assistant's `summary` prompt | the editor rail; `pages:summarize` for reports with none (a signed one stays signed, D66) (or only a stopgap; no assistant: the stopgap sentence) | a summary that is not a stopgap, unless `--overwrite` | `Service\Maintenance\SummarizeTask` |
+| **Tags** | the assistant's `tags` prompt (3–5 tags) | the editor rail; `pages:tag` for reports with none (a signed one stays signed, D66) | existing tags (unless `--overwrite`) | `Service\Maintenance\TagTask`, `Support\TagList` |
 | **RADS tags** `rads:birads-4a`… | the category the conclusion states (D18) | suggested on the Sign screen; added by the rail's tags action and by `pages:tag`: also on tagged reports; **not** on a plain save | tags already there are merged, never removed | `Support\Rads` |
 | **Starting frontmatter** of a page that does not exist yet | the path and the text: `private`; on a report path the modality (path segment through `reports.modality_namespaces`), site, date (`yymmdd` leaf), `patient.name` from `#`, `exam_title` from `##` | when the editor or the API is given no frontmatter; nothing is kept until Save. It writes no `title` (§3k) | n/a | `Service\FrontmatterGuess` |
 | **New report** | the form: path from name, date, site, modality; per exam, the title from the template's `##` when the form's is blank, the regions from the template's `region` when none is ticked, `protocol`, `template` (§3i-b) | the guided form | the form's own values win | `Service\NewReport` |

@@ -48,6 +48,21 @@ interface StorageInterface
     public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false, bool $minor = false): PageRecord;
 
     /**
+     * D66: a signed report's new revision that changes only the keys of
+     * `Support\SignedMeta` (study link, order ref, priors, summary, tags)
+     * and stays signed: a carried signature record (the last signer and
+     * parafa, a fresh digest, `carried_from`, `carried_by`, `keys`). The
+     * body is never changed. Nothing changed: a no-op.
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev
+     * @throws \Reporion\Exception\SignedPageException       when the current revision is not signed or another key or the body changed
+     */
+    public function saveCarryingSignature(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord;
+
+    /**
      * The server autosave (D25 amended): the editor's form kept as a
      * disposable draft of $username in the page's own directory: never a
      * revision, never indexed. A normal write by the same user removes it.

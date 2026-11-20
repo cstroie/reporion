@@ -414,6 +414,24 @@ final class His
         if ($priors !== []) {
             $fm['priors'] = $priors;
         }
+        if ($page->status === 'signed') {
+            // D66: a signed report takes only what never prints (the order it answers, its
+            // priors) and stays signed; the printed blanks the order would fill stay blank
+            $link = $before;
+            foreach ((array) ($fm['exams'] ?? []) as $i => $e) {
+                if (\is_array($e) && isset($e['order_ref']) && \is_array($link['exams'][$i] ?? null) && ($link['exams'][$i]['order_ref'] ?? '') === '') {
+                    $link['exams'][$i]['order_ref'] = $e['order_ref'];
+                }
+            }
+            if (isset($fm['priors'])) {
+                $link['priors'] = $fm['priors'];
+            }
+            if ($link === $before) {
+                return null;
+            }
+
+            return $this->storage->saveCarryingSignature($page->path, $link, $page->body, $page->rev, SystemActor::IMPORTER, 'priors from HippoBridge');
+        }
         if ($fm === $before) {
             return null;
         }

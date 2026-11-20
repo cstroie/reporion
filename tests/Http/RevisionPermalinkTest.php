@@ -107,6 +107,26 @@ final class RevisionPermalinkTest extends HttpTestCase
         self::assertStringContainsString(t('rev.digest_matches'), $response->body);
     }
 
+    public function testACarriedSignatureIsShownWithTheRevisionItCameFromAndStillMatches(): void
+    {
+        $this->owner('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:s',
+            'meta' => ['title' => 'RM cerebral nativ', 'visibility' => 'private', 'modality' => ['MR'], 'region' => ['neuro'], 'site' => 'mioveni', 'study_date' => '2026-09-23', 'summary' => 'Fara leziuni active.', 'indication' => 'Cefalee cronica.', 'patient' => ['name' => 'Test Patient']],
+            'body' => 'signed body',
+        ]);
+        self::assertSame(200, $this->owner('POST', '/api/v1/pages/reports:mri:mioveni:s/sign', ['parafa' => 'P-1'])->status);
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $page = $storage->read('reports:mri:mioveni:s');
+        $storage->saveCarryingSignature($page->path, ['tags' => ['normal']] + $page->frontmatter, $page->body, 1, 'system:summarizer');
+
+        $response = $this->owner('GET', '/reports:mri:mioveni:s@2');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('parafa P-1', $response->body);
+        self::assertStringContainsString(htmlspecialchars(t('rev.carried', [1, 'tags']), ENT_QUOTES), $response->body);
+        self::assertStringContainsString(t('rev.digest_matches'), $response->body);
+    }
+
     public function testAPageLiterallyNamedWithAnAtSuffixIsNotShadowed(): void
     {
         $this->twoRevisions('docs:odd', 'public');

@@ -76,7 +76,10 @@ entry" machinery goes away: the two never share a directory.
 `revlog.json` has the fields of today's `meta.json` that are history: `revlog` (with `chain`,
 `sha256` = sha256 of the revision's bytes), `signatures` (with `field_order`), `status`, the
 `archived` marker, and (D65) `status_log`, the trace of each archive/unarchive (append-only,
-absent until the first). Nothing operational (moves, share token, deliveries) goes in it.
+absent until the first). D66: a revision that changes only what never prints of a signed report
+(summary, tags, priors, an exam's `study_uid`/`order_ref`) has revlog `kind: meta` and its own **carried**
+signature (`carried_from`, `carried_by`, `carried_at`, `keys`; the original `by`, `ts`, `parafa`), written to the
+zip together with the revision and journalled as an ordinary `save`. Nothing operational (moves, share token, deliveries) goes in it.
 
 **Write-once, by verification.** A zip cannot be appended to atomically, so every save rewrites
 the container, but no entry is ever changed:

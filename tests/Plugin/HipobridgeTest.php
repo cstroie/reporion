@@ -245,6 +245,36 @@ final class HipobridgeTest extends HttpTestCase
         }
     }
 
+    public function testASignedReportTakesOnlyItsPriorsAndOrderAndStaysSigned(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-20', 'patient' => ['name' => 'IONESCU Maria'],
+        ], "# IONESCU Maria\n\n## CT torace\n", 'owner');
+        $this->storage()->sign(self::REPORT, 'owner', []);
+        $this->his['/fhir/Patient?q=IONESCU+Maria'] = [200, self::bundle([self::patientShort('p7', 'IONESCU MARIA')])];
+        $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
+        $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([
+            self::request('1001', 'ct', '2026-09-20 10:15', ['Chest']),
+            self::request('900', 'irm', '2025-03-02 09:00', ['Brain'], 'Vertij.'),
+        ])];
+        $this->his['/fhir/ServiceRequest/1001'] = [200, self::order('1001', 'IONESCU MARIA', $this->cnp, '2026-09-20T10:15:00', 'CT TORACE', 'Chest', 'Tuse persistenta.', 'Dr. Trimitator')];
+        $this->his['/fhir/DiagnosticReport/900'] = [200, self::report('900', '2025-03-02T09:30:00', [['IRM cerebral', "Fara leziuni.\n\nConcluzii: normal.", 'irm', 'Brain', 'Dr. Alt Radiolog']])];
+
+        $done = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900'], 'this' => 'ct.1001']);
+        self::assertSame(302, $done->status);
+
+        $updated = $this->storage()->read(self::REPORT);
+        self::assertSame(['signed', 2], [$updated->status, $updated->rev], 'stays signed (D66)');
+        $fm = $updated->frontmatter;
+        self::assertSame(['reports:mri:mioveni:250302-ionescu-maria'], $fm['priors']);
+        self::assertSame('hipobridge:ServiceRequest/1001', $fm['exams'][0]['order_ref']);
+        self::assertSame(['name' => 'IONESCU Maria'], $fm['patient'], 'printed blanks stay blank');
+        self::assertArrayNotHasKey('referrer', $fm);
+        $signatures = $updated->meta['signatures'];
+        self::assertSame(['owner', 1, 'system:importer'], [end($signatures)['by'], end($signatures)['carried_from'], end($signatures)['carried_by']]);
+    }
+
     public function testAnIdentifiedPatientWithNoExamCanStillUpdateThePatientData(): void
     {
         $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'patient' => ['name' => 'IONESCU Maria']], "# IONESCU Maria\n", 'owner');
