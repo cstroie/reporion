@@ -321,7 +321,7 @@ body.palette-cyberpunk:not(.theme-light)::before {
 @keyframes cp-blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .palette-cyberpunk:not(.theme-light) .wk-brand-text::after { animation: none; } }
 .palette-cyberpunk:not(.theme-light) .wk-eyebrow:not(summary .wk-eyebrow)::before { content: "//"; color: #d34fca; text-shadow: 0 0 6px rgba(211,79,202,.6); }
-.palette-cyberpunk:not(.theme-light) summary.wk-meta-h .wk-eyebrow::before { color: #d34fca; }
+.palette-cyberpunk:not(.theme-light) :is(summary.wk-meta-h .wk-eyebrow, details.wk-tool > summary)::before { color: #d34fca; }
 .palette-cyberpunk:not(.theme-light) .wk-toc .wk-eyebrow::before { margin-right: .5em; } /* a block there, not a flex row with a gap */
 
 /* buttons: [ LABEL ] */
