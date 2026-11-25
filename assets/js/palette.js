@@ -172,6 +172,15 @@
           });
           return;
         }
+        if (cmd.variants && exact) {
+          // Export: one row per format, `export pdf` narrows them
+          cmd.variants.forEach(function (variant) {
+            if (args.every(function (arg) { return variant.arg.indexOf(arg) === 0; })) {
+              items.push({ command: true, group: 'commands', icon: variant.icon, title: cmd.title + ' · ' + variant.title, hint: variant.arg, path: variant.path, complete: cmd.name + ' ' + variant.arg });
+            }
+          });
+          return;
+        }
         if (args.length === 0) {
           items.push({ command: true, group: 'commands', icon: cmd.icon, title: cmd.title, hint: cmd.name, path: cmd.path, complete: cmd.name + (cmd.args ? ' ' : '') });
         }

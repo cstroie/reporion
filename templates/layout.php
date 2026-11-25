@@ -115,6 +115,15 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
         !empty($canSign) && isset($headerPath) ? ['name' => 'sign', 'title' => t('page.sign'), 'icon' => 'signature', 'path' => $headerPath . '/sign'] : null,
         !empty($canWrite) && isset($headerPath) ? ['name' => 'edit', 'title' => t('page.edit'), 'icon' => 'pencil-simple', 'path' => $headerPath . '/edit'] : null,
         isset($headerPath) ? ['name' => 'history', 'title' => t('page.revisions'), 'icon' => 'clock-counter-clockwise', 'path' => $headerPath . '/revisions'] : null,
+        !empty($headerIsReport) && isset($headerPath) ? ['name' => 'timeline', 'title' => t('page.timeline'), 'icon' => 'timeline', 'path' => $headerPath . '/timeline'] : null,
+        // A copy of the page (D19, Service\Duplicates), where the page-actions menu offers it: the write grant
+        !empty($canWrite) && isset($headerPath) ? ['name' => 'dup', 'title' => t('page.duplicate'), 'icon' => 'copy-simple', 'path' => 'new?from=' . rawurlencode($headerPath)] : null,
+        // Export ▾ of the page header (view and revisions): one row per format, the same links
+        isset($headerPath) && in_array($headerTab ?? '', ['view', 'revisions'], true) ? ['name' => 'export', 'title' => t('page.export'), 'icon' => 'export', 'args' => true, 'variants' => array_map(
+            static fn (string $f, string $icon): array => ['arg' => $f, 'title' => t('page.export_' . $f), 'icon' => $icon, 'path' => 'export/' . $headerPath . '.' . $f],
+            ['pdf', 'odt', 'docx', 'md'],
+            ['file-pdf', 'file-doc', 'file-doc', 'file-md'],
+        )] : null,
         isset($headerPath) ? ['name' => 'print', 'title' => t('page.print_preview'), 'icon' => 'printer', 'path' => $headerPath . '/print'] : null,
         ($isOwner ?? false) ? ['name' => 'admin', 'title' => t('palette.cmd_admin'), 'icon' => 'gear', 'path' => 'admin'] : null,
     ]))], JSON_HEX_TAG) ?></script>

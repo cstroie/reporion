@@ -62,6 +62,10 @@ final class QuickNavTest extends HttpTestCase
         self::assertStringContainsString('"name":"print"', $report->body);
         self::assertStringContainsString('"name":"edit"', $report->body);
         self::assertStringContainsString('"name":"history"', $report->body);
+        self::assertStringContainsString('"name":"timeline"', $report->body);
+        self::assertStringContainsString('"name":"dup"', $report->body);
+        self::assertStringContainsString('"path":"new?from=reports%3Amri%3Amioveni%3A260101-test-name"', $report->body);
+        self::assertStringContainsString('"arg":"pdf"', $report->body);
         self::assertStringContainsString('"path":"reports:mri:mioveni:260101-test-name\/print"', $report->body);
     }
 
