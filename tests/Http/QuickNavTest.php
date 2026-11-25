@@ -56,6 +56,11 @@ final class QuickNavTest extends HttpTestCase
         self::assertStringContainsString('"path":"reports:mri:mioveni","modality":"mri","site":"mioveni"', $page->body);
         self::assertStringContainsString('"name":"new"', $page->body);
         self::assertStringContainsString('"name":"admin"', $page->body, 'an owner is offered Admin');
+        self::assertStringNotContainsString('"name":"print"', $page->body, 'print is a page\'s own command');
+
+        $report = $this->as('owner', 'GET', '/reports:mri:mioveni:260101-test-name');
+        self::assertStringContainsString('"name":"print"', $report->body);
+        self::assertStringContainsString('"path":"reports:mri:mioveni:260101-test-name\/print"', $report->body);
     }
 
     public function testASavedViewRoundTripsToTheMenuWithOnlySearchParameters(): void
