@@ -39,7 +39,7 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
 ## Layout and navigation
 
 - **Shell B, "Reading room", without its floating dock** (2026-09-25). Two layers:
-  - **Top nav, site-wide**: brand, search showing the current path (⌘K palette, also a command bar, 2026-11-25: `new medima mri`, `ask`, `library`, `notes`, `guide`, `profile`, `admin`, and on a page `print` and (a draft report the caller may sign) `sign`; the first word names the command, the rest are prefixes of modality and site, **Tab** completes, Enter goes; `Http\PaletteCommands`), ↑ up one
+  - **Top nav, site-wide**: brand, search showing the current path (⌘K palette, also a command bar, 2026-11-25: `new medima mri`, `ask`, `library`, `notes`, `guide`, `profile`, `admin`, and on a page `edit` (where the caller may write), `history`, `print` and (a draft report the caller may sign) `sign`; the first word names the command, the rest are prefixes of modality and site, **Tab** completes, Enter goes; `Http\PaletteCommands`), ↑ up one
     namespace, + New (only for someone who can write somewhere), 📌 quick navigation, appearance
     (theme and palette), account (Profile, Admin for owners, Sign out). The ☰ namespace drawer, the
     namespace-index button and the Admin button were removed (2026-10-15).

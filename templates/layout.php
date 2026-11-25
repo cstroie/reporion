@@ -113,6 +113,8 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
         ['name' => 'profile', 'title' => t('palette.cmd_profile'), 'icon' => 'user-gear', 'path' => 'profile'],
         // On a page's own routes: its sign screen (a draft report the caller may sign) and its print view
         !empty($canSign) && isset($headerPath) ? ['name' => 'sign', 'title' => t('page.sign'), 'icon' => 'signature', 'path' => $headerPath . '/sign'] : null,
+        !empty($canWrite) && isset($headerPath) ? ['name' => 'edit', 'title' => t('page.edit'), 'icon' => 'pencil-simple', 'path' => $headerPath . '/edit'] : null,
+        isset($headerPath) ? ['name' => 'history', 'title' => t('page.revisions'), 'icon' => 'clock-counter-clockwise', 'path' => $headerPath . '/revisions'] : null,
         isset($headerPath) ? ['name' => 'print', 'title' => t('page.print_preview'), 'icon' => 'printer', 'path' => $headerPath . '/print'] : null,
         ($isOwner ?? false) ? ['name' => 'admin', 'title' => t('palette.cmd_admin'), 'icon' => 'gear', 'path' => 'admin'] : null,
     ]))], JSON_HEX_TAG) ?></script>

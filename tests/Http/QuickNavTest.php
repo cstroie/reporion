@@ -60,6 +60,8 @@ final class QuickNavTest extends HttpTestCase
 
         $report = $this->as('owner', 'GET', '/reports:mri:mioveni:260101-test-name');
         self::assertStringContainsString('"name":"print"', $report->body);
+        self::assertStringContainsString('"name":"edit"', $report->body);
+        self::assertStringContainsString('"name":"history"', $report->body);
         self::assertStringContainsString('"path":"reports:mri:mioveni:260101-test-name\/print"', $report->body);
     }
 
