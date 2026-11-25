@@ -101,7 +101,18 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
         $quick[$group],
     ),
     ['fixed', 'pinned', 'related'],
-)), 'groups' => ['pinned' => t('quick.pinned'), 'related' => t('quick.related')]], JSON_HEX_TAG) ?></script>
+)), 'groups' => ['pinned' => t('quick.pinned'), 'related' => t('quick.related'), 'commands' => t('palette.commands')],
+    // Commands (Ctrl+K, a word then Tab): `new {site} {modality}` and the plain ones
+    'newTargets' => $paletteNew ?? [],
+    'commands' => array_values(array_filter([
+        $canCreate ? ['name' => 'new', 'title' => t('palette.cmd_new'), 'icon' => 'plus', 'path' => 'new', 'args' => !empty($paletteNew)] : null,
+        ['name' => 'ask', 'title' => t('quick.ask'), 'icon' => 'chats-circle', 'path' => 'ask'],
+        ['name' => 'library', 'title' => t('quick.library'), 'icon' => 'books', 'path' => 'library'],
+        ['name' => 'notes', 'title' => t('quick.notes'), 'icon' => 'note-pencil', 'path' => 'notes'],
+        ['name' => 'guide', 'title' => t('guide.title'), 'icon' => 'list-checks', 'path' => 'guide'],
+        ['name' => 'profile', 'title' => t('palette.cmd_profile'), 'icon' => 'user-gear', 'path' => 'profile'],
+        ($isOwner ?? false) ? ['name' => 'admin', 'title' => t('palette.cmd_admin'), 'icon' => 'gear', 'path' => 'admin'] : null,
+    ]))], JSON_HEX_TAG) ?></script>
 <?php else: ?>
 <span class="wk-tflex"></span>
 <?php endif; ?>

@@ -49,6 +49,15 @@ final class QuickNavTest extends HttpTestCase
         self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->pins);
     }
 
+    public function testThePaletteConfigCarriesTheNewCommandsTargetsTheCallerMaySee(): void
+    {
+        $page = $this->as('owner', 'GET', '/reports:ct:');
+        self::assertStringContainsString('"newTargets":[', $page->body);
+        self::assertStringContainsString('"path":"reports:mri:mioveni","modality":"mri","site":"mioveni"', $page->body);
+        self::assertStringContainsString('"name":"new"', $page->body);
+        self::assertStringContainsString('"name":"admin"', $page->body, 'an owner is offered Admin');
+    }
+
     public function testASavedViewRoundTripsToTheMenuWithOnlySearchParameters(): void
     {
         $save = $this->as('owner', 'POST', '/profile/views', ['name' => ' MR  unsigned ', 'query' => 'q=menisc&modality=MR&status=draft&page=3&evil=1', 'return_to' => '/search?q=menisc']);

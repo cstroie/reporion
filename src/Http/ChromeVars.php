@@ -65,6 +65,8 @@ final class ChromeVars
             // Where the top nav's New starts: the namespace being viewed when the caller may write there (or
             // at the root), else their own (D46): never a namespace they can only read
             'newNs' => $principal === null || $ns === '' || $principal->canWrite($ns) ? $ns : ($principal->personalNamespace() ?? $ns),
+            // The palette's `new {site} {modality}` (Http\PaletteCommands)
+            'paletteNew' => PaletteCommands::newTargets($principal, $index),
             'quick' => QuickNav::links($principal, $index, $ns, $principal !== null && $request->canAsk()),
             // The <link rel="alternate"> feeds of this page's <head> (partials/head-assets.php)
             'feedLinks' => Feeds::alternates($request->feedNamespaces, $ns, $request->basePath),

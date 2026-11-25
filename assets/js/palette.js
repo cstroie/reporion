@@ -42,6 +42,9 @@
     // The empty state: home, root, pins, the modality's namespaces
     // (Http\QuickNav): the same list as the top nav's pin menu
     var quick = Array.isArray(config.quick) ? config.quick : [];
+    // Commands (a word, then Tab): `new {site} {modality}` and plain ones
+    var commands = Array.isArray(config.commands) ? config.commands : [];
+    var newTargets = Array.isArray(config.newTargets) ? config.newTargets : [];
     var groups = config.groups && typeof config.groups === 'object' ? config.groups : {};
 
     var input = form.querySelector('input[name="q"]');
@@ -73,7 +76,7 @@
       }
       var lastGroup = null;
       results.forEach(function (result, index) {
-        if (result.quick && result.group !== lastGroup && groups[result.group]) {
+        if ((result.quick || result.command) && result.group !== lastGroup && groups[result.group]) {
           var heading = document.createElement('div');
           heading.className = 'wk-quick-h';
           var eyebrow = document.createElement('span');
@@ -86,6 +89,9 @@
         var row = document.createElement('a');
         row.className = 'wk-pal-row' + (index === activeIndex ? ' wk-sel' : '');
         row.href = basePath + '/' + result.path;
+        if (result.complete) {
+          row.setAttribute('data-complete', result.complete);
+        }
 
         var title = document.createElement('div');
         title.className = 'wk-row-t';
@@ -97,11 +103,18 @@
         title.appendChild(document.createTextNode(result.title || result.path));
         row.appendChild(title);
 
-        if (!result.quick) {
+        if (!result.quick && !result.command) {
           var path = document.createElement('div');
           path.className = 'wk-row-m wk-mono';
           path.textContent = result.path;
           row.appendChild(path);
+        }
+
+        if (result.hint) {
+          var hintEl = document.createElement('div');
+          hintEl.className = 'wk-row-m wk-mono';
+          hintEl.textContent = result.hint;
+          row.appendChild(hintEl);
         }
 
         if (result.snippet) {
@@ -127,9 +140,59 @@
       renderResults();
     }
 
+    // The commands the typed text asks for: the first word is a command's
+    // name (or the start of one), the rest its arguments, each a prefix of
+    // the modality or the site, in any order: `new medima mri`.
+    function matchCommands(term) {
+      var words = term.toLowerCase().split(/\s+/).filter(Boolean);
+      if (words.length === 0) {
+        return { items: [], only: false };
+      }
+      var hasArgs = /\s/.test(term) && words.length > 1 || /\s$/.test(term);
+      var items = [];
+      var only = false;
+      commands.forEach(function (cmd) {
+        if (words[0] !== cmd.name && !(words.length === 1 && !hasArgs && words[0].length >= 2 && cmd.name.indexOf(words[0]) === 0)) {
+          return;
+        }
+        var exact = words[0] === cmd.name && (hasArgs || words.length > 1);
+        if (exact) {
+          only = true;
+        }
+        var args = words.slice(1);
+        if (cmd.name === 'new' && exact) {
+          newTargets.forEach(function (target) {
+            var ok = args.every(function (arg) {
+              return target.modality.toLowerCase().indexOf(arg) === 0 || (target.site !== '' && target.site.toLowerCase().indexOf(arg) === 0);
+            });
+            if (ok && items.length < 12) {
+              var label = target.site !== '' ? target.site + ' ' + target.modality : target.modality;
+              items.push({ command: true, group: 'commands', icon: cmd.icon, title: cmd.title + ' · ' + label, hint: target.path, path: target.path + '/new', complete: 'new ' + label });
+            }
+          });
+          return;
+        }
+        if (args.length === 0) {
+          items.push({ command: true, group: 'commands', icon: cmd.icon, title: cmd.title, hint: cmd.name, path: cmd.path, complete: cmd.name + (cmd.args ? ' ' : '') });
+        }
+      });
+      return { items: items, only: only };
+    }
+
     function search(term) {
       if (term === '') {
         showQuick();
+        return;
+      }
+      var cmds = matchCommands(term);
+      if (cmds.only) {
+        // A command with its arguments: only what it offers, no search
+        if (currentController) {
+          currentController.abort();
+        }
+        results = cmds.items;
+        activeIndex = results.length > 0 ? 0 : -1;
+        renderResults();
         return;
       }
       if (currentController) {
@@ -145,7 +208,7 @@
           return response.ok ? response.json() : { data: [] };
         })
         .then(function (json) {
-          results = Array.isArray(json.data) ? json.data.slice(0, 8) : [];
+          results = cmds.items.concat(Array.isArray(json.data) ? json.data.slice(0, 8) : []);
           activeIndex = -1;
           renderResults();
         })
@@ -167,6 +230,16 @@
     });
 
     input.addEventListener('keydown', function (event) {
+      if (event.key === 'Tab' && !event.shiftKey && results.length > 0 && input.value.trim() !== '') {
+        // Tab completes to the highlighted command, or the first one offered
+        var pick = results[activeIndex >= 0 ? activeIndex : 0];
+        if (pick && pick.complete) {
+          event.preventDefault();
+          input.value = pick.complete;
+          search(input.value);
+          return;
+        }
+      }
       if (event.key === 'Escape') {
         if (!dropdown.hidden) {
           event.preventDefault();
